@@ -17,6 +17,9 @@ import { randomUUID } from 'expo-crypto';
 
 import { apiClient } from './api';
 import { confirmCloverAward } from './cosmetics-api';
+import { dailyCoinRewardKey, type CoinResponse } from './coin-reward-store';
+import {submitCoinOperation} from './coin-command-outbox';
+import { sessionEpoch } from './session-lifecycle';
 
 import { kReflectShareDefaults, kReflectState } from '../shared/storage/keys';
 import { storage } from './storage';
@@ -90,6 +93,9 @@ export interface SharedReflectItem {
 
 export interface ReflectSnapshot {
   reflectId: string;
+  /** Finalize can save successfully while supplementary quest registration is
+   * pending. Only a registration receipt can release a queued quest Claim. */
+  adventureRecordRegistered?: boolean;
   xpAwarded: number;
   companionXp: number;
   reflectsToday: number;
@@ -272,7 +278,7 @@ export async function fetchJournalEntryStates(requireBurrow = false): Promise<{
 }
 
 /** Wire shape from /api/reflect (snake_case from the RPC snapshot). */
-interface WireSnapshot {
+interface WireSnapshot extends CoinResponse {
   success?: boolean;
   memories?: ReflectMemoryDraft[];
   error?: string;
@@ -314,6 +320,7 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
 }
 
 export async function prepareReflect(params: {
+  localDate?: string;
   shareToPartner?: boolean;
   promptId: number;
   body: string;
@@ -321,7 +328,6 @@ export async function prepareReflect(params: {
   friendUserId?: string;
   mode?: 'typing' | 'prompt' | 'items';
   selectionVersion?: string;
-  matchingVersion?: { catalog: string; revision: number; itemsVersion?: string };
   selectedItems?: { itemId: string; label?: string; kind?: string; group?: string; custom?: boolean }[];
   removedItemIds?: string[];
   idempotencyKey?: string;
@@ -333,11 +339,12 @@ export async function prepareReflect(params: {
     return { ok: false, error: 'empty' };
   }
   if (body.length > 5000) return { ok: false, error: 'too_long' };
+  const epoch = sessionEpoch();
   beginReflectPreparation();
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user?.id;
-    if (!userId) return { ok: false, error: 'network' };
+    if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'network' };
     const wire = await apiClient.post<{
       success?: boolean;
       error?: string;
@@ -361,17 +368,16 @@ export async function prepareReflect(params: {
       promptId: params.promptId,
       shareToPartner: params.shareToPartner,
       body,
-      localDate: localDateStr(),
+      localDate: params.localDate ?? localDateStr(),
       sourceKit: params.sourceKit,
       friendUserId: params.friendUserId,
       mode,
       selectionVersion: params.selectionVersion,
-      matchingVersion: params.matchingVersion,
       selectedItems: params.selectedItems,
       removedItemIds: params.removedItemIds,
       idempotencyKey: params.idempotencyKey ?? randomUUID(),
     });
-    if (!wire.success || !wire.draftId) return { ok: false, error: 'network' };
+    if (epoch !== sessionEpoch() || !wire.success || !wire.draftId) return { ok: false, error: 'network' };
     if (params.selectionVersion) {
       const returnedIds = new Set((wire.matches ?? []).map((item) => item.itemId));
       // Never silently proceed with an older API's truncated selection list.
@@ -413,6 +419,7 @@ export async function prepareReflect(params: {
       },
     };
   } catch (error) {
+    if (epoch !== sessionEpoch()) return { ok: false, error: 'network' };
     const code = error instanceof ApiError && typeof error.body === 'object' && error.body && 'error' in error.body
       ? error.body.error : '';
     // Status/code/count only: never log reflection text, user IDs or tokens.
@@ -480,29 +487,35 @@ export async function enrichReflectDraft(
 export async function finalizeReflect(
   draft: PreparedReflect,
   memories: ReflectMemoryDraft[],
+  presentation?: { operationId:string; deferred:boolean },
 ): Promise<SubmitResult> {
+  const epoch = sessionEpoch();
+  const coinKey=draft.journalKind==='remember_together'?null:dailyCoinRewardKey('record-first');
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user?.id;
-    if (!userId) return { ok: false, error: 'network' };
-    if (draft.userId && draft.userId !== userId) return { ok: false, error: 'network' };
+    if (!userId || epoch !== sessionEpoch() || (draft.userId && draft.userId !== userId)) {
+      return { ok: false, error: 'network' };
+    }
     const checkpoint = draft.userId
       ? readSettlementCheckpoint(draft.userId, draft.draftId) ?? writeSettlementCheckpoint(draft, memories)
       : null;
-    const wire = await apiClient.post<WireSnapshot>('/api/reflect/finalize', {
+    const wire = await submitCoinOperation<WireSnapshot>({id:presentation?.operationId??`record:${draft.draftId}`,key:coinKey,amount:10,deferred:presentation?.deferred??false,path:'/api/reflect/finalize',payload:{
       userId,
       draftId: draft.draftId,
       revision: checkpoint?.revision,
       memories: memories.map(({ itemId, text, source, edited }) => ({ itemId, text: text.trim(), source, edited })),
       visibility: memories.map(({ itemId, visible }) => ({ itemId, visible })),
-    });
+    }});
+    if (epoch !== sessionEpoch()) return { ok: false, error: 'network' };
     if (wire.error === 'daily_limit_reached') {
       writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT });
       return { ok: false, error: 'daily_limit' };
     }
     if (wire.error || !wire.success) return { ok: false, error: 'network' };
     if (checkpoint) clearSettlementCheckpoint(userId, draft.draftId, checkpoint.revision);
-    const snapshot = { ...toSnapshot(wire), memories: wire.memories ?? memories };
+    const snapshot = { ...toSnapshot(wire), memories: wire.memories ?? memories,
+      adventureRecordRegistered: typeof wire.reward==='number' };
     writeCache({
       date: localDateStr(),
       reflectsToday: snapshot.reflectsToday,
@@ -517,6 +530,8 @@ export async function finalizeReflect(
     confirmCloverAward(snapshot.xpAwarded);
     return { ok: true, snapshot };
   } catch (error) {
+    if((error as Error)?.message==='daily_limit_reached'){writeCache({date:localDateStr(),reflectsToday:DAILY_LIMIT});return{ok:false,error:'daily_limit'};}
+    if (epoch !== sessionEpoch()) return { ok: false, error: 'network' };
     if (error instanceof ApiError && error.status === 403) {
       return { ok: false, error: 'plus_required' };
     }

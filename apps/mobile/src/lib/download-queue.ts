@@ -37,6 +37,9 @@ import {
 } from './android-r2-file-cache';
 import type { RemoteItemManifest } from '@novame/engine';
 import { isBaseItemIconUrl } from './base-item-icons';
+import { TAP_YOUR_DAY_LOCAL_CHOICES } from '@novame/engine';
+
+const localTapIds = new Set(TAP_YOUR_DAY_LOCAL_CHOICES.map(choice => choice.itemId));
 
 const IS_ANDROID = Platform.OS === 'android';
 const MAX_CONCURRENCY = IS_ANDROID ? 1 : 2;
@@ -478,6 +481,8 @@ export function stageRemoteItemImages(
   }
   const resolvedManifest = manifest === undefined ? getCachedRemoteItemManifest() : manifest;
   for (const item of resolvedManifest?.items ?? []) {
+    // Approved Tap art is packaged locally; do not stage obsolete R2 overrides.
+    if (localTapIds.has(item.itemId)) continue;
     enqueueR2Image(remoteItemAssetUrl(item.imageKey, item.assetVersion), PRIORITY.itemIcon);
   }
 }

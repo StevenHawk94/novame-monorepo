@@ -1,0 +1,1405 @@
+{
+  "code": "PK",
+  "id": "adventure_friend_pk",
+  "name": "Pickles",
+  "gender": "she",
+  "species": "Hedgehog",
+  "partner": "Basil (he)",
+  "emotionalState": "热恋期，嘴硬心软，怕被刺也怕刺到对方",
+  "speakingStyle": "炸毛吐槽，爱说 I'm FINE.",
+  "catchphrase": "I'm FINE.",
+  "art": [
+    "Hedgehog_02_Variant1.webp",
+    "Hedgehog_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "PK-01",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "A hedgehog stands very still, spikes slightly up.",
+      "lines": [
+        "Don't touch. I'm not mad. I'm just... spiky.",
+        "It's a lot. I know."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Noted. No touching.",
+          "reaction": [
+            "Thank you. Finally someone gets it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I like your spikes.",
+          "reaction": [
+            "...You do? Weird. I'm Pickles."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Are you okay?",
+          "reaction": [
+            "I'm FINE."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-02",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I've been hugging a pillow for a week.",
+        "Practicing. Without poking. It's not working. I've gone through four pillows."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Why the practice?",
+          "reaction": [
+            "...No reason. A boy. Maybe. I don't want to talk about it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Four pillows? Respect.",
+          "reaction": [
+            "Thank you. I'm committed."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Want some tips?",
+          "reaction": [
+            "No. Yes. Maybe. I'm FINE."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-03",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "He showed up wearing oven mitts.",
+        "Basil. The boy. He said 'now I can hug you.' ...I laughed so hard I spiked a leaf."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's actually adorable.",
+          "reaction": [
+            "I KNOW. Stop. I'm blushing. Under the spikes."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you hug him?",
+          "reaction": [
+            "...Yes. Mitten hug. Best hug."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "He sounds like a keeper.",
+          "reaction": [
+            "Hm. Don't say that. I'll start believing it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-04",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "We have a handshake now. Seven steps. It's dumb.",
+        "I do it every day. Don't tell him it's my favorite part of the day."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's not dumb.",
+          "reaction": [
+            "It's SO dumb. I love it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Show me!",
+          "reaction": [
+            "Okay. Step one. ...Never mind, I'm shy."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You're so in love.",
+          "reaction": [
+            "I'm FINE. ...Yes."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-05",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "It's our one-month. Basil forgot.",
+        "I said 'it's fine.' He said 'okay cool!' and went to nap. It's NOT fine.",
+        "How do you tell someone you're upset without it becoming a fight?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Say 'I felt sad' instead of 'you messed up.'",
+          "reaction": [
+            "'I felt sad.' Huh. That's way less scary."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe a small hint? He might just be oblivious.",
+          "reaction": [
+            "Oblivious. Yes. That's Basil. A very sweet rock."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, I'm still figuring that out.",
+          "reaction": [
+            "Wait, REALLY? Okay. I feel better."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-06",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I texted him 'k.' Just 'k.'",
+        "He sent back three hearts and a sunflower. I've been staring at my phone for two hours.",
+        "He's too nice for me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "He knows you're you.",
+          "reaction": [
+            "Does he? ...I hope so."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's a lot of hearts.",
+          "reaction": [
+            "It IS. I screenshotted it."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Text him something longer?",
+          "reaction": [
+            "...Okay. Okay. I'll try. I have a word. 'Hi.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-07",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Pickles sits with spikes flat, which is rare.",
+      "lines": [
+        "Can I say a thing?",
+        "What if Basil finds out I'm a lot? Like... really a lot.",
+        "I'm loud and prickly and I overthink. He's so calm."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "He picked you for a reason.",
+          "reaction": [
+            "Hm. Maybe. I just want to deserve it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Tell him a little of it. Test it.",
+          "reaction": [
+            "A 'little' lot. That's a plan. Thank you."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit next to her",
+          "reaction": [
+            "...You're good at this."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-08",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I said 'I'm sad' to Basil today. Not 'I'm fine.'",
+        "He put his oven mitts on and hugged me for ten minutes.",
+        "I think I'm learning."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's huge.",
+          "reaction": [
+            "I know. Don't make me cry."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Ten-minute hug? Wow.",
+          "reaction": [
+            "I timed it. Best ten minutes."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Proud of you.",
+          "reaction": [
+            "...Shush. Okay. Thank you."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-09",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "Basil's sick. He told me not to come.",
+        "I'm standing outside his burrow with soup. Not going in. Just... standing.",
+        "I said I was 'passing by.' I'm not passing by."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Knock softly.",
+          "reaction": [
+            "...Okay. I'll knock. Softly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Leave the soup at the door.",
+          "reaction": [
+            "That's a good idea. Soup. Door. Love."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Stand next to her",
+          "reaction": [
+            "...Thanks. I wasn't sure I could do it alone."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-10",
+      "friendId": "adventure_friend_pk",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Okay. Spikes down. Look.",
+        "Ten visits. You've seen me at my worst. I think we're friends now.",
+        "Basil wants to meet you. I told him you're the only one who didn't run.",
+        "...How are you and your partner? Real answer."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still figuring it out.",
+          "reaction": [
+            "Same. Always. Come to our picnic."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Some good days, some rough ones.",
+          "reaction": [
+            "Same. Bring snacks. Bring your partner."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, you've helped me say stuff more.",
+          "reaction": [
+            "...Don't. I'll cry. Okay. Picnic. Sunday."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P01",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Basil made leaf armor for our hug. Full armor. Helmet.",
+        "He looked ridiculous. I'm keeping the picture."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's the sweetest thing.",
+          "reaction": [
+            "It's the dumbest thing. Same thing."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Can I see the picture?",
+          "reaction": [
+            "No. It's mine. ...Okay, a peek."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P02",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Said 'I'm sad' instead of 'I'm fine' today. Nothing exploded.",
+        "Huh."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Told you.",
+          "reaction": [
+            "Okay. You did. Don't be smug."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What happened after?",
+          "reaction": [
+            "He just sat with me. That's it. It was enough."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P03",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We fought about the blanket. He steals it. I steal it back.",
+        "Then we shared. It was warm. I was mad about it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Blanket politics.",
+          "reaction": [
+            "The worst politics."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's so couple.",
+          "reaction": [
+            "I KNOW. Gross. Love it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P04",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Basil's friends think I'm scary. I was nice for three minutes.",
+        "Three. Minutes. I'm exhausted."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Three minutes is a lot!",
+          "reaction": [
+            "I know! Nobody gives me credit."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Were they nice back?",
+          "reaction": [
+            "Yes. Annoyingly. I might like them."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P05",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "A squirrel keeps texting Basil. 'Hey!!' with two exclamation points.",
+        "I'm not jealous. I'm just... aware."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Ask him about it?",
+          "reaction": [
+            "I will. Calmly. With a sandwich."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Aware is fine.",
+          "reaction": [
+            "Aware is my default setting."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P06",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We have matching nicknames now. Don't ask. Don't tell."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I won't tell.",
+          "reaction": [
+            "Good. They're 'Spike' and 'Mitt.' ...I said don't ask."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Mitt is perfect.",
+          "reaction": [
+            "I KNOW. He's so proud."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P07",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Bought Basil a gift. Hid it for four days.",
+        "I'm scared he won't like it. It's a scarf. It's not that deep."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Give it to him!",
+          "reaction": [
+            "Okay. Tomorrow. Maybe."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "He'll love it.",
+          "reaction": [
+            "You think? ...Okay. Okay."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P08",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Bad day. Didn't say anything. Basil came over, sat next to me, said nothing.",
+        "That was it. That was the whole thing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's love.",
+          "reaction": [
+            "I know. It's annoying how good he is."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sometimes silence is the answer.",
+          "reaction": [
+            "Okay, wise one."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P09",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Still have all four pillows. They're my 'hug practice' wall now."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Keep them!",
+          "reaction": [
+            "Obviously. They're my trophies."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You don't need them.",
+          "reaction": [
+            "I know. I'm sentimental. Don't tell anyone."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P10",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Basil still wears the oven mitts sometimes. Out of habit.",
+        "I don't mind. I kind of like the mitten hug."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's love.",
+          "reaction": [
+            "Dumb love. Best love."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Make it a tradition.",
+          "reaction": [
+            "It already is."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P11",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "That 'k' text. He still has it saved. He said 'it was your first one.'",
+        "I'm fine. I'm FINE."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "He kept it? Aww.",
+          "reaction": [
+            "SO dumb. SO sweet."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "He's a keeper.",
+          "reaction": [
+            "Don't say it. I'll say it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P12",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Our one-month anniversary. We redid it. A month late. With a sunflower.",
+        "Best anniversary. Worst anniversary. Both."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Better late.",
+          "reaction": [
+            "Always."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did he remember this time?",
+          "reaction": [
+            "He wrote it on his hand."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P13",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. A good partner makes you softer but not smaller."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so true.",
+          "reaction": [
+            "Don't compliment my hot take. I'm not ready."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's deep, Pickles.",
+          "reaction": [
+            "I'm FINE. Thank you."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P14",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. 'I'm fine' should be illegal."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Honestly yes.",
+          "reaction": [
+            "Right? Everyone lies."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Haha, okay.",
+          "reaction": [
+            "I'm serious. Fine me."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P15",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. Love is just being a prickly person next to a patient person."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's actually accurate.",
+          "reaction": [
+            "I'll put it on a mug."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Which one are you?",
+          "reaction": [
+            "...Obviously prickly. Obviously."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P16",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Okay. What's the nicest thing your partner did this week?",
+        "I need ideas. Not for me. Just ideas."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They made me tea when I was tired.",
+          "reaction": [
+            "Tea. Noted. For a friend."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They sent me a random 'miss you.'",
+          "reaction": [
+            "'Miss you.' Two words. I can do two words."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P17",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Are you being soft with your partner? Like, really soft?",
+        "I'm asking for a friend. The friend is me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Trying to.",
+          "reaction": [
+            "Same. We should have a support group."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Not always.",
+          "reaction": [
+            "Honest. Respect."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P18",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you two fight? Like... who starts, who ends?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I usually go quiet.",
+          "reaction": [
+            "Ooh. That's me too. Hm. Interesting."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We both say sorry at the same time.",
+          "reaction": [
+            "...That's adorable. I hate it. I love it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P19",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Pickles flattens her spikes slowly.",
+      "lines": [
+        "Okay. One hug. Just one. Don't make it weird."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hug her gently",
+          "reaction": [
+            "...Okay. That was nice. ONE. Don't tell anyone."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I'm good, thanks.",
+          "reaction": [
+            "...You're good at respecting boundaries. I might hug you anyway."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "PK-P20",
+      "friendId": "adventure_friend_pk",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Pickles and Basil have laid out a picnic. Basil's wearing oven mitts.",
+      "lines": [
+        "Basil, this is my friend. The one I told you about.",
+        "Be nice."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hi Basil!",
+          "reaction": [
+            "Basil waves with a mitten. Hi! I've heard so much."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Wave with both paws",
+          "reaction": [
+            "Basil waves back with both mittens. Hi! Welcome to the mitten club."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_433",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G01",
+      "name": "Blue Echeveria",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 433,
+      "file": "Succulents/Blue Echeveria.webp",
+      "key": "burrow/adventure-gifts/v1/433-b4ea4aecdca2560b.webp",
+      "sha256": "b4ea4aecdca2560bb67ca7d1dd7d17e9c96749458e3c99c59a52711ad320c842",
+      "bytes": 28024
+    },
+    {
+      "id": "adventure_gift_434",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G02",
+      "name": "Zebra Haworthia",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 434,
+      "file": "Succulents/Zebra Haworthia.webp",
+      "key": "burrow/adventure-gifts/v1/434-d067c4834bc25ecf.webp",
+      "sha256": "d067c4834bc25ecfc4f43b5c4d2ee2e829a9496fc018fd8483b9edcdf14c179c",
+      "bytes": 28430
+    },
+    {
+      "id": "adventure_gift_435",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G03",
+      "name": "Jade Plant",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 435,
+      "file": "Succulents/Jade Plant.webp",
+      "key": "burrow/adventure-gifts/v1/435-800e0907cb88767f.webp",
+      "sha256": "800e0907cb88767f3b6f1f26704a9ee404fdf5a0d95bc702a46511956869481c",
+      "bytes": 33994
+    },
+    {
+      "id": "adventure_gift_436",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G04",
+      "name": "Aloe Plant",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 436,
+      "file": "Succulents/Aloe Plant.webp",
+      "key": "burrow/adventure-gifts/v1/436-ea326d7c5870ef48.webp",
+      "sha256": "ea326d7c5870ef4834156f77628674cd912706a13ee84f3c15725e6fb1a0e7ba",
+      "bytes": 31332
+    },
+    {
+      "id": "adventure_gift_437",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G05",
+      "name": "Purple Moonstone",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 437,
+      "file": "Succulents/Purple Moonstone.webp",
+      "key": "burrow/adventure-gifts/v1/437-b0743ae9f537f260.webp",
+      "sha256": "b0743ae9f537f26056f79bd554c63dcd131719d373a82b9ea07db9b92300cced",
+      "bytes": 25746
+    },
+    {
+      "id": "adventure_gift_438",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G06",
+      "name": "Pearl Cascade",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 438,
+      "file": "Succulents/Pearl Cascade.webp",
+      "key": "burrow/adventure-gifts/v1/438-0a8c4d8ba1607312.webp",
+      "sha256": "0a8c4d8ba1607312332766a353c1b0c116a6b58809ca74b4ce32f0f9713a3120",
+      "bytes": 31538
+    },
+    {
+      "id": "adventure_gift_439",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G07",
+      "name": "Paddle Plant",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 439,
+      "file": "Succulents/Paddle Plant.webp",
+      "key": "burrow/adventure-gifts/v1/439-1d0375b6e6275f78.webp",
+      "sha256": "1d0375b6e6275f7836054261b21167121da821dff61e0e7eb64524a707356056",
+      "bytes": 24416
+    },
+    {
+      "id": "adventure_gift_440",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G08",
+      "name": "Crassula Tower",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 440,
+      "file": "Succulents/Crassula Tower.webp",
+      "key": "burrow/adventure-gifts/v1/440-550fbba9b76fb3f3.webp",
+      "sha256": "550fbba9b76fb3f3b013be40ceac6cb626ba326eef112580f4b54fe7c5890293",
+      "bytes": 34900
+    },
+    {
+      "id": "adventure_gift_441",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G09",
+      "name": "Bear Paws",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 441,
+      "file": "Succulents/Bear Paws.webp",
+      "key": "burrow/adventure-gifts/v1/441-7bdb3bd68b5448e4.webp",
+      "sha256": "7bdb3bd68b5448e479c13592853ff7308094b0b57090e44a03ecee2067e28160",
+      "bytes": 30104
+    },
+    {
+      "id": "adventure_gift_442",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G10",
+      "name": "Agave Rosette",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 442,
+      "file": "Succulents/Agave Rosette.webp",
+      "key": "burrow/adventure-gifts/v1/442-faa3d05d6b68414c.webp",
+      "sha256": "faa3d05d6b68414c29b788abac8c58a4c892db927d834b342072fafef9c675c8",
+      "bytes": 27886
+    },
+    {
+      "id": "adventure_gift_443",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G11",
+      "name": "Jellybean Plant",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 443,
+      "file": "Succulents/Jellybean Plant.webp",
+      "key": "burrow/adventure-gifts/v1/443-c1d0b57f80bc8368.webp",
+      "sha256": "c1d0b57f80bc8368152bbe0013529e7ac89b05229718d18a8ff822ae8f21f2a1",
+      "bytes": 32398
+    },
+    {
+      "id": "adventure_gift_444",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G12",
+      "name": "Elephant Bush",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 444,
+      "file": "Succulents/Elephant Bush.webp",
+      "key": "burrow/adventure-gifts/v1/444-8e215d31452a9f26.webp",
+      "sha256": "8e215d31452a9f26b27b1a0bee3dda3b1663e1ea89285cc08e0db7fdfc1daad8",
+      "bytes": 38298
+    },
+    {
+      "id": "adventure_gift_445",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G13",
+      "name": "Speckled Gasteria",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 445,
+      "file": "Succulents/Speckled Gasteria.webp",
+      "key": "burrow/adventure-gifts/v1/445-4badd7fe24261515.webp",
+      "sha256": "4badd7fe24261515e1b40ed8a50da29d2c5888c9a6a64725f39a08a24bf9e10d",
+      "bytes": 30988
+    },
+    {
+      "id": "adventure_gift_446",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G14",
+      "name": "Purple Aeonium",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 446,
+      "file": "Succulents/Purple Aeonium.webp",
+      "key": "burrow/adventure-gifts/v1/446-a56f7eea82f17894.webp",
+      "sha256": "a56f7eea82f178948cb37001c69bc52ca71308260143750b4c2f7c95330a337e",
+      "bytes": 32374
+    },
+    {
+      "id": "adventure_gift_447",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G15",
+      "name": "Living Stones",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 447,
+      "file": "Succulents/Living Stones.webp",
+      "key": "burrow/adventure-gifts/v1/447-74e8fdfdccce42f3.webp",
+      "sha256": "74e8fdfdccce42f30dfbd091032e9331d1bb554003e3594130423702bb4ebe13",
+      "bytes": 24976
+    },
+    {
+      "id": "adventure_gift_448",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G16",
+      "name": "Spiral Aloe",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 448,
+      "file": "Succulents/Spiral Aloe.webp",
+      "key": "burrow/adventure-gifts/v1/448-63dca2f39a41895e.webp",
+      "sha256": "63dca2f39a41895e6c5596f23f8a72166f8d3f1a6198162e8b5eccbb630d44f7",
+      "bytes": 31202
+    },
+    {
+      "id": "adventure_gift_449",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G17",
+      "name": "Button Cascade",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 449,
+      "file": "Succulents/Button Cascade.webp",
+      "key": "burrow/adventure-gifts/v1/449-5b9fc70d49d34873.webp",
+      "sha256": "5b9fc70d49d34873ce3b8bc8de65b3265eb291a42de3cd6bcde3160a48e17093",
+      "bytes": 45170
+    },
+    {
+      "id": "adventure_gift_450",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G18",
+      "name": "Heart Vine",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 450,
+      "file": "Succulents/Heart Vine.webp",
+      "key": "burrow/adventure-gifts/v1/450-356002dc1a8a0074.webp",
+      "sha256": "356002dc1a8a00749860f3dd52ae6da86fcf6b87f85cf372154fb30bb7f2ee4d",
+      "bytes": 61188
+    },
+    {
+      "id": "adventure_gift_451",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G19",
+      "name": "Bunny Cactus",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 451,
+      "file": "Succulents/Bunny Cactus.webp",
+      "key": "burrow/adventure-gifts/v1/451-1940049c8300778e.webp",
+      "sha256": "1940049c8300778e5f2c91ee890f9c154da004098747f4909540e68e5ea80ed6",
+      "bytes": 37672
+    },
+    {
+      "id": "adventure_gift_452",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G20",
+      "name": "Flowering Lithops",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 452,
+      "file": "Succulents/Flowering Lithops.webp",
+      "key": "burrow/adventure-gifts/v1/452-382b4812ddddc450.webp",
+      "sha256": "382b4812ddddc450df6add282bcc14d43126b6fe45171afcc80304b442c4fb14",
+      "bytes": 31200
+    },
+    {
+      "id": "adventure_gift_453",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G21",
+      "name": "Tiger Jaws",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 453,
+      "file": "Succulents/Tiger Jaws.webp",
+      "key": "burrow/adventure-gifts/v1/453-fb4e7eafcc24eabb.webp",
+      "sha256": "fb4e7eafcc24eabba2451ea48404aa9fc74ba7a1ca02c3a6b18ffe50fd026c60",
+      "bytes": 36512
+    },
+    {
+      "id": "adventure_gift_454",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G22",
+      "name": "Triangle Crassula",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 454,
+      "file": "Succulents/Triangle Crassula.webp",
+      "key": "burrow/adventure-gifts/v1/454-ee7c185c39edb774.webp",
+      "sha256": "ee7c185c39edb774fb1255f42b8b2dfb2d24ba9af736c22022d5af06636b13fb",
+      "bytes": 29554
+    },
+    {
+      "id": "adventure_gift_455",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G23",
+      "name": "Silver Leaves",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 455,
+      "file": "Succulents/Silver Leaves.webp",
+      "key": "burrow/adventure-gifts/v1/455-fa1dc7b4f2024561.webp",
+      "sha256": "fa1dc7b4f20245619226abe62649ab4a060082c7fbbce2d111664a9922661c87",
+      "bytes": 29378
+    },
+    {
+      "id": "adventure_gift_456",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G24",
+      "name": "Stacked Crassula",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 456,
+      "file": "Succulents/Stacked Crassula.webp",
+      "key": "burrow/adventure-gifts/v1/456-08215ff876f4c4b2.webp",
+      "sha256": "08215ff876f4c4b2b965eaabe3159d7f83f6d0f93debfbec2eb59c1bc52a15e7",
+      "bytes": 34652
+    },
+    {
+      "id": "adventure_gift_457",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G25",
+      "name": "Panda Plant",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 457,
+      "file": "Succulents/Panda Plant.webp",
+      "key": "burrow/adventure-gifts/v1/457-fc966c6b65f6a59f.webp",
+      "sha256": "fc966c6b65f6a59f32807a4a5af326dbdfd93c889c0bdf71409bc2eb741986db",
+      "bytes": 28474
+    },
+    {
+      "id": "adventure_gift_458",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G26",
+      "name": "Flowering Kalanchoe",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 458,
+      "file": "Succulents/Flowering Kalanchoe.webp",
+      "key": "burrow/adventure-gifts/v1/458-202e93d91e0f5ae1.webp",
+      "sha256": "202e93d91e0f5ae10056f6a1e0d6e297050c92e99a20f8e52428ab1157b14631",
+      "bytes": 27754
+    },
+    {
+      "id": "adventure_gift_459",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G27",
+      "name": "Finger Succulent",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 459,
+      "file": "Succulents/Finger Succulent.webp",
+      "key": "burrow/adventure-gifts/v1/459-4b72c72b1d084f8d.webp",
+      "sha256": "4b72c72b1d084f8deabc6e168e238264fe335c43fa8145044430e91e49eaeb10",
+      "bytes": 32896
+    },
+    {
+      "id": "adventure_gift_460",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G28",
+      "name": "Purple Beans",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 460,
+      "file": "Succulents/Purple Beans.webp",
+      "key": "burrow/adventure-gifts/v1/460-f0f21d26575765e5.webp",
+      "sha256": "f0f21d26575765e5d1c133c81b9d5ca77e994d62fd1c46da37d6843b0b61aff2",
+      "bytes": 27614
+    },
+    {
+      "id": "adventure_gift_461",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G29",
+      "name": "Blue Chalksticks",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 461,
+      "file": "Succulents/Blue Chalksticks.webp",
+      "key": "burrow/adventure-gifts/v1/461-408914bc3ce667d6.webp",
+      "sha256": "408914bc3ce667d6ae6cf1f6337fb662f5648ea25012259bd951b32eaabe14e5",
+      "bytes": 39434
+    },
+    {
+      "id": "adventure_gift_462",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G30",
+      "name": "Fishbone Cactus",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 462,
+      "file": "Succulents/Fishbone Cactus.webp",
+      "key": "burrow/adventure-gifts/v1/462-3571d55093e599bd.webp",
+      "sha256": "3571d55093e599bd6ff95f38b33abbf4727e2cff8980dc637d2c9b733561df42",
+      "bytes": 36902
+    },
+    {
+      "id": "adventure_gift_463",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G31",
+      "name": "Prickly Pear",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 463,
+      "file": "Succulents/Prickly Pear.webp",
+      "key": "burrow/adventure-gifts/v1/463-7c2d601f641c79a2.webp",
+      "sha256": "7c2d601f641c79a21c88ed975d11c0b40e7e5294a6808ad7d5a52d7cd76ea10e",
+      "bytes": 31368
+    },
+    {
+      "id": "adventure_gift_464",
+      "friendId": "adventure_friend_pk",
+      "giftId": "PK-G32",
+      "name": "Golden Cactus",
+      "category": "Succulents",
+      "categoryCode": "C14",
+      "sourceId": 464,
+      "file": "Succulents/Golden Cactus.webp",
+      "key": "burrow/adventure-gifts/v1/464-192cb738918a09c8.webp",
+      "sha256": "192cb738918a09c8892269b9e40142cca66702cec969128a622210ca2e65a24a",
+      "bytes": 24758
+    }
+  ]
+}

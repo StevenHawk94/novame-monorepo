@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { load, hooks } = require('./lifecycle-test-utils.cjs');
+const { load, hooks, deferred, flush } = require('./lifecycle-test-utils.cjs');
 const crop = load('apps/mobile/src/lib/room-photo-crop.ts');
 const registryFile = 'apps/mobile/src/lib/burrow-art-assets.ts';
 const imports = Object.fromEntries([...fs.readFileSync(registryFile, 'utf8').matchAll(/require\((['"])(.*?)\1\)/g)]
@@ -65,4 +65,20 @@ test('crop viewport and saved-photo preview use the same ratio without inset bor
   assert.ok(Math.abs(-moved.left / geometry.scale - geometry.crop.originX) < 1e-8);
   assert.ok(Math.abs(-moved.top / geometry.scale - geometry.crop.originY) < 1e-8);
   assert.equal(crop.FRAME_PHOTO_OUTPUT_SIZE.width * 290, crop.FRAME_PHOTO_OUTPUT_SIZE.height * 201);
+});
+
+test('frame crop confirmation has no cloud Saving state and same-frame taps enqueue only once; local failure permits retry',async()=>{
+  const hook=hooks(),pending=deferred();let calls=0;
+  const {FramePhotoCropper}=load('apps/mobile/src/components/burrow/frame-photo-cropper.tsx',{
+    react:hook.react,'react/jsx-runtime':{jsx,jsxs:jsx},'./burrow-image':{Image:'Image'},'@/lib/room-photo-crop':crop,
+    'react-native':{Modal:'Modal',Pressable:'Pressable',Text:'Text',View:'View',useWindowDimensions:()=>({width:390,height:844}),
+      StyleSheet:{create:x=>x},PanResponder:{create:()=>({panHandlers:{}})}},
+  });
+  const render=()=>hook.render(()=>FramePhotoCropper({asset:{uri:'fixture',width:1200,height:800},onCancel(){},onConfirm:()=>{calls++;return pending.promise;}}));
+  const button=nodes(render()).find(n=>n.type==='Pressable'&&n.props.children?.props?.children==='Use This Crop');
+  button.props.onPress();button.props.onPress();assert.equal(calls,1);
+  assert.equal(nodes(render()).some(n=>n.props?.children==='Saving…'),false);
+  pending.reject(Error('disk_full'));await flush();
+  const retry=nodes(render()).find(n=>n.type==='Pressable'&&n.props.children?.props?.children==='Use This Crop');
+  assert.equal(retry.props.disabled,false);retry.props.onPress();await flush();assert.equal(calls,2);hook.unmount();
 });

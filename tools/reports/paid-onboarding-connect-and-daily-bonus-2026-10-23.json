@@ -1,0 +1,40 @@
+{
+  "scope": "Client-only paid onboarding routing and Daily Plus Bonus dismissal",
+  "paidOnboarding": {
+    "flow": ["verified purchase or restored entitlement", "interactive Connect account", "account completion or confirmed skip", "Splash and Home preparation", "prepared unread announcement if eligible", "Home and Daily Bonus"],
+    "preConnectSplashRemoved": true,
+    "freePaywallCloseFlowUnchanged": true,
+    "cancelledScheduledOrUnrelatedPurchaseEventsCannotGrantPaidFlow": true,
+    "duplicatePurchaseAndCompletionGuarded": true,
+    "existingAccountRecoveryDoesNotApplyGuestNameOrCompanion": true,
+    "failedSetupReturnsToRetryableConnect": true
+  },
+  "dailyBonus": {
+    "popupAndScrimDismissAtLocalClaimAcceptance": true,
+    "globalCoinControllerAndFlightContinue": true,
+    "walletPortalReleasedWhenPopupHides": true,
+    "otherAutomaticPopupsRemainSequencedDuringFlight": true,
+    "serverValidationAndSilentRetryUnchanged": true,
+    "definitiveFailureCanRestoreClaim": true,
+    "synchronousLocalPersistenceFailureKeepsClaimVisible": true
+  },
+  "entryChecks": {
+    "forceUpdate": "Cold-start native Splash, before navigation mounts; not every visual Splash instance",
+    "onboardingAnnouncement": "First actual Home entry cover after account linking, with exclusive overlay reservation",
+    "guarantee": "Explicit priority and scoped state, not reliance on showing Splash twice; existing bounded network failure behavior remains"
+  },
+  "validation": {
+    "testsPassed": 120,
+    "testsFailed": 0,
+    "testLog": "/private/tmp/paid-onboarding-bonus-final-tests.log",
+    "mobileTypeCheck": "passed",
+    "iosExport": "/private/tmp/burrow-paid-connect-bonus-final-ios",
+    "androidExport": "/private/tmp/burrow-paid-connect-bonus-final-android",
+    "nativeDeviceVisualQA": "not performed"
+  },
+  "release": {
+    "requiresNextAppRelease": true,
+    "apiAdminDeploymentOrMigration": false,
+    "easBuildOrSubmission": false
+  }
+}

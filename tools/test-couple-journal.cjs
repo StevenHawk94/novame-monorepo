@@ -2,9 +2,10 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { load, hooks, flush } = require('./lifecycle-test-utils.cjs');
+const { load, hooks, flush, deferred } = require('./lifecycle-test-utils.cjs');
 
 const root = path.resolve(__dirname, '..');
+const questions = load('apps/mobile/src/lib/couple-journal-questions.ts');
 
 test('Couple Journal seeds fifty distinct prompts and isolates one answer per author and pairing generation', () => {
   const sql = fs.readFileSync(path.join(root, 'supabase/migrations/20261001000151_couple_journal.sql'), 'utf8');
@@ -33,6 +34,7 @@ test('solo journal pages remain private and map icons resolve to bundled files',
 
 test('cached page is immediate on the same day and invalid at pair or date change', () => {
   const journal = load('apps/mobile/src/lib/couple-journal.ts', {
+    './couple-journal-questions': questions,
     './storage': { storage: { getString() {}, set() {} } },
     '../shared/storage/keys': { kBurrowJournal: { keyFor: value => value } },
     './api': { apiClient: {} },
@@ -44,7 +46,7 @@ test('cached page is immediate on the same day and invalid at pair or date chang
   }).formatToParts(new Date());
   const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
   const today = `${values.year}-${values.month}-${values.day}`;
-  const example = { todayDate: today, timezone: 'UTC', today: { id: 'page' }, history: [] };
+  const example = { todayDate: today, timezone: 'UTC', today: { id: 'page', answers:[] }, history: [] };
   journal.cacheCoupleJournal('pair-one', example);
   assert.equal(journal.cachedCoupleJournal('pair-one'), example);
   assert.equal(journal.cachedCoupleJournal('pair-two'), null);
@@ -52,76 +54,117 @@ test('cached page is immediate on the same day and invalid at pair or date chang
   assert.equal(journal.cachedCoupleJournal('pair-one'), null);
 });
 
-test('today stays visible after save; history shows one writer and lets the other add an answer', async () => {
-  const h = hooks();
-  const jsx = (type, props) => ({ type, props });
-  const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes)
-    : tree && typeof tree === 'object' ? [tree, ...nodes(tree.props?.children)] : [];
-  let data = { profile: { id: 'me', display_name: 'Me' }, partner: { id: 'alex', display_name: 'Alex' }, pairVersion: 'v1' };
-  const today = { id: 'today', date: '2026-10-01', pageNumber: 13, questionId: 'cj_01',
-    question: 'What small thing made you feel close to me this week?', answers: [] };
-  const past = { id: 'past', date: '2026-09-30', pageNumber: 12, questionId: 'cj_02',
-    question: 'When did we make each other laugh lately?', answers: [
-      { id: 'a1', authorId: 'alex', body: 'Our walk home.', createdAt: '2026-09-30T12:00:00Z', updatedAt: '2026-09-30T12:00:00Z' },
-    ] };
-  let snapshot = { today, history: [past], hasMore: false, nextBefore: null,
-    todayDate: '2026-10-01', timezone: 'UTC', pairVersion: 'v1' };
-  const writes = [];
-  const { CoupleJournalScreen } = load('apps/mobile/src/components/burrow/couple-journal-screen.tsx', {
-    '@react-navigation/native': { useIsFocused: () => true },
-    '@/lib/burrow-text-drafts': { readBurrowTextDraft: () => null, keepBurrowTextDraft: (_scope, _page, body, expectedUpdatedAt) => ({ key: 'idempotency-key', body, expectedUpdatedAt }), removeBurrowTextDraft() {} },
-    react: h.react, 'react/jsx-runtime': { jsx, jsxs: jsx },
-    'react-native': {
-      ActivityIndicator: 'ActivityIndicator', AppState: { addEventListener: () => ({ remove() {} }) },
-      KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: 'ios', select: values => values.ios },
-      Pressable: 'Pressable', ScrollView: 'ScrollView', StatusBar: 'StatusBar',
-      StyleSheet: { create: values => values, absoluteFillObject: {} }, Text: 'Text', TextInput: 'TextInput',
-      View: 'View', useWindowDimensions: () => ({ width: 393, height: 852 }),
-    },
-    './burrow-image': { Image: 'Image' },
-    'expo-crypto': { randomUUID: () => 'idempotency-key' },
-    'expo-router': { router: { back() {} }, useFocusEffect() {} },
-    '@expo/vector-icons': { Feather: 'Feather' },
-    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0 }) },
-    '@/lib/burrow-store': { useBurrow: () => ({ data }) },
-    '@/lib/couple-journal': {
-      cachedCoupleJournal: () => snapshot, cacheCoupleJournal() {},
-      fetchCoupleJournal: async () => snapshot,
-      saveCoupleJournalAnswer: async (pageId, body) => {
-        writes.push({ pageId, body });
-        return { ...past, answers: [...past.answers, { id: 'mine', authorId: 'me', body,
-          createdAt: '2026-10-01T12:00:00Z', updatedAt: '2026-10-01T12:00:00Z' }] };
-      },
-    },
-    '../../../assets/burrow-webp/memories-room.webp': 1,
-  }, { setInterval: () => 1, clearInterval() {} });
-  const render = () => h.render(() => CoupleJournalScreen());
-  let tree = render();
-  assert.ok(nodes(tree).some(node => node.props?.children === 'Write here...'));
-  nodes(tree).find(node => node.props?.accessibilityLabel === 'Open journal history').props.onPress();
-  tree = render();
-  assert.ok(nodes(tree).some(node => node.props?.children === 'Our walk home.'));
-  assert.equal(nodes(tree).filter(node => node.props?.children === 'Write here...').length, 0);
-  nodes(tree).find(node => node.props?.accessibilityLabel?.startsWith('Open page 12')).props.onPress();
-  tree = render();
-  assert.ok(nodes(tree).some(node => node.props?.children === 'Write here...'));
-  nodes(tree).find(node => node.props?.accessibilityLabel === 'Write your answer').props.onPress();
-  tree = render();
-  const input = nodes(tree).find(node => node.type === 'TextInput');
-  input.props.onChangeText('I remember laughing too.');
-  tree = render();
-  nodes(tree).find(node => node.props?.accessibilityLabel === 'Save journal answer').props.onPress();
-  await flush();
-  assert.deepEqual(writes, [{ pageId: 'past', body: 'I remember laughing too.' }]);
-  tree = render();
-  assert.ok(nodes(tree).some(node => node.props?.children === 'I remember laughing too.'));
-  data = { ...data, partner: null, pairVersion: 'solo' };
-  snapshot = { ...snapshot, today: { ...today, private: true }, history: [] };
-  render();
-  tree = render();
-  assert.ok(nodes(tree).some(node => node.props?.children === 'Write here...'));
-  assert.equal(nodes(tree).filter(node => node.props?.children === 'Waiting for their words...').length, 0);
+
+test('bundled questions match all fifty server seeds, including cycle wrap and negative dates', () => {
+  const sql = fs.readFileSync(path.join(root, 'supabase/migrations/20261001000151_couple_journal.sql'), 'utf8');
+  const seeds = [...sql.matchAll(/\('cj_(\d{2})',(\d+),'([^']+)'\)/g)];
+  assert.equal(questions.COUPLE_JOURNAL_QUESTIONS.length, 50);
+  for (const [index, match] of seeds.entries()) {
+    const date = new Date(Date.UTC(2026, 9, 1 + index)).toISOString().slice(0, 10);
+    const question = questions.coupleJournalQuestion(date);
+    assert.equal(question.id, `cj_${match[1]}`);
+    assert.equal(question.question, match[3]);
+  }
+  assert.equal(questions.coupleJournalQuestion('2026-09-30').id, 'cj_50');
+  assert.equal(questions.coupleJournalQuestion('2026-11-20').id, 'cj_01');
+  const boundary = Date.parse('2026-10-01T00:30:00Z');
+  assert.equal(questions.coupleJournalDate('America/Los_Angeles', boundary), '2026-09-30');
+  assert.equal(questions.coupleJournalDate('Asia/Shanghai', boundary), '2026-10-01');
 });
+
+function journalHarness() {
+  const disk = new Map(), calls = [], read = deferred();
+  let identity = 'me', epoch = 0, identityListener;
+  const storage = { getString: key => disk.get(key), set: (key, value) => disk.set(key, value) };
+  const session = { sessionUserId: () => identity, sessionEpoch: () => epoch,
+    subscribeSessionIdentity: fn => { identityListener = fn; return () => {}; } };
+  const date = questions.coupleJournalDate('UTC');
+  const today = { id: 'real-page', date, private: true, pageNumber: 1,
+    questionId: questions.coupleJournalQuestion(date).id, question: questions.coupleJournalQuestion(date).question, answers: [] };
+  const snapshot = { success: true, today, history: [], hasMore: false, nextBefore: null,
+    todayDate: date, timezone: 'UTC', pairVersion: 'solo' };
+  const apiClient = {
+    get: url => { calls.push({ method: 'GET', url }); return read.promise; },
+    post: async (url, body) => { calls.push({ method: 'POST', url, body }); return { success: true,
+      page: { ...today, answers: [{ id: 'answer', authorId: 'me', body: body.body, createdAt: 'now', updatedAt: 'now' }] } }; },
+  };
+  const imports = { './storage': { storage }, './api': { apiClient }, './session-lifecycle': session,
+    './couple-journal-questions': questions, './async-lifecycle': { withDeadline: value => Promise.resolve(value) },
+    '../shared/storage/keys': { kBurrowJournal: { keyFor: scope => `journal:${scope}` } } };
+  const journal = load('apps/mobile/src/lib/couple-journal.ts', imports);
+  return { journal, disk, storage, session, calls, read, snapshot, apiClient, imports,
+    switchUser(user) { identity = user; epoch++; identityListener(); } };
+}
+
+test('cold entry and rollover use local questions; only own answers survive restart and pairing is isolated', () => {
+  const j = journalHarness();
+  const cold = j.journal.localCoupleJournal('me:solo');
+  assert.equal(cold.today.id, questions.localJournalPageId(cold.todayDate));
+  assert.equal(cold.today.question, j.snapshot.today.question);
+  assert.equal(cold.today.private, true);
+  const own = { id: 'a', authorId: 'me', body: 'My answer' };
+  const partner = { id: 'b', authorId: 'partner', body: 'Private partner answer' };
+  j.journal.cacheCoupleJournal('me:solo', { ...j.snapshot, today: { ...j.snapshot.today, answers: [own, partner] } });
+  const restarted = load('apps/mobile/src/lib/couple-journal.ts', j.imports);
+  assert.equal(restarted.localCoupleJournal('me:solo').today.answers.length, 1);
+  assert.equal(restarted.localCoupleJournal('me:solo').today.answers[0].body, own.body);
+  const yesterday = new Date(Date.parse(`${j.snapshot.todayDate}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  restarted.cacheCoupleJournal('me:solo', { ...j.snapshot, todayDate: yesterday,
+    today: { ...j.snapshot.today, date: yesterday, pageNumber: 4, answers: [own] } });
+  const rolled = restarted.localCoupleJournal('me:solo');
+  assert.equal(rolled.today.answers.length, 0);
+  assert.equal(rolled.today.pageNumber, 5);
+  assert.equal(rolled.history[0].date, yesterday);
+  assert.equal(rolled.history[0].answers[0].body, own.body);
+  assert.equal(restarted.localCoupleJournal('me:new-pair'), null, 'unknown shared topic is not guessed or borrowed from an old pairing');
+  assert.equal(restarted.localCoupleJournal('other:solo'), null);
+  assert.equal(j.calls.length, 0, 'local rendering never requests the API');
+});
+
+test('concurrent reads coalesce and old-user requests cannot cross a session change', async () => {
+  const j = journalHarness();
+  const first = j.journal.fetchCoupleJournal(undefined, 'me:solo');
+  assert.equal(j.journal.fetchCoupleJournal(undefined, 'me:solo'), first);
+  assert.equal(j.calls.length, 1);
+  j.switchUser('other');
+  j.read.resolve(j.snapshot);
+  await assert.rejects(first, /session_changed/);
+});
+test('v2 unfinished page stays current across local dates; confirmed completion archives immediately',()=>{
+ const j=journalHarness(),scope='me:one';const page={...j.snapshot.today,date:'2026-01-01',protocol:2};
+ const v2={...j.snapshot,protocol:2,todayDate:'2026-01-01',today:page};j.journal.cacheCoupleJournal(scope,v2);
+ assert.equal(j.journal.localCoupleJournal(scope).today.id,page.id);assert.ok(j.journal.cachedCoupleJournal(scope));
+ j.journal.cacheCoupleJournal(scope,{...v2,today:{...page,completedAt:new Date().toISOString(),nextAvailableAt:'2099-01-01T00:00:00Z'}});
+ assert.equal(j.journal.cachedCoupleJournal(scope).history[0].id,page.id);
+});
+test('a late snapshot cannot erase or rewind an acknowledged own answer',()=>{
+ const j=journalHarness(),scope='me:solo',answer={id:'own',authorId:'me',body:'Latest words',createdAt:'2026-10-24T00:00:00Z',updatedAt:'2026-10-24T12:00:00Z'};
+ j.journal.cacheCoupleJournal(scope,{...j.snapshot,today:{...j.snapshot.today,answers:[answer]}});
+ j.journal.cacheCoupleJournal(scope,j.snapshot);
+ assert.equal(j.journal.cachedCoupleJournal(scope).today.answers[0].body,answer.body);
+ j.journal.cacheCoupleJournal(scope,{...j.snapshot,today:{...j.snapshot.today,answers:[{...answer,body:'Old',updatedAt:'2026-10-24T01:00:00Z'}]}});
+ assert.equal(j.journal.cachedCoupleJournal(scope).today.answers[0].body,answer.body);
+});
+test('Journal v2 API and read receipts bind actor and validate stable cursors',async()=>{
+ const calls=[];const route=load('apps/api/src/app/api/vnext/couple-journal/route.js',{
+  'next/server':{NextResponse:{json:(body,init={})=>({body,status:init.status??200})}},
+  '@/lib/app-major-update':{authenticatedUserId:async()=> 'authenticated',majorUpdateEnabled:async()=>true,commandStatus:e=>e?400:200,
+   appMajorUpdateServiceClient:()=>({rpc:async(name,args)=>{calls.push({name,args});return{data:{page:{}},error:null};}})},
+ },{URL});
+ const id='11111111-1111-4111-8111-111111111111';
+ assert.equal((await route.GET({url:'https://local/api?v=2&before=2026-10-24'})).status,400);
+ await route.GET({url:'https://local/api?v=2&before='+id});assert.equal(calls[0].name,'couple_journal_snapshot_v2');assert.equal(calls[0].args.p_user_id,'authenticated');
+ await route.PATCH({text:async()=>JSON.stringify({pageId:id,answerAt:'2026-10-24T12:00:00Z',userId:'attacker'})});
+ assert.equal(calls[1].name,'read_couple_journal_v2');assert.equal(calls[1].args.p_user_id,'authenticated');
+ assert.equal((await route.PATCH({text:async()=>JSON.stringify({pageId:id,answerAt:'invalid'})})).status,400);
+});
+
+
+
+
+
+
+
 
 test('Journal API binds reads and writes to the authenticated user', async () => {
   const calls = [];

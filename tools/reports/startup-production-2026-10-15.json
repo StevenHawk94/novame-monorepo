@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-15",
+  "productionUrl": "https://api.soulsayit.com",
+  "project": "novame-monorepo-api",
+  "deploymentId": "dpl_AamL9R67tgqrdQj9sHen2mwxjrBj",
+  "deploymentUrl": "https://novame-monorepo-1813t0spi-soulsayit.vercel.app",
+  "previousDeploymentId": "dpl_Y6kNZ9FSRiRBJ6C5z3s7jL9Y2Dx8",
+  "deploymentState": "READY",
+  "productionDomainVerified": true,
+  "exactDeployedApiSourceFilesVerified": [
+    "apps/api/src/app/api/vnext/bootstrap/route.js",
+    "apps/api/src/lib/burrow-attention.mjs",
+    "apps/api/src/lib/burrow-reward-wallet.mjs"
+  ],
+  "verification": {
+    "script": "tools/verify-startup-production.mjs",
+    "liveApiChecksPassed": 16,
+    "home": {
+      "successfulReads": 10,
+      "catalogItems": 982,
+      "validated": [
+        "Authenticated profile and expected partner identity",
+        "Catalogue, wallet, server time and local date",
+        "No-store response",
+        "Unpaired, paired, unpaired again, re-paired states"
+      ],
+      "observedClientRoundTripMs": [6803, 3831, 3566, 4268, 2568, 7809, 2938, 3618, 2939, 3217],
+      "medianMs": 3592,
+      "overClientFiveSecondDeadline": 2,
+      "remainingRisk": "Two successful production requests exceeded the mobile 5000ms deadline and may still trigger Retry. These are end-to-end API-client timings, not isolated server execution timings; the source of the outliers has not been established.",
+      "faultInjection": "No production failure injection; supplementary timeout/failure isolation was tested locally and exact deployed source hashes verified."
+    },
+    "pairing": {
+      "stableInviteCodes": true,
+      "pairUnpairRePair": true,
+      "bothHomeAndMenuStates": true,
+      "bothPrivatePairingNotifications": true,
+      "burrowPairChangedNotificationsObserved": true,
+      "freshRePairGeneration": true
+    },
+    "transactions": {
+      "shopQuoteMismatch": "409 price_changed",
+      "gameQuoteMismatch": "409 price_changed",
+      "plusOnlyForFreeAccount": "403 plus_required",
+      "invalidAmount": "400",
+      "invalidCoinReceipt": "400 before store calls",
+      "authenticatedDirectFinancialRpc": "42501 denied",
+      "walletVersionsLedgersInventoriesAndUnlocksUnchanged": true,
+      "unauthenticatedAndForeignIdentityRejected": true
+    },
+    "databaseReadOnly": {
+      "catalogueHashBeforeAndAfter": "7fdef5bca57876467335c57c510810f2",
+      "existingMigration238FunctionsAndPrivateGrantsVerified": true,
+      "existingMigration240FunctionBodiesAndIdempotencyConstraintsVerified": true
+    },
+    "limits": "Production API and private realtime integration checks, not a mobile UI end-to-end test or real payment-store verification. No real purchase was attempted."
+  },
+  "safety": {
+    "temporaryIdentitiesCreated": 2,
+    "temporaryIdentitiesRemoved": 2,
+    "cleanupComplete": true,
+    "realUserWrites": 0,
+    "successfulPurchases": 0,
+    "paymentStoreCalls": 0,
+    "migrationsExecuted": 0,
+    "adminDeployed": false,
+    "mobileDeployed": false,
+    "existingWorkingTreePreserved": true
+  },
+  "logs": {
+    "deployment": "/private/tmp/novame-startup-api-deploy-standard.log",
+    "liveChecks": "/private/tmp/novame-startup-production-verification.json",
+    "catalogue": "/private/tmp/novame-startup-catalog-after.json",
+    "settlement": "/private/tmp/novame-startup-settlement-after.log"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "burrow-home-idle-approved",
+  "cycleSeconds": 4,
+  "breathingPhaseSeconds": 3,
+  "breathing": {
+    "amplitudePercent": 54,
+    "maxLiftSourcePx": 29.16,
+    "baseLiftAt100PercentSourcePx": 54,
+    "chestExpansionRatio": 0.02916,
+    "speed": 1,
+    "curve": "one cosine inhale-exhale in seconds 0..3; rest in seconds 3..4"
+  },
+  "ears": {
+    "openingDegreesPerEar": 16,
+    "deform": false,
+    "curve": "inverse breathing: tighten during inhale 0..1.5; open during exhale 1.5..3; remain open during rest 3..4"
+  },
+  "tail": {
+    "rotationAmplitudeDegrees": 6,
+    "translationAmplitudeSourcePx": 12,
+    "shakeOscillations": 3,
+    "deform": false,
+    "curve": "rest 3..4 only: sin(6*pi*s)*sin(pi*s)^2, s=t-3; still during inhale and exhale"
+  }
+}

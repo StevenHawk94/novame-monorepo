@@ -1,0 +1,1110 @@
+{
+  "code": "JN",
+  "name": "Juniper",
+  "friendId": "adventure_friend_jn",
+  "waitingLines": [
+    "I’m fine. Just chilling on your couch till {partner} shows up. Don’t mind me.",
+    "Not leaving till I’ve said hi to {partner}. Also your snacks are good. Mostly that."
+  ],
+  "questions": [
+    {
+      "id": "JN-V01",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper strolls in wearing sunglasses indoors, holding a family-size bag of chips.",
+      "lines": [
+        "I'm fine. Totally fine. Anyway, I brought trivia. And these chips are mine."
+      ],
+      "question": "When a red fox pounces on prey under snow, what helps it aim?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Smelling the snow's vibes",
+          "reply": [
+            "Vibes are real, but no.",
+            "Scientists think foxes use Earth's magnetic field to aim their pounce.",
+            "They land better facing northeast. Nature's cheat code."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Closing their eyes and hoping",
+          "reply": [
+            "That's literally how I date. Didn't work either.",
+            "Foxes likely use Earth's magnetic field to aim pounces.",
+            "Northeast-facing jumps hit way more often. Wild, right?"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Earth's magnetic field",
+          "reply": [
+            "Okay, you're smart. Annoyingly smart.",
+            "Red foxes pounce more accurately facing roughly northeast, likely using Earth's magnetism.",
+            "Built-in GPS. Wish it worked for my love life."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Red foxes' pounces are more successful when aligned roughly NE; magnetoreception hypothesized.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V02",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper chops an onion on your counter. Her eyes are watering. She glares at the onion.",
+      "lines": [
+        "This is onion. Not feelings. Onion."
+      ],
+      "question": "Why does cutting onions make you cry?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Onions are just sad vegetables",
+          "reply": [
+            "Relatable. Not science.",
+            "Cutting them releases a sulfur gas that irritates your eyes.",
+            "Tip: chill the onion first. Fewer tears. Unlike breakups."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Onions release a gas that irritates your eyes",
+          "reply": [
+            "Correct. It's chemical warfare, not heartbreak.",
+            "Cutting releases a sulfur compound that turns into an eye-stinging gas.",
+            "So these tears are scientifically NOT about him. Thank you."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "You're allergic to all vegetables",
+          "reply": [
+            "Then I'd only eat chips. Wait. Hm.",
+            "Onions release an eye-irritating sulfur gas when cut.",
+            "A cold onion or a sharp knife helps. Emotional tips not included."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Cutting onions releases syn-propanethial-S-oxide, a lachrymatory factor.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V03",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper peels a banana with suspicious focus.",
+      "lines": [
+        "Eating fruit. Healthy coping. My therapist would be so proud."
+      ],
+      "question": "Which of these is technically a berry?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Strawberry",
+          "reply": [
+            "Plot twist: strawberries aren't true berries.",
+            "Bananas are, botanically. Strawberries are a whole other thing.",
+            "Their seeds are on the outside. Trust issues, much?"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Banana",
+          "reply": [
+            "Correct. Bananas are berries. Feel betrayed yet?",
+            "Botanically, bananas fit the berry definition. Strawberries don't.",
+            "Things aren't always what they're called. Like 'talking stage.'"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Raspberry",
+          "reply": [
+            "Nope, betrayed by the name.",
+            "It's the banana. Botanically, bananas count as berries.",
+            "Raspberries are something else entirely. Labels lie."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Botanically, bananas are berries; strawberries and raspberries are not.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V04",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper breaks a chocolate bar in half, eats both halves.",
+      "lines": [
+        "Chocolate question. Very relevant to my current lifestyle."
+      ],
+      "question": "Where do cacao pods, the source of chocolate, grow?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Directly on the trunk of the cacao tree",
+          "reply": [
+            "Correct. Pods sprout straight off the trunk.",
+            "Each pod holds seeds that become chocolate after fermenting and roasting.",
+            "A tree that grows dessert on its body. Goals."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Underground, like potatoes",
+          "reply": [
+            "Underground chocolate would be a dream. No.",
+            "Cacao pods grow right off the trunk and big branches of the tree.",
+            "Imagine a tree just... sprouting chocolate pods from its body. Iconic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "On tiny bushes in the desert",
+          "reply": [
+            "Too dry. Cacao loves the tropics.",
+            "The pods grow right on the trunk and thick branches.",
+            "The beans inside become chocolate. Long process. Worth it."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Cacao is cauliflorous; pods grow directly from trunk and main branches.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V05",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper rips open a bag of peanuts with dramatic force.",
+      "lines": [
+        "Snack question. Underground edition. My two favorite things."
+      ],
+      "question": "Where do peanuts grow?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "On tall trees",
+          "reply": [
+            "Nope. No peanut trees.",
+            "Peanuts grow underground. The flower stalk pushes into the soil.",
+            "Basically a plant that buries its own snacks. Relatable."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Inside little pods on vines",
+          "reply": [
+            "Close-ish. They are pods.",
+            "But they grow underground. The flower stalk dives into the dirt.",
+            "Peanuts are actually legumes. Like beans in disguise."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Underground",
+          "reply": [
+            "Correct. Underground snacks. My people.",
+            "The plant flowers above ground, then pushes its pods into the soil.",
+            "Peanuts are legumes, not nuts. Identity crisis. Same."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Peanuts develop underground after the flower stalk (peg) pushes into soil; they are legumes.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V06",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper changes her phone wallpaper to a snowy mountain, then back again.",
+      "lines": [
+        "I'm fine. New season, new me. Speaking of glow-ups."
+      ],
+      "question": "What does an Arctic fox's coat do through the year?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Stays white all year",
+          "reply": [
+            "Basic. The Arctic fox would never.",
+            "It changes color: snowy white in winter, brownish in summer.",
+            "A full seasonal rebrand. Iconic."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Turns pink in summer",
+          "reply": [
+            "Okay, I'd watch that reality show.",
+            "It switches from white in winter to brown-gray in summer.",
+            "Camouflage, not Barbiecore. Sadly."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Changes color with the seasons",
+          "reply": [
+            "Correct. The ultimate seasonal glow-up.",
+            "White in winter for snow, brownish-gray in summer to blend in.",
+            "She switches her look and nobody asks questions. Goals."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Arctic foxes molt from white winter coats to brown/gray summer coats.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V07",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper holds up a tomato like she's in a courtroom.",
+      "lines": [
+        "Is it a fruit? Is it a vegetable? Is anything what it seems? Anyway."
+      ],
+      "question": "In 1893, the U.S. Supreme Court ruled that tomatoes were legally what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A fruit",
+          "reply": [
+            "Botanically, yes. Legally? Plot twist.",
+            "The court ruled tomatoes a vegetable, for tax reasons.",
+            "Science said fruit. The law said vegetable. Complicated relationship."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A vegetable",
+          "reply": [
+            "Correct. Legally a vegetable.",
+            "Botanically it's a fruit, but the court went with how people cook it.",
+            "Labels are complicated. I'm 'single' but also 'it's complicated.'"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A berry",
+          "reply": [
+            "Botanically it IS a berry. The law didn't care.",
+            "The court called it a vegetable, mostly about import taxes.",
+            "Two identities. Relatable tomato."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Nix v. Hedden (1893) classified tomatoes as vegetables for tariff purposes.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V08",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper drizzles honey on toast and doesn't make eye contact.",
+      "lines": [
+        "I'm fine. This one's about something that lasts. Unlike some people."
+      ],
+      "question": "What's special about honey?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It can basically never spoil",
+          "reply": [
+            "Yep. Honey is forever. Unlike some boyfriends.",
+            "Edible honey has been found in ancient Egyptian tombs.",
+            "Low water, high sugar, no germs. Main character food."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It's made from bee tears",
+          "reply": [
+            "Bees cry? Okay, now I'm sad.",
+            "No, it's nectar. And properly stored, honey basically never spoils.",
+            "Archaeologists found edible honey in ancient tombs."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It glows in the dark",
+          "reply": [
+            "That would be iconic for midnight toast.",
+            "Real fact: stored right, honey basically never spoils.",
+            "Edible honey turned up in ancient Egyptian tombs."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Properly stored honey is extremely resistant to spoiling; edible honey reported in ancient Egyptian tombs.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V09",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper puts a hand on her chest, then quickly pretends she's adjusting her scarf.",
+      "lines": [
+        "Heart question. Medical. Not personal. Completely unrelated to anything."
+      ],
+      "question": "Can intense emotional stress actually affect your heart?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "No, that's just a metaphor",
+          "reply": [
+            "Turns out it's more than a metaphor.",
+            "'Broken heart syndrome' is a real, usually temporary heart condition from intense stress.",
+            "Most people recover fully. Note to self. I mean, note to everyone."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Yes, there's a real condition called 'broken heart syndrome'",
+          "reply": [
+            "Yes. It's real. Doctors call it takotsubo.",
+            "Sudden intense stress can temporarily weaken the heart muscle.",
+            "Usually it recovers. Which is good news. For everyone. Hypothetically."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Only in movies",
+          "reply": [
+            "Movies got this one right, weirdly.",
+            "Broken heart syndrome is real and triggered by intense stress.",
+            "It usually heals. Hearts are tougher than they look."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Takotsubo cardiomyopathy ('broken heart syndrome') is a usually reversible stress-induced heart condition.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V10",
+      "friendId": "adventure_friend_jn",
+      "type": "Trivia",
+      "scene": "Juniper scrolls through photos of pink birds standing on one leg.",
+      "lines": [
+        "They're so dramatic. I love them. Unrelated: I'm also dramatic."
+      ],
+      "question": "Why are flamingos pink?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "From pigments in the food they eat",
+          "reply": [
+            "Correct. Diet-based glow-up.",
+            "Pigments called carotenoids in algae and shrimp tint their feathers pink.",
+            "No pink snacks, no pink bird. Respect the commitment."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They're born pink and stay that way",
+          "reply": [
+            "Nope. Baby flamingos are gray-white.",
+            "They turn pink from pigments in the algae and shrimp they eat.",
+            "You are what you eat. I'm currently 40% chips."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Sunburn from standing in the sun all day",
+          "reply": [
+            "Ouch. No.",
+            "Their pink comes from pigments in their algae and shrimp diet.",
+            "Chicks start gray. The pink is earned."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Flamingo coloration comes from dietary carotenoids.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "JN-V11",
+      "friendId": "adventure_friend_jn",
+      "type": "Preference",
+      "scene": "Juniper opens your fridge without asking and stands there thinking.",
+      "lines": [
+        "Don't mind me. Doing research. On comfort food. For science."
+      ],
+      "question": "Bad day comfort food: sweet or salty?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Sweet",
+          "reply": [
+            "Sweet. Ice cream therapy.",
+            "Free, cold, and never cancels plans."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Salty",
+          "reply": [
+            "Salty. Chips first, questions later.",
+            "Crunch is emotional support."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both go sweet. A two-spoon household.",
+          "Get a pint for you and a pint for {partner}. No sharing drama.",
+          "I'm fine. I just want ice cream now."
+        ],
+        "A:B": [
+          "Salty for you, sweet for {partner}.",
+          "Honestly ideal. Zero snack competition.",
+          "Fries dipped in a milkshake. Try it. Life-changing."
+        ],
+        "B:A": [
+          "Sweet for you, salty for {partner}.",
+          "Perfect. Nobody steals anybody's snack.",
+          "Chocolate-covered pretzels. Peace treaty."
+        ],
+        "B:B": [
+          "Salty for both of you. Crunch squad.",
+          "So you and {partner} probably fight over the last chip.",
+          "Buy two bags. Love is logistics."
+        ]
+      }
+    },
+    {
+      "id": "JN-V12",
+      "friendId": "adventure_friend_jn",
+      "type": "Preference",
+      "scene": "Juniper glances at your phone lock screen, then pretends she didn't.",
+      "lines": [
+        "I'm fine. Totally not looking. Okay I looked."
+      ],
+      "question": "Your phone wallpaper: a photo of you two, or literally anything else?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A photo of us",
+          "reply": [
+            "A couple photo? Cute. Disgusting. Cute.",
+            "Your lock screen is a soft launch."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Anything else",
+          "reply": [
+            "Anything else? Mysterious.",
+            "A sunset, a cat, a meme. Respect."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both of you use a couple photo. Okay, adorable.",
+          "Honestly, you and {partner} are a hard launch couple.",
+          "I'm fine. My wallpaper is a croissant."
+        ],
+        "A:B": [
+          "You keep it random. {partner} uses a photo of you two.",
+          "They're down bad, in a sweet way.",
+          "Maybe match them. Just for a week. See what happens."
+        ],
+        "B:A": [
+          "Couple photo for you. {partner} keeps it mysterious.",
+          "Their lock screen might be a sandwich. Don't take it personally.",
+          "Send them your favorite pic. Just as a suggestion."
+        ],
+        "B:B": [
+          "Neither of you uses a couple photo. Low-key love.",
+          "I can picture it: you and {partner} keep it private. Mature.",
+          "Croissant wallpaper gang. Welcome."
+        ]
+      }
+    },
+    {
+      "id": "JN-V13",
+      "friendId": "adventure_friend_jn",
+      "type": "Preference",
+      "scene": "Juniper steals a fry from your plate and looks you dead in the eye.",
+      "lines": [
+        "This fry looked lonely. I rescued it."
+      ],
+      "question": "Food-sharing rule?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Order two, share both",
+          "reply": [
+            "Share both. Diplomatic.",
+            "Two dishes, double the joy."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hands off my plate",
+          "reply": [
+            "Hands off. A boundary. Healthy.",
+            "Some fries are not for sharing."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Say 'not hungry,' then eat theirs",
+          "reply": [
+            "Ah, the classic fry thief.",
+            "Not hungry, but hungry for theirs."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Order two and share. You and {partner} are a buffet couple.",
+          "Every dinner is a tasting menu with a side of forks crossing.",
+          "Rowan never shared his fries. Not that I think about it. Next."
+        ],
+        "A:B": [
+          "Hands off your plate. {partner} wants to share.",
+          "They'll keep offering bites. You'll keep saying no.",
+          "Give them one fry. Just one. It's love."
+        ],
+        "A:C": [
+          "You steal food. {partner} likes sharing. Easy.",
+          "They're basically an open buffet for you.",
+          "Lucky you. Don't push it."
+        ],
+        "B:A": [
+          "You share both dishes. {partner} guards their plate.",
+          "Rough. Your fork will get rejected.",
+          "Ask first. Or order extra fries for the middle."
+        ],
+        "B:B": [
+          "Hands off for both of you. Respect.",
+          "Pretty sure you and {partner} each guard your plates like treasure.",
+          "No tension. Separate fries, happy hearts."
+        ],
+        "B:C": [
+          "Fry thief, meet plate guard.",
+          "{partner} will catch you. They always do.",
+          "Ask nicely. Or bribe them with dessert."
+        ],
+        "C:A": [
+          "You love sharing. {partner} pretends they're not hungry.",
+          "Then eats half your plate while saying 'I'm good.'",
+          "Order an extra side just for them. Label it 'not hungry fries.'"
+        ],
+        "C:B": [
+          "Hands off your plate. {partner} is a fry thief.",
+          "Oof. You'll need a fork shield.",
+          "Or order one extra fries just for them."
+        ],
+        "C:C": [
+          "You're both fry thieves. Absolute chaos.",
+          "Lowkey, you and {partner} will reach for the same fry at the same time.",
+          "Order extra fries for the middle. Or fight. Your call."
+        ]
+      }
+    },
+    {
+      "id": "JN-V14",
+      "friendId": "adventure_friend_jn",
+      "type": "Preference",
+      "scene": "Juniper grabs your remote and scrolls past every rom-com, very fast.",
+      "lines": [
+        "Nope. Skip. Skip. Not that one. Okay, movie question."
+      ],
+      "question": "Movie night: rom-com, or something with explosions?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Rom-com",
+          "reply": [
+            "Rom-com. Brave choice around me.",
+            "I won't cry. Okay, I might."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Explosions",
+          "reply": [
+            "Explosions. Loud. Safe. Emotionally.",
+            "No kissing scenes. Just cars flipping."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both rom-com. Tissues on standby.",
+          "You and {partner} probably mouth the lines together.",
+          "I'm fine. I'm not crying. You're crying."
+        ],
+        "A:B": [
+          "Explosions for you. {partner} wants a rom-com.",
+          "Watch theirs first. Hold their hand at the sad part.",
+          "Then blow stuff up. Balance."
+        ],
+        "B:A": [
+          "Rom-com for you. {partner} wants explosions.",
+          "Plot twist: some rom-coms have car chases.",
+          "Or alternate nights. Fair is fair."
+        ],
+        "B:B": [
+          "Both explosions. Volume up.",
+          "So you and {partner} prefer feelings in the form of car chases.",
+          "Popcorn plus fire. Iconic."
+        ]
+      }
+    },
+    {
+      "id": "JN-V15",
+      "friendId": "adventure_friend_jn",
+      "type": "Preference",
+      "scene": "Juniper unlocks her phone, then deletes a photo with zero hesitation.",
+      "lines": [
+        "That photo didn't exist. You saw nothing."
+      ],
+      "question": "Phone passwords: share everything, or some things stay private?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Share everything",
+          "reply": [
+            "Open phone policy. Bold.",
+            "Nothing to hide but your search history."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Some things stay private",
+          "reply": [
+            "Privacy. Healthy and valid.",
+            "Trust doesn't need passwords."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Full password sharing for both of you. Trust era.",
+          "Honestly, you and {partner} could swap phones and survive.",
+          "I'm fine. I'd delete my notes app first."
+        ],
+        "A:B": [
+          "You like privacy. {partner} shares everything.",
+          "Tell them it's not about secrets. It's about you.",
+          "Then maybe share one thing. Like your favorite meme folder."
+        ],
+        "B:A": [
+          "You'd share everything. {partner} likes some privacy.",
+          "That's okay. Trust isn't a password.",
+          "Give them space. They'll share when they're ready."
+        ],
+        "B:B": [
+          "You both keep some things private. Respect.",
+          "Trust without passwords. You and {partner} are mature.",
+          "Very healthy. Juniper approves."
+        ]
+      }
+    },
+    {
+      "id": "JN-V16",
+      "friendId": "adventure_friend_jn",
+      "type": "Guess",
+      "scene": "Juniper opens three snack bags at once, side by side.",
+      "lines": [
+        "Before you ask, this is a normal amount of snacks."
+      ],
+      "question": "On a bad day, what's your partner's go-to snack?",
+      "selfQuestion": "On a bad day, what's your go-to snack?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Ice cream",
+          "reply": [
+            "Ice cream. Classic heartbreak food.",
+            "I'm fine. I'm not eating ice cream. Shut up."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Chips",
+          "reply": [
+            "Chips. Crunch therapy.",
+            "Can't cry when you're crunching."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Midnight instant noodles",
+          "reply": [
+            "Midnight noodles. Unhinged. Respect.",
+            "Comfort in a cup at 2 a.m."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Ice cream, and {partner} called it.",
+          "They've seen you with a spoon and a sad face before.",
+          "Keep a pint in the freezer. Emergency use only."
+        ],
+        "A:B": [
+          "Chips for you. {partner} guessed ice cream.",
+          "They're showing up with a pint while you want crunch.",
+          "Tell them. Or take both."
+        ],
+        "A:C": [
+          "Midnight noodles for you. {partner} guessed ice cream.",
+          "Cold vs hot. Opposite ends of the freezer.",
+          "Time to tell them your 2 a.m. secret."
+        ],
+        "B:A": [
+          "Ice cream for you. {partner} guessed chips.",
+          "They've been bringing the wrong snack. Gently correct them.",
+          "Or do sweet and salty together. Peak bad-day combo."
+        ],
+        "B:B": [
+          "Chips, and {partner} called it.",
+          "They know the crunch means you're struggling.",
+          "Hide a bag somewhere. For emergencies."
+        ],
+        "B:C": [
+          "Midnight noodles for you. {partner} guessed chips.",
+          "They show up with a bag while you're boiling water.",
+          "Tell them your 2 a.m. kettle is a cry for help."
+        ],
+        "C:A": [
+          "Ice cream for you. {partner} guessed midnight noodles.",
+          "Same timing, different temperature.",
+          "Ice cream at midnight still counts."
+        ],
+        "C:B": [
+          "Chips for you. {partner} guessed midnight noodles.",
+          "Right salt level, wrong format.",
+          "Crush chips on top of noodles. Trust me. Life-changing."
+        ],
+        "C:C": [
+          "Midnight noodles, and {partner} called it.",
+          "They've heard the kettle at 2 a.m. They know.",
+          "Iconic. Make extra for them."
+        ]
+      }
+    },
+    {
+      "id": "JN-V17",
+      "friendId": "adventure_friend_jn",
+      "type": "Guess",
+      "scene": "Juniper smiles a little too wide.",
+      "lines": [
+        "I'm fine. Totally fine. Why do you ask?"
+      ],
+      "question": "When your partner says 'I'm fine,' what does it actually mean?",
+      "selfQuestion": "When you say 'I'm fine,' what does it actually mean?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Actually fine",
+          "reply": [
+            "Actually fine? Rare. Lucky you.",
+            "Some people mean it. Not me, but some people."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Absolutely not fine",
+          "reply": [
+            "Not fine. Classic.",
+            "The 'I'm fine' that hits like thunder."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Actually fine, and {partner} trusts it.",
+          "When you say it, you mean it. Good communication.",
+          "I'm fine. Okay, I'm jealous."
+        ],
+        "A:B": [
+          "You're not fine. {partner} thought you meant it.",
+          "Oof. Time for a new code word.",
+          "Try 'I'm fine-ish.' That's a cry for snacks."
+        ],
+        "B:A": [
+          "You're actually fine. {partner} thinks you're secretly not.",
+          "They'll keep checking on you. Kind of cute.",
+          "Say 'really fine' with a smile. Then they'll relax."
+        ],
+        "B:B": [
+          "Not fine, and {partner} knows it.",
+          "They can tell the 'I'm fine' that means 'please hug me.'",
+          "Real ones know. Keep them close."
+        ]
+      }
+    },
+    {
+      "id": "JN-V18",
+      "friendId": "adventure_friend_jn",
+      "type": "Guess",
+      "scene": "Juniper casually checks someone's social media, then closes it fast.",
+      "lines": [
+        "Not jealous. Just checking. Who even posts that much? Anyway."
+      ],
+      "question": "How does your partner act when they're a little jealous?",
+      "selfQuestion": "How do you act when you're a little jealous?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Goes quiet",
+          "reply": [
+            "Quiet jealous. Silent but deadly.",
+            "One sigh. Seven meanings. All of them about that one coworker."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Makes a joke about it",
+          "reply": [
+            "Joke jealous. Hides it in a meme.",
+            "'Haha who's THAT' is never just a joke."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You go quiet, and {partner} knew.",
+          "They've learned your silence has a volume. A loud one.",
+          "Say one honest sentence next time. Saves you both an hour."
+        ],
+        "A:B": [
+          "You joke about it. {partner} expected silence.",
+          "They'll laugh at the joke and completely miss the feeling under it.",
+          "Say it once, straight. Then go back to joking. Balance."
+        ],
+        "B:A": [
+          "You go quiet. {partner} expected a joke.",
+          "So they're waiting for a meme while you're doing a full silent movie.",
+          "Try one tiny joke, then one tiny truth. Works on foxes."
+        ],
+        "B:B": [
+          "You joke about it, and {partner} knew.",
+          "They can hear the jealousy hiding inside your 'lol.'",
+          "Funny is fine. Add one real line after. I'm working on that too."
+        ]
+      }
+    },
+    {
+      "id": "JN-V19",
+      "friendId": "adventure_friend_jn",
+      "type": "Guess",
+      "scene": "Juniper hums a breakup ballad, then switches to a pop song fast.",
+      "lines": [
+        "I wasn't singing about him. Songs are songs."
+      ],
+      "question": "What's your partner's karaoke energy?",
+      "selfQuestion": "What's your karaoke energy?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Main character, full choreography",
+          "reply": [
+            "Full choreography. Star behavior.",
+            "Grabs the mic and doesn't let go."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hides behind the snack menu",
+          "reply": [
+            "Snack menu hider. Shy legend.",
+            "Present, supportive, eating fries."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Main character, and {partner} knew it.",
+          "They've seen your shower concerts. They've been warned.",
+          "Next time, duet. Make it a moment."
+        ],
+        "A:B": [
+          "You hide behind the menu. {partner} expected a performance.",
+          "Sorry, they're waiting for a show you won't give.",
+          "Tell them you'll clap. Loudly. That's your role."
+        ],
+        "B:A": [
+          "You're a karaoke star. {partner} thought you'd hide.",
+          "Surprise! Drag them up for a duet.",
+          "Watching them see your full choreography? Priceless."
+        ],
+        "B:B": [
+          "Snack menu hider, and {partner} knew.",
+          "They know you'd rather eat fries than sing.",
+          "Fair. Someone has to hold the snacks."
+        ]
+      }
+    },
+    {
+      "id": "JN-V20",
+      "friendId": "adventure_friend_jn",
+      "type": "Guess",
+      "scene": "Juniper pulls out an old ticket stub and stares at it, then puts it away quickly.",
+      "lines": [
+        "First dates. I'm fine. Don't ask why I'm fine."
+      ],
+      "question": "How would your partner describe your first date?",
+      "selfQuestion": "How would you describe your first date?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Magical",
+          "reply": [
+            "Magical. Okay, movie scene.",
+            "Sparkles, slow motion, everything."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Chaotic",
+          "reply": [
+            "Chaotic. The best kind of story.",
+            "Something went wrong, and it was perfect."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Awkward but cute",
+          "reply": [
+            "Awkward but cute. The realest kind.",
+            "Weird pauses, cute smiles."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Magical for both of you. Disgusting. Cute.",
+          "{partner} remembers the sparkle too. Same movie, same soundtrack.",
+          "I'm fine. Not crying. It's allergies. To happiness."
+        ],
+        "A:B": [
+          "Chaos for you. {partner} remembers magic.",
+          "They saw sparkles through all the chaos.",
+          "That's love goggles. Keep them."
+        ],
+        "A:C": [
+          "Awkward but cute for you. {partner} remembers pure magic.",
+          "They completely missed the weird pauses. Lucky you.",
+          "Never tell them. Let them keep the movie version."
+        ],
+        "B:A": [
+          "Magical for you. {partner} remembers chaos.",
+          "Same date, different movie genres.",
+          "Rewatch it together. Who's right?"
+        ],
+        "B:B": [
+          "Chaotic, and {partner} agrees.",
+          "Spilled drinks? Wrong restaurant? Rain? That's the lore.",
+          "Retell it every anniversary. Add one fake detail each year."
+        ],
+        "B:C": [
+          "Awkward but cute for you. {partner} remembers chaos.",
+          "You remember the pauses. They remember the disasters.",
+          "Either way, look at you two now. Rude. Cute."
+        ],
+        "C:A": [
+          "Magical for you. {partner} remembers awkward but cute.",
+          "They were sweating through the whole thing. You saw fireworks.",
+          "Tell them their nerves were invisible. Even if they weren't."
+        ],
+        "C:B": [
+          "Chaos for you. {partner} remembers awkward but cute.",
+          "So something went wrong AND nobody knew what to say?",
+          "And you still came back for date two. That's love."
+        ],
+        "C:C": [
+          "Awkward but cute, and {partner} agrees.",
+          "Weird pauses, nervous laughs, and somehow, a second date.",
+          "That's the realest kind. Movies lie. Awkward is honest."
+        ]
+      }
+    }
+  ]
+}

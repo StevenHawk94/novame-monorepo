@@ -1,0 +1,1077 @@
+{
+  "code": "FN",
+  "name": "Fenn",
+  "friendId": "adventure_friend_fn",
+  "waitingLines": [
+    "I can’t leave without seeing {partner}! What if it’s a SIGN?",
+    "I’ll just wait here for {partner}. Romantically. On your windowsill."
+  ],
+  "questions": [
+    {
+      "id": "FN-V01",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn holds a glass of water up to the light, gazing through it dreamily.",
+      "lines": [
+        "Imagine being so open your heart is visible."
+      ],
+      "question": "Which frog has see-through skin on its belly?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The glass frog",
+          "reply": [
+            "YES! You can see its heart beating!",
+            "Glass frogs have transparent bellies showing their organs.",
+            "Literally wearing their heart on their skin. Goals."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The bullfrog",
+          "reply": [
+            "Too chunky for transparency!",
+            "It's the glass frog.",
+            "You can actually watch its heart beat. Iconic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "The tree frog",
+          "reply": [
+            "Close, they're cousins!",
+            "The glass frog has the see-through belly.",
+            "Visible heart. The most romantic frog alive."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Glass frogs have translucent ventral skin.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V02",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn clutches his stomach and flutters around your room.",
+      "lines": [
+        "Ribbit! I have butterflies! Real ones! Not real ones. Science ones!"
+      ],
+      "question": "What causes the 'butterflies in your stomach' feeling when you're nervous or crushing?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Actual tiny butterflies",
+          "reply": [
+            "Ribbit! Imagine! No!",
+            "It's adrenaline shifting blood away from your stomach.",
+            "Your body treats crushes like a big event. Because they are."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Eating too fast",
+          "reply": [
+            "Sometimes that too! But not this!",
+            "It's your stress response, sending blood away from your gut.",
+            "Nervous excitement. Heart racing. Stomach fluttering. Romance!"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Stress hormones like adrenaline shifting blood away from your gut",
+          "reply": [
+            "YES! Your body's fight-or-flight mode!",
+            "Adrenaline sends blood to your muscles, so your stomach feels fluttery.",
+            "It's a SIGN your body thinks love is an emergency. It kind of is."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Butterflies are linked to sympathetic arousal (adrenaline), diverting blood from the digestive tract.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V03",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn blinks a flashlight on and off in a secret pattern.",
+      "lines": [
+        "That means 'I love you' in firefly. Probably."
+      ],
+      "question": "Why do fireflies flash their lights?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "To scare away birds",
+          "reply": [
+            "They might warn predators too, but that's not the main thing.",
+            "The flashing is mostly how they find mates.",
+            "Each species has its own blinking pattern."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "To find and attract mates",
+          "reply": [
+            "YES! Love lights!",
+            "Each species has its own flash pattern, like a love code.",
+            "Romance at night with built-in fairy lights. Swoon."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "To read at night",
+          "reply": [
+            "Ha! A tiny library!",
+            "It's how they find and attract mates.",
+            "Every flash says 'Hey cutie.' In firefly."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Fireflies use species-specific flash patterns for courtship.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V04",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn stares at a photo of Lily and his pupils go huge.",
+      "lines": [
+        "My brain is doing something. Something chemical. It's LOVE."
+      ],
+      "question": "What happens in the brain when you're newly in love?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The brain goes completely quiet",
+          "reply": [
+            "Opposite! It's a party in there!",
+            "Early love activates reward areas powered by dopamine.",
+            "Love is literally a natural high. It's a SIGN."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Reward areas light up with dopamine",
+          "reply": [
+            "YES! Love lights up the reward system!",
+            "Brain scans show early love activates dopamine-rich reward areas.",
+            "Lily is basically my dopamine. Is that romantic? It's romantic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "You forget your own name",
+          "reply": [
+            "Feels like it! But no.",
+            "Reward regions rich in dopamine become very active.",
+            "Brain scans proved it. Love is real chemistry."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "fMRI (Fisher, Aron et al.) shows early romantic love activates dopamine-rich reward regions (VTA, caudate).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V05",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn grabs your hands and does a slow little twirl with you.",
+      "lines": [
+        "It's about a morning dance. It's a SIGN."
+      ],
+      "question": "What do seahorse couples do each morning?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Do a greeting dance together",
+          "reply": [
+            "YES! Every morning! A dance!",
+            "Seahorse partners greet each other with a little dance, sometimes changing color.",
+            "Lily and I started doing this. She's better than me."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Swim in opposite directions",
+          "reply": [
+            "Ouch! No!",
+            "They do a morning greeting dance together.",
+            "Twirling, color changes, tail holding. Romance."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Sleep in until noon",
+          "reply": [
+            "Ha! Relatable. But no!",
+            "They meet each morning for a greeting dance.",
+            "Some even link tails. I'm crying."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Seahorse pairs perform daily greeting rituals.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V06",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn wraps a scarf around his neck and shivers dramatically.",
+      "lines": [
+        "Winter is coming. Like my feelings."
+      ],
+      "question": "What can wood frogs do to survive winter?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fly south with the birds",
+          "reply": [
+            "Frogs can't fly. Tragically.",
+            "They freeze almost solid and thaw out in spring.",
+            "Natural antifreeze protects their cells. Science romance."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Knit a sweater",
+          "reply": [
+            "Ha! Cozy, but no.",
+            "They freeze almost solid and thaw in spring.",
+            "Their bodies make natural antifreeze to protect their cells."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Freeze solid, then thaw in spring",
+          "reply": [
+            "YES! It's wild!",
+            "Their hearts stop, they freeze, then thaw and hop away in spring.",
+            "Like love after a breakup. It always comes back."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Wood frogs survive partial freezing and thaw in spring.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V07",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn holds up a photo of a tiny round rodent couple snuggling.",
+      "lines": [
+        "These are my favorite romantics after frogs. Prairie voles!"
+      ],
+      "question": "Why are prairie voles famous in love research?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They're the fastest runners",
+          "reply": [
+            "Not really known for speed!",
+            "They form lifelong pair bonds, unlike most rodents.",
+            "Scientists learned a lot about bonding hormones from them."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They change color when in love",
+          "reply": [
+            "Ribbit! I wish! No!",
+            "They form strong, often lifelong pair bonds.",
+            "They're used to study oxytocin and vasopressin. Love science."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They form strong lifelong pair bonds",
+          "reply": [
+            "YES! Little lovebirds, but voles!",
+            "They pair up for life, and scientists study them to understand bonding hormones.",
+            "Oxytocin heroes. I aspire to be a vole."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Prairie voles are socially monogamous and a model for pair-bonding neurobiology (oxytocin/vasopressin).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V08",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn crawls through your yard on his hands and knees, searching the clover.",
+      "lines": [
+        "I'm looking for a sign. A four-leaf sign. Very rare."
+      ],
+      "question": "About how rare is a four-leaf clover?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "1 in 4",
+          "reply": [
+            "Too common! Not a sign at all!",
+            "It's roughly 1 in 5,000 to 10,000 clovers.",
+            "Rare enough to feel magical."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Roughly 1 in 5,000 to 10,000",
+          "reply": [
+            "YES! Very rare! A real SIGN!",
+            "Most clovers have three leaves. Four is a rare genetic quirk.",
+            "If you find one, it's basically the universe winking at you."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They don't exist",
+          "reply": [
+            "They exist! I've found three! Signs!",
+            "About 1 in 5,000 to 10,000 clovers have four leaves.",
+            "Keep searching. It's worth it."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Estimates commonly cite ~1 in 5,000–10,000 white clovers as four-leaved.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V09",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn flaps his arms frantically, trying to hover in place. He fails.",
+      "lines": [
+        "These little birds can do something even I can't. And I'm a frog."
+      ],
+      "question": "What can hummingbirds do that no other birds can?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fly backwards",
+          "reply": [
+            "YES! Backward flying!",
+            "Hummingbirds can hover, fly backward, and even briefly upside down.",
+            "Imagine flying backward into someone's arms. Romantic AND efficient."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Swim underwater",
+          "reply": [
+            "Ribbit, that's my job!",
+            "Hummingbirds are the only birds that can truly fly backward.",
+            "Wings beating dozens of times a second. Tiny powerhouses."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Sleep while flying",
+          "reply": [
+            "Some birds can! But not this one!",
+            "Hummingbirds are the only birds that can fly backward.",
+            "They hover like tiny helicopters. Precious."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Hummingbirds can hover and fly backward, unique among birds.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V10",
+      "friendId": "adventure_friend_fn",
+      "type": "Trivia",
+      "scene": "Fenn stares into the eyes of a puppy in a photo, smiling dreamily.",
+      "lines": [
+        "Love isn't just for frogs. It's for dogs too. And their humans."
+      ],
+      "question": "What happens when dogs and their owners gaze into each other's eyes?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The dog gets sleepy",
+          "reply": [
+            "Maybe! But that's not the finding!",
+            "Mutual gazing increased oxytocin in both dog and owner.",
+            "Bonding through eyes. Pure romance."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Both get a boost of oxytocin, the bonding hormone",
+          "reply": [
+            "YES! Love hormone for both!",
+            "A study found mutual gazing raised oxytocin in dogs and their owners.",
+            "Eye contact equals love. It's a SIGN. For everyone."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "The owner sneezes",
+          "reply": [
+            "Allergies! But no!",
+            "Both dog and owner showed a boost in oxytocin.",
+            "Your dog loves you scientifically."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Nagasawa et al. (2015): owner–dog mutual gaze increased oxytocin in both.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "FN-V11",
+      "friendId": "adventure_friend_fn",
+      "type": "Preference",
+      "scene": "Fenn collapses onto your couch with both hands over his heart.",
+      "lines": [
+        "Brace your heart. Love stories. Mine was love at first sight. Obviously."
+      ],
+      "question": "Your love story: love at first sight, or friends first?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Love at first sight",
+          "reply": [
+            "Love at first sight! Fireworks! Violins!",
+            "Zing. I knew it the moment Lily croaked hello."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Friends first",
+          "reply": [
+            "Friends first. Oh, that's so sweet.",
+            "Best friend turned love. My favorite plot."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Love at first sight for both of you! It's a SIGN!",
+          "{partner} saw you and you saw them and the universe just... clicked.",
+          "I'm crying. Ribbit. Sorry. Crying."
+        ],
+        "A:B": [
+          "Friends first for you. {partner} says love at first sight.",
+          "They were head over heels on day one. You were just being friendly.",
+          "They've been patient this whole time. Give them a big hug."
+        ],
+        "B:A": [
+          "Love at first sight for you. {partner} says friends first.",
+          "So you were in love from day one, and they took the scenic route.",
+          "Plot twist: you were waiting for them to catch up. Romantic!"
+        ],
+        "B:B": [
+          "Friends first for both of you. Slow burn magic.",
+          "So you and {partner} were best friends who slowly fell. Movie plot.",
+          "The best love stories start with 'we were just friends.'"
+        ]
+      }
+    },
+    {
+      "id": "FN-V12",
+      "friendId": "adventure_friend_fn",
+      "type": "Preference",
+      "scene": "Fenn holds up a ukulele with one string. He strums it. It's bad.",
+      "lines": [
+        "Ribbit! Sorry. Excited. Grand gestures. I'm practicing one."
+      ],
+      "question": "Grand gesture: a public serenade, or a private candlelit picnic?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Public serenade",
+          "reply": [
+            "Public serenade! Bold! Iconic! Terrifying!",
+            "Strangers clapping. Partner blushing. Perfect."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Private picnic",
+          "reply": [
+            "Private picnic. Candles, cheese, whispers.",
+            "Intimate. Classy. Swoon."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Public serenade for both of you! Showstoppers!",
+          "Honestly, {partner} and you would serenade each other in the middle of a mall.",
+          "Bring a tambourine. For backup."
+        ],
+        "A:B": [
+          "Private picnic for you. {partner} wants a public serenade.",
+          "They want the spotlight. You want the candlelight.",
+          "Let them sing at your picnic. Just you, them, and the moon."
+        ],
+        "B:A": [
+          "Public serenade for you. {partner} wants a private picnic.",
+          "You'll sing in a crowd. They'll want to hide behind a basket.",
+          "Serenade them AT the picnic. Private concert. Audience of one."
+        ],
+        "B:B": [
+          "Private picnic for both of you. Intimate love.",
+          "I can picture it: you and {partner} would light candles in a secret meadow.",
+          "Just watch for ants. They crash every picnic."
+        ]
+      }
+    },
+    {
+      "id": "FN-V13",
+      "friendId": "adventure_friend_fn",
+      "type": "Preference",
+      "scene": "Fenn points at the sky, then the window, then the pond outside, overwhelmed.",
+      "lines": [
+        "Oh my lily pads. Dream date. I have too many ideas."
+      ],
+      "question": "Dream date: under the stars, dancing in the rain, or by the water?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Under the stars",
+          "reply": [
+            "Under the stars! Constellations as witnesses!",
+            "I'd name a star after Lily. I did. It's unofficial."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Dancing in the rain",
+          "reply": [
+            "Dancing in the rain! Movie scene!",
+            "Wet hair, big smiles, zero regrets."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "By the water",
+          "reply": [
+            "By the water! My home turf!",
+            "Ripples, reflections, and a gentle breeze."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Stars for both of you! It's a SIGN!",
+          "Lie on a blanket with {partner} and count the stars.",
+          "Wish on a shooting star. Wish for each other. Done."
+        ],
+        "A:B": [
+          "Rain for you. {partner} wants to stargaze.",
+          "Dance in the rain until it clears. Then look up.",
+          "The stars come out just for you two."
+        ],
+        "A:C": [
+          "Water for you. {partner} wants the stars.",
+          "Find a lake with an open sky.",
+          "Reflections and constellations. A cosmic date."
+        ],
+        "B:A": [
+          "Stars for you. {partner} wants to dance in the rain.",
+          "Wait for the rain to stop. Then stargaze in wet clothes.",
+          "It's a SIGN of commitment."
+        ],
+        "B:B": [
+          "Rain for both of you! Movie couple!",
+          "Pretty sure you and {partner} will splash in puddles while everyone else runs for cover.",
+          "Umbrellas are for people without romance."
+        ],
+        "B:C": [
+          "Water for you. {partner} wants to dance in the rain.",
+          "Rain on a lake. The prettiest sound.",
+          "Splash, dance, kiss. Repeat."
+        ],
+        "C:A": [
+          "Stars for you. {partner} wants to be by the water.",
+          "A lake at night. Stars reflected in the water.",
+          "Double the stars. Double the romance."
+        ],
+        "C:B": [
+          "Rain for you. {partner} wants to be by the water.",
+          "Dance in the rain by a lake. Water everywhere.",
+          "Very wet. Very romantic. Very froggy."
+        ],
+        "C:C": [
+          "Water for both of you! Pond people!",
+          "Picture it: {partner} and you by a lake at sunset. Postcard material.",
+          "Skip stones. Make wishes. I'll provide the frogs."
+        ]
+      }
+    },
+    {
+      "id": "FN-V14",
+      "friendId": "adventure_friend_fn",
+      "type": "Preference",
+      "scene": "Fenn writes 'Month 47' on your calendar in glitter pen.",
+      "lines": [
+        "Listen. LISTEN. Anniversaries. I celebrate them monthly. Lily thinks I'm extra."
+      ],
+      "question": "Anniversaries: celebrate the monthly ones too, or just the yearly one?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Monthly too",
+          "reply": [
+            "Monthly too! YES! Every month is a gift!",
+            "Twelve chances a year to be cheesy."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Just yearly",
+          "reply": [
+            "Just yearly. Save the magic.",
+            "One big day. Very special."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Monthly celebrations for both of you! Extra couple!",
+          "{partner} and you probably have a cupcake every month.",
+          "It's a SIGN you're both as extra as me. I love it."
+        ],
+        "A:B": [
+          "Yearly for you. {partner} wants monthly too.",
+          "They'll show up with a cupcake every month. Brace yourself.",
+          "Let them. Eat the cupcake. Say thank you. It's love."
+        ],
+        "B:A": [
+          "Monthly for you. {partner} prefers just yearly.",
+          "They'll be surprised every month. You'll be delighted.",
+          "Keep monthly ones tiny. A note. A cookie. Not a parade."
+        ],
+        "B:B": [
+          "Yearly for both of you. Classic and meaningful.",
+          "So you and {partner} make one day a year really count.",
+          "Big, beautiful, once a year. Like a comet."
+        ]
+      }
+    },
+    {
+      "id": "FN-V15",
+      "friendId": "adventure_friend_fn",
+      "type": "Preference",
+      "scene": "Fenn finds a heart-shaped pebble and gasps loudly.",
+      "lines": [
+        "Ribbit. Do you see what I see? It's a SIGN."
+      ],
+      "question": "Do you believe in signs?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Absolutely",
+          "reply": [
+            "Absolutely! Welcome to my world!",
+            "Heart-shaped clouds, matching songs. Signs everywhere."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Not really",
+          "reply": [
+            "Not really. Grounded. Practical.",
+            "Maybe the signs will find you anyway."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both believe in signs! It's a SIGN!",
+          "Honestly, {partner} and you probably screenshot every lucky coincidence.",
+          "Cosmic couple. I'm adopting you both."
+        ],
+        "A:B": [
+          "You don't believe. {partner} totally does.",
+          "They'll see signs everywhere. You'll see coincidences.",
+          "Let them have it. Their joy is the real sign."
+        ],
+        "B:A": [
+          "You believe. {partner} doesn't.",
+          "You'll point out heart-shaped clouds. They'll say 'it's a cloud.'",
+          "Keep pointing. One day they'll see it."
+        ],
+        "B:B": [
+          "Neither of you believes in signs. Practical love.",
+          "I can picture it: you and {partner} don't need signs. You chose each other.",
+          "Honestly, that's the biggest sign of all."
+        ]
+      }
+    },
+    {
+      "id": "FN-V16",
+      "friendId": "adventure_friend_fn",
+      "type": "Guess",
+      "scene": "Fenn stares into your eyes intensely. Then blushes and looks away.",
+      "lines": [
+        "Don't laugh. First impressions."
+      ],
+      "question": "What did your partner notice first about you?",
+      "selfQuestion": "What did you notice first about your partner?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "The smile",
+          "reply": [
+            "The smile! Heart-melting.",
+            "One smile and it's over."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The laugh",
+          "reply": [
+            "The laugh! Musical!",
+            "A laugh you can't forget."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "The outfit",
+          "reply": [
+            "The outfit! Fashion romance.",
+            "Love at first fit."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "The smile, and {partner} knew it!",
+          "They've always known your smile had power over them.",
+          "It's a SIGN. Smile at them right now."
+        ],
+        "A:B": [
+          "It was the laugh for you. {partner} guessed the smile.",
+          "They think it was the smile. It was the sound.",
+          "Laugh together. Prove it."
+        ],
+        "A:C": [
+          "It was the outfit for you. {partner} guessed the smile.",
+          "They think you fell for their smile. You fell for their jacket.",
+          "Honest. Fashion matters. It's a SIGN."
+        ],
+        "B:A": [
+          "It was the smile for you. {partner} guessed the laugh.",
+          "They think it was the laugh. It was the smile.",
+          "Tell them. Watch them smile again."
+        ],
+        "B:B": [
+          "The laugh, and {partner} knew it!",
+          "They know your laugh is your secret weapon.",
+          "Laugh at their next joke. Even the bad ones."
+        ],
+        "B:C": [
+          "It was the outfit for you. {partner} guessed the laugh.",
+          "They think you heard them first. You saw them first.",
+          "Wear that outfit on your next date."
+        ],
+        "C:A": [
+          "It was the smile for you. {partner} guessed the outfit.",
+          "They think you noticed the clothes. You noticed the face.",
+          "Tell them their outfit was nice, but the smile won."
+        ],
+        "C:B": [
+          "It was the laugh for you. {partner} guessed the outfit.",
+          "They think it was the fashion. It was the giggle.",
+          "Laughing in a cute outfit. Combo."
+        ],
+        "C:C": [
+          "The outfit, and {partner} knew it!",
+          "They know they dressed to impress that day.",
+          "Wear it again on your anniversary. Full circle."
+        ]
+      }
+    },
+    {
+      "id": "FN-V17",
+      "friendId": "adventure_friend_fn",
+      "type": "Guess",
+      "scene": "Fenn leans close and whispers, 'Are you a pond? Because I'm drowning.'",
+      "lines": [
+        "Okay. Deep breath. Pickup lines."
+      ],
+      "question": "How does your partner react to a cheesy pickup line?",
+      "selfQuestion": "How do you react to a cheesy pickup line?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Groans, but blushes",
+          "reply": [
+            "Groans but blushes! Classic!",
+            "Pretends to hate it. Secretly loves it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Fires one right back",
+          "reply": [
+            "Fires one right back! A worthy opponent!",
+            "Pickup line battle. Nobody wins. Everyone giggles."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Groan-and-blush, and {partner} knew it!",
+          "They know your eye-roll always ends in a smile.",
+          "Keep the cheesy lines coming. It's a love language."
+        ],
+        "A:B": [
+          "You fire one back. {partner} expected a blushing groan.",
+          "They thought you'd melt. You came back swinging.",
+          "Your comeback game is strong. Respect."
+        ],
+        "B:A": [
+          "You groan and blush. {partner} expected you to fire back.",
+          "They're ready for battle. You're just pink.",
+          "Fire one back next time. Shock them."
+        ],
+        "B:B": [
+          "Firing one right back, and {partner} knew it!",
+          "Pickup line duels are your thing.",
+          "It's a SIGN you're both ridiculous. Perfect match."
+        ]
+      }
+    },
+    {
+      "id": "FN-V18",
+      "friendId": "adventure_friend_fn",
+      "type": "Guess",
+      "scene": "Fenn sniffles into a tissue, holding a rom-com DVD.",
+      "lines": [
+        "Oh, this one's good. Rom-com endings. They destroy me."
+      ],
+      "question": "How does your partner react to a rom-com ending?",
+      "selfQuestion": "How do you react to a rom-com ending?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Cries every single time",
+          "reply": [
+            "Cries every time! A true romantic!",
+            "Tissues on standby. Always."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Rolls eyes, secretly loved it",
+          "reply": [
+            "Eye-roll, secret love. Classic!",
+            "Too cool to cry. Too soft to hate it."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You cry every time, and {partner} knew it!",
+          "They hand you tissues before the airport scene.",
+          "Cry proudly. I do. Every time."
+        ],
+        "A:B": [
+          "You roll your eyes. {partner} expected tears.",
+          "They're ready with tissues. You're judging the plot.",
+          "Next time, cry a little. For them."
+        ],
+        "B:A": [
+          "You cry every time. {partner} expected an eye-roll.",
+          "They thought you were too cool. You're a puddle.",
+          "Show them your tears. It's a SIGN of a big heart."
+        ],
+        "B:B": [
+          "The eye-roll, and {partner} knew it!",
+          "They know you secretly loved it.",
+          "They saw you smile. You can't hide."
+        ]
+      }
+    },
+    {
+      "id": "FN-V19",
+      "friendId": "adventure_friend_fn",
+      "type": "Guess",
+      "scene": "Fenn kisses the air, then blows another kiss toward the window.",
+      "lines": [
+        "I'm emotional already. Rituals. I have 14."
+      ],
+      "question": "Which daily ritual would your partner never skip?",
+      "selfQuestion": "Which daily ritual would you never skip?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Goodnight kiss",
+          "reply": [
+            "Goodnight kiss! Every single night!",
+            "Sleep doesn't count without it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Morning 'good morning' text",
+          "reply": [
+            "Good morning text! Sunrise love!",
+            "First thing they think of: you."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Goodnight kiss, and {partner} knew it!",
+          "They know no night ends without one.",
+          "Never skip. It's a SIGN of forever."
+        ],
+        "A:B": [
+          "Morning text for you. {partner} guessed a goodnight kiss.",
+          "They think it's the kiss. It's the text.",
+          "Kiss them tonight anyway. Bonus love."
+        ],
+        "B:A": [
+          "Goodnight kiss for you. {partner} guessed a morning text.",
+          "They think mornings matter. You think nights matter.",
+          "Do both. Text at sunrise. Kiss at moonrise."
+        ],
+        "B:B": [
+          "Good morning text, and {partner} knew it!",
+          "Their phone lights up with your love every morning.",
+          "Sunrise and you. Perfect start."
+        ]
+      }
+    },
+    {
+      "id": "FN-V20",
+      "friendId": "adventure_friend_fn",
+      "type": "Guess",
+      "scene": "Fenn gasps and points at the window. 'A shooting star!' It was a plane.",
+      "lines": [
+        "Ribbit, ribbit. Wishes!"
+      ],
+      "question": "If your partner saw a shooting star, what would they wish for?",
+      "selfQuestion": "If you saw a shooting star, what would you wish for?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Something for you two",
+          "reply": [
+            "Something for you two. Aww!",
+            "Their wish is about you. Swoon."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Unlimited snacks",
+          "reply": [
+            "Unlimited snacks! Honest!",
+            "Priorities. Respect."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Something for you two, and {partner} knew it!",
+          "They know your wishes always include them.",
+          "It's a SIGN. Forever and ever."
+        ],
+        "A:B": [
+          "Unlimited snacks. {partner} thought you'd wish for you two.",
+          "They're touched. Then confused. Then hungry.",
+          "Share your wish snacks. Romance saved."
+        ],
+        "B:A": [
+          "Something for you two. {partner} guessed unlimited snacks.",
+          "They thought you'd wish for snacks. You wished for them.",
+          "Tell them. They'll melt like chocolate."
+        ],
+        "B:B": [
+          "Unlimited snacks, and {partner} knew it!",
+          "They know your heart, and your stomach.",
+          "Share the snacks. That's love."
+        ]
+      }
+    }
+  ]
+}

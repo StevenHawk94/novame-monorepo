@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-24",
+  "scope": "Friends Room visit presentation only",
+  "changes": [
+    "Welcome, dialogue, choices and farewell share Adventure's canonical panel height and actor-stage anchor",
+    "Retain shared opaque #FFF8EC panel and shared pose scale with 15% visible-height overlap",
+    "Farewell uses FriendDialogue down arrow and Tap to continue; durable finish precedes guarded single navigation back"
+  ],
+  "unchanged": ["server logic", "choices and rewards", "background submission", "readiness and notifications"],
+  "validation": {
+    "targetedTests": {"passed": 20, "failed": 0},
+    "domainIsolation": {"passed": 577, "failed": 0},
+    "mobileTypeCheck": "passed",
+    "native": {
+      "environment": "iPhone 17 Pro / iOS 26.2 simulator, minified Hermes Release isolated host",
+      "component": "CoupleFriendVisitCard with real layout, dialogue, transition and bundled art",
+      "fixtures": "Local visit runtime and account boundaries; no live messages or rewards",
+      "verified": ["fixed panel across welcome, intro, choices, replies and farewell", "stable actor scale/overlap through pose change", "farewell down arrow and hint, no Done", "final tap navigates back"],
+      "limits": ["No Android or physical-device validation", "No new frame-distribution measurement", "Not a production paired-account end-to-end test"]
+    }
+  },
+  "developmentStandardsUpdated": false,
+  "release": {"backendChanges": false, "appPublished": false, "requiresNextClientBuild": true}
+}

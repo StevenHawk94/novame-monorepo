@@ -1,5 +1,5 @@
 /**
- * Reward/day boundaries must come from the server-owned profile timezone, not
+ * Reward/day boundaries must come from the immutable economic timezone, not
  * a caller supplied YYYY-MM-DD. Otherwise changing a device clock can reopen
  * daily rewards. The client date remains useful for display only.
  */
@@ -16,8 +16,8 @@ export function dateKeyInTimeZone(timeZone, now = new Date()) {
 }
 
 export async function resolveUserLocalDate(supabase, userId) {
-  const { data, error } = await supabase.from('profiles')
-    .select('timezone_name').eq('id', userId).maybeSingle()
+  const { data, error } = await supabase.rpc('economic_calendar_v1', { p_user: userId })
   if (error) throw error
-  return dateKeyInTimeZone(data?.timezone_name)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data?.localDate || '')) throw new Error('economic_calendar_unavailable')
+  return data.localDate
 }

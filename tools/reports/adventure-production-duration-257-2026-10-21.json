@@ -1,0 +1,20 @@
+{
+  "migration": "20261021000257_adventure_production_duration",
+  "productionDatabaseApplied": true,
+  "freeSeconds": 21600,
+  "plusSeconds": 7200,
+  "removedTestInsertTrigger": "burrow_test_adventure_duration",
+  "existingAdventures": "Entire adventures table count/digest unchanged within the locked migration transaction; existing ends_at values preserved.",
+  "compatibility": "Existing start RPC names, return shapes, permissions, subscription checks, idempotency, daily limits and settlement chain preserved. API/Admin source unchanged.",
+  "mobile": "New local starts and durable offline previews use tier-correct durations, frozen at local Start until a server receipt provides the authoritative deadline.",
+  "verification": {
+    "relatedTestsPassed": 109,
+    "isolatedDatabaseWritersAndLegacyJourneyChecks": "passed",
+    "mobileTypeCheck": "passed",
+    "iosProductionExport": "passed",
+    "productionPostcheck": "passed"
+  },
+  "releaseEvidenceAndRollback": "/private/tmp/burrow-duration257-release.siaiLZ",
+  "apiAdminDeploymentRequired": false,
+  "mobileBinaryOrOtaPublished": false
+}

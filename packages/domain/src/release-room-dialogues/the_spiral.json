@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "Something bad is about to happen. Stay on guard.",
+    "replies": [
+      "This is a feeling, not a prediction.",
+      "Right now, I am safe enough.",
+      "I can handle one moment at a time.",
+      "I’m coming back to my breath."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "Don’t relax. You’ll regret letting your guard down.",
+    "replies": [
+      "I don’t need to solve danger that isn’t here.",
+      "I can be alert without panicking.",
+      "This moment is mine.",
+      "I choose calm over alarm."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "Something feels off. You should keep worrying.",
+    "replies": [
+      "Feeling scared doesn’t mean danger is here.",
+      "I can check the facts once.",
+      "I’m safe enough in this moment.",
+      "My body deserves a pause."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I’m trying to keep you prepared.",
+    "replies": [
+      "Thank you. I’m safe enough right now.",
+      "I only need to handle this moment.",
+      "I can prepare without spiraling.",
+      "Let’s breathe before we decide."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "racing heart",
+    "monster": "Your heart is racing. Something must be wrong.",
+    "replies": [
+      "A fast heart is a feeling, not a threat.",
+      "I can slow it with a long breath.",
+      "My body is trying to protect me.",
+      "This will settle."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "worst case",
+    "monster": "Imagine everything going wrong.",
+    "replies": [
+      "I can imagine it going fine, too.",
+      "Worst cases are rarely real.",
+      "I can handle what actually comes.",
+      "I’ll come back to what’s true."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "what if",
+    "monster": "What if it happens and you can’t cope?",
+    "replies": [
+      "I’ve coped before.",
+      "I can ask for help if I need it.",
+      "I’m more capable than this fear says.",
+      "I’ll meet it when it’s real."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "sleep",
+    "monster": "Lie awake and think about tomorrow.",
+    "replies": [
+      "Tomorrow can wait until morning.",
+      "I can rest my body even if my mind buzzes.",
+      "I’ll put it down for the night.",
+      "A breath at a time is enough."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "body signals",
+    "monster": "That tightness in your chest means danger.",
+    "replies": [
+      "Tightness often means tension, not danger.",
+      "I can soften my shoulders.",
+      "I’ll breathe into the tight spot.",
+      "My body is asking for gentleness."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "constant scanning",
+    "monster": "Keep scanning. Look for threats.",
+    "replies": [
+      "I can look around and see I’m okay.",
+      "I’m allowed to stop scanning.",
+      "I’ll notice something safe instead.",
+      "No threat is here right now."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "control",
+    "monster": "If you worry enough, you can prevent it.",
+    "replies": [
+      "Worry doesn’t prevent anything.",
+      "I can act on what I control.",
+      "Letting go of the rest is allowed.",
+      "I’ll do my part and release the rest."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "catastrophic",
+    "monster": "This one thing will ruin everything.",
+    "replies": [
+      "One thing rarely ruins everything.",
+      "I can handle a setback.",
+      "I’ll take the next small step.",
+      "Things are rarely as final as they feel."
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "check again",
+    "monster": "Check it one more time. Just to be safe.",
+    "replies": [
+      "I’ve checked. It’s enough.",
+      "Another check won’t add safety.",
+      "I can trust what I’ve done.",
+      "I’m allowed to stop checking."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "future dread",
+    "monster": "The future is full of danger.",
+    "replies": [
+      "The future is also full of good things.",
+      "I’ll meet it a day at a time.",
+      "I can’t live there yet.",
+      "I’m here, now."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "fear of fear",
+    "monster": "If you feel anxious, it will get worse.",
+    "replies": [
+      "Anxiety rises and falls like a wave.",
+      "I can let it be without feeding it.",
+      "I’ve felt this before, and it passed.",
+      "I can ride this out."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "social worry",
+    "monster": "Everyone noticed you were nervous.",
+    "replies": [
+      "Most people are focused on themselves.",
+      "Nervous is human.",
+      "I’ll keep being myself.",
+      "Their thoughts aren’t mine to carry."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "alone with it",
+    "monster": "Nobody can help you with this.",
+    "replies": [
+      "I can reach out to someone.",
+      "I don’t have to hold this alone.",
+      "Talking can lighten it.",
+      "People care more than I think."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "uncertainty",
+    "monster": "You can’t be sure everything will be okay.",
+    "replies": [
+      "I can live with some uncertainty.",
+      "I don’t need certainty to be safe.",
+      "I’ll trust myself to handle it.",
+      "Not knowing isn’t the same as danger."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "hyper-alert",
+    "monster": "You must always be ready.",
+    "replies": [
+      "I can be ready enough.",
+      "Rest helps me be ready better.",
+      "I can’t be on alert forever.",
+      "I’m allowed to be at ease."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "avoidance",
+    "monster": "Avoid it. That’s the safest thing.",
+    "replies": [
+      "Avoiding keeps the fear alive.",
+      "I can take a small step toward it.",
+      "I’ll try a bit and see.",
+      "I’m braver than I feel."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "mind racing",
+    "monster": "Your thoughts are racing. You’re losing control.",
+    "replies": [
+      "Thoughts racing doesn’t mean I’m losing control.",
+      "I can slow them with my breath.",
+      "I’ll name five things I can see.",
+      "I can ground myself here."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "health fear",
+    "monster": "That little symptom could be something serious.",
+    "replies": [
+      "I can check in with a professional if needed.",
+      "Most small symptoms are small.",
+      "I’ll do what’s reasonable and let it go.",
+      "I won’t diagnose myself at midnight."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "bad news",
+    "monster": "Bad news is coming. You can feel it.",
+    "replies": [
+      "Feeling isn’t knowing.",
+      "I’ll wait for facts.",
+      "I can be present while I wait.",
+      "This feeling isn’t a forecast."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "overpreparing",
+    "monster": "Prepare for every possibility.",
+    "replies": [
+      "I can’t cover every possibility.",
+      "A reasonable plan is enough.",
+      "I’ll adapt when needed.",
+      "I’ll prepare once and rest."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "perfect safety",
+    "monster": "You’re only safe if nothing goes wrong.",
+    "replies": [
+      "Safety can include things going wrong.",
+      "I can be safe and imperfect.",
+      "I’m resilient, not invincible.",
+      "I can handle bumps."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "tight grip",
+    "monster": "Hold on tighter. Don’t let go.",
+    "replies": [
+      "I can loosen my grip a little.",
+      "Softening is allowed.",
+      "I’ll unclench my hands.",
+      "Letting go can feel safer."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "trusting",
+    "monster": "You can’t trust that things will be okay.",
+    "replies": [
+      "I can trust myself to cope.",
+      "I can trust a little more today.",
+      "Many things have turned out okay.",
+      "I’ll lean on what’s been steady."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "breath",
+    "monster": "Breathing won’t help. You’re in danger.",
+    "replies": [
+      "Breathing slows my body down.",
+      "I’m not in danger right now.",
+      "A slow breath is a small tool.",
+      "I can breathe with this."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "racing future",
+    "monster": "Think about everything that could go wrong next month.",
+    "replies": [
+      "Next month isn’t today.",
+      "I’ll handle it when it arrives.",
+      "I can only live this day.",
+      "I’ll come back to now."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "overthink feelings",
+    "monster": "Why are you anxious? Figure it out right now.",
+    "replies": [
+      "I don’t have to find a reason.",
+      "It’s okay to just feel it.",
+      "Anxiety can come without a cause.",
+      "I’ll be gentle and wait."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "people",
+    "monster": "They’re upset with you. You can sense it.",
+    "replies": [
+      "I can’t sense what isn’t there.",
+      "I’ll ask if I need to.",
+      "Their mood isn’t my fault.",
+      "I’m allowed to assume the best for now."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "performance",
+    "monster": "You’ll mess up in front of everyone.",
+    "replies": [
+      "I can make a mistake and recover.",
+      "People are kinder than my fear says.",
+      "I’ve prepared enough.",
+      "I’ll do my best, imperfectly."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "crowd",
+    "monster": "This place is too much. Get out.",
+    "replies": [
+      "I can step away and breathe.",
+      "I can take a pause and return.",
+      "I’m allowed to take care of myself.",
+      "I’ll find a calm corner."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "no rest",
+    "monster": "You can’t rest until it’s resolved.",
+    "replies": [
+      "I can rest with it unresolved.",
+      "Rest helps me handle it.",
+      "I’m allowed to pause.",
+      "Not everything has to be solved today."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "shame",
+    "monster": "You shouldn’t be anxious about this.",
+    "replies": [
+      "Feeling anxious isn’t a flaw.",
+      "It’s okay to feel what I feel.",
+      "I can be kind to myself.",
+      "No “should” needed."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "danger sign",
+    "monster": "That sound might be something bad.",
+    "replies": [
+      "Most sounds are ordinary.",
+      "I can check once and let it go.",
+      "I’m safe right now.",
+      "My mind is guessing. I’ll stay with facts."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "panic",
+    "monster": "This is it. You’re going to lose it.",
+    "replies": [
+      "Panic peaks and passes.",
+      "I’ve been through this wave before.",
+      "I can ride it out.",
+      "I’m safe, even if I feel scared."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "trust",
+    "monster": "Don’t trust calm. It’s a trap.",
+    "replies": [
+      "Calm can just be calm.",
+      "I can let myself enjoy it.",
+      "Peace isn’t a warning.",
+      "I’m allowed to feel okay."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "planning obsession",
+    "monster": "You need a plan for every scenario.",
+    "replies": [
+      "One flexible plan is plenty.",
+      "I can improvise when needed.",
+      "I’ll plan the next step only.",
+      "I trust myself to adapt."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "clenched body",
+    "monster": "Stay tense. It keeps you ready.",
+    "replies": [
+      "My muscles can soften.",
+      "Relaxed is also ready.",
+      "I’ll drop my shoulders.",
+      "I’ll let my jaw unclench."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "not enough",
+    "monster": "You’re not strong enough for this.",
+    "replies": [
+      "I’m stronger than my fear thinks.",
+      "I’ve handled hard things.",
+      "I can ask for support.",
+      "I’ll take it one moment at a time."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "alarm",
+    "monster": "Alarm! Alarm! Something is wrong!",
+    "replies": [
+      "Thank you, alarm. I’ve heard you.",
+      "I’ve checked. I’m okay.",
+      "You can quiet down now.",
+      "I’ll turn the volume down."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "endless vigilance",
+    "monster": "If you stop watching, you’ll miss something.",
+    "replies": [
+      "I’ll notice what matters when it comes.",
+      "I can rest my attention.",
+      "My instincts work without constant effort.",
+      "I can trust the quiet."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "anticipation",
+    "monster": "You’ll be anxious until it’s over.",
+    "replies": [
+      "I can find ease before it’s over.",
+      "I can enjoy small things meanwhile.",
+      "I’ll take care of myself while I wait.",
+      "I can be okay in the waiting."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "self-judging",
+    "monster": "Why can’t you just calm down?",
+    "replies": [
+      "I’m learning to calm at my pace.",
+      "Telling myself to calm doesn’t help. Kindness does.",
+      "I’m doing my best.",
+      "I can be gentle with a nervous system."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "tight timeline",
+    "monster": "You have to fix this feeling now.",
+    "replies": [
+      "Feelings don’t need to be fixed instantly.",
+      "I can let it ease on its own time.",
+      "I can wait it out gently.",
+      "I’ll just breathe and notice."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "belief",
+    "monster": "You’re always going to be like this.",
+    "replies": [
+      "Feelings change. So can I.",
+      "I’m learning new ways to cope.",
+      "This is a moment, not forever.",
+      "I can grow calmer over time."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "final",
+    "monster": "Stay afraid. It’s the only way to be safe.",
+    "replies": [
+      "I’m safe enough without fear.",
+      "I can choose calm.",
+      "I’m safe without staying afraid.",
+      "I’m putting the guard down, slowly."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "quiet moment",
+    "monster": "A calm moment? Suspicious.",
+    "replies": [
+      "I’m allowed to enjoy this calm.",
+      "Calm doesn’t need to be earned.",
+      "I can rest in it for a moment.",
+      "Peace is a good sign."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "rewind",
+    "monster": "Go over every worst moment once more, just in case.",
+    "replies": [
+      "I’ve gone over it enough.",
+      "Re-living it won’t protect me.",
+      "I’m here now, and I’m okay.",
+      "I’m setting it down."
+    ]
+  }
+]

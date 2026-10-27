@@ -1,0 +1,487 @@
+{
+  "date": "2026-10-15",
+  "scope": "全仓运行时依赖扫描、46 项失败归因、自动化回归与核心链路深查；不是线上性能实测或渗透测试。",
+  "changesThisTurn": "仅修正测试契约/夹具并增加审计清单工具；未修改产品运行时逻辑，未删除旧代码，未迁移、部署或触碰生产数据。",
+  "failedTests": {
+    "before": 46,
+    "after": 0,
+    "productDefectsEstablishedByTheseFailures": 0,
+    "explanation": "按既定产品需求及当前真实入口核对，不为了通过旧测试恢复已退役 UI 或改变订阅、金币、配对、结算规则；没有通过 skip 绕过失败。",
+    "classification": [
+      {
+        "kind": "测试依赖/异步时序/数据库夹具过时",
+        "count": 29,
+        "files": {
+          "tools/test-burrow-reliability.cjs": 24,
+          "tools/test-coin-rewards.cjs": 1,
+          "tools/test-burrow-cleanup.cjs": 1,
+          "tools/test-burrow-character-navigation.cjs": 3
+        }
+      },
+      {
+        "kind": "产品契约已确认变更：季节在一次前台访问内稳定、本地 Tap 目录、边缘返回手势",
+        "count": 5,
+        "files": {
+          "tools/test-burrow-map.cjs": 3,
+          "tools/test-item-learning-review.cjs": 1,
+          "tools/test-reflect-durability.cjs": 1
+        }
+      },
+      {
+        "kind": "旧页面/组件退役或职责迁移",
+        "count": 12,
+        "files": {
+          "tools/test-tab-visuals.cjs": 8,
+          "tools/test-admin-item-rule-editor.cjs": 2,
+          "tools/test-connection-v8.cjs": 1,
+          "tools/test-completion-effects.cjs": 1
+        }
+      }
+    ]
+  },
+  "verification": {
+    "affectedFiles": {
+      "tests": 149,
+      "passed": 149,
+      "failed": 0,
+      "log": "/private/tmp/novame-repo-audit-46-fixed.log"
+    },
+    "allCjs": {
+      "tests": 1529,
+      "passed": 1529,
+      "failed": 0,
+      "skipped": 0,
+      "log": "/private/tmp/novame-repo-audit-final-tests.log"
+    },
+    "domain": {
+      "tests": 23,
+      "passed": 23,
+      "log": "/private/tmp/novame-repo-audit-domain.log"
+    },
+    "engine": {
+      "tests": 197,
+      "passed": 197,
+      "log": "/private/tmp/novame-repo-audit-engine.log"
+    },
+    "bootstrapMjs": {
+      "tests": 7,
+      "passed": 7,
+      "log": "/private/tmp/novame-repo-audit-bootstrap-mjs.log"
+    },
+    "postgresql": {
+      "isolated": true,
+      "burrowAssertions": 356,
+      "gameRoomSoloAssertions": 100,
+      "adventureAssertions": 9097,
+      "adventureJourneys": 483,
+      "friendVisitMigrationAndRepair": "passed",
+      "dailyPlusBonus": "1 test passed",
+      "careCooldown": "passed",
+      "legacyCourtRules": "passed",
+      "logPrefix": "/private/tmp/novame-repo-audit-sql-"
+    },
+    "types": "5 workspace type-check tasks passed",
+    "apiBuild": "passed",
+    "adminBuild": "passed",
+    "mobileProductionJsBundles": {
+      "ios": {
+        "passed": true,
+        "bytes": 12073492,
+        "assets": 1222
+      },
+      "android": {
+        "passed": true,
+        "bytes": 12130194,
+        "assets": 1225
+      },
+      "note": "JS/asset exports only; not APK/IPA native compilation or emulator end-to-end verification."
+    },
+    "lint": {
+      "passed": false,
+      "reason": "API/Admin 缺少 ESLint 配置，pnpm lint 进入首次配置交互并退出；不能把 build/type-check 成功表述为 lint 已通过。",
+      "log": "/private/tmp/novame-repo-audit-lint.log"
+    },
+    "androidEmulator": "按用户要求跳过",
+    "iosNativeE2E": "本轮未重跑；本轮仅变更 Node 测试和审计工具，不宣称新的真机验证。"
+  },
+  "findings": [
+    {
+      "id": "AUD-01",
+      "priority": "P1",
+      "status": "confirmed_failure_coupling",
+      "title": "启动 bootstrap 将核心页面与补充数据绑定为同一失败域",
+      "evidence": [
+        "apps/api/src/app/api/vnext/bootstrap/route.js:48",
+        "apps/api/src/app/api/vnext/bootstrap/route.js:59",
+        "apps/api/src/app/api/vnext/bootstrap/route.js:68",
+        "apps/mobile/src/lib/app-major-update-api.ts:173"
+      ],
+      "observation": "核心 RPC 成功后仍等待 bonus、collection、wallet、photoUsage、care；部分补充查询错误会抛出整个请求 500。客户端全链路 5 秒截止会进一步放大慢查询的影响。",
+      "impact": "某个非核心数据读取失败或较慢，会让本可用的 Home/入口表现成整体加载失败；这是代码路径证据，未测量线上各查询耗时，不能直接认定既往每次卡顿都由它引起。",
+      "recommendation": "优先处理。按核心场景/商品配置/可选状态拆分有版本的快照，设独立耗时预算；非授权性展示字段可保留同 scope 最近确认值。余额、订阅、价格、配对和结算写入保持服务端权威，不用默认免费或无限额度兜底。",
+      "acceptance": "注入 collection/care 故障时 Home 仍可打开；交易和配对仍 fail closed；启动 p50/p95 和各 RPC 时长可观测。"
+    },
+    {
+      "id": "AUD-02",
+      "priority": "P2",
+      "status": "confirmed_unnecessary_new_mode_work",
+      "title": "已退役 Connection 的全局恢复工作仍执行",
+      "evidence": [
+        "apps/mobile/app/(main)/(tabs)/status.tsx:4",
+        "apps/mobile/src/lib/pairing-realtime.ts:115",
+        "apps/mobile/src/lib/pairing-realtime.ts:219",
+        "apps/mobile/src/lib/pairing-realtime.ts:225",
+        "apps/mobile/src/lib/pairing-realtime.ts:408"
+      ],
+      "observation": "status 路由已直接重定向 Home，但全局 pairing channel 的 SUBSCRIBED 仍恢复 Connection history/Insights；配对恢复还会拉旧 feed 和 Bags。",
+      "impact": "启动、回前台或重连有额外网络/解析/缓存工作。未实测节省毫秒数。",
+      "recommendation": "建议处理。保留配对、Unpair、邀请和权限失效事件；将旧 Connection/旧 Memories 数据恢复限制到确有旧功能消费者时，而不是删除整个配对监听。",
+      "acceptance": "新版连接恢复不调用旧历史/Insights/Bags；双方 Unpair、重新配对、共享 Plus 和 Menu 日期仍及时同步。"
+    },
+    {
+      "id": "AUD-03",
+      "priority": "P2",
+      "status": "measured_bundle_bytes",
+      "title": "旧大词典仍进入生产移动 JS 包，且存在顶层初始化",
+      "evidence": [
+        "packages/engine/src/index.ts:4",
+        "apps/mobile/src/lib/item-rule-cache.ts:12",
+        "apps/mobile/src/lib/base-item-icons.ts:1"
+      ],
+      "observation": "本轮 iOS 生产 JS 12,073,492 bytes，其中包含词典的 Metro module 为 3,559,725 bytes，约 29.5%。这是未压缩 JS 模块体积，不等于 IPA/APK 下载节省。item-rule-cache 在模块加载时构造远程覆盖/审核规则后的词典。",
+      "recommendation": "建议处理。拆 engine 子路径入口；先将仍需历史匹配的路径按需载入，现代 Burrow/Tap 显示使用小目录和必要名称元数据。保留历史日志、旧物品和 Widget 的兼容读取，不能直接删除词典。",
+      "acceptance": "对比实际 Hermes/安装包/冷启动 p95；历史条目和 Widget 图标不退化，首屏不执行无关全词典 rebuild。"
+    },
+    {
+      "id": "AUD-04",
+      "priority": "P2",
+      "status": "verification_gap",
+      "title": "全仓 lint 质量门禁尚未有效建立",
+      "evidence": [
+        "apps/api/package.json:10",
+        "apps/admin/package.json:12",
+        "package.json:11"
+      ],
+      "observation": "pnpm lint 实际进入 Next 首次 ESLint 配置问答并退出；没有可用的无人值守 lint 配置。原 46 项失败也暴露了分散测试夹具和源码正则断言易随重构失效。",
+      "recommendation": "建议尽快补齐。显式配置 ESLint CLI、非交互 CI、集中真实模块 fixture；新增统一 test-all 流程涵盖 CJS、Domain/Engine、关键 SQL、类型与双端 JS 资产打包。源码结构断言保留给架构禁令，业务规则尽量执行行为验证。",
+      "acceptance": "全新 checkout 的 lint/test-all 无交互执行；失败分类清晰，不静默跳过数据库和平台检查。"
+    },
+    {
+      "id": "AUD-05",
+      "priority": "P2",
+      "status": "security_hardening_not_proven_exploit",
+      "title": "高影响账号操作与普通读取共用仅本地 JWT 校验",
+      "evidence": [
+        "apps/api/src/lib/auth-guard.ts:10",
+        "apps/api/src/lib/auth-guard.ts:46",
+        "apps/api/src/app/api/delete-account/route.js:56"
+      ],
+      "observation": "代码明确采用缓存 JWKS 的本地验签，不能即时感知服务端撤销；verifyToken 未显式限制 issuer/audience。删除账号仍复用该校验，并正确校验本人 UUID。没有发现无需登录即可删除他人账号的证据。",
+      "recommendation": "建议独立安全加固。普通读取继续本地验签以避免每次网络认证；删除账号等高影响操作增加在线用户状态/近期重新认证，JWT 显式校验预期 issuer/audience。是否要求重新登录需作为体验策略确认。",
+      "acceptance": "错项目/错 audience/被撤销会话无法执行高影响操作；普通读取无需新增每次认证往返。"
+    },
+    {
+      "id": "AUD-06",
+      "priority": "P3",
+      "status": "measurement_required",
+      "title": "Toy 空闲时仍注册持续帧回调",
+      "evidence": [
+        "apps/mobile/src/lib/use-squishy-toy.ts:34",
+        "apps/mobile/src/lib/use-squishy-toy.ts:40"
+      ],
+      "observation": "每帧先写 clock，再检查 state.active。空闲时没有继续更新 Canvas 物理状态，但回调与时钟写入仍存在；未按页面焦点/前后台停用 frame callback。",
+      "recommendation": "建议在性能专项中处理，先测空闲/隐藏页面的 UI frame callback 与电量；可按交互活动和页面可见性启停，并用一致单调时钟唤醒。不要为省小开销改坏连续点击、交替 Squeeze/Punch 或弹簧状态连续性。",
+      "acceptance": "空闲/后台无无意义帧工作；恢复后无首帧大跳，连续操作仍保持 30% 压缩和现有拖动幅度。"
+    },
+    {
+      "id": "AUD-07",
+      "priority": "P3",
+      "status": "confirmed_listener_fanout",
+      "title": "全局 rollout 配置监听分散在每个 hook 实例",
+      "evidence": [
+        "apps/mobile/src/lib/use-major-update.ts:45"
+      ],
+      "observation": "useMajorUpdateEnabled 每个挂载实例注册 AppState listener。全仓有 62 处文本引用，不代表 62 个同时挂载实例；底层请求有 single-flight，不能宣称会发送 62 个重复网络请求。",
+      "recommendation": "可随清理合并为根级生命周期协调器，页面 hook 只订阅状态。收益主要是生命周期复杂度和回调数，优先级低于启动失败域和大词典。",
+      "acceptance": "一次回前台只触发一个协调流程；仍保留 rollout 决策缓存、超时和身份切换防旧响应覆盖。"
+    },
+    {
+      "id": "AUD-08",
+      "priority": "P3",
+      "status": "conservative_static_candidates",
+      "title": "运行时不可达代码候选需要分批清理，而不是全删",
+      "observation": "Mobile 25 个候选、Admin 4 个候选；其中 asset-types.ts 属类型依赖，不能算运行时代码缺陷。API 路由都作为外部入口，不会因为前台无 import 就被判定可删。",
+      "recommendation": "建议先清理确定无调用的旧 RewardPopup、旧 Plus 文案、旧 resume overlay 及其专用依赖；再逐组确认旧 Guided/Tame/Rating/Admin item 库的工具、回滚和客户端支持要求。每组删除后运行全套测试和双端资产打包。",
+      "keep": [
+        "apps/mobile/index.js 载入的 headless background-widget-refresh，已从死代码候选中排除",
+        "storage/keys.ts 中 clear-only 历史键：旧用户升级与退出清理仍需保留",
+        "历史 Supabase migration：已部署数据库的重建/升级链",
+        "仍服务旧客户端的 API 与历史记录兼容读取；需线上调用量与最低版本策略后再退役",
+        "type-only 文件和原生/构建入口"
+      ]
+    }
+  ],
+  "protectionsReviewed": [
+    "Admin 价格/Plus 由服务端管理；关键购买传 expectedPrice，变价冲突不会静默按新价格扣金币。",
+    "Free 游戏领取与永久共享解锁保留；同 pairVersion 缓存只合并解锁权限，不合并旧价格。",
+    "配对 generation/session epoch 防止旧账号、旧配对的响应与队列污染新关系。",
+    "Adventure 展示预选与实际结算分离；服务端领取与金币幂等保留。",
+    "Release Room 限额、金币奖励与好友拜访均有隔离 PostgreSQL 回归覆盖。",
+    "照片上传有流式大小限制、格式/尺寸校验、限流、owner/pair 约束和短效签名 URL。",
+    "iOS 原生视频循环保留 weak observers/释放处理；Android 单播放器 loop 和双端产物验证通过。",
+    "Toy 物理状态在 UI 线程运行、合成纹理缓存有界；本轮没有为测试回退动画方案。"
+  ],
+  "runtimeInventory": {
+    "caveat": "Candidates only: review dynamic loading, native entrypoints, tooling and rollback support before deletion.",
+    "apps": {
+      "mobile": {
+        "roots": 80,
+        "codeFiles": 452,
+        "reachableCodeFiles": 427,
+        "candidates": [
+          {
+            "file": "apps/mobile/src/components/burrow/adventure-reward-popup.tsx",
+            "bytes": 1916
+          },
+          {
+            "file": "apps/mobile/src/components/burrow/love-letter-inbox.tsx",
+            "bytes": 3302
+          },
+          {
+            "file": "apps/mobile/src/components/burrow/moments-hearts.tsx",
+            "bytes": 1427
+          },
+          {
+            "file": "apps/mobile/src/components/burrow/room-scene.tsx",
+            "bytes": 6958
+          },
+          {
+            "file": "apps/mobile/src/components/main/background-resume-overlay.tsx",
+            "bytes": 1837
+          },
+          {
+            "file": "apps/mobile/src/components/main/confetti-burst.tsx",
+            "bytes": 3061
+          },
+          {
+            "file": "apps/mobile/src/components/main/wave-background.tsx",
+            "bytes": 2573
+          },
+          {
+            "file": "apps/mobile/src/components/modals/skin-unlock-modal.tsx",
+            "bytes": 356
+          },
+          {
+            "file": "apps/mobile/src/components/onboarding/plus-benefit-icon.tsx",
+            "bytes": 3797
+          },
+          {
+            "file": "apps/mobile/src/components/rating/rating-prompt-sheet.tsx",
+            "bytes": 10492
+          },
+          {
+            "file": "apps/mobile/src/components/ui/confetti-burst.tsx",
+            "bytes": 5064
+          },
+          {
+            "file": "apps/mobile/src/components/ui/fireworks-burst.tsx",
+            "bytes": 3237
+          },
+          {
+            "file": "apps/mobile/src/components/ui/pager-tab-bar.tsx",
+            "bytes": 4998
+          },
+          {
+            "file": "apps/mobile/src/components/ui/toast.tsx",
+            "bytes": 3408
+          },
+          {
+            "file": "apps/mobile/src/lib/asset-types.ts",
+            "bytes": 360
+          },
+          {
+            "file": "apps/mobile/src/lib/background-resume-store.ts",
+            "bytes": 2070
+          },
+          {
+            "file": "apps/mobile/src/lib/cache-refresh-all.ts",
+            "bytes": 2029
+          },
+          {
+            "file": "apps/mobile/src/lib/guided-catalog.g.ts",
+            "bytes": 192219
+          },
+          {
+            "file": "apps/mobile/src/lib/guided-prompts.ts",
+            "bytes": 6639
+          },
+          {
+            "file": "apps/mobile/src/lib/plus-benefits.ts",
+            "bytes": 738
+          },
+          {
+            "file": "apps/mobile/src/lib/publish-count.ts",
+            "bytes": 2274
+          },
+          {
+            "file": "apps/mobile/src/lib/rating-prompt.ts",
+            "bytes": 6713
+          },
+          {
+            "file": "apps/mobile/src/lib/skills-api.ts",
+            "bytes": 2069
+          },
+          {
+            "file": "apps/mobile/src/lib/tame-cards.ts",
+            "bytes": 36899
+          },
+          {
+            "file": "apps/mobile/src/lib/task-completion-count.ts",
+            "bytes": 2343
+          }
+        ],
+        "largestReachableData": [
+          {
+            "file": "packages/engine/src/items/dictionary.json",
+            "bytes": 4556724
+          },
+          {
+            "file": "apps/mobile/assets/animations/reflect-dense.json",
+            "bytes": 127857
+          },
+          {
+            "file": "apps/api/src/data/burrow-game-room-v1.json",
+            "bytes": 105076
+          },
+          {
+            "file": "apps/mobile/assets/animations/reflect.json",
+            "bytes": 64880
+          },
+          {
+            "file": "packages/engine/src/items/rule-metadata.json",
+            "bytes": 37795
+          },
+          {
+            "file": "apps/mobile/assets/animations/exploding-heart.json",
+            "bytes": 27073
+          },
+          {
+            "file": "apps/mobile/src/lib/surprise-frame-geometry.json",
+            "bytes": 22891
+          },
+          {
+            "file": "packages/engine/src/items/tap-your-day-local.json",
+            "bytes": 17891
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/the_swallower.json",
+            "bytes": 16981
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/overthinking.json",
+            "bytes": 16911
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/procrastination.json",
+            "bytes": 16306
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/the_fog.json",
+            "bytes": 15939
+          }
+        ]
+      },
+      "api": {
+        "roots": 100,
+        "codeFiles": 145,
+        "reachableCodeFiles": 145,
+        "candidates": [],
+        "largestReachableData": [
+          {
+            "file": "packages/engine/src/items/dictionary.json",
+            "bytes": 4556724
+          },
+          {
+            "file": "apps/api/src/data/connection-insight-v8.json",
+            "bytes": 249001
+          },
+          {
+            "file": "apps/api/src/data/burrow-game-room-v1.json",
+            "bytes": 105076
+          },
+          {
+            "file": "packages/engine/src/items/rule-metadata.json",
+            "bytes": 37795
+          },
+          {
+            "file": "packages/engine/src/items/tap-your-day-local.json",
+            "bytes": 17891
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/the_swallower.json",
+            "bytes": 16981
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/overthinking.json",
+            "bytes": 16911
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/procrastination.json",
+            "bytes": 16306
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/the_fog.json",
+            "bytes": 15939
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/the_spiral.json",
+            "bytes": 15638
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/the_hollow.json",
+            "bytes": 15291
+          },
+          {
+            "file": "packages/domain/src/release-room-dialogues/the_comparer.json",
+            "bytes": 15220
+          }
+        ]
+      },
+      "admin": {
+        "roots": 27,
+        "codeFiles": 39,
+        "reachableCodeFiles": 35,
+        "candidates": [
+          {
+            "file": "apps/admin/src/lib/item-catalog.js",
+            "bytes": 7299
+          },
+          {
+            "file": "apps/admin/src/lib/item-keyword-batch.js",
+            "bytes": 5947
+          },
+          {
+            "file": "apps/admin/src/lib/item-manifest.js",
+            "bytes": 9962
+          },
+          {
+            "file": "apps/admin/src/lib/item-review.js",
+            "bytes": 9876
+          }
+        ],
+        "largestReachableData": [
+          {
+            "file": "apps/admin/src/generated/shop-art.json",
+            "bytes": 131175
+          },
+          {
+            "file": "apps/admin/src/generated/game-details.json",
+            "bytes": 124475
+          }
+        ]
+      }
+    },
+    "dynamic": [],
+    "unresolved": []
+  }
+}

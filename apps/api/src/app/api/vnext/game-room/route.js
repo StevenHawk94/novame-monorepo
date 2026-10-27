@@ -1,7 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import catalog from '@/data/burrow-game-room-v1.json'
 import { appMajorUpdateServiceClient, authenticatedUserId, commandStatus, majorUpdateEnabled } from '@/lib/app-major-update'
 import { scoreGameRoomRound, sameGameRoomQuestions } from '@/lib/burrow-game-room.mjs'
+import { gameHistoryPage, parseGameHistoryCursor } from '@/lib/burrow-game-history.mjs'
+import { drainPushNotificationOutbox } from '@/lib/push-notifications'
+import { shopItemSupported } from '@/lib/shop-catalog-release.mjs'
 
 export const runtime = 'edge'
 
@@ -30,13 +33,28 @@ export async function GET(request) {
     if (ctx.error) return json({ error: ctx.error }, ctx.status)
     const params = new URL(request.url).searchParams
     const localContent = params.get('content') === 'local'
+    if (params.get('mode') === 'history') {
+      let cursor
+      try { cursor = parseGameHistoryCursor(params.get('cursor')) }
+      catch { return json({ error: 'invalid_request' }, 400) }
+      try { return json({ success: true, ...await gameHistoryPage(ctx.db, ctx.userId, cursor) }) }
+      catch (error) { if (error.message === 'pair_changed') return json({ error: 'pair_changed' }, 409); throw error }
+    }
     if (params.get('mode') === 'overview') {
       const state = await rpc(ctx.db, 'burrow_game_overview_v1', { p_user_id: ctx.userId })
       if (state?.error) return json(state, commandStatus(state.error))
+      const { data: offers, error: offerError } = await ctx.db.from('catalog_items')
+        .select('stable_id,metadata,price,plus_only,status,revision_id').eq('item_type','game')
+      if (offerError) throw offerError
+      const { data: config, error: configError } = await ctx.db.from('app_config').select('value').eq('key','app_major_update_content_revision').single()
+      if (configError) throw configError
+      const products = Object.fromEntries((offers || []).map(item => [item.metadata?.gameId, {
+        price: item.price, plus_only: item.plus_only, active: item.status === 'active' && item.revision_id === config.value && shopItemSupported(item.stable_id,request),
+      }]))
       // New mobile bundles already contain the catalogue. Keep the full
       // response for older clients, but sync only user state to local clients.
-      if (localContent) return json({ success: true, version: catalog.version, ...state })
-      return json({ success: true, version: catalog.version, categories: catalog.categories, games: gameSummary, ...state })
+      if (localContent) return json({ success: true, version: catalog.version, ...state, products })
+      return json({ success: true, version: catalog.version, categories: catalog.categories, games: gameSummary, ...state, products })
     }
     if (params.get('mode') === 'session' && uuid(params.get('id'))) {
       const state = await rpc(ctx.db, 'burrow_game_state_v1', { p_user_id: ctx.userId, p_session_id: params.get('id') })
@@ -70,8 +88,10 @@ export async function POST(request) {
     if (!body || Array.isArray(body) || typeof body !== 'object') return json({ error: 'invalid_request' }, 400)
     let name, args
     if (body.action === 'unlock' && gameById.has(body.gameId) && uuid(body.key)) {
-      name = 'burrow_game_unlock_v1'
-      args = { p_user_id: ctx.userId, p_game_id: body.gameId, p_key: body.key }
+      if (!shopItemSupported('game:'+body.gameId,request)) return json({error:'client_upgrade_required'},409)
+      if (body.expectedPrice != null && (!Number.isInteger(body.expectedPrice) || body.expectedPrice < 0 || body.expectedPrice > 1000000)) return json({ error: 'invalid_request' }, 400)
+      name = 'burrow_game_unlock_v2'
+      args = { p_user_id: ctx.userId, p_game_id: body.gameId, p_key: body.key, p_expected_price: body.expectedPrice ?? null }
     } else if (body.action === 'start' && gameById.has(body.gameId)) {
       name = 'burrow_game_start_v1'
       args = { p_user_id: ctx.userId, p_game_id: body.gameId, p_questions: gameById.get(body.gameId).questions }
@@ -80,14 +100,54 @@ export async function POST(request) {
       && Number.isInteger(body.choice) && body.choice >= 0 && body.choice < 4) {
       name = 'burrow_game_answer_v1'
       args = { p_user_id: ctx.userId, p_session_id: body.sessionId, p_phase: body.phase, p_index: body.index, p_choice: body.choice }
+    } else if (body.action === 'submit' && uuid(body.sessionId)
+      && [body.ownAnswers, body.guesses].every(answers => Array.isArray(answers) && answers.length === 6
+        && answers.every(choice => Number.isInteger(choice) && choice >= 0 && choice < 4))) {
+      name = 'burrow_game_submit_v1'
+      args = { p_user_id: ctx.userId, p_session_id: body.sessionId, p_own_answers: body.ownAnswers, p_guesses: body.guesses }
+    } else if (body.action === 'view_result' && uuid(body.sessionId)) {
+      name = 'burrow_game_view_result_v1'
+      args = { p_user_id: ctx.userId, p_session_id: body.sessionId }
+    } else if (body.action === 'nudge' && uuid(body.sessionId)) {
+      name = 'burrow_game_nudge_v1'
+      args = { p_user_id: ctx.userId, p_session_id: body.sessionId }
     } else if (body.action === 'notify' && uuid(body.sessionId) && typeof body.enabled === 'boolean') {
       name = 'burrow_game_notify_v1'
       args = { p_user_id: ctx.userId, p_session_id: body.sessionId, p_enabled: body.enabled }
     } else return json({ error: 'invalid_request' }, 400)
-    const result = await rpc(ctx.db, name, args)
-    if (!result?.error && ['start', 'answer'].includes(body.action)) {
+    if (body.content === 'local' && ['start', 'answer', 'submit'].includes(body.action)
+      && Number(body.catalogVersion) !== catalog.version) return json({ error: 'game_content_update_required' }, 409)
+    let readyReceipt = null
+    if (body.action === 'submit' && body.gameId != null) {
+      const game = gameById.get(body.gameId)
+      if (!game) return json({ error: 'invalid_request' }, 400)
+      try {
+        readyReceipt = await rpc(ctx.db, 'burrow_game_submit_ready_v1', { ...args,
+          p_game_id: game.id, p_questions: game.questions })
+      } catch (error) {
+        // Rolling deploy compatibility only. Network/permission errors must not
+        // trigger a second write disguised as a fallback.
+        if (!['PGRST202','42883'].includes(error?.code)) throw error
+      }
+      // Preserve the legacy canonical-content conflict status. This is not a
+      // transient server failure and must not cause blind write retries.
+      if (readyReceipt?.error === 'game_content_update_required') return json(readyReceipt, 409)
+    }
+    // Older deployments/clients retain the canonical-content guard.
+    if (body.action === 'submit' && !readyReceipt) {
+      const state = await rpc(ctx.db, 'burrow_game_state_v1', { p_user_id: ctx.userId, p_session_id: body.sessionId })
+      if (state?.error) return json(state, commandStatus(state.error))
+      const game = gameById.get(state.gameId)
+      if (!game || !sameGameRoomQuestions(state.questions, game.questions)) return json({ error: 'game_content_update_required' }, 409)
+    }
+    const result = readyReceipt ?? await rpc(ctx.db, name, args)
+    if (!result?.error && ['submit','nudge'].includes(body.action)) after(async () => {
+      try { await drainPushNotificationOutbox(ctx.db, 10) }
+      catch (error) { console.warn('[vnext/game-room delivery]', error?.message || 'Push retry queued') }
+    })
+    if (!result?.error && ['start', 'answer', 'submit'].includes(body.action)) {
       const sessionId = body.action === 'start' ? result.sessionId : body.sessionId
-      const session = await rpc(ctx.db, 'burrow_game_state_v1', { p_user_id: ctx.userId, p_session_id: sessionId })
+      const session = readyReceipt?.session ?? await rpc(ctx.db, 'burrow_game_state_v1', { p_user_id: ctx.userId, p_session_id: sessionId })
       if (session?.error) return json(session, commandStatus(session.error))
       // The same authenticated response carries the post-command answer state;
       // mobile no longer needs another HTTP round trip for every answer.

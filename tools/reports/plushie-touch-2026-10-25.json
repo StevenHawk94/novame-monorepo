@@ -1,0 +1,116 @@
+{
+  "feature": "Plushie Touch / Love Bomb v1",
+  "date": "2026-10-25",
+  "status": {
+    "clientImplemented": true,
+    "apiDeployed": true,
+    "productionMigrationApplied": 276,
+    "appPublished": false,
+    "announcementOrForceUpdateChanged": false,
+    "developmentStandardsVersion": "1.8"
+  },
+  "approvedContract": {
+    "recording": "First valid contact starts a monotonic 60000ms foreground recording. Background, blur or exit interrupts an incomplete recording. Complete clips are durably saved before sending is offered.",
+    "counts": "Completed touch gesture or successful Squeeze/Bonk button action counts once. Movement samples and cancellation do not inflate the count. Haptic onset follows contact, not a delayed long-pull release.",
+    "wireLimits": {"durationMs": 60000, "touches": 999, "pointers": 2, "events": 8192, "jsonbBytes": 262144, "movementSampleMs": 34},
+    "sendAllowance": "Free: one per account per natural month. Effective Plus: one per account per natural day. Server-fixed economic calendar; same-day upgrade is not additive. Only a committed send consumes allowance.",
+    "recipientRetention": "Free: latest ONE, replacing older unread too. Effective Plus: latest 30 days. Current-entitlement pruning on send/read/Push recheck; bounded hourly expiry cleanup.",
+    "readSemantics": "Metadata, prepared/openable, unread and played are separate. History opening does not mark every message read. Explicit playback durably queues one message acknowledgement. A stale Push is bound to its immutable message ID, not redirected to an unrelated newer message.",
+    "visualEntitlement": "Server catalog snapshot of the recorded toy is viewable only within the authorized message. No inventory, room editing, coin, task, rating or reward grant.",
+    "unlink": "Server deletes pair content and pending touch notifications and rejects old-pair reads. Client clears pair-bound state when relationship change is detected. Non-content quota/idempotency tombstones remain to prevent unlink farming. Offline devices cannot be remotely erased before reconnecting.",
+    "photos": "Existing shared private-photo cache and signed-read endpoint. A live current-pair message grants a narrow read of its sender-owned associated photo, including one uploaded while solo. Deleting the photo leaves toy/trajectory playback without resurrecting deleted photo bytes.",
+    "durability": "Immutable payload and original key before optimistic acceptance. Timeouts retry the original request. Definitive rejection retains a recoverable recording. Receipt-confirmed sends cannot become rejected because local persistence or a listener fails. Root scope-storage errors stay within this feature.",
+    "transport": "BurrowSyncGate remains sole owner of the authenticated shared realtime channel. Touch consumers use a payload-free account-scoped public signal adapter; unmounting them never closes another feature's channel. No full-bootstrap invalidation for a touch event."
+  },
+  "renderingDecision": {
+    "default": "standard",
+    "userOptions": ["Light", "Standard", "Detailed"],
+    "full": "Existing local Skia deformation and native fallback; approximate contact locations and movement. No pixel-perfect replay promise.",
+    "standard": "Whole-toy squash/movement using native image layers; no replay Skia Canvas.",
+    "light": "Static toy, haptics and at most two pooled flying hearts.",
+    "reason": "Steady-state throughput was close to 60fps for all tiers, but full cold opening still produced a 401.876ms slow frame in the second trial. Full is therefore available as Detailed, not the universal default. Standard's extreme 999-action trial also contained one 53.391ms frame; zero slow frames on all devices is NOT claimed.",
+    "adaptation": {"windowMs": 1500, "slowFrameAboveMs": 34, "slowFractionAbove": 0.15, "minimumSamples": 3, "order": ["full", "standard", "light"], "upgradeDuringPlayback": false, "memoryWarning": "light", "reducedMotion": "light"},
+    "timeline": "One UI-thread cursor survives quality changes; no replay/recount or catch-up vibration burst. Stop on background, blur or exit.",
+    "haptics": {"adapter": "Existing preference-aware expo-haptics wrapper", "minimumGapMs": 140, "dropLateAfterMs": 180, "maximumDueEventsPerFrame": 64, "nativePatternSdkAdded": false},
+    "hearts": {"normalPool": 6, "lightPool": 2},
+    "compositeTextureMaximumEdge": 1024,
+    "historyPreparedPayloadLimit": 6
+  },
+  "nativeComparison": {
+    "environment": "iPhone 17 Pro / iOS 26.2 SIMULATOR, compatible existing Release native host, minified JS, Hermes. Real product toy/rendering/recording/playback components; bundled non-private face fixture; production business API prohibited.",
+    "protocol": "Two trials, six 60-second phases each: full/standard/light with the same normal 120-pull trajectory and extreme 999-button trajectory. No local compilation or test gate during formal sampling. UI-frame callback intervals, not a physical-device GPU/compositor trace.",
+    "normalTrace": {"touches": 120, "events": 1200, "compactJsonBytes": 23833, "jsonbTextBytes": 29839},
+    "secondTrial": [
+      {"quality": "full", "dense": false, "frames": 3537, "p50Ms": 16.667, "p95Ms": 16.667, "p99Ms": 16.667, "maxMs": 401.876, "over50Ms": 2, "meanFps": 59.529},
+      {"quality": "full", "dense": true, "frames": 3541, "p50Ms": 16.667, "p95Ms": 16.667, "p99Ms": 16.667, "maxMs": 21.237, "over50Ms": 0, "meanFps": 59.995},
+      {"quality": "standard", "dense": false, "frames": 3599, "p50Ms": 16.667, "p95Ms": 16.667, "p99Ms": 16.667, "maxMs": 37.898, "over50Ms": 0, "meanFps": 59.954},
+      {"quality": "standard", "dense": true, "frames": 3598, "p50Ms": 16.667, "p95Ms": 16.667, "p99Ms": 16.667, "maxMs": 53.391, "over50Ms": 1, "meanFps": 59.947},
+      {"quality": "light", "dense": false, "frames": 3600, "p50Ms": 16.667, "p95Ms": 16.667, "p99Ms": 16.667, "maxMs": 33.333, "over50Ms": 0, "meanFps": 59.972},
+      {"quality": "light", "dense": true, "frames": 3601, "p50Ms": 16.667, "p95Ms": 16.667, "p99Ms": 16.667, "maxMs": 21.479, "over50Ms": 0, "meanFps": 59.995}
+    ],
+    "firstTrial": [
+      {"quality": "full", "dense": false, "frames": 3470, "p99Ms": 16.667, "maxMs": 1004.104, "over50Ms": 1, "meanFps": 58.796},
+      {"quality": "full", "dense": true, "frames": 3582, "p99Ms": 16.667, "maxMs": 104.084, "over50Ms": 5, "meanFps": 59.633},
+      {"quality": "standard", "dense": false, "frames": 3541, "p99Ms": 16.667, "maxMs": 16.667, "over50Ms": 0, "meanFps": 60.003},
+      {"quality": "standard", "dense": true, "frames": 3600, "p99Ms": 16.667, "maxMs": 33.333, "over50Ms": 0, "meanFps": 59.984},
+      {"quality": "light", "dense": false, "frames": 3598, "p99Ms": 16.667, "maxMs": 54.345, "over50Ms": 1, "meanFps": 59.942},
+      {"quality": "light", "dense": true, "frames": 3594, "p99Ms": 16.667, "maxMs": 121.731, "over50Ms": 1, "meanFps": 59.865}
+    ],
+    "samplingCorrection": "First trial included the frame driver's initial inactive-to-active interval. Second trial excludes only that initial interval, not legitimate later slow frames; the full cold-opening slow frame remains reported. Subsequent client refinements align contact haptics and add the standard default/detail selector without adding per-frame work or changing sample/particle/texture budgets; final actual-page gesture and selector flows were separately exercised.",
+    "wholeProcessMemorySecondTrial": [
+      {"quality": "full", "dense": false, "samples": 12, "rssMedianMiB": 108.891, "rssPeakMiB": 109.578, "meanPsCpuPercent": 21.558},
+      {"quality": "full", "dense": true, "samples": 30, "rssMedianMiB": 125.484, "rssPeakMiB": 177.438, "meanPsCpuPercent": 29.343},
+      {"quality": "standard", "dense": false, "samples": 30, "rssMedianMiB": 125.125, "rssPeakMiB": 169.859, "meanPsCpuPercent": 22.570},
+      {"quality": "standard", "dense": true, "samples": 30, "rssMedianMiB": 122.891, "rssPeakMiB": 172.141, "meanPsCpuPercent": 27.603},
+      {"quality": "light", "dense": false, "samples": 30, "rssMedianMiB": 101.531, "rssPeakMiB": 146.328, "meanPsCpuPercent": 17.180},
+      {"quality": "light", "dense": true, "samples": 31, "rssMedianMiB": 96.969, "rssPeakMiB": 133.938, "meanPsCpuPercent": 23.006}
+    ],
+    "memoryCaveats": "ps RSS for the entire simulator App every two seconds, not incremental feature allocation, physical footprint, GPU memory or battery consumption. Sequential same-process trials are affected by GC and cache warmup; first-phase RSS collection started late and does not include its complete cold peak. Ranges overlap, so small full/standard differences are not a precise memory saving claim.",
+    "ephemeralRawArtifacts": ["/private/tmp/burrow-touch-native-metrics.json", "/private/tmp/burrow-touch-native-final.json"]
+  },
+  "bundleMeasurement": {
+    "method": "Production-mode minified Metro full-app JS with new entry/store/badge modules enabled versus no-op feature modules. Existing shared renderer/transport plumbing remains in both. This is not a byte-for-byte previous release or an IPA/APK download measurement.",
+    "baselineMinifiedBytes": 9792409,
+    "enabledMinifiedBytes": 9837480,
+    "minifiedDeltaBytes": 45071,
+    "baselineGzipBytes": 2257304,
+    "enabledGzipBytes": 2272383,
+    "gzipDeltaBytes": 15079,
+    "assetsBoth": 1393,
+    "newBitmapAssets": 0,
+    "newNativeDependencies": 0,
+    "newVideoOrThreeTierSpriteSets": 0
+  },
+  "verification": {
+    "domainIsolation": {"command": "pnpm test:domain-isolation", "passed": 654, "failed": 0},
+    "mobileTypeCheck": {"command": "pnpm --filter @novame/mobile type-check", "passed": true},
+    "database": {"command": "BURROW_PGLITE_PATH=<isolated pglite>/index.js node --test tools/test-plushie-touch-database.mjs", "passed": 8, "failed": 0, "exactProductionTransactionRehearsed": true, "deliberatelyInjectedProtectedDataMutationRejectedAndRolledBack": true},
+    "catalog": {"command": "node tools/sync-shop-catalog.cjs --check", "passed": true, "products": 555, "active": 496, "release": "3e581bf854bf4e3758d2620371b0b883f97756ee26da051a4f6b145df5c76c5a"},
+    "covered": ["strict clip and SQL validation", "real action counting and 999 cap with held fingers", "full-minute and interruption", "all three replay tiers", "dense haptic limiting and no late bursts", "very-low-FPS automatic degradation", "durable queue and immutable retry", "committed receipt versus local failure", "identity and pair isolation", "prepared-before-badge", "seen idempotency and removed-message recovery", "Free replacement including unread", "Plus 30-day expiry", "upgrade does not add a same-day send", "foreign photo and inventory rejection", "message-only photo access and photo deletion", "unlink content deletion with quota tombstone", "client table/RPC grants denied", "security limiter fail-closed", "immutable Push destination", "shared realtime channel single ownership", "root scope-storage failure stays local"],
+    "nativeObserved": ["Guide and allowance entry", "first contact starts timer", "Squeeze and Bonk counted", "actual face/body drag counted once", "60 seconds must elapse before Send", "heart progress and pooled flying hearts", "complete draft preview", "Sending before receipt and Sent after receipt", "Done returns without trapping", "received toy opens without an inventory grant", "History does not auto-play or consume all unread", "playback clears only its own badge", "Standard selected by default", "Detailed can be selected and played", "back exits active playback"]
+  },
+  "production": {
+    "migration": "20261025000276_plushie_touch",
+    "migrationMd5": "e3d4c118b3102e6445b7cd73a1584dd8",
+    "apiDeployment": "dpl_DwFgnMqPsVN2nAFR4556oSRZVaq4",
+    "previousDeployment": "dpl_Av3STtJZg9ikSTLkkr8iPMrNLZgV",
+    "domainVerified": "api.soulsayit.com",
+    "verifiedAt": "2026-10-25T15:28:13.560Z",
+    "deploymentSourceFilesVerified": 293,
+    "narrowOverlayFiles": 9,
+    "protectedExistingTables": 31,
+    "protectedRowsUnchanged": true,
+    "existingTablePermissionsUnchanged": true,
+    "oldDeviceTouchCapability": 0,
+    "unauthenticatedSmokeStatus": {"plushieTouch": 401, "touchCleanupCron": 401, "bootstrap": 401, "bunny": 401},
+    "realUserTransactionsOrContentTestsPerformed": false,
+    "apiAndMigrationOnly": true
+  },
+  "limits": [
+    "No physical iPhone/Android matrix, true motor sensation, low-memory OS-pressure run, GPU/compositor trace or APNs/FCM end-to-end delivery was measured. Those require physical devices and the new client build.",
+    "The isolated native comparison is not a full production Home/startup coexistence stress profile. Finite targeted results are not all historical tests or all devices passing.",
+    "All tiers had excellent percentile frame times, but occasional slow frames exist; no zero-jank or every-frame-under-50ms guarantee.",
+    "The server validates authorization, schema, bounds and quota, not proof of physical finger activity. This is bounded sender-authored social content with no task/reward value.",
+    "Client changes need a new app/dev bundle. API deployment does not silently install or publish an App Store/Google Play build."
+  ]
+}

@@ -1,4 +1,4 @@
-/* Offline matching/review regressions. No live AI, credentials or remote database. */
+/* Retirement, preserved manual data and historical migration regressions. */
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
@@ -20,89 +20,42 @@ function load(file, imports = {}, globals = {}) {
   }});
   return mod.exports;
 }
-const engine = {...load('packages/engine/src/items/item-matcher.ts'),...load('packages/engine/src/items/dictionary.ts'),...load('packages/engine/src/items/item-rules.ts'),...load('packages/engine/src/items/remote-manifest.ts')};
-const evidence = load('apps/api/src/lib/item-learning-evidence.js',{'@novame/engine':engine});
+const engine = { ...load('packages/engine/src/items/tap-your-day.ts'), ITEM_DISPLAY_CATALOG: {
+  ...require('../packages/engine/src/items/display-catalog.json'), ...load('packages/engine/src/items/tap-person-items.ts').TAP_PERSON_ITEMS,
+} };
 const plain = x => JSON.parse(JSON.stringify(x));
-test('evidence must be a real short source span and existing valid matches are excluded',()=>{
-  const empty={...engine.ITEM_DICTIONARY,synonyms:{}};
-  const signal={phrase:'running on the track',concept:'Running',literal:true,privacySafe:true};
-  assert.equal(evidence.cleanLearningSignals([signal],'Went running on the track.',empty).length,1);
-  assert.equal(evidence.cleanLearningSignals([signal],'I ran a company.',empty).length,0);
-  assert.equal(evidence.cleanLearningSignals([signal],"Didn't go running on the track.",empty).length,0);
-  assert.equal(evidence.cleanLearningSignals([{...signal,privacySafe:false}],signal.phrase,empty).length,0);
-  const coffee={phrase:'coffee',concept:'Coffee',literal:true,privacySafe:true};
-  assert.equal(evidence.cleanLearningSignals([coffee],'Made coffee.').length,0);
-  assert.ok(evidence.itemLearningHints('running a business').some(h=>h.word==='running'));
-  assert.ok(evidence.learningShortlist('Basketball',empty).some(i=>i.name==='Basketball'));
-  const alias={items:{a:{displayName:'Cooling Unit',keywords:['air conditioner'],visualConcept:'A wall mounted air conditioning unit.'}},synonyms:{}};
-  assert.equal(evidence.learningShortlist('Air Conditioner',alias)[0].id,'a');
-});
-test('one small AI batch; semantic rejection and verified missing keyword/icon; repeats cost zero calls',async()=>{
-  const dict={items:{run:{displayName:'Running',category:'Activity'},ball:{displayName:'Basketball',category:'Activity'}},synonyms:{}};
-  const decisions=new Map(), evidenceRows=[]; let aiCalls=0;
-  const db={from(){let key;return {select(){return this},eq(name,value){if(name==='signal_key')key=value;return this},maybeSingle:async()=>({data:decisions.has(key)?{decision:decisions.get(key)}:null}),upsert:async row=>{decisions.set(row.signal_key,row.decision);return {error:null}}}},rpc:async(name,args)=>{evidenceRows.push(args);return {error:null}}};
-  const mod=load('apps/api/src/lib/item-learning.js',{'@novame/engine':engine,'./item-learning-evidence':evidence,'./ai-usage':{recordAIUsage:async()=>{}},'./ai':{parseAIJson:JSON.parse,callAI:async input=>{
-    aiCalls++;assert.equal(JSON.parse(input.userText).length,3);assert.equal(input.generationConfig.maxOutputTokens,650);
-    return {text:JSON.stringify({decisions:[{index:0,kind:'skip',confidence:1},{index:1,kind:'missing_keyword',itemId:'ball',confidence:.96},{index:2,kind:'missing_icon',confidence:.96}]})};
-  }}});
-  const signals=[{phrase:'running a business',concept:'Running'},{phrase:'hooping on the court',concept:'Basketball'},{phrase:'air conditioner',concept:'Air Conditioner'}];
-  await mod.recordItemLearningConcepts(db,signals,dict,[],{reflectId:'one',userId:'u'});
-  assert.equal(aiCalls,1);assert.equal(evidenceRows.length,2);assert.equal(evidenceRows[0].p_item,'ball');assert.equal(evidenceRows[1].p_kind,'missing_icon');
-  await mod.recordItemLearningConcepts(db,signals,dict,[],{reflectId:'two',userId:'u'});
-  assert.equal(aiCalls,1);assert.equal(evidenceRows.length,4);
-});
-test('rule revision mismatch fails closed; legacy clients still use base rules',async()=>{
-  const store=load('apps/api/src/lib/item-rule-store.js',{'@novame/engine':engine});
-  assert.equal(await store.dictionaryForRevision({},null),engine.ITEM_DICTIONARY);
-  await assert.rejects(store.dictionaryForRevision({}, {catalog:'wrong',revision:0}),/invalid_rule_version/);
-});
-test('admin approval is exact, requires fresh revision, and cannot enable ambiguous bare words',async()=>{
-  const id=Object.keys(engine.ITEM_DICTIONARY.items).find(id=>engine.ITEM_DICTIONARY.items[id].displayName==='Running');
-  let row={id:'candidate',kind:'missing_keyword',evidence_version:2,source_phrase:'running on a freshly painted track',status:'pending',suggested_item_id:id};
-  const writes=[];
-  const db={from:()=>({select(){return this},eq(){return this},single:async()=>({data:row})}),rpc:async(name,args)=>{
-    if(name==='item_rule_snapshot')return {data:{catalog:engine.ITEM_CATALOG_VERSION,revision:0,rules:[]}};
-    writes.push(args);return {data:1};
-  }};
-  const admin=load('apps/admin/src/lib/item-review.js',{
-    '@novame/engine':engine,
-    './item-manifest':{loadCurrentItemManifest:async()=>({version:'0',manifest:null})},
-  });
-  await assert.rejects(admin.publishReview(db,{action:'publish',id:row.id,revision:4},'admin'),/Rules changed/);
-  assert.equal(writes.length,0);
-  await admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin');
-  assert.equal(writes[0].p_keyword,row.source_phrase);assert.equal(writes[0].p_action,'enable');
-  row={...row,source_phrase:'running'};
-  await assert.rejects(admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin'),/contextual multi-word phrase|NEVER_AUTO/);
-  assert.equal(writes.length,1);
-});
-
 test('custom choices persist by account, and a stale save cannot cross an auth change',async()=>{
   const values=new Map(), slots=[], effects=[];let cursor=0,auth;
   const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],next=>{slots[i]=next}]},useRef(value){const i=cursor++;return slots[i]??=( {current:value} )},useEffect(fn){effects.push(fn)}};
   const mod=load('apps/mobile/src/lib/custom-tap-items.ts',{
-    '../shared/storage/keys': { kCustomTapItems: { keyFor: id => `custom-tap-items:v1:${id}` } },
+    '../shared/storage/keys': { kCustomTapItems: { keyFor: id => `custom-tap-items:v1:${id}` },
+      kLocalTapItems: { keyFor: id => `local-tap-items:v1:${id}` } },
     react,'@novame/engine':{...engine,...load('packages/engine/src/items/custom-tap-items.ts')},
     './storage':{storage:{getString:key=>values.get(key),set:(key,value)=>values.set(key,value)}},
     './supabase':{supabase:{auth:{getSession:async()=>({data:{session:{user:{id:'a'}}}}),onAuthStateChange(fn){auth=fn;return{data:{subscription:{unsubscribe(){}}}}}}}},
-    './remote-items':{mergedItemDictionary:()=>engine.ITEM_DICTIONARY},
+    './remote-items':{mergedItemDictionary:()=>({ items: engine.ITEM_DISPLAY_CATALOG })},
   });
   const render=()=>{cursor=0;return mod.useCustomTapItems()};
   render();effects.shift()();await Promise.resolve();let hook=render();
-  const item={itemId:'memory.0002_coffee',label:'Morning cup',kind:'food',group:'DRINKS',custom:true};
-  hook.save(item);hook=render();assert.equal(hook.items[0].label,'Morning cup');
+  const optional=engine.TAP_YOUR_DAY_OPTIONAL_CHOICES[0];
+  const item={...optional,label:'Morning cup',custom:true};
+  hook.save(item);hook=render();assert.equal(hook.items[0].label,optional.label,'labels follow the approved local catalogue');
   auth('SIGNED_IN',{user:{id:'b'}});
   assert.throws(()=>hook.save(item),/account is still loading/);
   hook=render();assert.equal(hook.items.length,0);
   hook.save({...item,label:'Evening cup'});
-  assert.equal(JSON.parse(values.get('custom-tap-items:v1:a'))[0].label,'Morning cup');
-  auth('SIGNED_IN',{user:{id:'a'}});hook=render();assert.equal(hook.items[0].label,'Morning cup');
+  assert.equal(JSON.parse(values.get('local-tap-items:v1:a'))[0].label,optional.label);
+  assert.equal(JSON.parse(values.get('local-tap-items:v1:b'))[0].label,optional.label);
+  auth('SIGNED_IN',{user:{id:'a'}});hook=render();assert.equal(hook.items[0].itemId,item.itemId);
 });
 
 test('automatic rating waits outside modal transitions and never renders a blocking UI',async()=>{
   function gate({route=['(main)','(tabs)','home'],transition=false,dialog=false}={}){
     const effects=[],timers=new Map();let state=0,calls=0,resolveAction;
     const mod=load('apps/mobile/src/components/rating/official-rating-gate.tsx',{
+      ...require('./rating-test-mocks.cjs'),
+      '@/lib/coin-reward-store':{useCoinRewardBusy:()=>false},
+      '@/lib/adventure-paywall':{peekAdventurePaywall:()=>null,subscribeAdventurePaywall:()=>()=>{},consumeAdventurePaywall(){}},
       '@/lib/partner-reflect-paywall':{peekPartnerReflectPaywall:()=>null,subscribePartnerReflectPaywallRequest:()=>()=>{},syncPartnerReflectPaywallRequests:async()=>{}},
       react:{useMemo:fn=>fn(),useRef:current=>({current}),useState:initial=>[state++===0?true:(typeof initial==='function'?initial():initial),()=>{}],useEffect:fn=>effects.push(fn)},
       'react-native':{AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
@@ -192,4 +145,47 @@ test('claim is exclusive, legacy jobs excluded and retries capped at two',async(
   const retry=(await pg.query('select * from claim_item_learning_jobs()')).rows;assert.equal(retry[0].attempts,2);
   await pg.exec("update item_learning_jobs set status='failed' where evidence_version=2");
   assert.equal((await pg.query('select * from claim_item_learning_jobs()')).rows.length,0);
+});
+
+test('retirement preserves all history and rejects worker/publisher access for every API role', async()=>{
+ const tables=['item_learning_candidates','item_learning_jobs','item_learning_occurrences','item_learning_decisions','item_match_removals','item_keyword_rule_events'];
+ const snapshot=async()=>Object.fromEntries(await Promise.all(tables.map(async table=>[table,(await pg.query('select * from '+table)).rows])));
+ const before=await snapshot();
+ const sql=read('20261015000241_retire_keyword_matching.sql');
+ assert.doesNotMatch(sql,/\b(drop|delete|truncate)\s+(table|from)/i);
+ await pg.exec(sql);await pg.exec(sql);
+ assert.deepEqual(await snapshot(),before);
+ const functions=['item_rule_snapshot(text,bigint)','publish_item_rule(text,text,text,text,bigint,uuid,uuid,uuid)',
+ 'publish_item_rules_batch(text,jsonb,bigint,uuid)','claim_item_learning_jobs()',
+ 'record_item_learning_evidence(uuid,text,text,text,text,numeric,boolean)'];
+ for(const role of ['anon','authenticated','service_role']) {
+  for(const f of functions)assert.equal((await pg.query("select has_function_privilege($1,$2,'execute') as allowed",[role,f])).rows[0].allowed,false,role+':'+f);
+  for(const table of tables)for(const action of ['INSERT','UPDATE','DELETE','TRUNCATE'])
+   assert.equal((await pg.query('select has_table_privilege($1,$2,$3) as allowed',[role,table,action])).rows[0].allowed,false,role+':'+table+':'+action);
+ }
+ await pg.exec('set role service_role');
+ try {
+  await assert.rejects(pg.query('select * from claim_item_learning_jobs()'),/permission denied/);
+  await assert.rejects(pg.query("insert into item_learning_decisions values('x','x','{}',now())"),/permission denied/);
+  for(const table of tables)await pg.query('select * from '+table);
+ }finally{await pg.exec('reset role');}
+ assert.deepEqual(await snapshot(),before);
+});
+test('API tombstones authenticate and never run a worker or expose rules', async()=>{
+ const json=(body,options={})=>({body,status:options.status||200});
+ for(const valid of [false,true]) {
+  const endpoint=load('apps/api/src/app/api/item-rules/route.js',{
+   'next/server':{NextResponse:{json}},'@/lib/auth-guard':{verifyToken:async()=>valid?{id:'u'}:null},
+  });
+  const result=await endpoint.GET({headers:new Headers({authorization:'Bearer token'})});
+  assert.equal(result.status,valid?410:401);
+ }
+ const worker=load('apps/api/src/app/api/cron/item-learning/route.js',{'next/server':{NextResponse:{json}}},{process:{env:{CRON_SECRET:'test'}}});
+ assert.equal((await worker.GET({headers:new Headers()})).status,401);
+ assert.equal((await worker.GET({headers:new Headers({authorization:'Bearer test'})})).status,410);
+ const config=require('../apps/api/vercel.json');
+ assert.ok(!config.crons.some(x=>x.path==='/api/cron/item-learning'));
+ assert.equal(config.crons.length,7);
+ for(const file of ['reflect-analysis-store.js','reflect-analysis-jobs.js','reflect-ai.js','connection-ai.js'])
+  assert.doesNotMatch(fs.readFileSync(path.join(root,'apps/api/src/lib',file),'utf8'),/item_learning_jobs|itemLearningHints|learningCandidates|cleanLearningSignals/);
 });

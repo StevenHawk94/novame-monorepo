@@ -5,22 +5,24 @@
   "description": "NovaMe API — Next.js routes (deployed to Vercel)",
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "node ../../tools/verify-shop-release.cjs && next build && node ../../tools/check-avatar-runtime.mjs",
     "start": "next start -p 3001",
     "lint": "next lint",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "3.1.0",
     "@aws-sdk/client-s3": "3.985.0",
     "@novame/core": "workspace:^",
+    "@novame/domain": "workspace:^",
     "@supabase/supabase-js": "2.95.3",
-    "app-store-server-api": "^0.17.3",
     "date-fns": "4.1.0",
     "google-auth-library": "10.5.0",
     "jose": "6.2.2",
     "next": "15.5.21",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "sharp": "0.35.0",
     "uuid": "13.0.0"
   },
   "devDependencies": {

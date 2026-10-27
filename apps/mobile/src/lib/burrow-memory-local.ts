@@ -18,14 +18,32 @@ export const subscribeMemoryRetry=(fn:()=>void)=>{retryListeners.add(fn);return(
 const publish=()=>{version++;listeners.forEach(fn=>fn());};
 export const subscribeMemoryLocal=(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};};
 subscribeSessionIdentity(publish);
-const key=(scope:MemoryScope)=>`${kBurrowMemoryLocal.prefix}${scope.userId}:${scope.partnerId}`;
+// Preserve the old bytes for recovery, but never import a former relationship's
+// draft/queue into a new relationship (including the same two accounts).
+const legacyKey=(scope:MemoryScope)=>`${kBurrowMemoryLocal.prefix}${scope.userId}:${scope.partnerId}`;
+const key=(scope:MemoryScope)=>`${legacyKey(scope)}${scope.pairVersion?':'+scope.pairVersion:''}`;
 const draftKey=(entryId:string|null)=>entryId??'new';
 const validDraft=(d:MemoryDraft)=>d && typeof d.body==='string'&&d.body.length<=5000&&typeof d.revision==='string'
   &&(d.entryId===null||typeof d.entryId==='string')&&(d.promptId===null||typeof d.promptId==='string')
   &&(d.expectedUpdatedAt===null||typeof d.expectedUpdatedAt==='string');
 export function readMemoryLocal(scope:MemoryScope):LocalState {
   const raw=storage.getString(key(scope));
-  if(!raw)return {version:1,drafts:{},jobs:[]};
+  if(!raw){
+    const empty:LocalState={version:1,drafts:{},jobs:[]};
+    const snap=getBurrowSnapshot();
+    // Upgrade only already-submitted jobs with a provable CURRENT generation.
+    // Unversioned drafts and former-epoch jobs stay archived in the old bytes.
+    if(scope.pairVersion&&!snap.pairInvalidated&&snap.data?.profile.id===scope.userId
+      &&snap.data.partner?.id===scope.partnerId&&snap.data.pairVersion===scope.pairVersion){
+      let jobs:MemoryJob[]=[];
+      try{const previous=JSON.parse(storage.getString(legacyKey(scope))??'null');
+        if(previous?.version===1&&Array.isArray(previous.jobs))jobs=previous.jobs.filter((job:MemoryJob)=>
+          job.pairVersion===scope.pairVersion&&typeof job.id==='string'&&typeof job.blocked==='boolean'&&validDraft(job.draft)).slice(0,20);
+      }catch{} // An unreadable archive never replaces the current generation.
+      if(jobs.length){const migrated={...empty,jobs};storage.set(key(scope),JSON.stringify(migrated));return migrated;}
+    }
+    return empty;
+  }
   try {
     const value=JSON.parse(raw) as LocalState;
     if(value.version!==1||!value.drafts||Array.isArray(value.drafts)||!Array.isArray(value.jobs)||value.jobs.length>20

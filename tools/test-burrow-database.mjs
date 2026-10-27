@@ -312,6 +312,11 @@ try {
   await db.exec('reset role');
   check((await rpc('read_room_photo_v1',[a,photo.id])).error==='not_paired','unpair prevents issuing new signed photo URLs');
   check((await rpc('complete_room_photo_v1',[a,frame.ticketId])).error==='not_paired','unpair blocks upload completion including replay');
+  await db.exec('alter table pairings add column created_at timestamptz default now()');
+  for (const file of ['20260920000147_burrow_solo_core.sql','20261001000151_couple_journal.sql',
+    '20261005000201_burrow_solo_history.sql']) await db.exec(readFileSync(resolve(`supabase/migrations/${file}`),'utf8'));
+  const {testRepairIsolation}=await import('./test-repair-isolation-database.mjs');
+  await testRepairIsolation({db,query,rpc,check});
   console.log(`Burrow PostgreSQL integration: ${tests} assertions passed.`);
 } catch (error) {
   console.error(`Burrow database test failed after ${tests} assertions: ${error.message}`);

@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Modal, Platform, StyleSheet, View, type ModalProps } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 import { registerOverlay } from '@/lib/overlay-presence';
+import {AppWindowLayer} from '@/components/layout/app-window-layer';
 
 /**
  * iOS window overlay: no competing UIViewController presentations and no
@@ -30,8 +31,8 @@ export function ScreenOverlay({ visible = true, children, onShow, onRequestClose
   if (!visible) return null;
   const content = <View style={StyleSheet.absoluteFill} accessibilityViewIsModal
     onLayout={Platform.OS === 'ios' ? didShow : undefined}>{children}</View>;
-  if (Platform.OS === 'ios') return <FullWindowOverlay>{content}</FullWindowOverlay>;
+  if (Platform.OS === 'ios') return <FullWindowOverlay><AppWindowLayer>{content}</AppWindowLayer></FullWindowOverlay>;
   return <Modal visible transparent animationType="none" onRequestClose={onRequestClose}
     onShow={didShow} statusBarTranslucent={statusBarTranslucent}
-    navigationBarTranslucent={navigationBarTranslucent}>{content}</Modal>;
+    navigationBarTranslucent={navigationBarTranslucent}><AppWindowLayer>{content}</AppWindowLayer></Modal>;
 }

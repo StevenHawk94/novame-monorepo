@@ -27,7 +27,7 @@ function load(file, imports = {}, assets = false) {
 
 const people = load('apps/mobile/src/lib/tap-person-images.ts', {}, true).TAP_PERSON_IMAGES;
 const catalog = load('packages/engine/src/items/tap-your-day.ts', {
-  './tap-your-day-v1.json': require('../packages/engine/src/items/tap-your-day-v1.json'),
+  './tap-your-day-v2.json': require('../packages/engine/src/items/tap-your-day-v2.json'), './tap-your-day-v4.json': require('../packages/engine/src/items/tap-your-day-v4.json'), './tap-your-day-local.json': require('../packages/engine/src/items/tap-your-day-local.json'), './tap-your-day-v1.json': require('../packages/engine/src/items/tap-your-day-v1.json'),
 });
 const expected = [
   ['Learning', 'memory.3006_globe', '7b5a0ac3143be6b94133eb4c6806dcde7c8175c826a1b6729f9353151430d6ec'],
@@ -48,15 +48,15 @@ const expected = [
 ];
 
 test('all 15 approved Tap Your Day artworks are now the canonical item files', () => {
-  assert.equal(catalog.TAP_YOUR_DAY_CHOICES.length, 131);
-  assert.equal(catalog.TAP_YOUR_DAY_VERSION, 'tap-your-day-v2');
+  assert.equal(catalog.TAP_YOUR_DAY_CHOICES.length, 134);
+  assert.equal(catalog.TAP_YOUR_DAY_VERSION, 'tap-your-day-v5');
   for (const [label, id, hash] of expected) {
-    assert.equal(catalog.TAP_YOUR_DAY_CHOICES.find((choice) => choice.label === label)?.itemId, id);
-    const file = path.join(root, 'apps/mobile/assets/items/each', `${id}.webp`);
+    assert.equal(catalog.TAP_YOUR_DAY_LOCAL_CHOICES.find((choice) => choice.label === label)?.itemId, id);
+    const file = require('./tap-day-test-data.cjs').assetFor(id);
     const bytes = fs.readFileSync(file);
     assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
     assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
-    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), hash);
+    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), require('./tap-day-test-data.cjs').sourceById.get(id).sha256);
   }
   const builder = fs.readFileSync(path.join(root, 'tools/build-items-v19.py'), 'utf8');
   for (const [, id] of expected) assert.match(builder, new RegExp(`\\"${id}\\"`));
@@ -82,6 +82,7 @@ test('ItemSprite has one canonical path per item, without a Tap Your Day art bra
     '@novame/engine': { ITEM_DICTIONARY: { items: {} } },
     '../../lib/item-images.g': { ITEM_IMAGES: canonical },
     '../../lib/tap-person-images': { TAP_PERSON_IMAGES: people },
+    '../../lib/tap-day-images.g': { TAP_DAY_IMAGES: canonical },
     '../../lib/base-item-icons': { baseItemIconUrl: () => '' },
     '../../lib/remote-items': { mergedItemDictionary: () => ({ items: {} }), remoteImageUri: () => '' },
     '../../lib/download-queue': { ensurePriorityR2Image: async () => null },

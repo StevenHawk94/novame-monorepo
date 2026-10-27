@@ -1,0 +1,55 @@
+{
+  "status": "Migration 247 applied and API production deployment verified",
+  "productionUrl": "https://api.soulsayit.com",
+  "supabaseProjectRef": "qleeohkhbrdvznbwgqad",
+  "migration": {
+    "version": "20261018000247",
+    "name": "burrow_initial_care_needs",
+    "exactRegisteredSourceVerified": true,
+    "foodDefault": 0,
+    "waterDefault": 0,
+    "scope": "Only two column defaults; no existing needs, timestamps, wallets or inventory updated",
+    "existingRows": 32,
+    "beforeStateHash": "6db1f2ac7cb7d85fee6e3a386f7597f3",
+    "afterStateHash": "6db1f2ac7cb7d85fee6e3a386f7597f3",
+    "atomicPreservationCheck": "Existing rows and timestamps hashed before/after under the same table lock; mismatch would roll back migration and history together",
+    "postVerificationPreservedRows": 32,
+    "postVerificationPreservedStateHash": "6db1f2ac7cb7d85fee6e3a386f7597f3",
+    "postVerificationNewerStateRows": 1,
+    "postVerificationNote": "The live table gained one newer state during verification. The original 32 rows still match the complete pre-migration hash; no live-state restoration was performed."
+  },
+  "deployment": {
+    "projectId": "prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4",
+    "previousDeploymentId": "dpl_9D9wNVdsKWAn9WZCWiHSSmWzUh5K",
+    "deploymentId": "dpl_wKKsRJJg8kK9sB33Gf4xbsnJ9sPj",
+    "deploymentUrl": "https://novame-monorepo-6h0kqgq37-soulsayit.vercel.app",
+    "readyState": "READY",
+    "productionDomainAssigned": true,
+    "exactDeployedSourceVerified": true,
+    "bootstrapSourceSha256": "5ea11b147f7f573594411b2cb31a5ce84231aa23eacd81b496b1324797319fc5",
+    "sourceScope": {
+      "verifiedProductionFiles": 269,
+      "unchangedFiles": 268,
+      "onlyChangedFile": "apps/api/src/lib/burrow-unpaired-bootstrap.mjs",
+      "change": "Four missing-care fallback values changed from 100 to 0",
+      "productionDependencyLockRetained": true,
+      "adminOrMobileDeployed": false
+    }
+  },
+  "verification": {
+    "localRegressionTestsPassed": 14,
+    "localApiTypeCheck": "passed",
+    "vercelProductionBuild": "passed",
+    "productionChecks": [
+      "Unauthenticated bootstrap rejected with 401",
+      "Fresh solo account: food/water stored and displayed at zero",
+      "Repeated reads preserve initial timestamps",
+      "Paired account: new partner starts at zero; existing fixture's 73/41 values and timestamps unchanged",
+      "Fresh authentication sessions preserve both rooms without reinitializing"
+    ],
+    "temporaryIdentitiesCreated": 2,
+    "temporaryIdentitiesAndRoomRowsRemoved": true,
+    "realUserWrites": 0,
+    "completedAt": "2026-10-19T04:19:55.202Z"
+  }
+}

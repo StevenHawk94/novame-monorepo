@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-18",
+  "status": "implemented_and_verified",
+  "scope": "Background music and completion chime audio-mode compatibility; no UI, permissions, pricing or purchase flow changes",
+  "rootCause": {
+    "configuration": "playsInSilentMode:false combined with interruptionMode:duckOthers",
+    "effect": "ExpoAudio iOS rejects setAudioModeAsync before the background music player is created",
+    "nativeErrorReproduced": "Impossible audio mode: playsInSilentMode == false and duckOthers == true cannot be set on iOS",
+    "priorTestGap": "Music mocks accepted any mode. Completion-mode assertions inside an async function were caught by the production fail-soft handler and therefore did not fail the test."
+  },
+  "fix": {
+    "sharedPolicy": "apps/mobile/src/lib/foreground-audio-mode.ts",
+    "mode": {
+      "allowsRecording": false,
+      "shouldPlayInBackground": false,
+      "playsInSilentMode": false,
+      "interruptionMode": "mixWithOthers"
+    },
+    "consumers": [
+      "apps/mobile/src/components/burrow/burrow-music.tsx",
+      "apps/mobile/src/lib/use-completion-sound.ts"
+    ],
+    "preserved": [
+      "System silent-switch policy",
+      "Global sound preference and independent Music mute/None controls",
+      "Foreground-only playback and player cleanup",
+      "Recording/private-audio focus suspension and stale-setup cancellation",
+      "Free Lofi / authoritative Plus entitlement for premium tracks",
+      "Existing selection queue, rollback, retry and completion-chime deduplication"
+    ]
+  },
+  "verification": {
+    "targetedRegression": {
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0,
+      "log": "/private/tmp/novame-audio-policy-regression.log"
+    },
+    "fullRegression": {
+      "command": "PGLITE_MODULE=/private/tmp/novame-ui-test-deps.Piadco/node_modules/@electric-sql/pglite node --test --test-concurrency=2 tools/test-*.cjs",
+      "passed": 1992,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 128.813,
+      "log": "/private/tmp/novame-audio-policy-full-suite.log"
+    },
+    "typeCheck": {
+      "command": "pnpm type-check",
+      "successfulWorkspaces": 5,
+      "totalWorkspaces": 5,
+      "log": "/private/tmp/novame-audio-policy-types.log"
+    },
+    "productionJsBundles": {
+      "command": "pnpm verify:mobile-bundles",
+      "android": { "passed": true, "bytes": 9588937, "assets": 1328 },
+      "ios": { "passed": true, "bytes": 9532039, "assets": 1324 },
+      "log": "/private/tmp/novame-audio-policy-bundles.log"
+    },
+    "iosNative": {
+      "environment": "Installed ExpoAudio native module in the isolated com.novame.localsecureqa app, iOS 26.2 simulator; local-only QA server and real bundled audio files",
+      "oldModeRejected": true,
+      "newModeAccepted": true,
+      "tracks": [
+        { "key": "lofi", "loaded": true, "playing": true, "currentTime": 0.173001583 },
+        { "key": "lullaby", "loaded": true, "playing": true, "currentTime": 0.171371353 },
+        { "key": "jazz", "loaded": true, "playing": true, "currentTime": 0.170173407 }
+      ],
+      "completionChime": { "loaded": true, "playbackAdvanced": true, "finished": true, "nextEventAccepted": true },
+      "log": "/private/tmp/novame-audio-policy-native-events.log",
+      "limitations": "Native decoding/playback state and advancing media time were verified at zero test volume. Physical-device speaker output and physical silent-switch toggling were not exercised. Recording focus and navigation lifecycle are covered by automated native-boundary regressions, not a new microphone recording session."
+    },
+    "androidEmulator": "not run, as previously requested"
+  },
+  "deployment": {
+    "performed": false,
+    "newMigrationRequiredForThisAudioFix": false,
+    "clientUpdateRequired": true,
+    "note": "The previously prepared initial-care migration 247 is separate and has not been executed by this task."
+  },
+  "cleanup": "Dedicated simulator and localhost-only QA server stopped after verification; no production account, purchase, upload or database writes performed."
+}

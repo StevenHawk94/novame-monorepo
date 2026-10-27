@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from './burrow-image';
+import { SeasonalWindowArtwork } from './window-artwork';
 import type { MajorUpdateCatalogItem, MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { BURROW_BACKGROUNDS, burrowArtForItem, type BurrowArtAsset } from '@/lib/burrow-art-assets';
 import { BunnyActor } from './bunny-actor';
 import { RoomPhoto } from './room-photo';
+import { RoomPhotoPlaceholder } from './room-photo-placeholder';
 import { InteractiveDoll } from './interactive-doll';
+import { toyPhotoFor } from '@/lib/burrow-toy-photos';
 import { dollFaceRect, framePhotoRect } from '@/lib/burrow-doll-face';
+import {PlushieFaceMask} from './plushie-face-mask';
 
 type Placement = { category: string; slot: string; x: number; y: number; width: number; anchor: 'top' | 'bottom'; canvasWidth?: number };
 const ROOM_WIDTH = 360;
@@ -14,11 +18,11 @@ const furniture: Placement[] = [
   { category: 'light_strings', slot: 'light_string', x: 45, y: 65, width: 270, anchor: 'top' },
   { category: 'windows', slot: 'window', x: 60, y: 125, width: 90, anchor: 'top' },
   { category: 'shelves', slot: 'shelf', x: 228, y: 185, width: 110, anchor: 'top' },
-  { category: 'shelf_decor', slot: 'shelf_decor', x: 235, y: 185, width: 35, anchor: 'bottom' },
+  { category: 'shelf_decor', slot: 'shelf_decor', x: 235, y: 185, width: 35, canvasWidth: 35, anchor: 'bottom' },
   { category: 'music_players', slot: 'music_player', x: 295, y: 185, width: 43, anchor: 'bottom' },
   { category: 'posters', slot: 'poster', x: 82, y: 240, width: 44, anchor: 'top' },
   { category: 'cabinets', slot: 'cabinet', x: 148, y: 300, width: 115, anchor: 'top' },
-  { category: 'dresser_plants', slot: 'dresser_plant', x: 145, y: 300, width: 30, anchor: 'bottom' },
+  { category: 'dresser_plants', slot: 'dresser_plant', x: 137, y: 300, width: 30, canvasWidth: 500 * 30 / 410, anchor: 'bottom' },
   { category: 'lamps', slot: 'lamp', x: 35, y: 355, width: 60, anchor: 'bottom' },
   { category: 'rugs', slot: 'rug', x: 200, y: 430, width: 145, anchor: 'bottom' },
   { category: 'cushions', slot: 'cushion', x: 40, y: 420, width: 125, anchor: 'bottom' },
@@ -30,16 +34,19 @@ const furniture: Placement[] = [
 function artStyle(asset: BurrowArtAsset, placement: Placement, scale: number) {
   const [left, top, right, bottom] = asset.bounds;
   const ratio = placement.canvasWidth == null ? placement.width / (right - left) : placement.canvasWidth / asset.width;
+  const edge = placement.category === 'couple_dolls' || placement.category === 'shelf_decor'
+    ? (placement.anchor === 'top' ? 0 : asset.height)
+    : (placement.anchor === 'top' ? top : bottom);
   return {
     position: 'absolute' as const,
     left: (placement.canvasWidth == null ? placement.x - left * ratio : placement.x + placement.width / 2 - placement.canvasWidth / 2) * scale,
-    top: (placement.y - (placement.anchor === 'top' ? top : bottom) * ratio) * scale,
+    top: (placement.y - edge * ratio) * scale,
     width: asset.width * ratio * scale,
     height: asset.height * ratio * scale,
   };
 }
 
-export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [], onSlot, partnerOutfit, busy = false, canFeed = true }: {
+export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [], onSlot, partnerOutfit, busy = false, canFeed = true,ownerId,partnerOwnerId }: {
   slots: Record<string, MajorUpdateCatalogItem>;
   away?: boolean;
   shared?: boolean;
@@ -49,15 +56,17 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
   partnerOutfit?: MajorUpdateCatalogItem;
   busy?: boolean;
   canFeed?: boolean;
+  ownerId?:string;partnerOwnerId?:string;
 }) {
   const [width, setWidth] = useState(ROOM_WIDTH);
   const scale = width / ROOM_WIDTH;
   const photo = photos.find(item => item.kind === 'frame');
-  const doll = photos.find(item => item.kind === 'doll');
+  const doll = toyPhotoFor(photos, photos.find(item => item.kind === 'doll')?.ownerId ?? '', slots.couple_doll?.stable_id);
   const frameArt = burrowArtForItem(slots.frame, 'frames');
   const dollArt = burrowArtForItem(slots.couple_doll, 'couple_dolls');
   const framePlacement: Placement = { category: 'frames', slot: 'frame', x: 261, y: 221, width: 47, canvasWidth: 500 * 47 / 304, anchor: 'top' };
-  const dollPlacement: Placement = { category: 'couple_dolls', slot: 'couple_doll', x: 176, y: 300, width: 39, anchor: 'bottom' };
+  const dollPlacement: Placement = { category: 'couple_dolls', slot: 'couple_doll', x: 176, y: 300, width: 39, canvasWidth: 512 * 39 / 300, anchor: 'bottom' };
+  const dollBox=dollArt?artStyle(dollArt,dollPlacement,scale):null;
   const target = (slot: string, x: number, y: number, w: number, h: number) =>
     <Pressable key={slot} accessibilityRole="button" accessibilityLabel={slots[slot]?.title ?? slot} disabled={busy || !onSlot} onPress={() => onSlot?.(slot)}
       style={{ position: 'absolute', left: x * scale, top: y * scale, width: w * scale, height: h * scale }} />;
@@ -66,25 +75,24 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
     <Image source={BURROW_BACKGROUNDS.common} contentFit="cover" contentPosition="bottom" style={StyleSheet.absoluteFillObject} pointerEvents="none" />
     {furniture.map(placement => {
       const asset = burrowArtForItem(slots[placement.slot], placement.category);
+      if (asset && placement.category === 'windows') return <SeasonalWindowArtwork key={placement.slot} asset={asset} style={artStyle(asset, placement, scale)}/>;
       return asset && <Image key={placement.slot} source={asset.source} contentFit="fill" style={artStyle(asset, placement, scale)} pointerEvents="none" />;
     })}
     {shared && <View pointerEvents="none" style={[styles.sharedBed, { left: 65 * scale, top: 340 * scale, width: 200 * scale, height: 70 * scale }]} />}
     {frameArt && <View pointerEvents="none" style={artStyle(frameArt, framePlacement, scale)}>
       <Image source={frameArt.source} contentFit="fill" style={styles.fill} />
-      {photo && <View style={[styles.framePhoto, framePhotoRect(frameArt)]}><RoomPhoto photo={photo} /></View>}
+      <View style={[styles.framePhoto, framePhotoRect(frameArt)]}>{photo ? <RoomPhoto photo={photo} /> : <RoomPhotoPlaceholder kind="frame" />}</View>
     </View>}
-    {dollArt && (onSlot?<InteractiveDoll asset={dollArt} photo={doll} disabled={busy}
+    {dollArt && dollBox && (onSlot?<InteractiveDoll asset={dollArt} photo={doll} disabled={busy} showEmptyPhotoDecoration
       onInteract={()=>onSlot('couple_doll')} onEditPhoto={()=>onSlot('doll_photo')}
-      style={{ position:'absolute', left:170*scale, top:240*scale, width:58*scale, height:62*scale }}
-      artStyle={{...artStyle(dollArt, dollPlacement, scale),
-        left:artStyle(dollArt, dollPlacement, scale).left-170*scale,
-        top:artStyle(dollArt, dollPlacement, scale).top-240*scale}} />
-      :<View pointerEvents="none" style={artStyle(dollArt, dollPlacement, scale)}>
-        {doll && <View style={[styles.dollPhoto, dollFaceRect(dollArt)]}><RoomPhoto photo={doll} /></View>}
+      style={dollBox}
+      artStyle={{position:'absolute',left:0,top:0,width:dollBox.width,height:dollBox.height}} />
+      :<View pointerEvents="none" style={dollBox}>
+        <View style={[styles.dollPhoto, dollFaceRect(dollArt)]}><PlushieFaceMask asset={dollArt} photo={doll} placeholder/></View>
         <Image source={dollArt.source} contentFit="fill" style={styles.fill} />
       </View>)}
-    <BunnyActor outfit={slots.outfit} pose={shared && sleeping?.mine ? 'sleeping' : away ? 'away' : 'idle'} />
-    {shared && <BunnyActor partner outfit={partnerOutfit} pose={sleeping?.partner ? 'sleeping' : 'idle'} />}
+    <BunnyActor outfit={slots.outfit} ownerId={ownerId} pose={shared && sleeping?.mine ? 'sleeping' : away ? 'away' : 'idle'} />
+    {shared && <BunnyActor partner outfit={partnerOutfit} ownerId={partnerOwnerId} pose={sleeping?.partner ? 'sleeping' : 'idle'} />}
     {shared && (sleeping?.mine || sleeping?.partner) && <Text pointerEvents="none" style={styles.sleepLabel}>z Z</Text>}
     {onSlot && (shared || !away) && <Pressable accessibilityRole="button" accessibilityLabel={shared ? sleeping?.mine ? 'Wake my bunny' : 'Put my bunny to sleep' : 'Feed bunny'}
       disabled={busy || (!shared && !canFeed)} onPress={() => onSlot(shared ? 'bed' : 'bunny')}

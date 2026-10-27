@@ -37,16 +37,23 @@ export default function OverviewTab() {
   }, []);
 
   useEffect(() => {
-    loadHistory();
+    loadHistory(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadHistory = async () => {
+  const loadHistory = async (hydrate=false) => {
     try {
       const d = await apiClient.get<{ success?: boolean; history?: ForceUpdateRow[] }>(
         '/api/force-update?history=true',
       );
-      if (d.success) setFuHistory(d.history ?? []);
+      if (d.success) {
+        const rows=d.history??[];setFuHistory(rows);
+        const current=rows.find(row=>row.is_active);setFuActive(!!current);
+        if(hydrate){const last=current??rows[0];if(last){
+          setFuMinVersion(last.min_version??last.version??'');setFuMessage(last.message??'');
+          setFuPlatform(last.platform==='ios'||last.platform==='android'?last.platform:'all');
+        }}
+      }
     } catch {}
   };
 
@@ -83,11 +90,8 @@ export default function OverviewTab() {
         message: fuMessage,
         platform: fuPlatform,
       });
-      setFuMinVersion('');
-      setFuMessage('');
-      setFuPlatform('all');
       loadDash();
-      loadHistory();
+      loadHistory(true);
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Failed to send force update');
     }
@@ -95,9 +99,11 @@ export default function OverviewTab() {
   };
 
   const cancelForceUpdate = async () => {
-    await apiClient.delete('/api/force-update');
-    loadDash();
-    loadHistory();
+    if(fuSending||!confirm('Pause minimum-version enforcement? Older versions will be allowed again on their next launch.'))return;
+    setFuSending(true);
+    try{await apiClient.delete('/api/force-update');await loadDash();await loadHistory();}
+    catch(e){alert(e instanceof Error?e.message:'Could not pause minimum-version enforcement');}
+    finally{setFuSending(false);}
   };
 
   return (
@@ -117,30 +123,33 @@ export default function OverviewTab() {
 
             {/* Force Update Control */}
             <div className="bg-white rounded-xl p-5 border mb-6">
-              <h3 className="font-bold text-black mb-3">🚨 Force App Update</h3>
-              {fuActive ? (
-                <div className="flex items-center justify-between bg-red-50 p-3 rounded-lg">
+              <h3 className="font-bold text-black mb-3">最低支持版本 · Minimum Supported Version</h3>
+              <p className="text-sm text-gray-500 mb-3">仅低于最低版本、且匹配所选平台的用户需要更新。可直接修改并保存，无需先暂停。新版本必须已在对应商店正式可下载。</p>
+              {fuActive && (
+                <div className="flex items-center justify-between bg-red-50 p-3 rounded-lg mb-3">
                   <div>
                     <span className="text-red-700 font-bold text-sm">
-                      Force update is ACTIVE
+                      Minimum-version enforcement is ACTIVE
                     </span>
                     <p className="text-red-600 text-xs">
-                      All users will see a mandatory update prompt
+                      Below-minimum versions are blocked; supported versions are unaffected.
                     </p>
                   </div>
                   <button
                     onClick={cancelForceUpdate}
+                    disabled={fuSending}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm"
                   >
-                    Deactivate
+                    Pause enforcement
                   </button>
                 </div>
-              ) : (
+              )}
                 <div className="flex gap-3">
                   <input
                     value={fuMinVersion}
                     onChange={(e) => setFuMinVersion(e.target.value)}
-                    placeholder="Min version (e.g. 1.2.0)"
+                    aria-label="Minimum supported version"
+                    placeholder="例如 1.0.25"
                     className="border rounded-lg px-3 py-2 text-sm text-black w-36"
                   />
                   <select
@@ -155,7 +164,8 @@ export default function OverviewTab() {
                   <input
                     value={fuMessage}
                     onChange={(e) => setFuMessage(e.target.value)}
-                    placeholder="Update message..."
+                    maxLength={2000}
+                    placeholder="更新页下方说明文字..."
                     className="border rounded-lg px-3 py-2 text-sm text-black flex-1"
                   />
                   <button
@@ -163,10 +173,9 @@ export default function OverviewTab() {
                     disabled={fuSending}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm shrink-0"
                   >
-                    {fuSending ? '...' : 'Send'}
+                    {fuSending ? 'Saving...' : fuActive ? 'Save changes' : 'Save & enable'}
                   </button>
                 </div>
-              )}
             </div>
 
             {/* Force Update History */}

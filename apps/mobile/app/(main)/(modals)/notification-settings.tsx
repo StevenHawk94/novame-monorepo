@@ -23,7 +23,7 @@ type Phase = 'ask' | 'time-picker' | 'saved';
 const HOUR_DEFAULT = 20;
 const MIN_DEFAULT = 0;
 
-/** Full post-purchase notification setup page. Menu uses a compact modal. */
+/** Daily reminder setup page. Menu uses a compact modal. */
 export default function NotificationSettingsModal() {
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<Phase>('ask');
@@ -92,7 +92,7 @@ export default function NotificationSettingsModal() {
           <Text style={styles.askEmoji}>🔔</Text>
           <Text style={styles.askTitle}>Stay on Track</Text>
           <Text style={styles.askDescription}>
-            Would you like your companion to send you a daily reminder to share your moments?
+            Get a reminder at 8:00 PM if you haven’t started your adventure.
           </Text>
           <Pressable
             onPress={() => void enable()}

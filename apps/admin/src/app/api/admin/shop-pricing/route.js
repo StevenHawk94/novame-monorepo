@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SHOP_CATEGORIES, shopPreview, shopAppVersion, validateShopPriceBatch } from '@/lib/burrow-shop-pricing';
+import gameDetails from '@/generated/game-details.json';
 
 export const runtime = 'nodejs';
 const reply = (body, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -17,12 +18,13 @@ export async function GET() {
       .order('category').order('stable_id').limit(2000);
     if (error) throw error;
     const { data: history, error: historyError } = await db.from('burrow_shop_price_audit')
-      .select('id,batch_id,item_id,old_price,new_price,version,admin_email,reason,created_at')
+      .select('id,batch_id,item_id,old_price,new_price,old_plus_only,new_plus_only,version,admin_email,reason,created_at')
       .order('id', { ascending: false }).limit(100);
     if (historyError) throw historyError;
     return reply({ appVersion: shopAppVersion, rows: rows.map(row => ({ ...row, preview: shopPreview(row),
-      editable: row.price > 0 && !row.metadata?.starter && ['decor', 'outfit'].includes(row.item_type) })), history });
-  } catch { return reply({ error: 'shop_pricing_unavailable', message: 'Shop pricing is unavailable. Check that the Shop Pricing migration has been applied.' }, 503); }
+      questions: row.item_type==='game' ? gameDetails[row.metadata?.gameId] ?? [] : undefined,
+      editable: (row.price > 0 || row.item_type==='game' && row.price===0) && !row.metadata?.starter && ['decor', 'outfit', 'game', 'surprise'].includes(row.item_type) })), history });
+  } catch { return reply({ error: 'shop_pricing_unavailable', message: 'Product settings are unavailable. Check migrations 224, 226 and 227.' }, 503); }
 }
 export async function POST(request) {
   const auth = await requireAdmin(); if (auth.error) return auth.error;

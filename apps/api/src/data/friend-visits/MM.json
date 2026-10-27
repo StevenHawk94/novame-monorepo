@@ -1,0 +1,1077 @@
+{
+  "code": "MM",
+  "name": "Mr Mole",
+  "friendId": "adventure_friend_mm",
+  "waitingLines": [
+    "Hm. Comfy chair. I’ll stay till {partner}’s back. Haven’t said hi yet.",
+    "Hm. Mabel says don’t leave before greeting everyone. So. Waiting for {partner}."
+  ],
+  "questions": [
+    {
+      "id": "MM-V01",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole slides a blurry photo across the table. It's a nose. A very weird nose.",
+      "lines": [
+        "Hm. My cousin. Don't stare. Okay, stare a little."
+      ],
+      "question": "The star-nosed mole holds a world record. For what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fastest eater of any mammal",
+          "reply": [
+            "Hm. Correct. Blink and lunch is over.",
+            "His 22 nose tentacles find and gulp food in about a quarter second.",
+            "Mabel calls him 'the vacuum.' Not to his face."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Loudest sneeze",
+          "reply": [
+            "Hm. With that nose? Fair guess.",
+            "It's actually the fastest-eating mammal. Snack gone in about a quarter second.",
+            "Those 22 nose tentacles move faster than you can blink."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Longest nap",
+          "reply": [
+            "Hm. That's my record, not his.",
+            "He's the fastest eater of any mammal. A bite takes about a quarter second.",
+            "Family dinners are short. Very short."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "The star-nosed mole is the fastest-eating mammal (~1/4 second per item); its star has 22 appendages.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V02",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole sniffs the air by your open window, very slowly, eyes closed.",
+      "lines": [
+        "Hm. Rain's coming. I can smell it. So can you, probably."
+      ],
+      "question": "That lovely 'smell of rain' on dry ground mostly comes from what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Clouds rubbing together",
+          "reply": [
+            "Hm. Clouds don't rub. They hover.",
+            "It's mostly geosmin, made by soil bacteria, launched up by raindrops.",
+            "We can smell tiny amounts of it. Built-in rain alarm."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Worms celebrating",
+          "reply": [
+            "Hm. They do celebrate. Not the smell, though.",
+            "It's geosmin from soil bacteria, tossed into the air by raindrops.",
+            "That earthy smell even has a name: petrichor."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Soil bacteria releasing a compound called geosmin",
+          "reply": [
+            "Hm. Correct. Bacteria. Romantic, isn't it.",
+            "Rain kicks geosmin into the air, and human noses are incredibly sensitive to it.",
+            "The smell even has a name: petrichor. Mabel's favorite word."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Petrichor's earthy note is largely geosmin from soil microbes; humans detect it at very low concentrations.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V03",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "A worm pokes out of your plant pot. Mr Mole tips his hat to it.",
+      "lines": [
+        "Hm. Respect the worm. It has more heart than you."
+      ],
+      "question": "How many heart-like pumps does an earthworm have?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "One, like everybody else",
+          "reply": [
+            "Hm. Reasonable. Also wrong.",
+            "Earthworms have five heart-like arches pumping blood.",
+            "Five hearts and still no drama. Admirable."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Five",
+          "reply": [
+            "Hm. Correct. Five little pumps.",
+            "They're called aortic arches, wrapped around the front of the worm.",
+            "Five hearts. Still can't say 'I love you.' Relatable."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Zero. Cold-hearted",
+          "reply": [
+            "Hm. Harsh on my coworker.",
+            "They've got five heart-like pumps. More than any of us.",
+            "Lots of heart. Very little brain. Honestly, peaceful."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Earthworms have five pairs of aortic arches, often called 'hearts'.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V04",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole taps the ground with his paw and listens, impressed.",
+      "lines": [
+        "Hm. Biggest living thing I know of. It's underground. Of course."
+      ],
+      "question": "One of the largest living organisms on Earth is a...?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Blue whale",
+          "reply": [
+            "Hm. Big. Not biggest by area.",
+            "A honey fungus in Oregon spreads underground across about 2,000+ acres.",
+            "Mostly hidden threads in the soil. Very mole of it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Giant honey fungus underground in Oregon",
+          "reply": [
+            "Hm. Correct. A mushroom the size of a town.",
+            "Its threads spread across roughly 2,000+ acres of forest soil.",
+            "Possibly thousands of years old. Quiet achiever. My hero."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Giant sequoia tree",
+          "reply": [
+            "Hm. Tall. Impressive. Not the winner by area.",
+            "A honey fungus in Oregon covers about 2,000+ acres underground.",
+            "You walk over it and never know. Like most good things."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "An Armillaria ostoyae individual in Oregon's Malheur National Forest spans ~2,385 acres.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V05",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole presses one ear to the ground, listening to something you can't hear.",
+      "lines": [
+        "Hm. The trees are gossiping again."
+      ],
+      "question": "Underground, many trees are linked together by what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fungus threads that share nutrients",
+          "reply": [
+            "Hm. Correct. Fungus is the real networker.",
+            "Fungal threads wrap roots and help move water and nutrients between trees.",
+            "Nicknamed the wood wide web. No password needed."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Secret tunnels dug by moles",
+          "reply": [
+            "Hm. I wish I got the credit.",
+            "It's fungi. Their threads link roots and pass nutrients around.",
+            "People call it the 'wood wide web.' Trees with a group chat."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Root Wi-Fi with actual bars",
+          "reply": [
+            "Hm. Close, honestly. Still wrong.",
+            "It's fungus threads linking roots, nicknamed the wood wide web.",
+            "No signal bars. Just mushrooms doing logistics."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Mycorrhizal fungal networks connect tree roots and move nutrients ('wood wide web').",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V06",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole opens his lunchbox. Something inside wiggles. He closes it very calmly.",
+      "lines": [
+        "Hm. Don't worry about it. Actually, quiz about it."
+      ],
+      "question": "Some moles keep a pantry of live earthworms. How do they stop them escaping?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A tiny fridge",
+          "reply": [
+            "Hm. No outlets down here. Sadly.",
+            "They bite the worm's head so it's paralyzed but still fresh.",
+            "Hundreds stored at once. A pantry with a pulse."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Asking them nicely to stay",
+          "reply": [
+            "Hm. Worms don't respect manners.",
+            "Moles bite the head to paralyze them, so they keep for later.",
+            "The original meal prep. No containers, no dishes."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A bite that paralyzes them",
+          "reply": [
+            "Hm. Correct. Grim, but efficient.",
+            "A bite to the head means the worm stays alive but can't crawl off.",
+            "Some larders hold hundreds. Meal prep king."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Moles bite earthworms' heads to immobilize them and store them alive in larders.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V07",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole sets down a photo of a little seabird with an orange beak.",
+      "lines": [
+        "Hm. Fellow tunnel person. Different neighborhood."
+      ],
+      "question": "What's special about where Atlantic puffins nest?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They nest on floating ice",
+          "reply": [
+            "Hm. Cold. No.",
+            "They dig burrows in cliffs and often reuse them with the same partner.",
+            "Seabirds with tunnels. Respect."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They borrow other birds' nests every year",
+          "reply": [
+            "Hm. Rude. No.",
+            "Puffins dig their own burrows, often returning to the same one with the same mate.",
+            "Commitment, with a front door."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They dig burrows and often return to the same one with the same mate",
+          "reply": [
+            "Hm. Correct. Same burrow. Same partner. Year after year.",
+            "Puffins dig underground nests on cliff tops.",
+            "Mabel and I approve. Strongly."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Atlantic puffins nest in burrows and often reuse them with the same mate across years.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V08",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole sits beside you on the couch. Not too close. Then a little closer.",
+      "lines": [
+        "Hm. Mabel and I sit like this. Science says something about it."
+      ],
+      "question": "When romantic partners sit close together, what can happen to their bodies?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They both get hungry at the same moment",
+          "reply": [
+            "Hm. That's just dinnertime.",
+            "Studies found partners' breathing and heart rhythms can sync up.",
+            "Bodies in step. No talking required. My favorite kind of communication."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Their breathing and heart rhythms can start to sync",
+          "reply": [
+            "Hm. Correct. Studies found couples' heart rhythms and breathing can sync up.",
+            "Being near your person literally tunes your body to them.",
+            "Twenty years. Mabel and I probably hum in harmony now."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Nothing. Bodies don't care",
+          "reply": [
+            "Hm. Bodies care more than mouths do.",
+            "Partners' heart rhythms and breathing can sync when they're together.",
+            "Love is a quiet duet. Hm."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Studies (e.g., UC Davis 2012) observed physiological synchrony (breathing, heart rate) between romantic partners.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V09",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole pulls a purple carrot out of the soil and holds it up.",
+      "lines": [
+        "Hm. Not dyed. Not broken. Original."
+      ],
+      "question": "What color were most cultivated carrots before orange became popular?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Purple or yellow",
+          "reply": [
+            "Hm. Correct. Purple and yellow carrots came first.",
+            "Orange carrots became widespread later, especially through Dutch growers.",
+            "Mabel says purple ones taste fancier. She's right. Don't tell her."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Bright blue",
+          "reply": [
+            "Hm. Blue food makes me nervous.",
+            "Early carrots were mostly purple or yellow.",
+            "Orange took over later. Carrots had a rebrand."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Always orange",
+          "reply": [
+            "Hm. History disagrees.",
+            "Early cultivated carrots were mostly purple or yellow.",
+            "Orange became popular later. Even vegetables have eras."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Early domesticated carrots were mainly purple and yellow; orange cultivars were popularized in the 17th-century Netherlands.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V10",
+      "friendId": "adventure_friend_mm",
+      "type": "Trivia",
+      "scene": "Mr Mole points at a beach photo, then at a tiny drawing of a turtle hatchling.",
+      "lines": [
+        "Hm. Long trip home. Very long."
+      ],
+      "question": "Where do many female sea turtles return to lay their eggs?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Whichever beach has the best snacks",
+          "reply": [
+            "Hm. Practical. Not it.",
+            "Many return to the beach region where they hatched, decades later.",
+            "Magnetic navigation. No maps. Very impressive."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The same beach region where they hatched",
+          "reply": [
+            "Hm. Correct. Decades later. Same beach.",
+            "They likely navigate using Earth's magnetic field.",
+            "Coming home after a long time away. Mabel cried at this one."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A different ocean every time",
+          "reply": [
+            "Hm. Too much travel.",
+            "Many return to the region where they hatched.",
+            "Sometimes decades later. That's commitment to a place."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Many sea turtles show natal homing, likely using geomagnetic cues.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "MM-V11",
+      "friendId": "adventure_friend_mm",
+      "type": "Preference",
+      "scene": "Mr Mole fiddles with a small trowel, avoiding eye contact.",
+      "lines": [
+        "Hm. Personal question. Don't make it weird."
+      ],
+      "question": "Saying 'I love you': out loud, or through actions?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Out loud",
+          "reply": [
+            "Hm. Out loud. Brave.",
+            "I said it once in 2006. Mabel wrote down the date."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Through actions",
+          "reply": [
+            "Hm. Actions. My people.",
+            "Twenty years. Twenty windows. Zero speeches."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both say it out loud. Hm. Loud house.",
+          "{partner} says it, you say it back. Very efficient.",
+          "Mabel would cry. Happy crying."
+        ],
+        "A:B": [
+          "Actions for you. {partner} likes hearing it out loud.",
+          "Hm. Mabel's the same. I learned to say it on Sundays.",
+          "Fix the shelf, then say the words. Double points."
+        ],
+        "B:A": [
+          "You say it out loud. {partner} shows it instead.",
+          "So when they refill your water without asking? That's a whole love letter.",
+          "Read the actions. Say the words. Balanced."
+        ],
+        "B:B": [
+          "Both of you, actions over words. Hm. Respect.",
+          "Your home must be full of fixed hinges and warm tea.",
+          "Still. Say it to {partner} once a year. For safety."
+        ]
+      }
+    },
+    {
+      "id": "MM-V12",
+      "friendId": "adventure_friend_mm",
+      "type": "Preference",
+      "scene": "Mr Mole taps a wobbly shelf on your wall. It wobbles more.",
+      "lines": [
+        "Hm. Who built this. Never mind."
+      ],
+      "question": "Home repair day: DIY it together, or hire a pro?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "DIY it together",
+          "reply": [
+            "Hm. DIY. You, a toolbox, and hope.",
+            "I dug every window myself. Mabel only cried twice."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hire a pro",
+          "reply": [
+            "Hm. Hire a pro. Wise.",
+            "Fewer fights about which way the screw turns."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both pick DIY. Hm. Bold.",
+          "Buy extra screws. And extra patience for {partner}.",
+          "Crooked shelves hold the best memories."
+        ],
+        "A:B": [
+          "You'd hire a pro. {partner} wants to grab the drill.",
+          "Hm. Let them try. Keep the pro's number on the fridge.",
+          "Mabel calls this 'supervising.' I call it love."
+        ],
+        "B:A": [
+          "You want to DIY. {partner} wants to call someone.",
+          "Hm. Classic standoff. Try one small shelf first.",
+          "If it wobbles, call the pro. No shame."
+        ],
+        "B:B": [
+          "You both hire a pro. Hm. Peaceful household.",
+          "No 'you're holding it wrong' fights with {partner}. Ever.",
+          "Spend the saved energy on snacks."
+        ]
+      }
+    },
+    {
+      "id": "MM-V13",
+      "friendId": "adventure_friend_mm",
+      "type": "Preference",
+      "scene": "Mr Mole squints at your window and measures it with his paw.",
+      "lines": [
+        "Hm. I dig windows. Professionally. Romantically."
+      ],
+      "question": "Dream window view: a garden, the night sky, or a rainy street?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A garden",
+          "reply": [
+            "Hm. A garden. Classic.",
+            "Mabel's first window faced her tomatoes. She talks to them daily."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The night sky",
+          "reply": [
+            "Hm. Night sky. Romantic.",
+            "Hard to dig toward. Worth it."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A rainy street",
+          "reply": [
+            "Hm. Rainy street. Moody.",
+            "Good for sitting. Good for not talking."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "A garden for both of you. Hm. Easy.",
+          "Grow tomatoes with {partner}. Name them. Mabel did.",
+          "Don't get attached. They become sauce."
+        ],
+        "A:B": [
+          "Night sky for you. {partner} picked the garden.",
+          "Hm. Plant flowers that bloom at night. Moonflowers exist.",
+          "Garden for them. Stars for you. One window."
+        ],
+        "A:C": [
+          "Rainy street for you. {partner} wants a garden.",
+          "Hm. Rainy garden. Both happy. Worms happiest.",
+          "My coworkers thank you both."
+        ],
+        "B:A": [
+          "You want a garden. {partner} wants the night sky.",
+          "Hm. Easy fix. Garden window by day, roof window by night.",
+          "I dug Mabel both. It took two anniversaries."
+        ],
+        "B:B": [
+          "Both pick the night sky. Hm. Stargazers.",
+          "Put the bed under it. Fall asleep counting stars with {partner}.",
+          "Mabel counts stars. I count Mabel. Hm. Too much?"
+        ],
+        "B:C": [
+          "You love rain. {partner} loves stars.",
+          "Hm. Get one big window. Let the sky pick the mood.",
+          "Rain one night, stars the next. Nobody loses."
+        ],
+        "C:A": [
+          "Garden for you, rainy street for {partner}.",
+          "Hm. Rain waters the garden. Same team, technically.",
+          "Watch it rain on the flowers together."
+        ],
+        "C:B": [
+          "You want stars. {partner} wants rain.",
+          "Hm. Unlucky. Clouds block stars. Weather picks favorites.",
+          "Rainy nights for {partner}, clear nights for you. Shared custody."
+        ],
+        "C:C": [
+          "Rainy street for both. Hm. Cozy weirdos.",
+          "Tea, blanket, rain sounds, {partner}. No talking needed.",
+          "Best date. Zero effort. My kind."
+        ]
+      }
+    },
+    {
+      "id": "MM-V14",
+      "friendId": "adventure_friend_mm",
+      "type": "Preference",
+      "scene": "Mr Mole sets two bowls of stew on your table and sits. Silently.",
+      "lines": [
+        "Hm. ...Hm."
+      ],
+      "question": "Dinner for two: comfy silence, or nonstop chatting?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Comfy silence",
+          "reply": [
+            "Hm. Silence. My love language.",
+            "Mabel and I once didn't talk for an entire stew. Best dinner."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Nonstop chatting",
+          "reply": [
+            "Hm. Chatting. Lively.",
+            "Mabel tells stories. I nod. It's a system."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both pick comfy silence. Hm. Rare skill.",
+          "Some couples need to talk. You and {partner} just pass the salt.",
+          "That's peak comfort. Trust me."
+        ],
+        "A:B": [
+          "You want to chat. {partner} wants quiet.",
+          "Hm. Talk through the main course. Silence for dessert.",
+          "Pudding should be eaten in peace anyway."
+        ],
+        "B:A": [
+          "You like quiet. {partner} likes to chat.",
+          "Hm. Be the nodder. It's a respected position.",
+          "Toss in 'really?' every few minutes. Works for me."
+        ],
+        "B:B": [
+          "Both pick nonstop chatting. Hm. Loud table.",
+          "Hm. you and {partner} never finish soup while it's hot, do you.",
+          "Microwave it. Keep talking."
+        ]
+      }
+    },
+    {
+      "id": "MM-V15",
+      "friendId": "adventure_friend_mm",
+      "type": "Preference",
+      "scene": "Mr Mole pulls out a tiny calendar with one date circled. Hard.",
+      "lines": [
+        "Hm. Anniversary talk. My specialty. Quietly."
+      ],
+      "question": "Anniversaries: a big celebration, or the same quiet tradition every year?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A big celebration",
+          "reply": [
+            "Hm. Big. Balloons. Noise.",
+            "I'd hide under the table. But good for you."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A quiet tradition",
+          "reply": [
+            "Hm. Same tradition every year. Correct answer.",
+            "Twenty years. Twenty windows. Never once boring."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both want big celebrations. Hm. Party couple.",
+          "Invite everyone. Make {partner} give a speech.",
+          "I would leave early. You won't."
+        ],
+        "A:B": [
+          "You love a quiet tradition. {partner} wants it big.",
+          "Hm. Let them throw the party. You sneak in the ritual.",
+          "A toast for two, mid-party. Mabel likes that."
+        ],
+        "B:A": [
+          "You want a big party. {partner} wants the quiet tradition.",
+          "Hm. Do the tradition at sunrise. Party at night.",
+          "Two celebrations. Twice the cake."
+        ],
+        "B:B": [
+          "You both want a quiet tradition. Hm. Perfect.",
+          "Same spot, same meal with {partner}, every year. That's a love story.",
+          "Mabel calls ours 'window day.' Find yours."
+        ]
+      }
+    },
+    {
+      "id": "MM-V16",
+      "friendId": "adventure_friend_mm",
+      "type": "Guess",
+      "scene": "Mr Mole kneels by your sink, listening to a drip with deep concern.",
+      "lines": [
+        "Hm. That drip. It's mocking us."
+      ],
+      "question": "When something breaks at home, what does your partner do?",
+      "selfQuestion": "When something breaks at home, what do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fixes it (eventually)",
+          "reply": [
+            "Hm. 'Eventually.' Love that word.",
+            "My gutter's been 'almost fixed' since spring."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Calls for help right away",
+          "reply": [
+            "Hm. Calls for help. Efficient.",
+            "Nothing wrong with knowing your limits."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You fix it yourself, and {partner} knew it. Hm.",
+          "They've watched you mutter at a broken drawer before.",
+          "'Eventually' is a valid timeline."
+        ],
+        "A:B": [
+          "You'd call for help. {partner} pictured you with a wrench.",
+          "Hm. They believe in you more than your skills do.",
+          "Call the pro. Keep the wrench as decoration."
+        ],
+        "B:A": [
+          "You'd fix it yourself. {partner} thought you'd call someone.",
+          "Hm. Underestimated. Go get the toolbox.",
+          "Let them watch. Quietly impressed is a love language."
+        ],
+        "B:B": [
+          "Help on speed dial, and {partner} called it. Hm.",
+          "No pretending to understand pipes. Healthy.",
+          "Mole wisdom: wet floors don't care about pride."
+        ]
+      }
+    },
+    {
+      "id": "MM-V17",
+      "friendId": "adventure_friend_mm",
+      "type": "Guess",
+      "scene": "Mr Mole quietly slides the last cookie toward you, then looks away.",
+      "lines": [
+        "Hm. That wasn't anything. Moving on."
+      ],
+      "question": "Which tiny thing does your partner do that secretly means 'I love you'?",
+      "selfQuestion": "Which tiny thing do you do that secretly means 'I love you'?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Saves the last bite",
+          "reply": [
+            "Hm. The last bite. Real sacrifice.",
+            "Mabel gives me hers. I pretend I didn't notice. I noticed."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Warms up the bed first",
+          "reply": [
+            "Hm. Bed warming. Underrated.",
+            "Cold sheets are a crime. They're a hero."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Texts 'home safe?'",
+          "reply": [
+            "Hm. 'Home safe?' Short. Strong.",
+            "Two words that carry all the other words."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "The last bite, and {partner} saw it coming. Hm.",
+          "They noticed every fry you've ever given up.",
+          "That's real love. Food love."
+        ],
+        "A:B": [
+          "You warm the bed. {partner} guessed the last bite.",
+          "Hm. They think the mattress is just naturally cozy.",
+          "Leave a note on the pillow. 'This was me.'"
+        ],
+        "A:C": [
+          "You send 'home safe?' {partner} guessed the last bite.",
+          "Hm. They think your love language is fries. It's also texts.",
+          "Do both. Text from the table. Pass the fries."
+        ],
+        "B:A": [
+          "You give up the last bite. {partner} guessed bed warming.",
+          "Hm. They missed all the fries you sacrificed.",
+          "Next time, slide it over slowly. Make eye contact."
+        ],
+        "B:B": [
+          "Warming the bed, and {partner} knew. Hm.",
+          "They clocked the warm sheets. Every single time.",
+          "Human heater. Respected profession."
+        ],
+        "B:C": [
+          "'Home safe?' is your love note. {partner} guessed bed warming.",
+          "Hm. They're giving the blanket your credit.",
+          "Fine. Warm the bed too. Overachiever."
+        ],
+        "C:A": [
+          "Last bite for you. {partner} guessed the 'home safe?' text.",
+          "Hm. They're reading your texts, not your plate.",
+          "Text 'saved you the last bite.' Both covered."
+        ],
+        "C:B": [
+          "Bed warming is your move. {partner} guessed the texts.",
+          "Hm. Your best work, completely uncredited. Classic.",
+          "Text them: 'Bed's warm.' Now they'll know."
+        ],
+        "C:C": [
+          "'Home safe?' texts, and {partner} knew. Hm.",
+          "Short texts. Huge meaning. They get it.",
+          "Mabel texts me that. From the next room."
+        ]
+      }
+    },
+    {
+      "id": "MM-V18",
+      "friendId": "adventure_friend_mm",
+      "type": "Guess",
+      "scene": "A spider strolls across your ceiling. Mr Mole watches it, unbothered.",
+      "lines": [
+        "Hm. Roommate. Doesn't pay rent."
+      ],
+      "question": "There's a spider in the house. What does your partner do?",
+      "selfQuestion": "There's a spider in the house. What do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Gently carries it outside",
+          "reply": [
+            "Hm. Spider escort. Gentle soul.",
+            "Mabel does this. She names them first."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Calls for backup",
+          "reply": [
+            "Hm. Backup. Smart. Spiders are fast.",
+            "No shame. I scream too. Quietly."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Spider escort, and {partner} knew. Hm.",
+          "Cup, paper, calm face, out the door.",
+          "That spider tells all its friends about you."
+        ],
+        "A:B": [
+          "You'd call for backup. {partner} thought you were the brave one.",
+          "Hm. Your secret's out.",
+          "Good news: now they know to come running."
+        ],
+        "B:A": [
+          "You'd walk the spider out. {partner} thought you'd yell for help.",
+          "Hm. They don't know you're the spider whisperer.",
+          "Show them next time. Very casually."
+        ],
+        "B:B": [
+          "Calling for backup, and {partner} knew it. Hm.",
+          "They already know their role: spider bodyguard.",
+          "Teamwork. One screams, one carries."
+        ]
+      }
+    },
+    {
+      "id": "MM-V19",
+      "friendId": "adventure_friend_mm",
+      "type": "Guess",
+      "scene": "Mr Mole lies flat on your rug and stares at the ceiling. Peacefully.",
+      "lines": [
+        "Hm. Sunday energy. Let's discuss."
+      ],
+      "question": "Lazy Sunday. What does your partner actually want to do?",
+      "selfQuestion": "Lazy Sunday. What do you actually want to do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fix a few things around the house",
+          "reply": [
+            "Hm. Productive Sunday. Suspicious.",
+            "Mabel calls it 'puttering.' I respect it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Absolutely nothing",
+          "reply": [
+            "Hm. Nothing. A noble goal.",
+            "Sundays were made for staring at ceilings."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Fixing stuff, and {partner} knew. Hm.",
+          "They've seen you 'relax' while holding a screwdriver.",
+          "Let them nap nearby. You putter."
+        ],
+        "A:B": [
+          "You want to do nothing. {partner} thought you'd be fixing things.",
+          "Hm. Busted. The tools stay in the drawer.",
+          "Tell them gently: Sunday is a no-hammer zone."
+        ],
+        "B:A": [
+          "You'd want to fix stuff. {partner} thought you'd do nothing.",
+          "Hm. Surprise handyman. Plot twist.",
+          "Fix one thing, then do nothing together. Fair trade."
+        ],
+        "B:B": [
+          "Absolutely nothing, and {partner} knew. Hm.",
+          "Pajamas. No plans. No guilt.",
+          "Perfect Sunday. Mole approved."
+        ]
+      }
+    },
+    {
+      "id": "MM-V20",
+      "friendId": "adventure_friend_mm",
+      "type": "Guess",
+      "scene": "Mr Mole shows you a small window he dug for Mabel. He looks very proud. Says nothing.",
+      "lines": [
+        "Hm. About being proud. Quietly."
+      ],
+      "question": "When your partner is secretly proud of you, what do they do?",
+      "selfQuestion": "When you're secretly proud of your partner, what do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Tells everyone",
+          "reply": [
+            "Hm. A hype person. Loud love.",
+            "Mabel tells the whole tunnel when I fix a window."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Says 'hm, nice' and smiles",
+          "reply": [
+            "Hm. 'Hm, nice.' My entire vocabulary.",
+            "Means more than it sounds. Trust me."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You tell everyone, and {partner} knew. Hm.",
+          "Your group chat has heard about them. Many times.",
+          "Keep going. They act embarrassed. They're not."
+        ],
+        "A:B": [
+          "Just 'hm, nice' from you. {partner} imagined a whole parade.",
+          "Hm. Lower their expectations or raise your volume.",
+          "Tell one person. Out loud. Where they can hear."
+        ],
+        "B:A": [
+          "You tell everyone. {partner} thought you'd just say 'hm, nice.'",
+          "Hm. They have no idea about your bragging.",
+          "Forward them one hype text. Let them see."
+        ],
+        "B:B": [
+          "'Hm, nice' and a smile, and {partner} knew. Hm.",
+          "They read that tiny smile like a full speech.",
+          "Mole-level communication. I'm proud. Hm. Nice."
+        ]
+      }
+    }
+  ]
+}

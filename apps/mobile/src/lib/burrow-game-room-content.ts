@@ -7,16 +7,32 @@ import type { GameOverview, GameSession, GameSummary } from './burrow-game-room-
 export const GAME_ROOM_CONTENT_VERSION = catalog.version;
 export const GAME_ROOM_CATEGORIES = catalog.categories;
 export const GAME_ROOM_GAMES: GameSummary[] = catalog.games.map(({ questions, ...game }) => ({
-  ...game, questionCount: questions.length,
+  ...game, title: game.title.replace(/\s+[^\x00-\x7F].*$/u, '').trim(), questionCount: questions.length,
 }));
 const byId = new Map(catalog.games.map(game => [game.id, game]));
+
+/** Stable partition of the resolved Admin offers, never the membership badge.
+ * Preserve editorial order within each group and never mutate the catalogue. */
+export function gameRailItems(games: readonly GameSummary[]): GameSummary[] {
+  const regular: GameSummary[] = [], plus: GameSummary[] = [];
+  for (const game of games) {
+    if (game.active === false) continue;
+    (game.plus_only ? plus : regular).push(game);
+  }
+  return [...regular, ...plus];
+}
 
 /** User state is remote; every visible catalogue string is always local. */
 export function localGameOverview(state?: Partial<GameOverview> | null): GameOverview {
   return {
     paired: state?.paired ?? false,
     ownedIds: state?.ownedIds ?? [], availableIds: state?.availableIds ?? [], sessions: state?.sessions ?? [],
-    categories: GAME_ROOM_CATEGORIES, games: GAME_ROOM_GAMES,
+    products: state?.products,
+    completion: state?.completion,
+    lastRounds: state?.lastRounds,
+    categories: GAME_ROOM_CATEGORIES, games: state?.products ? GAME_ROOM_GAMES.map(game => ({...game,
+      ...(state.products?.[game.id]??{active:false}),
+    })) : GAME_ROOM_GAMES,
   };
 }
 

@@ -1,0 +1,447 @@
+Tap Your Day 当前在用图标名称列表
+共 391 个：默认 134 个；可选添加 257 个。
+来源：packages/engine/src/items/tap-your-day-local.json。名称为当前界面显示名称，保留原有 item ID。
+素材目录：apps/mobile/assets/Tap-your-day-Icons/。所有 391 款均使用提供的本地素材。
+
+DAILY RHYTHM (32)
+默认：At Home、Work、School、Studying、Commuting、Errands、Shopping、Life Admin、Appointments、Travel、Working from Home、Driving、Groceries
+  At Home	memory.1452_home	memory.1452_home.webp
+  Work	memory.1541_workplace	memory.1541_workplace.webp
+  School	memory.1551_school	memory.1551_school.webp
+  Studying	memory.3002_workbook	memory.3002_workbook.webp
+  Commuting	memory.2127_bus	memory.2127_bus.webp
+  Errands	memory.2345_checklist_card	memory.2345_checklist_card.webp
+  Shopping	memory.5389_shopping	memory.5389_shopping.webp
+  Life Admin	memory.2950_planner	memory.2950_planner.webp
+  Appointments	memory.1435_appointment_book	memory.1435_appointment_book.webp
+  Travel	memory.2207_travel_luggage	memory.2207_travel_luggage.webp
+  Working from Home	memory.new_working_from_home	memory.new_working_from_home.webp
+  Driving	memory.new_driving	memory.new_driving.webp
+  Groceries	memory.new_groceries	memory.new_groceries.webp
+可选添加：Taking an Exam、Sending / Receiving a Parcel、Doing Taxes、Meeting、Working Late、Day Off、Job Interview、Side Hustle、Paying Bills、Budgeting、Online Shopping、Getting Gas、Car Maintenance、School Run、Flying、Road Trip、Hotel Stay、Packing、Going to the Library
+  Taking an Exam	memory.1361_exam	memory.1361_exam.webp
+  Sending / Receiving a Parcel	memory.1433_parcel	memory.1433_parcel.webp
+  Doing Taxes	memory.1434_tax_return	memory.1434_tax_return.webp
+  Meeting	memory.new_meeting	memory.new_meeting.webp
+  Working Late	memory.new_working_late	memory.new_working_late.webp
+  Day Off	memory.new_day_off	memory.new_day_off.webp
+  Job Interview	memory.new_job_interview	memory.new_job_interview.webp
+  Side Hustle	memory.new_side_hustle	memory.new_side_hustle.webp
+  Paying Bills	memory.new_paying_bills	memory.new_paying_bills.webp
+  Budgeting	memory.new_budgeting	memory.new_budgeting.webp
+  Online Shopping	memory.new_online_shopping	memory.new_online_shopping.webp
+  Getting Gas	memory.new_getting_gas	memory.new_getting_gas.webp
+  Car Maintenance	memory.new_car_maintenance	memory.new_car_maintenance.webp
+  School Run	memory.new_school_run	memory.new_school_run.webp
+  Flying	memory.new_flying	memory.new_flying.webp
+  Road Trip	memory.new_road_trip	memory.new_road_trip.webp
+  Hotel Stay	memory.new_hotel_stay	memory.new_hotel_stay.webp
+  Packing	memory.new_packing	memory.new_packing.webp
+  Going to the Library	memory.new_going_to_the_library	memory.new_going_to_the_library.webp
+
+HOME & CARE (31)
+默认：Chores、Cooking、Baking、Home Projects、Gardening、Pet Care、Caregiving、Doing Laundry、Vacuuming、Doing the Dishes、Tidying Up、Plant Care
+  Chores	memory.3990_cleaning_caddy	memory.3990_cleaning_caddy.webp
+  Cooking	memory.1399_cooking	memory.1399_cooking.webp
+  Baking	memory.0005_baking	memory.0005_baking.webp
+  Home Projects	memory.1436_toolbox	memory.1436_toolbox.webp
+  Gardening	memory.1400_gardening	memory.1400_gardening.webp
+  Pet Care	memory.1441_pet_bowl	memory.1441_pet_bowl.webp
+  Caregiving	memory.1417_hugging	memory.1417_hugging.webp
+  Doing Laundry	memory.5399_washing_machine	memory.5399_washing_machine.webp
+  Vacuuming	memory.4008_vacuum_cleaner	memory.4008_vacuum_cleaner.webp
+  Doing the Dishes	memory.5398_dishwasher	memory.5398_dishwasher.webp
+  Tidying Up	memory.new_tidying_up	memory.new_tidying_up.webp
+  Plant Care	memory.new_plant_care	memory.new_plant_care.webp
+可选添加：Drying Clothes、Recycling、Taking Out the Trash、Mowing the Lawn、Weeding、Raking Leaves、Cleaning the Litter Box、Meal Prep、Making the Bed、Deep Cleaning、Cleaning the Bathroom、Ironing、Decluttering、Decorating、Repairs、Walking the Dog、Vet Visit、Pet Grooming、Childcare
+  Drying Clothes	memory.5400_clothes_dryer	memory.5400_clothes_dryer.webp
+  Recycling	memory.1432_recycling_bin	memory.1432_recycling_bin.webp
+  Taking Out the Trash	memory.1431_trash_can	memory.1431_trash_can.webp
+  Mowing the Lawn	memory.1443_lawn_mower	memory.1443_lawn_mower.webp
+  Weeding	memory.1445_weeding	memory.1445_weeding.webp
+  Raking Leaves	memory.1444_leaf_rake	memory.1444_leaf_rake.webp
+  Cleaning the Litter Box	memory.1442_litter_box	memory.1442_litter_box.webp
+  Meal Prep	memory.new_meal_prep	memory.new_meal_prep.webp
+  Making the Bed	memory.new_making_the_bed	memory.new_making_the_bed.webp
+  Deep Cleaning	memory.new_deep_cleaning	memory.new_deep_cleaning.webp
+  Cleaning the Bathroom	memory.new_cleaning_the_bathroom	memory.new_cleaning_the_bathroom.webp
+  Ironing	memory.new_ironing	memory.new_ironing.webp
+  Decluttering	memory.new_decluttering	memory.new_decluttering.webp
+  Decorating	memory.new_decorating	memory.new_decorating.webp
+  Repairs	memory.new_repairs	memory.new_repairs.webp
+  Walking the Dog	memory.new_walking_the_dog	memory.new_walking_the_dog.webp
+  Vet Visit	memory.new_vet_visit	memory.new_vet_visit.webp
+  Pet Grooming	memory.new_pet_grooming	memory.new_pet_grooming.webp
+  Childcare	memory.new_childcare	memory.new_childcare.webp
+
+MOVEMENT & OUTDOORS (47)
+默认：Outdoors、Gym、Sports、Walking、Running、Cycling、Yoga、Hiking、Swimming、Pilates、Stretching、Home Workout
+  Outdoors	memory.1486_park	memory.1486_park.webp
+  Gym	memory.1299_fitness	memory.1299_fitness.webp
+  Sports	memory.1325_basketball	memory.1325_basketball.webp
+  Walking	memory.1297_walking	memory.1297_walking.webp
+  Running	memory.0004_running	memory.0004_running.webp
+  Cycling	memory.1306_bicycle	memory.1306_bicycle.webp
+  Yoga	memory.1304_yoga	memory.1304_yoga.webp
+  Hiking	memory.1298_hiking	memory.1298_hiking.webp
+  Swimming	memory.1307_swimming	memory.1307_swimming.webp
+  Pilates	memory.1303_reformer_pilates	memory.1303_reformer_pilates.webp
+  Stretching	memory.new_stretching	memory.new_stretching.webp
+  Home Workout	memory.new_home_workout	memory.new_home_workout.webp
+可选添加：Dancing、Ballet、Climbing、Skiing、Snowboarding、Kayaking、Surfing、Roller Skating、Playing Soccer、Playing Tennis、Playing Badminton、Playing Volleyball、Bowling、Boxing、Camping、Fishing、Birdwatching、Stargazing、Beach Day、Pickleball、Golf、Playing Basketball、Playing Football、Playing Baseball、Table Tennis、Martial Arts、Spin Class、Weightlifting、Skateboarding、Ice Skating、Horse Riding、Paddleboarding、Snorkeling、Running a Race、Sunset Watching
+  Dancing	memory.1355_dance	memory.1355_dance.webp
+  Ballet	memory.1356_ballet	memory.1356_ballet.webp
+  Climbing	memory.1321_rock_climbing	memory.1321_rock_climbing.webp
+  Skiing	memory.1317_skiing	memory.1317_skiing.webp
+  Snowboarding	memory.1318_snowboard	memory.1318_snowboard.webp
+  Kayaking	memory.1308_kayak	memory.1308_kayak.webp
+  Surfing	memory.1312_surfboard	memory.1312_surfboard.webp
+  Roller Skating	memory.1315_roller_skates	memory.1315_roller_skates.webp
+  Playing Soccer	memory.1326_soccer_ball	memory.1326_soccer_ball.webp
+  Playing Tennis	memory.1330_tennis_racket	memory.1330_tennis_racket.webp
+  Playing Badminton	memory.1332_badminton_racket	memory.1332_badminton_racket.webp
+  Playing Volleyball	memory.1329_volleyball	memory.1329_volleyball.webp
+  Bowling	memory.1337_bowling_ball	memory.1337_bowling_ball.webp
+  Boxing	memory.1342_boxing_gloves	memory.1342_boxing_gloves.webp
+  Camping	memory.1405_tent	memory.1405_tent.webp
+  Fishing	memory.1404_fishing_rod	memory.1404_fishing_rod.webp
+  Birdwatching	memory.1401_binoculars	memory.1401_binoculars.webp
+  Stargazing	memory.1402_telescope	memory.1402_telescope.webp
+  Beach Day	memory.new_beach_day	memory.new_beach_day.webp
+  Pickleball	memory.new_pickleball	memory.new_pickleball.webp
+  Golf	memory.new_golf	memory.new_golf.webp
+  Playing Basketball	memory.new_playing_basketball	memory.new_playing_basketball.webp
+  Playing Football	memory.new_playing_football	memory.new_playing_football.webp
+  Playing Baseball	memory.new_playing_baseball	memory.new_playing_baseball.webp
+  Table Tennis	memory.new_table_tennis	memory.new_table_tennis.webp
+  Martial Arts	memory.new_martial_arts	memory.new_martial_arts.webp
+  Spin Class	memory.new_spin_class	memory.new_spin_class.webp
+  Weightlifting	memory.new_weightlifting	memory.new_weightlifting.webp
+  Skateboarding	memory.new_skateboarding	memory.new_skateboarding.webp
+  Ice Skating	memory.new_ice_skating	memory.new_ice_skating.webp
+  Horse Riding	memory.new_horse_riding	memory.new_horse_riding.webp
+  Paddleboarding	memory.new_paddleboarding	memory.new_paddleboarding.webp
+  Snorkeling	memory.new_snorkeling	memory.new_snorkeling.webp
+  Running a Race	memory.new_running_a_race	memory.new_running_a_race.webp
+  Sunset Watching	memory.new_sunset_watching	memory.new_sunset_watching.webp
+
+SOCIAL & GOING OUT (29)
+默认：Socializing、Date、Calls & Chats、Parties、Events、Café、Drinks Out
+  Socializing	memory.1403_picnic	memory.1403_picnic.webp
+  Date	memory.1491_restaurant	memory.1491_restaurant.webp
+  Calls & Chats	memory.5388_messaging	memory.5388_messaging.webp
+  Parties	memory.2217_party	memory.2217_party.webp
+  Events	memory.2261_event_ticket	memory.2261_event_ticket.webp
+  Café	memory.new_caf	memory.new_caf.webp
+  Drinks Out	memory.new_drinks_out	memory.new_drinks_out.webp
+可选添加：Volunteering、Going to a Concert、Seeing a Show、Visiting a Museum、Visiting a Theme Park、Holding Hands、Brunch、Night Out、Hosting Guests、Family Gathering、Video Call、Game Night、Watching a Game、Going to a Festival、Visiting the Zoo、Visiting an Aquarium、Meeting New People、Networking、Club Meetup、Attending a Service、Cuddling、Movie Night In
+  Volunteering	memory.1594_volunteer_center	memory.1594_volunteer_center.webp
+  Going to a Concert	memory.1414_concert	memory.1414_concert.webp
+  Seeing a Show	memory.1413_theater	memory.1413_theater.webp
+  Visiting a Museum	memory.1408_museum	memory.1408_museum.webp
+  Visiting a Theme Park	memory.1415_theme_park	memory.1415_theme_park.webp
+  Holding Hands	memory.1418_holding_hands	memory.1418_holding_hands.webp
+  Brunch	memory.new_brunch	memory.new_brunch.webp
+  Night Out	memory.new_night_out	memory.new_night_out.webp
+  Hosting Guests	memory.new_hosting_guests	memory.new_hosting_guests.webp
+  Family Gathering	memory.new_family_gathering	memory.new_family_gathering.webp
+  Video Call	memory.new_video_call	memory.new_video_call.webp
+  Game Night	memory.new_game_night	memory.new_game_night.webp
+  Watching a Game	memory.new_watching_a_game	memory.new_watching_a_game.webp
+  Going to a Festival	memory.new_going_to_a_festival	memory.new_going_to_a_festival.webp
+  Visiting the Zoo	memory.new_visiting_the_zoo	memory.new_visiting_the_zoo.webp
+  Visiting an Aquarium	memory.new_visiting_an_aquarium	memory.new_visiting_an_aquarium.webp
+  Meeting New People	memory.new_meeting_new_people	memory.new_meeting_new_people.webp
+  Networking	memory.new_networking	memory.new_networking.webp
+  Club Meetup	memory.new_club_meetup	memory.new_club_meetup.webp
+  Attending a Service	memory.new_attending_a_service	memory.new_attending_a_service.webp
+  Cuddling	memory.new_cuddling	memory.new_cuddling.webp
+  Movie Night In	memory.new_movie_night_in	memory.new_movie_night_in.webp
+
+ENTERTAINMENT & DOWNTIME (25)
+默认：Movies、TV、Gaming、Reading、Music、Podcasts、Social Media、Relaxing、Watching Videos
+  Movies	memory.1363_movie_theater	memory.1363_movie_theater.webp
+  TV	memory.1362_television	memory.1362_television.webp
+  Gaming	memory.1368_game_controller	memory.1368_game_controller.webp
+  Reading	memory.0006_book	memory.0006_book.webp
+  Music	memory.5387_music	memory.5387_music.webp
+  Podcasts	memory.1364_podcast	memory.1364_podcast.webp
+  Social Media	memory.5385_social_media	memory.5385_social_media.webp
+  Relaxing	memory.1421_bed	memory.1421_bed.webp
+  Watching Videos	memory.5386_video	memory.5386_video.webp
+可选添加：Playing Board Games、Playing Cards、Doing a Puzzle、Visiting an Escape Room、Karaoke、Mobile Gaming、Watching Anime、Watching Sports、Audiobooks、Reading Comics、Word Games、Playing Chess、Arcade、Trivia Night、Doing Nothing、Daydreaming
+  Playing Board Games	memory.1369_board_game	memory.1369_board_game.webp
+  Playing Cards	memory.1370_card_game	memory.1370_card_game.webp
+  Doing a Puzzle	memory.1371_jigsaw_puzzle	memory.1371_jigsaw_puzzle.webp
+  Visiting an Escape Room	memory.1373_escape_room	memory.1373_escape_room.webp
+  Karaoke	memory.1365_karaoke_machine	memory.1365_karaoke_machine.webp
+  Mobile Gaming	memory.5391_mobile_gaming	memory.5391_mobile_gaming.webp
+  Watching Anime	memory.new_watching_anime	memory.new_watching_anime.webp
+  Watching Sports	memory.new_watching_sports	memory.new_watching_sports.webp
+  Audiobooks	memory.new_audiobooks	memory.new_audiobooks.webp
+  Reading Comics	memory.new_reading_comics	memory.new_reading_comics.webp
+  Word Games	memory.new_word_games	memory.new_word_games.webp
+  Playing Chess	memory.new_playing_chess	memory.new_playing_chess.webp
+  Arcade	memory.new_arcade	memory.new_arcade.webp
+  Trivia Night	memory.new_trivia_night	memory.new_trivia_night.webp
+  Doing Nothing	memory.new_doing_nothing	memory.new_doing_nothing.webp
+  Daydreaming	memory.new_daydreaming	memory.new_daydreaming.webp
+
+HOBBIES & PERSONAL GROWTH (30)
+默认：Art & Crafts、Writing、Photography、Making Music、Learning、Journaling
+  Art & Crafts	memory.4827_artist_paint_palette	memory.4827_artist_paint_palette.webp
+  Writing	memory.2876_notebook	memory.2876_notebook.webp
+  Photography	memory.1397_camera	memory.1397_camera.webp
+  Making Music	memory.1367_making_music	memory.1367_making_music.webp
+  Learning	memory.3006_globe	memory.3006_globe.webp
+  Journaling	memory.new_journaling	memory.new_journaling.webp
+可选添加：Singing、Drawing、Painting、Knitting、Crocheting、Sewing、Making Pottery、Woodworking、Editing Videos、Learning a Language、Online Course、Coding、Playing Guitar、Playing Piano、Building Blocks、Collecting、Scrapbooking、Calligraphy、Embroidery、Making Jewelry、Candle Making、Thrifting、Making Content、Trying a Recipe
+  Singing	memory.1366_singing	memory.1366_singing.webp
+  Drawing	memory.1376_drawing	memory.1376_drawing.webp
+  Painting	memory.1377_painting	memory.1377_painting.webp
+  Knitting	memory.1380_knitting_needles	memory.1380_knitting_needles.webp
+  Crocheting	memory.1381_crochet_hook	memory.1381_crochet_hook.webp
+  Sewing	memory.1382_sewing_kit	memory.1382_sewing_kit.webp
+  Making Pottery	memory.1386_pottery_wheel	memory.1386_pottery_wheel.webp
+  Woodworking	memory.1387_woodworking	memory.1387_woodworking.webp
+  Editing Videos	memory.1398_video_editing	memory.1398_video_editing.webp
+  Learning a Language	memory.new_learning_a_language	memory.new_learning_a_language.webp
+  Online Course	memory.new_online_course	memory.new_online_course.webp
+  Coding	memory.new_coding	memory.new_coding.webp
+  Playing Guitar	memory.new_playing_guitar	memory.new_playing_guitar.webp
+  Playing Piano	memory.new_playing_piano	memory.new_playing_piano.webp
+  Building Blocks	memory.new_building_blocks	memory.new_building_blocks.webp
+  Collecting	memory.new_collecting	memory.new_collecting.webp
+  Scrapbooking	memory.new_scrapbooking	memory.new_scrapbooking.webp
+  Calligraphy	memory.new_calligraphy	memory.new_calligraphy.webp
+  Embroidery	memory.new_embroidery	memory.new_embroidery.webp
+  Making Jewelry	memory.new_making_jewelry	memory.new_making_jewelry.webp
+  Candle Making	memory.new_candle_making	memory.new_candle_making.webp
+  Thrifting	memory.new_thrifting	memory.new_thrifting.webp
+  Making Content	memory.new_making_content	memory.new_making_content.webp
+  Trying a Recipe	memory.new_trying_a_recipe	memory.new_trying_a_recipe.webp
+
+MEALS (40)
+默认：Breakfast、Noodles、Pizza、Pasta、Sandwich、Burger、Taco、Dumplings、Sushi、Salad、Rice、Soup、Meat、Seafood、Vegetables、Fast Food、Takeout、Chicken
+  Breakfast	memory.0358_breakfast_platter	memory.0358_breakfast_platter.webp
+  Noodles	memory.0718_rice_noodles	memory.0718_rice_noodles.webp
+  Pizza	memory.0003_pizza	memory.0003_pizza.webp
+  Pasta	memory.0045_spaghetti	memory.0045_spaghetti.webp
+  Sandwich	memory.0009_sandwich	memory.0009_sandwich.webp
+  Burger	memory.0007_burger	memory.0007_burger.webp
+  Taco	memory.0017_taco	memory.0017_taco.webp
+  Dumplings	memory.0066_dumplings	memory.0066_dumplings.webp
+  Sushi	memory.0062_sushi	memory.0062_sushi.webp
+  Salad	memory.0079_salad	memory.0079_salad.webp
+  Rice	memory.0056_rice_bowl	memory.0056_rice_bowl.webp
+  Soup	memory.0078_soup	memory.0078_soup.webp
+  Meat	memory.0027_steak	memory.0027_steak.webp
+  Seafood	memory.0076_seafood_boil	memory.0076_seafood_boil.webp
+  Vegetables	memory.0087_roasted_vegetables	memory.0087_roasted_vegetables.webp
+  Fast Food	memory.5392_chicken_nuggets	memory.5392_chicken_nuggets.webp
+  Takeout	memory.5390_food_delivery	memory.5390_food_delivery.webp
+  Chicken	memory.new_chicken	memory.new_chicken.webp
+可选添加：Wrap、Curry、Eggs、Pancakes、Toast、Cereal、Oatmeal、Bagel、Ramen、Instant Noodles、Fried Rice、Hot Pot、BBQ、Fried Chicken、Burrito、Poke Bowl、Hot Dog、Mac & Cheese、Fries、Leftovers、Packed Lunch、Plant-Based
+  Wrap	memory.0011_wrap	memory.0011_wrap.webp
+  Curry	memory.0059_curry	memory.0059_curry.webp
+  Eggs	memory.new_eggs	memory.new_eggs.webp
+  Pancakes	memory.new_pancakes	memory.new_pancakes.webp
+  Toast	memory.new_toast	memory.new_toast.webp
+  Cereal	memory.new_cereal	memory.new_cereal.webp
+  Oatmeal	memory.new_oatmeal	memory.new_oatmeal.webp
+  Bagel	memory.new_bagel	memory.new_bagel.webp
+  Ramen	memory.new_ramen	memory.new_ramen.webp
+  Instant Noodles	memory.new_instant_noodles	memory.new_instant_noodles.webp
+  Fried Rice	memory.new_fried_rice	memory.new_fried_rice.webp
+  Hot Pot	memory.new_hot_pot	memory.new_hot_pot.webp
+  BBQ	memory.new_bbq	memory.new_bbq.webp
+  Fried Chicken	memory.new_fried_chicken	memory.new_fried_chicken.webp
+  Burrito	memory.new_burrito	memory.new_burrito.webp
+  Poke Bowl	memory.new_poke_bowl	memory.new_poke_bowl.webp
+  Hot Dog	memory.new_hot_dog	memory.new_hot_dog.webp
+  Mac & Cheese	memory.new_mac_and_cheese	memory.new_mac_and_cheese.webp
+  Fries	memory.new_fries	memory.new_fries.webp
+  Leftovers	memory.new_leftovers	memory.new_leftovers.webp
+  Packed Lunch	memory.new_packed_lunch	memory.new_packed_lunch.webp
+  Plant-Based	memory.new_plant_based	memory.new_plant_based.webp
+
+CUISINE (28)
+可选添加：American Food、Chinese Food、Japanese Food、Korean Food、Mexican Food、Italian Food、Indian Food、Thai Food、Vietnamese Food、Mediterranean Food、Middle Eastern Food、Caribbean Food、Filipino Food、French Food、Greek Food、Ethiopian Food、Spanish Food、Turkish Food、Brazilian Food、Peruvian Food、Hawaiian Food、Southern Food、Cajun Food、Taiwanese Food、Malaysian Food、Indonesian Food、German Food、West African Food
+  American Food	memory.0040_corn_dog	memory.0040_corn_dog.webp
+  Chinese Food	memory.0119_dim_sum	memory.0119_dim_sum.webp
+  Japanese Food	memory.0266_bento_box	memory.0266_bento_box.webp
+  Korean Food	memory.0122_korean_bbq	memory.0122_korean_bbq.webp
+  Mexican Food	memory.0021_enchiladas	memory.0021_enchiladas.webp
+  Italian Food	memory.0048_ravioli	memory.0048_ravioli.webp
+  Indian Food	memory.0149_chicken_tikka_masala	memory.0149_chicken_tikka_masala.webp
+  Thai Food	memory.0053_pad_thai	memory.0053_pad_thai.webp
+  Vietnamese Food	memory.0051_pho	memory.0051_pho.webp
+  Mediterranean Food	memory.1230_falafel_plate	memory.1230_falafel_plate.webp
+  Middle Eastern Food	memory.0042_shawarma	memory.0042_shawarma.webp
+  Caribbean Food	memory.0186_jerk_chicken	memory.0186_jerk_chicken.webp
+  Filipino Food	memory.0166_adobo	memory.0166_adobo.webp
+  French Food	memory.0320_crepes	memory.0320_crepes.webp
+  Greek Food	memory.0015_gyro	memory.0015_gyro.webp
+  Ethiopian Food	memory.0267_injera	memory.0267_injera.webp
+  Spanish Food	memory.new_spanish_food	memory.new_spanish_food.webp
+  Turkish Food	memory.new_turkish_food	memory.new_turkish_food.webp
+  Brazilian Food	memory.new_brazilian_food	memory.new_brazilian_food.webp
+  Peruvian Food	memory.new_peruvian_food	memory.new_peruvian_food.webp
+  Hawaiian Food	memory.new_hawaiian_food	memory.new_hawaiian_food.webp
+  Southern Food	memory.new_southern_food	memory.new_southern_food.webp
+  Cajun Food	memory.new_cajun_food	memory.new_cajun_food.webp
+  Taiwanese Food	memory.new_taiwanese_food	memory.new_taiwanese_food.webp
+  Malaysian Food	memory.new_malaysian_food	memory.new_malaysian_food.webp
+  Indonesian Food	memory.new_indonesian_food	memory.new_indonesian_food.webp
+  German Food	memory.new_german_food	memory.new_german_food.webp
+  West African Food	memory.new_west_african_food	memory.new_west_african_food.webp
+
+SNACKS (23)
+默认：Fruit、Snack、Pastry、Chips、Sweets、Cake
+  Fruit	memory.2844_fruit_bowl	memory.2844_fruit_bowl.webp
+  Snack	memory.1258_rice_crackers	memory.1258_rice_crackers.webp
+  Pastry	memory.0363_croissant	memory.0363_croissant.webp
+  Chips	memory.new_chips	memory.new_chips.webp
+  Sweets	memory.new_sweets	memory.new_sweets.webp
+  Cake	memory.new_cake	memory.new_cake.webp
+可选添加：Chocolate、Cookies、Donut、Ice Cream、Popcorn、Nuts、Yogurt、Cheese & Crackers、Granola Bar、Cupcake、Muffin、Brownie、Pie、Mochi、Pretzel、Popsicle、Late-Night Snack
+  Chocolate	memory.new_chocolate	memory.new_chocolate.webp
+  Cookies	memory.new_cookies	memory.new_cookies.webp
+  Donut	memory.new_donut	memory.new_donut.webp
+  Ice Cream	memory.new_ice_cream	memory.0455_ice_cream.webp
+  Popcorn	memory.new_popcorn	memory.new_popcorn.webp
+  Nuts	memory.new_nuts	memory.new_nuts.webp
+  Yogurt	memory.new_yogurt	memory.new_yogurt.webp
+  Cheese & Crackers	memory.new_cheese_and_crackers	memory.new_cheese_and_crackers.webp
+  Granola Bar	memory.new_granola_bar	memory.new_granola_bar.webp
+  Cupcake	memory.new_cupcake	memory.new_cupcake.webp
+  Muffin	memory.new_muffin	memory.new_muffin.webp
+  Brownie	memory.new_brownie	memory.new_brownie.webp
+  Pie	memory.new_pie	memory.new_pie.webp
+  Mochi	memory.new_mochi	memory.new_mochi.webp
+  Pretzel	memory.new_pretzel	memory.new_pretzel.webp
+  Popsicle	memory.new_popsicle	memory.new_popsicle.webp
+  Late-Night Snack	memory.new_late_night_snack	memory.new_late_night_snack.webp
+
+DRINKS (24)
+默认：Water、Coffee、Tea、Juice、Smoothie、Soda、Milk、Energy Drink、Bubble Tea
+  Water	memory.0507_water	memory.0507_water.webp
+  Coffee	memory.0002_coffee	memory.0002_coffee.webp
+  Tea	memory.0510_tea	memory.0510_tea.webp
+  Juice	memory.0520_juice	memory.0520_juice.webp
+  Smoothie	memory.0527_smoothie	memory.0527_smoothie.webp
+  Soda	memory.0537_soda	memory.0537_soda.webp
+  Milk	memory.0530_milk	memory.0530_milk.webp
+  Energy Drink	memory.0535_energy_drink	memory.0535_energy_drink.webp
+  Bubble Tea	memory.new_bubble_tea	memory.new_bubble_tea.webp
+可选添加：Iced Coffee、Latte、Matcha、Hot Chocolate、Sparkling Water、Lemonade、Kombucha、Protein Shake、Coconut Water、Beer、Wine、Cocktail、Mocktail、Champagne、Soju & Sake
+  Iced Coffee	memory.new_iced_coffee	memory.new_iced_coffee.webp
+  Latte	memory.new_latte	memory.new_latte.webp
+  Matcha	memory.new_matcha	memory.new_matcha.webp
+  Hot Chocolate	memory.new_hot_chocolate	memory.new_hot_chocolate.webp
+  Sparkling Water	memory.new_sparkling_water	memory.new_sparkling_water.webp
+  Lemonade	memory.new_lemonade	memory.new_lemonade.webp
+  Kombucha	memory.new_kombucha	memory.new_kombucha.webp
+  Protein Shake	memory.new_protein_shake	memory.new_protein_shake.webp
+  Coconut Water	memory.new_coconut_water	memory.new_coconut_water.webp
+  Beer	memory.new_beer	memory.0557_beer.webp
+  Wine	memory.new_wine	memory.new_wine.webp
+  Cocktail	memory.new_cocktail	memory.new_cocktail.webp
+  Mocktail	memory.new_mocktail	memory.new_mocktail.webp
+  Champagne	memory.new_champagne	memory.new_champagne.webp
+  Soju & Sake	memory.new_soju_and_sake	memory.new_soju_and_sake.webp
+
+REST & WELLNESS (25)
+默认：Health Care、Meditation、Self-Care、Sleep、Nap、Shower、Sick Day
+  Health Care	memory.3461_first_aid_kit	memory.3461_first_aid_kit.webp
+  Meditation	memory.1430_meditation	memory.1430_meditation.webp
+  Self-Care	memory.1426_skincare	memory.1426_skincare.webp
+  Sleep	memory.new_sleep	memory.new_sleep.webp
+  Nap	memory.new_nap	memory.new_nap.webp
+  Shower	memory.new_shower	memory.new_shower.webp
+  Sick Day	memory.new_sick_day	memory.new_sick_day.webp
+可选添加：Taking a Bath、Bad Sleep、Sleeping In、Early Night、Getting a Haircut、Nails、Massage、Spa Day、Sauna、Doctor Visit、Dentist、Therapy Session、Taking Vitamins、Period、Breathing Exercise、Digital Detox、Sunbathing、Prayer
+  Taking a Bath	memory.new_taking_a_bath	memory.new_taking_a_bath.webp
+  Bad Sleep	memory.new_bad_sleep	memory.new_bad_sleep.webp
+  Sleeping In	memory.new_sleeping_in	memory.new_sleeping_in.webp
+  Early Night	memory.new_early_night	memory.new_early_night.webp
+  Getting a Haircut	memory.new_getting_a_haircut	memory.new_getting_a_haircut.webp
+  Nails	memory.new_nails	memory.new_nails.webp
+  Massage	memory.new_massage	memory.new_massage.webp
+  Spa Day	memory.new_spa_day	memory.new_spa_day.webp
+  Sauna	memory.new_sauna	memory.new_sauna.webp
+  Doctor Visit	memory.new_doctor_visit	memory.new_doctor_visit.webp
+  Dentist	memory.new_dentist	memory.new_dentist.webp
+  Therapy Session	memory.new_therapy_session	memory.new_therapy_session.webp
+  Taking Vitamins	memory.new_taking_vitamins	memory.new_taking_vitamins.webp
+  Period	memory.new_period	memory.new_period.webp
+  Breathing Exercise	memory.new_breathing_exercise	memory.new_breathing_exercise.webp
+  Digital Detox	memory.new_digital_detox	memory.new_digital_detox.webp
+  Sunbathing	memory.new_sunbathing	memory.new_sunbathing.webp
+  Prayer	memory.new_prayer	memory.new_prayer.webp
+
+MOMENTS & OCCASIONS (22)
+可选添加：Moving Home、Celebrating a Birthday、Anniversary、Valentine's Day、Christmas、Thanksgiving、Halloween、New Year's、Lunar New Year、Wedding、Engagement、Graduation、New Job、Promotion、Payday、Got a Gift、Gave a Gift、Good News、A First Time、Personal Best、New Pet、Baby News
+  Moving Home	memory.1437_moving_box	memory.1437_moving_box.webp
+  Celebrating a Birthday	memory.2219_birthday	memory.2219_birthday.webp
+  Anniversary	memory.new_anniversary	memory.new_anniversary.webp
+  Valentine's Day	memory.new_valentines_day	memory.new_valentines_day.webp
+  Christmas	memory.new_christmas	memory.new_christmas.webp
+  Thanksgiving	memory.new_thanksgiving	memory.new_thanksgiving.webp
+  Halloween	memory.new_halloween	memory.new_halloween.webp
+  New Year's	memory.new_new_years	memory.new_new_years.webp
+  Lunar New Year	memory.new_lunar_new_year	memory.new_lunar_new_year.webp
+  Wedding	memory.new_wedding	memory.new_wedding.webp
+  Engagement	memory.new_engagement	memory.new_engagement.webp
+  Graduation	memory.new_graduation	memory.new_graduation.webp
+  New Job	memory.new_new_job	memory.new_new_job.webp
+  Promotion	memory.new_promotion	memory.new_promotion.webp
+  Payday	memory.new_payday	memory.new_payday.webp
+  Got a Gift	memory.new_got_a_gift	memory.new_got_a_gift.webp
+  Gave a Gift	memory.new_gave_a_gift	memory.new_gave_a_gift.webp
+  Good News	memory.new_good_news	memory.new_good_news.webp
+  A First Time	memory.new_a_first_time	memory.new_a_first_time.webp
+  Personal Best	memory.new_personal_best	memory.new_personal_best.webp
+  New Pet	memory.new_new_pet	memory.new_new_pet.webp
+  Baby News	memory.new_baby_news	memory.new_baby_news.webp
+
+PEOPLE (5)
+默认：Just Me、Partner、Family、Friends、Pets
+  Just Me	tap.person.just_me	just_me.webp
+  Partner	tap.person.partner	partner.webp
+  Family	tap.person.family	family.webp
+  Friends	tap.person.friends	friends.webp
+  Pets	tap.person.pets	pets.webp
+
+FEELINGS (30)
+默认：Happy、Calm、Cool、Excited、Angelic、Shy Smile、Blowing a Kiss、In Love、Neutral、Playful、Laughing、Surprised、Crying、Worried、Dizzy、Sad、Angry、Anxious、Lonely、Tearful、Bandaged、Frustrated、Mischievous、Nauseous、Sleepy、Celebrating、Money Excited、Flirty、Annoyed、Silly
+  Happy	memory.5355_happy	memory.5355_happy.webp
+  Calm	memory.5356_calm	memory.5356_calm.webp
+  Cool	memory.5357_cool	memory.5357_cool.webp
+  Excited	memory.5358_excited	memory.5358_excited.webp
+  Angelic	memory.5359_angelic	memory.5359_angelic.webp
+  Shy Smile	memory.5360_shy_smile	memory.5360_shy_smile.webp
+  Blowing a Kiss	memory.5361_blowing_a_kiss	memory.5361_blowing_a_kiss.webp
+  In Love	memory.5362_in_love	memory.5362_in_love.webp
+  Neutral	memory.5363_neutral	memory.5363_neutral.webp
+  Playful	memory.5364_playful	memory.5364_playful.webp
+  Laughing	memory.5365_laughing	memory.5365_laughing.webp
+  Surprised	memory.5366_surprised	memory.5366_surprised.webp
+  Crying	memory.5367_crying	memory.5367_crying.webp
+  Worried	memory.5368_worried	memory.5368_worried.webp
+  Dizzy	memory.5369_dizzy	memory.5369_dizzy.webp
+  Sad	memory.5370_sad	memory.5370_sad.webp
+  Angry	memory.5371_angry	memory.5371_angry.webp
+  Anxious	memory.5372_anxious	memory.5372_anxious.webp
+  Lonely	memory.5373_lonely	memory.5373_lonely.webp
+  Tearful	memory.5374_tearful	memory.5374_tearful.webp
+  Bandaged	memory.5375_bandaged	memory.5375_bandaged.webp
+  Frustrated	memory.5376_frustrated	memory.5376_frustrated.webp
+  Mischievous	memory.5377_mischievous	memory.5377_mischievous.webp
+  Nauseous	memory.5378_nauseous	memory.5378_nauseous.webp
+  Sleepy	memory.5379_sleepy	memory.5379_sleepy.webp
+  Celebrating	memory.5380_celebrating	memory.5380_celebrating.webp
+  Money Excited	memory.5381_money_excited	memory.5381_money_excited.webp
+  Flirty	memory.5382_flirty	memory.5382_flirty.webp
+  Annoyed	memory.5383_annoyed	memory.5383_annoyed.webp
+  Silly	memory.5384_silly	memory.5384_silly.webp

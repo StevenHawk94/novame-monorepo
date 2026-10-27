@@ -17,14 +17,15 @@ for (const id of Array.from({ length: 10 }, (_, index) => `default-${index + 1}`
   assert.match(avatarLib, new RegExp(`['\"]${id}['\"]`));
   assert.match(updateProfile, new RegExp(`['\"]${id}['\"]`));
   assert.match(userSync, new RegExp(`['\"]${id}['\"]`));
-  assert.equal(fs.existsSync(path.join(root, `apps/mobile/assets/profile/${id}.webp`)), true);
+  // IDs remain valid for old stored profiles; their retired image files are
+  // deliberately absent from the new initial-avatar renderer and may be deleted.
 }
 
-assert.match(accountScreen, /DEFAULT_AVATAR_OPTIONS\.map/);
-assert.match(accountScreen, /flexWrap:\s*'wrap'/);
-assert.match(accountScreen, /flexBasis:\s*'18%'/);
+assert.doesNotMatch(accountScreen, /DEFAULT_AVATAR_OPTIONS\.map/);
+assert.match(accountScreen, /AccountManagementScreen/);
+assert.doesNotMatch(avatarLib, /assets\/profile/);
 assert.doesNotMatch(accountScreen, /styles\.avatarCheck/);
-assert.match(accountScreen, /updateDefaultAvatar/);
+assert.match(read('apps/mobile/app/(main)/(modals)/me.tsx'), /ProfileAvatarEditor/);
 assert.doesNotMatch(accountScreen, /ImagePicker|ImageManipulator|Upload New/);
 assert.match(accountApi, /defaultAvatarId/);
 assert.doesNotMatch(accountApi, /FormData/);

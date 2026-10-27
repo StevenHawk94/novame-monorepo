@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-21",
+  "scope": "First retirement pass after user paused release; user explicitly approved removing the legacy-UI rollback path.",
+  "externalActions": {
+    "vercelDeployed": false,
+    "easBuildSubmitted": false,
+    "appStoreConnectSubmitted": false,
+    "databaseChanged": false,
+    "gitCommitted": false
+  },
+  "changes": [
+    "Home/Collection/Moments/Quests now mount existing Burrow screens directly; only the established RetainedTabs navigator is mounted.",
+    "Retired client rollout switch no longer fetches config, waits or re-enables legacy screens. Server app config and old-client APIs remain untouched.",
+    "Legacy quest editor, Visit Master and companion-picker links redirect to existing tabs; old outfit/scene store links redirect to current Shop.",
+    "Tame Enemy route retains current ReleaseRoomScreen only; shared SwipeAttackLayer used by Release Room is preserved.",
+    "Old Reflect picker redirects to Adventure; preset New Lens journal links retain their prompt and sourceKit.",
+    "Removed unused companion video/source modules, companion picker, memory bubbles, feature guide presentation and onboarding guide initialization, and unused battle-deck module.",
+    "Slimmed icon registry to referenced keys with explicit key typing; removed legacy scene prefetch from cache warmup.",
+    "Disabled only retired feed/Connection reads in pairing realtime; core pairing/invites and current Burrow notification/readiness flows remain active.",
+    "Asset audit is read-only and --restore-required is disabled."
+  ],
+  "restoredAssets": {
+    "originalCount": 70,
+    "removedFromWorkspace": 61,
+    "bytesRemoved": 3890018,
+    "recoverableBackup": "/private/tmp/burrow-retired-restored-assets-tp2lyk",
+    "retained": [
+      {
+        "assets": [
+          "true-north-1.png",
+          "true-north-2.png",
+          "true-north-3.png"
+        ],
+        "consumer": "app/(main)/true-north.tsx: existing Self Care route"
+      },
+      {
+        "assets": [
+          "NewLens.png"
+        ],
+        "consumer": "app/(main)/new-lens.tsx: existing Self Care route"
+      },
+      {
+        "assets": [
+          "friend-list.png"
+        ],
+        "consumer": "app/(main)/friend-add.tsx"
+      },
+      {
+        "assets": [
+          "bunny.png"
+        ],
+        "consumer": "src/components/privacy/meta-privacy-provider.tsx: privacy consent prompt"
+      },
+      {
+        "assets": [
+          "calendar.png"
+        ],
+        "consumer": "reflect-detail/their-patterns/my-logs/friend-profile detail routes"
+      },
+      {
+        "assets": [
+          "memory.png"
+        ],
+        "consumer": "src/components/main/reflect-shared.tsx"
+      },
+      {
+        "assets": [
+          "shared-memories.png"
+        ],
+        "consumer": "my-logs/friend-profile detail routes"
+      }
+    ],
+    "retentionReason": "These 9 files still have consumers outside the removed legacy rollback screens. Removing them requires a separate decision about those supported detail/Self Care/privacy surfaces, not automatic restoration of the old app."
+  },
+  "verification": {
+    "resolvedAssetReferences": 1611,
+    "missingAssets": 0,
+    "relatedRegressionTestsPassed": 204,
+    "regressionLogs": [
+      "/private/tmp/burrow-legacy-cleanup-regression-final.log",
+      "/private/tmp/burrow-legacy-cleanup-extra.log"
+    ],
+    "mobileTypeCheck": "passed",
+    "iosProductionExport": "/private/tmp/burrow-cleanup-export-ios-final",
+    "androidProductionExport": "/private/tmp/burrow-cleanup-export-android-final",
+    "nativeDeviceTesting": "not run; local production resource exports are not signed native builds",
+    "databaseDurationCheck": "Existing isolated PGlite migration-257 replay passed; no production database writes",
+    "initialHarnessIssues": "Updated obsolete renderer/rollout tests to retirement behavior; added missing viewport/AppModal mocks to existing onboarding tests. No runtime code changed to satisfy mocks."
+  },
+  "preserved": "Current UI/business rules, authorization, rewards, durable saves/failure recovery, current notification readiness and legacy server endpoints were not removed.",
+  "releaseStatus": "Paused. Local version 1.0.25 remains pending; remote EAS version/build and production deployments were not changed."
+}

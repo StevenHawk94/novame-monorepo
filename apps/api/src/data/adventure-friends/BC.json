@@ -1,0 +1,1489 @@
+{
+  "code": "BC",
+  "id": "adventure_friend_bc",
+  "name": "Biscuit",
+  "gender": "she",
+  "species": "Groundhog",
+  "partner": "Pip (he)",
+  "emotionalState": "异地恋，有时差，想念",
+  "speakingStyle": "温柔，爱算时差，爱看钟",
+  "catchphrase": "What time is it there?",
+  "art": [
+    "Groundhog_02_Variant1.webp",
+    "Groundhog_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "BC-01",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "A groundhog looks up from a tiny clock, then at you.",
+      "lines": [
+        "Oh, hello. Sorry, I was checking the time. It's mid-afternoon here. It's the middle of the night somewhere else.",
+        "I check a lot. It's a habit."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Where's 'somewhere else'?",
+          "reaction": [
+            "Oh, far. Past the river, over the mountains, in a whole other burrow.",
+            "I'm Biscuit, by the way. I know the exact distance, if you ever want it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's a lot of clocks.",
+          "reaction": [
+            "I have three on my wall.",
+            "One for here, one for there, and one for 'when we can talk.' The third is the most important."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Nice to meet you, Biscuit.",
+          "reaction": [
+            "Nice to meet you too. You have a kind face. I'm usually good at telling.",
+            "It's one of my small talents."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-02",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I keep a little jar of notes.",
+        "Little things I want to tell someone, but can't yet. Like 'the sunset was orange today.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Who do you tell them to?",
+          "reaction": [
+            "Someone who's far away. I save them up and read them out loud later.",
+            "It's slower than texting, but it feels like carrying water in cupped paws."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Orange sunset? Tell me.",
+          "reaction": [
+            "It was like someone spilled marmalade across the sky. I'd like someone to see it.",
+            "Now you have, in a way. Thank you."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "That's a lovely habit.",
+          "reaction": [
+            "Thank you. It's a bit sentimental, I know.",
+            "But it makes the quiet hours feel less empty. Each note is a little lantern."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-03",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "My partner's name is Pip. He lives in the burrow over the mountain.",
+        "It's a six-hour time difference. When I wake up, he's about to sleep. We've learned to love the overlap."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "How long have you been apart?",
+          "reaction": [
+            "Eight months. Two more to go before the next visit.",
+            "I've marked it on my wall with a very bright star."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What's the overlap like?",
+          "reaction": [
+            "Short, warm, a little sleepy. We have about an hour where both of us are awake.",
+            "I save my best stories for it. Pip saves his best yawns."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Pip sounds special.",
+          "reaction": [
+            "Pip's the kind of person who sends a goodnight message with a tiny drawing.",
+            "Every single day. I have eight months of drawings. They're all on my wall."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-04",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Pip sent me a photo of his window today.",
+        "It was just the view. Nothing special. A tree and some fog. I stared at it for ten minutes."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Why did it matter?",
+          "reaction": [
+            "Because it was his morning. A small piece of his day I wasn't in.",
+            "And now I was, for a minute. It's like a postcard from a quiet world."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's sweet.",
+          "reaction": [
+            "It's the little things that carry the weight. A window, a tree, a bit of fog.",
+            "I put the photo on my wall right next to the clocks."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Did you send one back?",
+          "reaction": [
+            "Yes. I sent my window.",
+            "Pip said 'your tree looks lonely.' I said 'it misses your tree.' We both got a bit teary at the same time."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-05",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Okay, can I ask you something?",
+        "When you and your partner are apart, even for a day, how do you stay close? What works for you?",
+        "I'm collecting little ideas. I have a notebook for it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We send small messages throughout the day.",
+          "reaction": [
+            "Small messages. Not big speeches. Just tiny pings. 'Thinking of you' in three words.",
+            "I could do that. Pip would love it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We have a shared playlist.",
+          "reaction": [
+            "A playlist! That's lovely. Music is a good bridge. I'll make one with Pip.",
+            "We'll call it 'the overlap.' I already have a song in mind."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, I miss them most at night.",
+          "reaction": [
+            "Night's the hardest for me too. That's when the clocks get loud.",
+            "It helps to say it out loud to someone. Thank you for being honest."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-06",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "We tried to have a video call tonight.",
+        "The connection froze on Pip's face. Mid-laugh. Mouth open. I stared at it for a full minute.",
+        "Then I took a screenshot. It's my favorite photo now."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's adorable.",
+          "reaction": [
+            "It's the best photo I own. Pip's mid-laugh, eyes squeezed, looking like a very happy fish.",
+            "I'd never trade it for a perfect one."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A frozen face is hilarious.",
+          "reaction": [
+            "It's SO silly!",
+            "I sent Pip the screenshot and he said 'delete that.' I said 'never.' We argued for an hour.",
+            "A very happy hour."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Connection issues are the worst.",
+          "reaction": [
+            "They are. But sometimes they give you a gift. A moment you didn't plan.",
+            "I'll take it. Pip's frozen laugh is my new favorite thing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-07",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Biscuit sits quietly with the three clocks, none of them ticking loudly.",
+      "lines": [
+        "Can I tell you something that isn't cheerful?",
+        "Sometimes I wonder if the distance is making us into letters instead of people.",
+        "What if we're better at missing each other than being together?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a real fear.",
+          "reaction": [
+            "It is. Thank you for not trying to fix it.",
+            "Sometimes I just need someone to say 'yeah, that's real.' I feel less alone already."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You'll find out when you're together.",
+          "reaction": [
+            "That's true. Distance can fool you both ways.",
+            "Maybe the only way to know is to stand in the same room. Two more months."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Biscuit.",
+          "reaction": [
+            "...Thank you. It's quiet, but it's nice. A different kind of company.",
+            "I'll tell Pip about this later. About the quiet."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-08",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I told Pip about my worry. The letters one.",
+        "Pip said, 'I worry too. Every day.' He told me he's been practicing a surprise.",
+        "I wasn't supposed to say. Okay, I probably shouldn't have said that either."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's exciting.",
+          "reaction": [
+            "I'm trying not to guess. Pip's good at surprises.",
+            "Last time it was a handmade puzzle of our favorite photo.",
+            "It took me a week to finish."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Pip sounds thoughtful.",
+          "reaction": [
+            "He really is. He doesn't say things loudly. He does them quietly, over time.",
+            "It's one of the reasons I love him."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Your worry matters too.",
+          "reaction": [
+            "Thank you. That means a lot. Saying it out loud helped.",
+            "The worry didn't vanish, but it's smaller. It fits in my pocket now."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-09",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "We counted down from ten together tonight.",
+        "Just 'ten, nine, eight...' Then we both said 'goodnight' at zero. It was so simple.",
+        "It felt like being in the same room. Like hearing someone breathe next to you."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds so intimate.",
+          "reaction": [
+            "It was. A small ritual can carry a lot of love.",
+            "I think I'll do it every night. Even if one of us falls asleep before zero."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you sleep well?",
+          "reaction": [
+            "Better than I have in weeks. I dreamed about the border between two time zones.",
+            "A quiet line where both our clocks said midnight."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and listen.",
+          "reaction": [
+            "Thank you for just listening. It's a bit like what Pip does.",
+            "No big words, just someone nearby. I think that's the best kind of company."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-10",
+      "friendId": "adventure_friend_bc",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten visits. I kept count. I'm a time-keeping sort of groundhog.",
+        "Pip's coming to visit next month. A whole week. I've been cleaning the burrow since sunrise.",
+        "I'm nervous and excited and I can't tell which is bigger.",
+        "And you? How are you and your partner? Honestly."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning is good. That's the right word. Come by when Pip's here. I'll make something warm.",
+            "You'll love Pip. Everyone does."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I miss them sometimes, even when we're close.",
+          "reaction": [
+            "That's a real thing. Missing can happen in the same room. We talk about it.",
+            "It's okay. I'm glad you said it out loud."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You make me want to say it more often.",
+          "reaction": [
+            "That's the best thing anyone's said all week.",
+            "Okay, I'm going to add it to the jar of notes. It deserves its own lantern."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P01",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Pip's changing jobs. Different shift. Now it's nights.",
+        "I'm trying to be cheerful about it. I'm reorganizing my clocks."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a big shift.",
+          "reaction": [
+            "It is! We'll need a new overlap. I've already started drawing a chart.",
+            "I'm calling it 'The Great Reshuffle.' Pip says it's too dramatic. It's perfect."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How do you feel?",
+          "reaction": [
+            "Honestly? A little wobbly. But also hopeful.",
+            "When something changes, you learn something new about how you love."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P02",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I mailed Pip a box of fall leaves. It took four days.",
+        "I included a note: 'Open when the weather feels lonely.' He texted 'it's raining here, I'm opening it now.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Perfect timing.",
+          "reaction": [
+            "It was! The mail knew. Pip sent a photo of the leaves on his desk.",
+            "I could almost smell the maple.",
+            "It felt like a hug that took four days to arrive."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's so thoughtful.",
+          "reaction": [
+            "It's easy to be thoughtful when you miss someone. The hard part is waiting.",
+            "But waiting makes the box more precious."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P03",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We watched the same movie at the same time, on different screens.",
+        "Pip kept pausing to say 'wait, this part!' I could hear him eating. It was almost like sitting together."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds cozy.",
+          "reaction": [
+            "It really was. I made popcorn, and Pip made a bad copy of my popcorn.",
+            "We rated them. They lost. Gloriously."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you laugh at the same parts?",
+          "reaction": [
+            "Exactly the same parts. We both cried at the dog.",
+            "Pip said 'it's just a dog.' Then he said 'it's NOT just a dog.' A beautiful moment."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P04",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "There's a tiny storm on Pip's side. He said it's loud. I could hear it through the phone.",
+        "I stayed on the line until it passed. I didn't say anything. Just listened."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's love.",
+          "reaction": [
+            "I think it is. Quiet presence. You don't have to fix the weather.",
+            "You just stay on the line while it happens. I'd do it forever."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did Pip feel better?",
+          "reaction": [
+            "He said 'thanks for not hanging up.' It was the best thing I've heard in weeks.",
+            "I put it in the jar of notes."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P05",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I woke up at 3 AM for a call and forgot why.",
+        "Then I saw Pip's face on the screen, half asleep, and remembered everything. I'd wake up for that any time."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds worth it.",
+          "reaction": [
+            "It's the best kind of tired. The kind that's full instead of empty.",
+            "I fell asleep at 4 with the phone on my chest. Pip said I snored.",
+            "I did not."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Do you get enough sleep?",
+          "reaction": [
+            "Not really! But I'm learning to nap like a pro. A groundhog has to be flexible.",
+            "Two naps, a long yawn, and a lot of tea."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P06",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I found a word in a book. 'Hiraeth.' It means missing a home you can't return to.",
+        "I told Pip. He said 'you're my home.' I had to sit down on the floor."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "I know. I stayed on the floor for ten minutes. The clocks kept ticking.",
+            "I'm not sure time was moving. I think it was just me and the word."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You had to sit down?",
+          "reaction": [
+            "My knees gave out! Emotionally. It's a real thing.",
+            "Pip laughed and said 'are you okay?' I said 'no, in the best way.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P07",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We're planning the visit. Pip's coming in thirty-one days. I made a countdown on the wall.",
+        "It's got stickers. I'm not ashamed."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Stickers are essential.",
+          "reaction": [
+            "Right? Each day I peel one off. It's a small ritual.",
+            "Like unwrapping a gift in tiny pieces. Day twelve has a tiny carrot on it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Thirty-one days? So close.",
+          "reaction": [
+            "So close and so far. A month feels like both a blink and an ocean.",
+            "I'm trying to enjoy the middle part. The waiting part."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P08",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Pip called me just to say 'I'm having a good day.'",
+        "No reason. No news. Just that. I think it was the best call we've had."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so sweet.",
+          "reaction": [
+            "It was! Not every call has to solve something.",
+            "Sometimes it's just a little 'I'm okay' sent across the miles.",
+            "I could feel it in my chest."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A call for no reason?",
+          "reaction": [
+            "The best kind. A reasonless call is love with its coat off.",
+            "We stayed on the line for an hour. We talked about socks."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P09",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still have the frozen-face screenshot. I made it my phone's lock screen.",
+        "Pip's mid-laugh, forever. I smile every time I check the time."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's adorable.",
+          "reaction": [
+            "It is! And I check the time a lot, as you know.",
+            "So I smile a lot. It's a good trade.",
+            "Pip pretends to be annoyed but secretly loves it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does Pip know?",
+          "reaction": [
+            "He knows. He called it 'a crime.' Then he made one of me, caught mid-sneeze.",
+            "We're in an arms race of unflattering love."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P10",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The jar of notes is full. I need a bigger jar.",
+        "I'm going to read them all to Pip when he visits. One a night. It'll take a month."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Better get a big jar.",
+          "reaction": [
+            "I found one at the market. It's shaped like a pear. Pip will love it.",
+            "Or find it ridiculous. Both are good outcomes."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That sounds romantic.",
+          "reaction": [
+            "I hope so. Some notes are silly, some are sad.",
+            "But all of them say 'I thought of you.' That's the whole point."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P11",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the three clocks? I got a fourth.",
+        "It's set to Pip's time, but it runs backwards. It's a joke. I don't know why I bought it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A backwards clock?",
+          "reaction": [
+            "It runs the wrong way. Pip says it fits.",
+            "'We're a little backwards sometimes, but we get there.' I put it by the door."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Four clocks is a lot.",
+          "reaction": [
+            "It is! The walls are getting crowded. But each clock holds a different kind of waiting.",
+            "I'm running out of wall, not out of love."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P12",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The ten-count at bedtime. We still do it, every night.",
+        "Even when we're tired. Even when we're cranky. 'Ten, nine, eight...' It's the most reliable thing in my life."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's lovely.",
+          "reaction": [
+            "I think so too. Some nights we say it in whispers.",
+            "Some nights we say it laughing. The number's always the same, but the feeling changes."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Even on grumpy nights?",
+          "reaction": [
+            "Especially on grumpy nights. It's hard to stay mad when you're counting down together.",
+            "By 'three,' someone's already giggling."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P13",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Distance doesn't test love. It just shows you how much you've learned to pay attention."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good way to put it.",
+          "reaction": [
+            "Thanks. I think distance makes you listen harder.",
+            "When all you have is a voice, you hear everything in it. Every pause, every breath."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It tests it a bit.",
+          "reaction": [
+            "Fair. It does. Some days it tests me a lot.",
+            "But I think attention is the thing that holds. Attention and a good clock."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P14",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: A good goodnight is better than a grand gesture."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I'd agree.",
+          "reaction": [
+            "It's the daily proof. A grand gesture is a firework.",
+            "A good goodnight is a lantern that stays lit.",
+            "I need both, but I need the lantern more."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Grand gestures are fun too.",
+          "reaction": [
+            "They are! I'll take a bouquet any day.",
+            "But I'd still choose a soft 'goodnight' on a rainy Tuesday. That's where the love lives."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P15",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Time zones are just love's way of making you value the overlap."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's lovely.",
+          "reaction": [
+            "I made that up during a very sleepy afternoon. It stuck.",
+            "The overlap is where we shine. It's short, so we don't waste it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Love's love, overlap or not.",
+          "reaction": [
+            "True. Love's love. But overlap is the cozy bit.",
+            "If I could bottle one hour, it would be the one where we're both awake and a little silly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P16",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "I'm trying to learn something new. How do you comfort your partner when they're having a hard day?",
+        "Not fix. Comfort."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I just sit with them.",
+          "reaction": [
+            "Sitting with them. I'm learning that.",
+            "Pip's far, so I have to do it through a screen.",
+            "I stay on the line and don't talk. It works better than I expected."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I bring them something small.",
+          "reaction": [
+            "A small thing. Tea, a snack, a blanket. I wish I could do that.",
+            "Maybe I'll mail a tea bag next. A tiny comfort in an envelope."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P17",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Do you and your partner ever run out of things to say?",
+        "Pip and I have days where we just sit on a call in silence."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Yeah, and it's nice.",
+          "reaction": [
+            "It is. Silence is a good sign, I think.",
+            "When you can be quiet together, you've built a home inside the call."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Not really, we talk a lot.",
+          "reaction": [
+            "That's lovely. Chatty love is warm. We're the quiet kind, mostly.",
+            "But I'm glad both kinds exist. They all count."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P18",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's a small thing your partner does that makes you feel seen?",
+        "I keep a list. It helps on lonely days."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They remember what I like.",
+          "reaction": [
+            "Remembering. That's a big one. Pip remembers I like pears.",
+            "Every time he sees a pear, he sends a picture.",
+            "I've got a whole album of pears."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They notice when I'm off.",
+          "reaction": [
+            "Noticing is magic. Pip can tell from the tone of my 'hello.' Distance hasn't dulled it.",
+            "If anything, it's sharper."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P19",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Biscuit hands you a small envelope with a faint smile.",
+      "lines": [
+        "This is for you. A note from the jar. One of the good ones.",
+        "It says: 'Somebody out there is glad you exist.' I thought you might need it today."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Open the note.",
+          "reaction": [
+            "I wrote it a while ago for no one in particular.",
+            "Today it felt like it was for you. That's what notes do.",
+            "They wait for the right person."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Thank you, Biscuit.",
+          "reaction": [
+            "You're very welcome. It's just a small thing. But small things are the ones that stay.",
+            "Keep it somewhere you'll find it by accident."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BC-P20",
+      "friendId": "adventure_friend_bc",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Biscuit leads you to a hilltop. The sky is turning orange.",
+      "lines": [
+        "This is where I come to feel closer to Pip.",
+        "If I look in that direction, past the mountain, I like to imagine he's looking back."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I bet they are.",
+          "reaction": [
+            "I bet so too. The sky is the same sky, just wearing a different hour.",
+            "Sunset here is almost lunch there. Funny, isn't it?"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sit and watch the sunset.",
+          "reaction": [
+            "Thank you for sitting with me. It's nicer with company.",
+            "I think Pip would have liked you. He will like you. I'll make sure of it."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_97",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G01",
+      "name": "Alarm Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 97,
+      "file": "Clocks/Alarm Clock.webp",
+      "key": "burrow/adventure-gifts/v1/97-7026bdb94d4d466c.webp",
+      "sha256": "7026bdb94d4d466c1956d85baaebe32eb1c704bfe1cf88ebab9cc9e079a372de",
+      "bytes": 38280
+    },
+    {
+      "id": "adventure_gift_98",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G02",
+      "name": "Mint Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 98,
+      "file": "Clocks/Mint Clock.webp",
+      "key": "burrow/adventure-gifts/v1/98-18074df476983926.webp",
+      "sha256": "18074df4769839268b22e76017058217f662d986612b9ed49a842ae171be8c1b",
+      "bytes": 22384
+    },
+    {
+      "id": "adventure_gift_99",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G03",
+      "name": "Mantel Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 99,
+      "file": "Clocks/Mantel Clock.webp",
+      "key": "burrow/adventure-gifts/v1/99-cf5013d32d461d55.webp",
+      "sha256": "cf5013d32d461d55ec3a558e13175582012aed8d6acf6386f77242f452533099",
+      "bytes": 20696
+    },
+    {
+      "id": "adventure_gift_100",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G04",
+      "name": "Oval Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 100,
+      "file": "Clocks/Oval Clock.webp",
+      "key": "burrow/adventure-gifts/v1/100-7a714a2f5cb79cc2.webp",
+      "sha256": "7a714a2f5cb79cc209ad9359b44e0da42ecd9e6299abbdc97506850041518e76",
+      "bytes": 26556
+    },
+    {
+      "id": "adventure_gift_101",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G05",
+      "name": "Mushroom Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 101,
+      "file": "Clocks/Mushroom Clock.webp",
+      "key": "burrow/adventure-gifts/v1/101-9219517475216ab0.webp",
+      "sha256": "9219517475216ab06b92144458aa6d57e5d945c8624bd941131a9fae6fb044bd",
+      "bytes": 27182
+    },
+    {
+      "id": "adventure_gift_102",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G06",
+      "name": "Flower Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 102,
+      "file": "Clocks/Flower Clock.webp",
+      "key": "burrow/adventure-gifts/v1/102-b88ddef60b3794ab.webp",
+      "sha256": "b88ddef60b3794abe3160da19b1de2d49671df6d997ee497a72a7ee170310222",
+      "bytes": 27458
+    },
+    {
+      "id": "adventure_gift_103",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G07",
+      "name": "Cat Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 103,
+      "file": "Clocks/Cat Clock.webp",
+      "key": "burrow/adventure-gifts/v1/103-c8a086e197c06850.webp",
+      "sha256": "c8a086e197c068503e4b7860bbea69183cfc4c76695e68ed75713c32d097efaa",
+      "bytes": 26618
+    },
+    {
+      "id": "adventure_gift_104",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G08",
+      "name": "Deco Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 104,
+      "file": "Clocks/Deco Clock.webp",
+      "key": "burrow/adventure-gifts/v1/104-4fb8f72619ce3691.webp",
+      "sha256": "4fb8f72619ce3691af130707f0a6799d13df4f1ead113b00dd46648e908e5705",
+      "bytes": 19890
+    },
+    {
+      "id": "adventure_gift_105",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G09",
+      "name": "Pendulum Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 105,
+      "file": "Clocks/Pendulum Clock.webp",
+      "key": "burrow/adventure-gifts/v1/105-a6e0907603164e78.webp",
+      "sha256": "a6e0907603164e78283b02f42249072b62416a6f94b80153f16259ce4c6fc29b",
+      "bytes": 18674
+    },
+    {
+      "id": "adventure_gift_106",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G10",
+      "name": "Triangle Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 106,
+      "file": "Clocks/Triangle Clock.webp",
+      "key": "burrow/adventure-gifts/v1/106-153c61a225c5736f.webp",
+      "sha256": "153c61a225c5736f28208180abe056403aa5f66ec1f7c984b8b4a17f3daef69e",
+      "bytes": 26014
+    },
+    {
+      "id": "adventure_gift_107",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G11",
+      "name": "Heart Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 107,
+      "file": "Clocks/Heart Clock.webp",
+      "key": "burrow/adventure-gifts/v1/107-e8fec6b35e1831b3.webp",
+      "sha256": "e8fec6b35e1831b3cdb476b3304e7b2befa4c3a95f2cbda7a68d29110448a73f",
+      "bytes": 25668
+    },
+    {
+      "id": "adventure_gift_108",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G12",
+      "name": "Rainbow Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 108,
+      "file": "Clocks/Rainbow Clock.webp",
+      "key": "burrow/adventure-gifts/v1/108-6093d9ee0f7debf4.webp",
+      "sha256": "6093d9ee0f7debf475ef4bcb0708ee64d5759f8c45450fd25b6514539d0dba23",
+      "bytes": 24010
+    },
+    {
+      "id": "adventure_gift_109",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G13",
+      "name": "Orbit Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 109,
+      "file": "Clocks/Orbit Clock.webp",
+      "key": "burrow/adventure-gifts/v1/109-5f83bf91c9307d22.webp",
+      "sha256": "5f83bf91c9307d22a417b29243df5f8de740e92b9867ee65fd9fad8c6857b15b",
+      "bytes": 25558
+    },
+    {
+      "id": "adventure_gift_110",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G14",
+      "name": "Amber Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 110,
+      "file": "Clocks/Amber Clock.webp",
+      "key": "burrow/adventure-gifts/v1/110-430a6c9209d510fc.webp",
+      "sha256": "430a6c9209d510fc8042b66cf2c7fa757da312e0c48646cdf170edff3bbdfcdd",
+      "bytes": 26222
+    },
+    {
+      "id": "adventure_gift_111",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G15",
+      "name": "Cloud Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 111,
+      "file": "Clocks/Cloud Clock.webp",
+      "key": "burrow/adventure-gifts/v1/111-a418afebf70557b4.webp",
+      "sha256": "a418afebf70557b4035e8727faa07045b935d57ebe657842ed484eb4863aaeaa",
+      "bytes": 25692
+    },
+    {
+      "id": "adventure_gift_112",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G16",
+      "name": "Pocket Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 112,
+      "file": "Clocks/Pocket Clock.webp",
+      "key": "burrow/adventure-gifts/v1/112-33977e15bb24ce24.webp",
+      "sha256": "33977e15bb24ce24436ff364442e10a6c6ac3ac4f28bda8557fce3b2331c1595",
+      "bytes": 27174
+    },
+    {
+      "id": "adventure_gift_113",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G17",
+      "name": "Rabbit Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 113,
+      "file": "Clocks/Rabbit Clock.webp",
+      "key": "burrow/adventure-gifts/v1/113-6ea46614be370dee.webp",
+      "sha256": "6ea46614be370dee2fb1bbe7fd97d81cec85f43c6bfa4c7ff49368f6039c92d6",
+      "bytes": 25768
+    },
+    {
+      "id": "adventure_gift_114",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G18",
+      "name": "Strawberry Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 114,
+      "file": "Clocks/Strawberry Clock.webp",
+      "key": "burrow/adventure-gifts/v1/114-50e53ad8eaf9edf0.webp",
+      "sha256": "50e53ad8eaf9edf057ddda56334f3f89a092a8aed496e08265448db0a6efff30",
+      "bytes": 25614
+    },
+    {
+      "id": "adventure_gift_115",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G19",
+      "name": "Pear Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 115,
+      "file": "Clocks/Pear Clock.webp",
+      "key": "burrow/adventure-gifts/v1/115-b7f7768fd75bd345.webp",
+      "sha256": "b7f7768fd75bd345e8bae67658436fb32c63b0890dabbf8be39b403b2594a0fc",
+      "bytes": 24046
+    },
+    {
+      "id": "adventure_gift_116",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G20",
+      "name": "Moon Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 116,
+      "file": "Clocks/Moon Clock.webp",
+      "key": "burrow/adventure-gifts/v1/116-72e0a48e34082dbc.webp",
+      "sha256": "72e0a48e34082dbc880ff4d27e31a2ed8951fd127e08f909c3c3b21161cac3a5",
+      "bytes": 23394
+    },
+    {
+      "id": "adventure_gift_117",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G21",
+      "name": "Star Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 117,
+      "file": "Clocks/Star Clock.webp",
+      "key": "burrow/adventure-gifts/v1/117-119a84b6b95c1450.webp",
+      "sha256": "119a84b6b95c145065ba14b174e4ca69909b1f3f87b682a6a4aa0a001db268b7",
+      "bytes": 27092
+    },
+    {
+      "id": "adventure_gift_118",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G22",
+      "name": "Shell Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 118,
+      "file": "Clocks/Shell Clock.webp",
+      "key": "burrow/adventure-gifts/v1/118-7caa0660076ccdf1.webp",
+      "sha256": "7caa0660076ccdf1b3825a9b9a4d3d785d6a25a5f62bac3124c1794c220f7cee",
+      "bytes": 24932
+    },
+    {
+      "id": "adventure_gift_119",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G23",
+      "name": "House Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 119,
+      "file": "Clocks/House Clock.webp",
+      "key": "burrow/adventure-gifts/v1/119-af17f5b00364d885.webp",
+      "sha256": "af17f5b00364d8851bf6c3f30c7ccc91051ce7dfe07fed2803fe6d3655aa8bd0",
+      "bytes": 23030
+    },
+    {
+      "id": "adventure_gift_120",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G24",
+      "name": "Cuckoo Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 120,
+      "file": "Clocks/Cuckoo Clock.webp",
+      "key": "burrow/adventure-gifts/v1/120-055e8e13944d29cb.webp",
+      "sha256": "055e8e13944d29cb0fbf645931d8785c014fe7df2521978589f875e600146ad9",
+      "bytes": 24814
+    },
+    {
+      "id": "adventure_gift_121",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G25",
+      "name": "Hexagon Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 121,
+      "file": "Clocks/Hexagon Clock.webp",
+      "key": "burrow/adventure-gifts/v1/121-02699a0d538cf2ae.webp",
+      "sha256": "02699a0d538cf2aed1d0907e4026b6974883db0a870102e82bc0ef77e27a829a",
+      "bytes": 24972
+    },
+    {
+      "id": "adventure_gift_122",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G26",
+      "name": "Arch Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 122,
+      "file": "Clocks/Arch Clock.webp",
+      "key": "burrow/adventure-gifts/v1/122-5c53b7e6e3ca7296.webp",
+      "sha256": "5c53b7e6e3ca72969c8b9a4eebbe437118b014520246cbaa60f4334311f2b43a",
+      "bytes": 20582
+    },
+    {
+      "id": "adventure_gift_123",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G27",
+      "name": "Bow Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 123,
+      "file": "Clocks/Bow Clock.webp",
+      "key": "burrow/adventure-gifts/v1/123-c5645279cc4e2891.webp",
+      "sha256": "c5645279cc4e28916050e3f6ae02901a1a88a22d5a1ca7e601ebe93409830757",
+      "bytes": 27790
+    },
+    {
+      "id": "adventure_gift_124",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G28",
+      "name": "Rocking Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 124,
+      "file": "Clocks/Rocking Clock.webp",
+      "key": "burrow/adventure-gifts/v1/124-8e93533f1f4e7e83.webp",
+      "sha256": "8e93533f1f4e7e837b06507682f236ffd9a0db252b5d8d90ec9680e0cdb219d7",
+      "bytes": 27320
+    },
+    {
+      "id": "adventure_gift_125",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G29",
+      "name": "Penguin Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 125,
+      "file": "Clocks/Penguin Clock.webp",
+      "key": "burrow/adventure-gifts/v1/125-1bf4ac251146b787.webp",
+      "sha256": "1bf4ac251146b78795953b6ea0cf3d0be6fcc2c80847eba47f79ca1785a38795",
+      "bytes": 26784
+    },
+    {
+      "id": "adventure_gift_126",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G30",
+      "name": "Bear Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 126,
+      "file": "Clocks/Bear Clock.webp",
+      "key": "burrow/adventure-gifts/v1/126-2a8223764c285074.webp",
+      "sha256": "2a8223764c285074d27024a94a9625bcceb22f9258b1b6a4f06f220eb117b87c",
+      "bytes": 29542
+    },
+    {
+      "id": "adventure_gift_127",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G31",
+      "name": "Pumpkin Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 127,
+      "file": "Clocks/Pumpkin Clock.webp",
+      "key": "burrow/adventure-gifts/v1/127-82f27cd30ff9addb.webp",
+      "sha256": "82f27cd30ff9addbfb6a767e465c664bd7b230a9674f571d50d306da0902273f",
+      "bytes": 27374
+    },
+    {
+      "id": "adventure_gift_128",
+      "friendId": "adventure_friend_bc",
+      "giftId": "BC-G32",
+      "name": "Globe Clock",
+      "category": "Clocks",
+      "categoryCode": "C04",
+      "sourceId": 128,
+      "file": "Clocks/Globe Clock.webp",
+      "key": "burrow/adventure-gifts/v1/128-137b8c81ca81aa67.webp",
+      "sha256": "137b8c81ca81aa67ce5dfeaf2eb32c9b9d572f3f503f0ef78332c677fc140236",
+      "bytes": 37450
+    }
+  ]
+}

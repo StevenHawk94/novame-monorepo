@@ -1,93 +1,32 @@
-import { Platform, Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-
-import { haptics } from '@/lib/haptics';
-
-// Play URL is a placeholder slot — points at the package name; goes live
-// automatically once the Play listing exists.
-const STORE_URL = Platform.select({
-  android: 'https://play.google.com/store/apps/details?id=com.burrow.app',
-  default: 'https://apps.apple.com/app/id6763723281',
-}) as string;
-
-/**
- * Full-screen, UNESCAPABLE hard-update screen.
- *
- * Rendered only when force-update.ts has positively determined the installed
- * version is below the server min_version (fail-open lives there, not here --
- * by the time this mounts, blocking is intended).
- *
- * Deliberately blocking: no close button, no backdrop dismiss, and
- * onRequestClose is a no-op so the Android hardware back button cannot
- * dismiss it. The only action is "Update Now" -> App Store.
- */
-export function ForceUpdateGate({ message }: { message: string | null }) {
-  const handleUpdate = () => {
-    void haptics.pageOpen();
-    void Linking.openURL(STORE_URL).catch(() => {
-      // If the store URL somehow fails to open, there is nothing else the user
-      // can do from here; leave the screen up so they can retry.
-    });
-  };
-
-  return (
-    <Modal visible transparent={false} animationType="fade" onRequestClose={() => {}}>
-      <View style={styles.root}>
-        <View style={styles.body}>
-          <Text style={styles.title}>Update Required</Text>
-          <Text style={styles.message}>
-            {message && message.trim().length > 0
-              ? message
-              : 'This version of Burrow is out of date. Please update to continue.'}
-          </Text>
-          <Pressable
-            onPress={handleUpdate}
-            style={({ pressed }) => [styles.button, { opacity: pressed ? 0.85 : 1 }]}
-          >
-            <Text style={styles.buttonText}>Update Now</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
+import {useEffect} from 'react';
+import {BackHandler,Image,Platform,Linking,Pressable,StyleSheet,Text,View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {hideSplashOnce} from '@/lib/splash';
+import {haptics} from '@/lib/haptics';
+export const UPDATE_STORE_URL=Platform.OS==='android'
+ ?'https://play.google.com/store/apps/details?id=com.burrow.app'
+ :'https://apps.apple.com/app/id6763723281';
+/** Root renders this INSTEAD of Stack: no Home or business popup can mount. */
+export function ForceUpdateGate({message}:{message:string|null}){
+ const insets=useSafeAreaInsets();
+ useEffect(()=>{const back=BackHandler.addEventListener('hardwareBackPress',()=>true);return()=>back.remove();},[]);
+ return <View accessibilityViewIsModal onLayout={hideSplashOnce} style={[styles.root,{paddingTop:insets.top,paddingBottom:Math.max(insets.bottom,24)}]}>
+  <View style={styles.body}>
+   <Image source={require('../../../assets/burrow-webp/force_update.webp')} resizeMode="contain" style={styles.art}/>
+   <Text style={styles.title}>Your App Needs An Update</Text>
+   <Text style={styles.message}>{message?.trim()||'To continue using this app, update it in the app store to get the latest features, content and bug fixes.'}</Text>
+  </View>
+  <Pressable accessibilityRole="button" accessibilityLabel="Update Now" onPress={()=>{
+   void haptics.pageOpen();void Linking.openURL(UPDATE_STORE_URL).catch(()=>{});
+  }} style={({pressed})=>[styles.button,{opacity:pressed?.85:1}]}><Text style={styles.buttonText}>Update Now</Text></Pressable>
+ </View>;
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#0F0823',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  body: {
-    width: '100%',
-    maxWidth: 360,
-    alignItems: 'center',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontFamily: 'Inter_700Bold',
-    marginBottom: 14,
-    textAlign: 'center',
-  },
-  message: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 15,
-    lineHeight: 23,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  button: {
-    width: '100%',
-    backgroundColor: '#4A3423',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontFamily: 'Inter_700Bold',
-  },
+const styles=StyleSheet.create({
+ root:{flex:1,backgroundColor:'#fdf4e9',paddingHorizontal:20},
+ body:{flex:1,alignItems:'center',justifyContent:'center',paddingVertical:24},
+ art:{width:150,height:150,marginBottom:24},
+ title:{color:'#49270f',fontSize:25,fontFamily:'Inter_900Black',textAlign:'center',marginBottom:24},
+ message:{color:'#23180e',fontSize:19,lineHeight:27,fontFamily:'Inter_400Regular',textAlign:'center',paddingHorizontal:12,maxWidth:520},
+ button:{backgroundColor:'#4c341c',borderRadius:10,paddingVertical:18,alignItems:'center'},
+ buttonText:{color:'#fff',fontSize:20,fontFamily:'Inter_700Bold'},
 });

@@ -181,8 +181,8 @@ test('unmount pauses the native instance and leaves no queued start or replay', 
   assert.equal(h.view.plays.length, 0);
   assert.equal(h.view.pauses, 1);
 });
-test('recolored Quest composition uses the same full playback and completes exactly once', () => {
-  const source = require('../apps/mobile/assets/animations/quest-dense.json');
+test('custom celebration source uses the same full playback and completes exactly once', () => {
+  const source = structuredClone(require('../apps/mobile/assets/animations/reflect-dense.json'));
   for (const platform of ['ios', 'android']) {
     const h = animationHarness(platform, source);
     let l = prepareAnimation(h, false);
@@ -230,55 +230,12 @@ test('a failed preload cannot suppress the active run; active failure retries on
   assert.equal(h.completions(), 1); assert.equal(h.render(true), null);
   h.unmount();
 });
-test('every Quest particle stays visible until it exits the full screen, and only the last one completes', () => {
-  for (const height of [568, 844, 1200]) for (const random of [0, 0.5, 0.999]) {
-    const effects = [], shared = [], cancelled = [], timers = [];
-    let done = 0;
-    const { ConfettiBurst } = load('apps/mobile/src/components/main/confetti-burst.tsx', {
-      react: { useEffect: (fn) => effects.push(fn), useMemo: (fn) => fn() },
-      'react/jsx-runtime': { jsx, jsxs: jsx },
-      'react-native': { View: 'View', useWindowDimensions: () => ({ width: 390, height }),
-        StyleSheet: { absoluteFill: {}, create: (x) => x } },
-      'react-native-reanimated': {
-        __esModule: true, default: { View: 'AnimatedView' },
-        Easing: { in: (x) => x, quad: 'quad' },
-        useSharedValue: (value) => { const ref = { value }; shared.push(ref); return ref; },
-        useAnimatedStyle: (fn) => fn,
-        withTiming: (_target, config, callback) => ({ config, callback }),
-        withDelay: (delay, animation) => { timers.push({ delay, ...animation }); return 0; },
-        cancelAnimation: (value) => cancelled.push(value), runOnJS: (fn) => fn,
-      },
-    }, { Math: Object.assign(Object.create(Math), { random: () => random }) });
-    const tree = ConfettiBurst({ onDone: () => done++ });
-    assert.equal(tree.props.pointerEvents, 'none');
-    const pieces = tree.props.children;
-    assert.equal(pieces.length, 26);
-    const rendered = pieces.map((piece) => piece.type(piece.props));
-    const cleanups = effects.map((fn) => fn());
-    rendered.forEach((node, i) => {
-      const style = node.props.style.at(-1);
-      for (const progress of [0, 0.5, 0.75, 0.9, 1]) {
-        shared[i].value = progress;
-        assert.equal(style().opacity, 1);
-      }
-      assert.ok(style().transform[1].translateY > height + 16);
-    });
-    assert.equal(timers.length, 26);
-    assert.equal(pieces.filter((p) => typeof p.props.onLast === 'function').length, 1);
-    const last = pieces.findIndex((p) => p.props.onLast);
-    assert.ok(timers.every((t) => t.delay + t.config.duration <= timers[last].delay + timers[last].config.duration));
-    timers.forEach((t, i) => { if (i !== last) t.callback(true); });
-    assert.equal(done, 0);
-    timers[last].callback(false); assert.equal(done, 0);
-    timers[last].callback(true); assert.equal(done, 1);
-    cleanups.forEach((fn) => fn());
-    assert.equal(cancelled.length, 26);
-  }
-});
-test('Quest rewards use the compact Clover payout animation without legacy confetti state', () => {
-  const source = read('apps/mobile/app/(main)/(tabs)/quests.tsx');
-  assert.match(source, /<CloverBurst amount=\{reward\}/);
-  assert.match(source, /confirmCloverAward\(next\.cloversEarned\)/);
-  assert.match(source, /if \(next\.cloversEarned <= 0\) return/);
-  assert.doesNotMatch(source, /ReflectCelebration|QUEST_CELEBRATION_SOURCE|ConfettiBurst/);
+test('current Quest particles share one native clock, complete once and cancel on unmount without a retired full-screen composition', () => {
+ const utils=require('./lifecycle-test-utils.cjs'),h=utils.hooks(),motion=require('./motion-test-utils.cjs').motionHarness(h);let done=0;
+ const {QuestClaimConfetti}=utils.load('apps/mobile/src/components/burrow/quest-claim-confetti.tsx',{
+  react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{View:'View',StyleSheet:{create:x=>x}},'react-native-reanimated':motion.reanimated,
+ });
+ const tree=h.render(()=>QuestClaimConfetti({onComplete:()=>done++}));assert.equal(tree.props.pointerEvents,'none');assert.equal(tree.props.children.length,12);
+ assert.equal(motion.timings.length,1);motion.time.advance(849);assert.equal(done,0);motion.time.advance(1);assert.equal(done,1);h.unmount();assert.equal(motion.time.timers.size,0);
+ const source=read('apps/mobile/src/components/burrow/quest-board.tsx');assert.match(source,/QuestClaimConfetti/);assert.doesNotMatch(source,/quest-dense|CloverBurst/);
 });

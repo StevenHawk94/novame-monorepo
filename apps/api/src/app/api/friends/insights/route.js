@@ -1,4 +1,5 @@
 import { after, NextResponse } from 'next/server'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { generateBrief } from '@/lib/connection-brief'
@@ -62,7 +63,7 @@ export async function GET(request) {
       .select('subscription_tier, connection_resume_required')
       .eq('id', userId).maybeSingle()
     if (meError) throw meError
-    if ((me?.subscription_tier || 'free') === 'free') return NextResponse.json({ error: 'plus_required' }, { status: 403 })
+    if (!await effectiveHasPlus(supabase,userId)) return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     if (intentView) {
       const { error: activityError } = await supabase.from('profiles')
         .update({ last_active_at: new Date().toISOString() }).eq('id', userId)

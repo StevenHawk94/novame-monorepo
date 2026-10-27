@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-26",
+  "scope": "Adventure entry-time partner prefetch, optimistic Couple presentation, closer follower and wider dirt",
+  "authorization": "User approved lightweight API production deployment after tests, then explicitly paused frame acceptance and requested completing other necessary work and deployment only.",
+  "causes": [
+    "Adventure entry did not proactively refresh partner eligibility during the log flow.",
+    "Local durable Start generated a solo-only prediction even when Bootstrap already contained a joinable partner trip.",
+    "The presentation clock ignored team progress while pending, and the pending coordination projection did not carry the user's pending Adventure ID."
+  ],
+  "changes": [
+    "Authenticated capability-gated no-store GET /api/vnext/adventure?coordination=1 reuses the existing service-only eligibility RPC with a 30/minute account limit. No private log, story, reward or wallet payload is read.",
+    "Read starts on Adventure entry, with focused foreground entry/write/tap screens refreshing at most every 30 seconds. Single-flight, five-second deadline, 15-second request reuse and 60-second maximum preview age; background/blur stop refresh timers.",
+    "Actor, auth epoch, partner and relationship version scope every response. Newer Bootstrap metadata, including a negative eligibility snapshot, supersedes older entry hints. No full Home invalidation or global polling.",
+    "Start durably freezes a display-only team prediction alongside the original immutable intent. Matching partner progress is inherited and only the remaining time is divided by 1.5. The user's pending personal record ID remains separate from the leader's personal Adventure and rewards.",
+    "Pending ongoing screen immediately uses the prepared Couple state and both heads. Authoritative receipt overrides the prediction without remounting the route or replaying its swing; clock correction preserves nondecreasing displayed progress.",
+    "Follower arc-distance reduced from 70 to 48 design units. Dirt trajectory enlarged using the same six pooled particles and UI-thread shared phase; no new image, video, dependency or Skia renderer."
+  ],
+  "unchanged": [
+    "Server-authoritative Start validation and same-economic-domain/current-pair eligibility",
+    "Free six hours, Plus three hours, remaining-only 1.5x cooperative boost and inclusive 600-second no-join boundary",
+    "Original idempotency keys and personal logs, quotas, encounters, results, rewards, inventory and wallets",
+    "Notification readiness and read consumption, launch priorities and other feature rules",
+    "No database migration, App publication, announcement or forced update"
+  ],
+  "validation": {
+    "domainIsolation": {"passed": 706, "failed": 0, "log": "/private/tmp/burrow-adventure-entry-final-gate.log"},
+    "focusedAdventure": {"passed": 39, "failed": 0, "log": "/private/tmp/burrow-adventure-entry-focused-final.log"},
+    "additionalStoreAndApi": {"passed": 60, "failed": 0, "log": "/private/tmp/burrow-adventure-entry-regression.log"},
+    "mobileTypeScript": {"passed": true, "log": "/private/tmp/burrow-adventure-entry-types.log"},
+    "nativeVisual": "Real AdventureProgressScreen in isolated minified Hermes iPhone 17 Pro / iOS 26.2 simulator host: visible close-following heads, Couple Mode, ongoing countdown and retained animation during join. Business API fixtures, not two live production devices.",
+    "frameAcceptance": "Paused at user's explicit request. Exploratory JS RAF sampling included cold simulator startup, concurrent work and long host pauses with slow frames; it is not clean UI/GPU acceptance and no all-frames-under-50ms claim is made.",
+    "legacyExtraSuite": "Initial 37-test optional run had 34 passes: display endpoint 500/503 compatibility regression was fixed and its test now passes. Two unrelated older tests were not altered: migration257 test requires an explicit PGlite path, and pre-cooperative UI polish expects a clickable Home button that current Nudge/Mode contract replaced. No claim that every historical test passed."
+  },
+  "release": {
+    "snapshot": "/private/tmp/burrow-adventure-entry-api.WpzmkO",
+    "manifest": "/private/tmp/burrow-adventure-entry-release.AArdEZ/manifest.json",
+    "sourceFiles": 293,
+    "onlyProductionSourceChange": "apps/api/src/app/api/vnext/adventure/route.js",
+    "previousProduction": "dpl_DwFgnMqPsVN2nAFR4556oSRZVaq4",
+    "status": "READY; promoted and production domain verified",
+    "deployment": "dpl_Aobnqdp25w9qaZh8SehUjHo4nnA6",
+    "productionDomain": "api.soulsayit.com",
+    "verifiedAt": "2026-10-26T09:54:14.079Z",
+    "verifiedCandidateSourceFiles": 293,
+    "authenticationSmoke": {"coordination": 401, "existingAdventure": 401, "bootstrap": 401, "plushieTouch": 401},
+    "databaseMigration": false,
+    "clientDelivery": "Client changes require reloading the updated Metro bundle or a new client build; API deployment does not install an App build."
+  }
+}

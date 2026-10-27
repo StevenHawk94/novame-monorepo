@@ -29,11 +29,32 @@ export const RECORD_DRAFT_AUDIO_PATH: string | null = FileSystem.documentDirecto
 export const ONBOARDING_AVATAR_PATH: string | null = FileSystem.documentDirectory
   ? `${FileSystem.documentDirectory}burrow_onboarding_avatar.jpg`
   : null;
+export const PROFILE_AVATAR_DIRECTORY=FileSystem.documentDirectory?`${FileSystem.documentDirectory}burrow-profile-avatar/`:null;
+let avatarCleanup=Promise.resolve();
+export const waitForProfileAvatarCleanup=()=>avatarCleanup;
+export function deleteProfileAvatars(){
+  avatarCleanup=avatarCleanup.then(async()=>{if(PROFILE_AVATAR_DIRECTORY)await FileSystem.deleteAsync(PROFILE_AVATAR_DIRECTORY,{idempotent:true});}).catch(()=>{});
+  return avatarCleanup;
+}
 
 /** Private room photos survive app restarts, but never an account switch. */
 export const BURROW_ROOM_PHOTO_DIRECTORY: string | null = FileSystem.documentDirectory
   ? `${FileSystem.documentDirectory}burrow-room-photos/`
   : null;
+export const SURPRISE_DRAFT_DIRECTORY = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}burrow-surprise-drafts/` : null;
+// Paid messages are replayable documents, not disposable OS cache entries.
+export const SURPRISE_MEDIA_DIRECTORY = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}burrow-surprise-media/` : null;
+export const SURPRISE_LEGACY_MEDIA_DIRECTORY = FileSystem.cacheDirectory ? `${FileSystem.cacheDirectory}burrow-surprise-media/` : null;
+let surpriseCleanup: Promise<void> = Promise.resolve();
+export const waitForSurpriseCleanup = () => surpriseCleanup;
+export function deleteSurpriseDraftFiles(includeMedia=false): Promise<void> {
+  surpriseCleanup = surpriseCleanup.then(async () => {
+    if (SURPRISE_DRAFT_DIRECTORY) await FileSystem.deleteAsync(SURPRISE_DRAFT_DIRECTORY, {idempotent:true});
+    if (includeMedia&&SURPRISE_MEDIA_DIRECTORY) await FileSystem.deleteAsync(SURPRISE_MEDIA_DIRECTORY, {idempotent:true});
+    if (includeMedia&&SURPRISE_LEGACY_MEDIA_DIRECTORY) await FileSystem.deleteAsync(SURPRISE_LEGACY_MEDIA_DIRECTORY, {idempotent:true});
+  }).catch(() => {});
+  return surpriseCleanup;
+}
 let roomPhotoCleanup: Promise<void> = Promise.resolve();
 export function waitForRoomPhotoCleanup(): Promise<void> { return roomPhotoCleanup; }
 export function deleteBurrowRoomPhotos(): Promise<void> {

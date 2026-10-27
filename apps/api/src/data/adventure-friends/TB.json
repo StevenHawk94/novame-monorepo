@@ -1,0 +1,1520 @@
+{
+  "code": "TB",
+  "id": "adventure_friend_tb",
+  "name": "Tobias",
+  "gender": "he",
+  "species": "Tortoise",
+  "partner": "Marlow (she)",
+  "emotionalState": "慢热 slow burn，追了三年才在一起，不急不慌，珍惜每个小仪式",
+  "speakingStyle": "语速极慢，温和，爱说 No rush.",
+  "catchphrase": "No rush.",
+  "art": [
+    "Tortoise_02_Variant1.webp",
+    "Tortoise_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "TB-01",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "Tobias is crossing the tunnel at the speed of a very slow thought.",
+      "lines": [
+        "Oh, hello there. Don't mind me. I'm on my way to see Marlow.",
+        "I started this walk yesterday.",
+        "No rush. We waited three years to say it out loud. A walk is nothing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Three years?!",
+          "reaction": [
+            "Three. She liked me the whole time. I was just slow.",
+            "Worth it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Need a lift?",
+          "reaction": [
+            "Kind of you. No.",
+            "I like the walk. It's how I think about her."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Walk with Tobias.",
+          "reaction": [
+            "Oh. Company.",
+            "You're slow too. I like that."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-02",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Ah, you again. Good. I arrived. Yesterday's walk is done.",
+        "Marlow was waiting with tea. She said, 'You're late.' I said, 'No rush.'",
+        "She laughed. Then she kissed my shell. Gently."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A kiss on the shell!",
+          "reaction": [
+            "The shell is tough. The kiss went right through.",
+            "I'm still glowing. In a slow way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Late is fine.",
+          "reaction": [
+            "Late is my specialty. She's gotten used to it.",
+            "She says it's part of my charm."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile quietly.",
+          "reaction": [
+            "Thank you. A quiet smile fits me.",
+            "We understand each other."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-03",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": "Tobias is carefully polishing a small round stone.",
+      "lines": [
+        "I'm making Marlow a gift. A round stone. Polished smooth.",
+        "It's taking me about two months. I just started week three.",
+        "Some things are worth the wait."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What's special about the stone?",
+          "reaction": [
+            "It's from the first place we spoke. A creek bend.",
+            "It fits in her palm. I checked. Twice."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Two months is long.",
+          "reaction": [
+            "Not for love. Love is a long-term project.",
+            "I like that it takes time."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Help polish.",
+          "reaction": [
+            "Gently. Round and round. Like that.",
+            "You have a good touch. Marlow would approve."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-04",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I'm learning how to say things faster. Marlow asked.",
+        "She said, 'Tobias, I love how you're slow. But sometimes I'd love a faster hello.'",
+        "So I practiced. 'Hi.' Done. Three seconds."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's impressive.",
+          "reaction": [
+            "Thank you! I timed it. Marlow cheered.",
+            "It's a one-syllable revolution."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did it feel weird?",
+          "reaction": [
+            "A bit. Like running downhill.",
+            "But for her, I'll try a quick hello now and then."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Say 'hi' back, fast.",
+          "reaction": [
+            "Ha! You're a natural. Welcome to the fast club.",
+            "Population: almost no one."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-05",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Question for you. Did you and your partner take long to get together?",
+        "Or was it quick? I wonder what's normal."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Pretty quick.",
+          "reaction": [
+            "Quick! Wow. Like a spring.",
+            "I admire that. But slow has its charm."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It took a while.",
+          "reaction": [
+            "Ah, a fellow slow burner. I like you already.",
+            "Slow love tends to stick."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Not sure there's a normal.",
+          "reaction": [
+            "That's wise. I'm hanging on to that.",
+            "Normal is just what works for two."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-06",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": "Tobias is watching a snail glide past and nodding with respect.",
+      "lines": [
+        "Marlow and I take afternoon walks. Four steps. Sometimes five.",
+        "We don't go anywhere. We just... walk. And talk.",
+        "Yesterday we only said eleven words. Best walk ever."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Eleven words?",
+          "reaction": [
+            "Eleven. I counted. Each one meant something.",
+            "One was 'tea.' It was a good one."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That sounds peaceful.",
+          "reaction": [
+            "It is. Peace takes time to build.",
+            "And a little practice standing still."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Walk four steps with him.",
+          "reaction": [
+            "One. Two. Three. Four. See? Revolution.",
+            "I'm adding you to the walking list."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-07",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Tobias stops completely, which is rare, and looks at you.",
+      "lines": [
+        "Can I tell you something? It's a heavy one.",
+        "Sometimes I worry I waited too long. That I wasted years not saying it.",
+        "Marlow says there's no waste. I'm still thinking about it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You're together now.",
+          "reaction": [
+            "That's true. We are. And that's the whole point.",
+            "I shouldn't count the lost years. Just the found ones."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What do you think?",
+          "reaction": [
+            "I think... timing is a shy friend.",
+            "It arrived when we were ready. Probably."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Stay beside him.",
+          "reaction": [
+            "Thank you. I think better when someone's near.",
+            "Even if we say nothing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-08",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I wrote Marlow a letter. It took two weeks. It's one page.",
+        "The first word is 'Marlow.' The last word is 'still.'",
+        "In between, I tried to say everything. Slowly."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Did she cry?",
+          "reaction": [
+            "A little. Then she wrote one back. Longer.",
+            "Her handwriting is lovely. I read it ten times."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That sounds beautiful.",
+          "reaction": [
+            "Thank you. I wrote it with the good pencil.",
+            "I'm keeping the draft too."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Nod softly.",
+          "reaction": [
+            "I think you understand.",
+            "Some feelings need a slow pen."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-09",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": "Tobias settles beside a warm rock and pats a spot next to him.",
+      "lines": [
+        "Marlow's visiting her sister. I'm missing her slowly.",
+        "Sit with me. No talk required.",
+        "Missing someone is easier with company."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Of course.",
+          "reaction": [
+            "Thank you. It's a gentle ache.",
+            "It reminds me I'm lucky."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Tell me about Marlow.",
+          "reaction": [
+            "Oh, she hums when she thinks. She hates cold tea.",
+            "She makes me feel like I'm exactly the right speed."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit in silence.",
+          "reaction": [
+            "Silence is a good friend of mine.",
+            "Thank you for being one too."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-10",
+      "friendId": "adventure_friend_tb",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten times. No rush, but... I'm happy you came.",
+        "Marlow said I've been talking about you. I said, 'They're a slow friend, too.' She approved.",
+        "Your turn. How are you and your partner doing? Honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning, slowly, is the best way.",
+            "Come for tea. Marlow bakes. I sit very nicely."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We had a rough week, honestly.",
+          "reaction": [
+            "Rough weeks pass. Slowly, then suddenly.",
+            "No rush to fix it. Just stay close."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Better since I slowed down.",
+          "reaction": [
+            "Slowing down. Oh, I love that.",
+            "You're a true tortoise at heart."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P01",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Marlow and I celebrated our first year together. By walking.",
+        "Four steps. A picnic of one cracker. It was glorious."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "One cracker?",
+          "reaction": [
+            "Split in half. Equal halves. Very romantic.",
+            "Crumbs for the ants. Everyone ate.",
+            "We sat on the rock until the cracker was dust."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Happy anniversary!",
+          "reaction": [
+            "Thank you! Three years of waiting, one year of being.",
+            "Next year: five steps.",
+            "We might add a tiny candle, if we find one."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P02",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I tried to hurry once. I walked to Marlow in just six hours.",
+        "I arrived very proud. She said, 'You hurried?' I said, 'For you.' She cried."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Aww.",
+          "reaction": [
+            "Slow love can go fast when it needs to.",
+            "I'll do it again. Maybe in a year.",
+            "I slept for two days. Worth every blink."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Six hours is huge.",
+          "reaction": [
+            "It was a marathon. I need a nap still.",
+            "Marlow made me soup. I slept in it. Almost."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P03",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Marlow redecorated our burrow. Everything's rounder now.",
+        "She said, 'It matches us.' I agree. I love round."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Round is cozy.",
+          "reaction": [
+            "It really is. I bump into fewer corners.",
+            "She added a tiny window. For sunset.",
+            "Even the lamp is round. It glows like a tiny moon."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Matches you perfectly.",
+          "reaction": [
+            "It does. I feel at home in every curve.",
+            "She has good taste. Obviously.",
+            "She says it feels like living inside a hug."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P04",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I forgot our anniversary. Slowly remembered. Three days late.",
+        "Marlow said, 'On time for you.' I fell in love again."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Aww. She gets you.",
+          "reaction": [
+            "She does. She gets me better than I do.",
+            "I'm very lucky. And very slow.",
+            "She wrote 'Happy Tobias Day' on the wall. Mine."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Three days is fine.",
+          "reaction": [
+            "It is when someone waits with open arms.",
+            "I wrote an apology poem. It rhymes 'late' with 'great.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P05",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We watched the sun set from our rock. All of it. Forty minutes.",
+        "Neither of us spoke. At the end she said, 'Again tomorrow?'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's the dream.",
+          "reaction": [
+            "It really is. Sunset after sunset.",
+            "We call it 'The Long Date.'",
+            "We hold hands, slowly. The sun is faster than us."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Forty minutes!",
+          "reaction": [
+            "Forty-one. I counted. It's what I do.",
+            "Worth every second.",
+            "I'd do it forty more times. I probably will."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P06",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Marlow's learning to slow down for me. And I'm learning to speed up for her.",
+        "We met in the middle. At a rock. We sat on it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Perfect meeting point.",
+          "reaction": [
+            "It's now called 'Our Rock.' Very original.",
+            "We have a lease. Forever.",
+            "We put a pillow on it. Now it's the coziest rock alive."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Compromise is love.",
+          "reaction": [
+            "It is. And snacks. Snacks help.",
+            "We had two. Equal halves again.",
+            "We stayed on the rock until the stars looked down."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P07",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I gave Marlow the polished stone. Finally. After two months.",
+        "She held it for a full minute. Then she whispered, 'It's perfect.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "She loved it.",
+          "reaction": [
+            "I think she did. She put it in her pocket.",
+            "She takes it everywhere. Even to the garden."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Two months well spent.",
+          "reaction": [
+            "Time spent loving something is never wasted.",
+            "I wrote that on the underside of my shell.",
+            "She asked what I'd polish next. I said, 'Us.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P08",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Marlow made me tea. She forgot sugar. I drank it anyway.",
+        "She noticed halfway. We laughed. We shared the sugar jar after."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sweet tea or not.",
+          "reaction": [
+            "The tea tasted of her. Sugar or no sugar.",
+            "I'm a simple tortoise with simple joys.",
+            "Next time I'll bring the sugar. She'll bring the smile."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "She's thoughtful.",
+          "reaction": [
+            "She is. Even in her forgetfulness.",
+            "I'd choose that tea any day.",
+            "She cried when I said it. Quietly. The best kind."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P09",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The round stone sits on our shelf now. Marlow named it 'Tobias Two.'",
+        "I'm not sure how to feel. Mostly honored."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Tobias Two!",
+          "reaction": [
+            "I've been replaced by a stone. But a lovely stone.",
+            "It's quieter than me. Slightly.",
+            "It sits beside my picture. They share a candle."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's adorable.",
+          "reaction": [
+            "It is. She's adorable.",
+            "I told her. Slowly. She blushed.",
+            "She said Tobias Two is quieter. I'm slightly offended."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P10",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember my letter? She framed it. The last word 'still' is bigger than the rest.",
+        "I asked her why. She said, 'Because that's the whole story.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "I thought so. I stared at it for an hour.",
+            "Still. A small word that does a lot."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "She's so sweet.",
+          "reaction": [
+            "She is. She's sweet in a quiet, strong way.",
+            "I'd say it faster. But I like saying it slowly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P11",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The eleven-word walk? We broke our record. Nine words.",
+        "We were so proud. We celebrated with silence."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Nine words!",
+          "reaction": [
+            "Nine. A new low. I'm thrilled.",
+            "One was 'sky.' It carried the whole walk.",
+            "Next goal: seven. We're ambitious in a quiet way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Perfect quiet.",
+          "reaction": [
+            "Perfect quiet. The best kind.",
+            "I wish everyone knew how loud silence can be.",
+            "We smiled at each other. Words weren't needed."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P12",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I did the fast 'hi' again. Marlow gasped. Then she said it back. Three seconds.",
+        "We stared at each other. Proud of our speed."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Speedy lovebirds.",
+          "reaction": [
+            "Fast hellos, slow goodbyes. That's our style.",
+            "I'll keep practicing. Once a month.",
+            "We timed it. Two seconds. We might be athletes."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's cute.",
+          "reaction": [
+            "It's our thing. Our quick, slow thing.",
+            "Everyone needs a thing.",
+            "She giggles every time. I adore the giggle."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P13",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: slow love isn't less love.",
+        "It's just love with more time to notice."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I like that.",
+          "reaction": [
+            "Thank you. I've had a lot of time to think.",
+            "Not much else to do on a four-step walk."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Fast love is fun too.",
+          "reaction": [
+            "It is! Fireworks and pie. I'm a fan.",
+            "Mine just has a longer fuse.",
+            "A long fuse still ends in a spark."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P14",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: you don't have to say everything right away.",
+        "Some things ripen. Like fruit. Or a good tea."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "True. Timing matters.",
+          "reaction": [
+            "It does. Too early and it's sour.",
+            "Too late and it's... also sweet, honestly.",
+            "Marlow is a patient fruit, then. Sweet and lasting."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What if it's too late?",
+          "reaction": [
+            "Then say it anyway. Late is better than never.",
+            "I'm proof. Three years late. Perfect timing.",
+            "She said, 'Right on time.' I fainted slowly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P15",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: the best dates are the ones where nothing happens.",
+        "Just two creatures, one rock, and a long shadow."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Agreed.",
+          "reaction": [
+            "Nothing happens, and everything happens.",
+            "That's the magic.",
+            "We watched an ant carry a crumb for an hour. Epic."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I like adventures.",
+          "reaction": [
+            "Adventures are great. A fine contrast.",
+            "Sometimes I'd love to see one. Briefly. From a bench.",
+            "I'll pack a lunch and look at the horizon. Briefly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P16",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's a ritual you and your partner share?",
+        "Marlow and I split a leaf tea every evening."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We have morning coffee.",
+          "reaction": [
+            "Morning coffee. Lovely. It's the start of everything.",
+            "Do you each have a favorite mug? We do.",
+            "Marlow's mug has a tiny crack. We never replaced it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We say goodnight in a funny voice.",
+          "reaction": [
+            "A funny voice! Delightful.",
+            "I'm now thinking about my funny voice. I don't have one.",
+            "Maybe I'll try a tiny squeak. For her."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P17",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you know when something's worth the wait?",
+        "I'm still working on my own answer."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "When it feels like home.",
+          "reaction": [
+            "Home. Yes. That's the feeling.",
+            "Nice answer. Slow and true.",
+            "Marlow is my home. A round one, with tea."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "When you can't stop thinking about it.",
+          "reaction": [
+            "Ah, the persistent thought. I know it well.",
+            "It nagged me for three years.",
+            "I thought about her at every step. All four."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P18",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What did you notice first about your partner?",
+        "I noticed Marlow's humming. Before her face."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Their laugh.",
+          "reaction": [
+            "Laughter. A sound that can last forever.",
+            "I remember Marlow's. It arrived before she did.",
+            "Marlow's laugh sounds like a spoon in a teacup."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Their eyes.",
+          "reaction": [
+            "Eyes. Always eyes.",
+            "Marlow's are the color of tea at sunset.",
+            "I could paint her eyes, if I could paint."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P19",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Tobias is standing perfectly still under a glowing patch of ceiling, face lifted.",
+      "lines": [
+        "Do you feel that? The light is slow today.",
+        "Marlow and I stood right here when we said it. The first time.",
+        "I wanted you to be here for the second."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I'm honored.",
+          "reaction": [
+            "Thank you. It's a gentle honor.",
+            "I'll hold this light a while longer.",
+            "I'll bring Marlow here someday, at the same slow pace."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Stand with him.",
+          "reaction": [
+            "Ah. Company. The best kind.",
+            "The light is slow. We're slow. Perfect.",
+            "We stood there until the light changed. Neither of us moved."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TB-P20",
+      "friendId": "adventure_friend_tb",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Tobias is holding a small carved box, shell-shaped, his paws trembling very slightly.",
+      "lines": [
+        "I carved this for Marlow. It took a season. It's empty.",
+        "I want to fill it with something. A wish. A promise.",
+        "Do you have an idea? I've been thinking for weeks."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Fill it with a tiny note.",
+          "reaction": [
+            "A note. Yes. 'Still.' Just that.",
+            "She'll understand. She always does.",
+            "She'll put it in the box and smile. Slowly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe leave it empty for now.",
+          "reaction": [
+            "Empty... for room to grow. I love that.",
+            "Thank you. I'll wait. I'm good at waiting.",
+            "Room to grow. I'll hold that thought."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_129",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G01",
+      "name": "Sun Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 129,
+      "file": "Crystal Globes/Sun Globe.webp",
+      "key": "burrow/adventure-gifts/v1/129-60676369f60a77ec.webp",
+      "sha256": "60676369f60a77ec606f57c22a66d2b4724be53f784f8c2b35cf028397740f1d",
+      "bytes": 23358
+    },
+    {
+      "id": "adventure_gift_130",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G02",
+      "name": "Saturn Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 130,
+      "file": "Crystal Globes/Saturn Globe.webp",
+      "key": "burrow/adventure-gifts/v1/130-67348d56291dccf1.webp",
+      "sha256": "67348d56291dccf1de36873cd9fa12f20a8e5be447bd9f642edf796e46026949",
+      "bytes": 23440
+    },
+    {
+      "id": "adventure_gift_131",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G03",
+      "name": "Cloud Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 131,
+      "file": "Crystal Globes/Cloud Globe.webp",
+      "key": "burrow/adventure-gifts/v1/131-d22508f9bedb309a.webp",
+      "sha256": "d22508f9bedb309a34822f99d4cea0fab0d9557701ff218d3af2ddd513a16f9e",
+      "bytes": 23848
+    },
+    {
+      "id": "adventure_gift_132",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G04",
+      "name": "Aurora Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 132,
+      "file": "Crystal Globes/Aurora Globe.webp",
+      "key": "burrow/adventure-gifts/v1/132-75a90fdad22522e2.webp",
+      "sha256": "75a90fdad22522e2478a66cf1d4d5536f570669ace0c8acd9051586103b9d455",
+      "bytes": 23822
+    },
+    {
+      "id": "adventure_gift_133",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G05",
+      "name": "Rose Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 133,
+      "file": "Crystal Globes/Rose Globe.webp",
+      "key": "burrow/adventure-gifts/v1/133-ad34ff84b1c1d228.webp",
+      "sha256": "ad34ff84b1c1d2281d8387e33ace5d9cf582b926058d3f59ac09cff32f317ed0",
+      "bytes": 24272
+    },
+    {
+      "id": "adventure_gift_134",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G06",
+      "name": "Clover Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 134,
+      "file": "Crystal Globes/Clover Globe.webp",
+      "key": "burrow/adventure-gifts/v1/134-c0d29e47cbcccd0f.webp",
+      "sha256": "c0d29e47cbcccd0fb0b0ddfa688fcc87bd2bf5c5789ffe465f3e650d5cae2f1f",
+      "bytes": 23146
+    },
+    {
+      "id": "adventure_gift_135",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G07",
+      "name": "Butterfly Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 135,
+      "file": "Crystal Globes/Butterfly Globe.webp",
+      "key": "burrow/adventure-gifts/v1/135-af01d6cff9370c5e.webp",
+      "sha256": "af01d6cff9370c5ed6b311cdf131c0b1bfc4d87d70af6a7f0aabc8eb35c03030",
+      "bytes": 23966
+    },
+    {
+      "id": "adventure_gift_136",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G08",
+      "name": "Mushroom Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 136,
+      "file": "Crystal Globes/Mushroom Globe.webp",
+      "key": "burrow/adventure-gifts/v1/136-07b3314a71e7d553.webp",
+      "sha256": "07b3314a71e7d55392ff08df623720a6cf908cb7d88f6d58cf22e9787497c757",
+      "bytes": 23494
+    },
+    {
+      "id": "adventure_gift_137",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G09",
+      "name": "Ocean Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 137,
+      "file": "Crystal Globes/Ocean Globe.webp",
+      "key": "burrow/adventure-gifts/v1/137-9b18de1151e7f53e.webp",
+      "sha256": "9b18de1151e7f53e347b4978b740051e9d30ce6009de075b395b969470b09f13",
+      "bytes": 25058
+    },
+    {
+      "id": "adventure_gift_138",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G10",
+      "name": "Mountain Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 138,
+      "file": "Crystal Globes/Mountain Globe.webp",
+      "key": "burrow/adventure-gifts/v1/138-5d0c54b281aa4a3e.webp",
+      "sha256": "5d0c54b281aa4a3ebc43c4dc25350d08ade7db9d3c56c05f564fbe493c04c487",
+      "bytes": 23188
+    },
+    {
+      "id": "adventure_gift_139",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G11",
+      "name": "Snowflake Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 139,
+      "file": "Crystal Globes/Snowflake Globe.webp",
+      "key": "burrow/adventure-gifts/v1/139-56e8d3d5d4656480.webp",
+      "sha256": "56e8d3d5d4656480f4cdc54f08e107f4e138d6c17130abab03ca4d7581f1a761",
+      "bytes": 25452
+    },
+    {
+      "id": "adventure_gift_140",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G12",
+      "name": "Rainbow Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 140,
+      "file": "Crystal Globes/Rainbow Globe.webp",
+      "key": "burrow/adventure-gifts/v1/140-422e95f747acab82.webp",
+      "sha256": "422e95f747acab82ec2f5975d857e484ef80c849ee163ed79fd41866630ac921",
+      "bytes": 23794
+    },
+    {
+      "id": "adventure_gift_141",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G13",
+      "name": "Heart Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 141,
+      "file": "Crystal Globes/Heart Globe.webp",
+      "key": "burrow/adventure-gifts/v1/141-cbbca7341878472d.webp",
+      "sha256": "cbbca7341878472d891970e0fd13b955ce74d92ea6a6538632966a362badf0a6",
+      "bytes": 23032
+    },
+    {
+      "id": "adventure_gift_142",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G14",
+      "name": "Key Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 142,
+      "file": "Crystal Globes/Key Globe.webp",
+      "key": "burrow/adventure-gifts/v1/142-fe587a36f3814925.webp",
+      "sha256": "fe587a36f381492561415eb27eb42704636aebe25da9e85af56a788e6c3b842d",
+      "bytes": 23568
+    },
+    {
+      "id": "adventure_gift_143",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G15",
+      "name": "Firefly Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 143,
+      "file": "Crystal Globes/Firefly Globe.webp",
+      "key": "burrow/adventure-gifts/v1/143-5631f3149d8878a7.webp",
+      "sha256": "5631f3149d8878a784d666fdcc716c33b2b34d36846250864c573b45746e0751",
+      "bytes": 23574
+    },
+    {
+      "id": "adventure_gift_144",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G16",
+      "name": "Shooting Star",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 144,
+      "file": "Crystal Globes/Shooting Star.webp",
+      "key": "burrow/adventure-gifts/v1/144-f8efb7fc031af9b7.webp",
+      "sha256": "f8efb7fc031af9b7c1ca660c817923271fcb44798d201f715a8e493f2a9188cc",
+      "bytes": 24410
+    },
+    {
+      "id": "adventure_gift_145",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G17",
+      "name": "Cat Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 145,
+      "file": "Crystal Globes/Cat Globe.webp",
+      "key": "burrow/adventure-gifts/v1/145-2153882e900f9ccf.webp",
+      "sha256": "2153882e900f9ccf79ff1014a77d60ee49e2a287a39d3b195b25b7dc77addddd",
+      "bytes": 23456
+    },
+    {
+      "id": "adventure_gift_146",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G18",
+      "name": "Blossom Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 146,
+      "file": "Crystal Globes/Blossom Globe.webp",
+      "key": "burrow/adventure-gifts/v1/146-3901de0df322e987.webp",
+      "sha256": "3901de0df322e987926a0c8d721f0b40ba1c4f3de6e7318fef58ceff0ab42d3e",
+      "bytes": 24368
+    },
+    {
+      "id": "adventure_gift_147",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G19",
+      "name": "Strawberry Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 147,
+      "file": "Crystal Globes/Strawberry Globe.webp",
+      "key": "burrow/adventure-gifts/v1/147-4a5cc8b04003b79c.webp",
+      "sha256": "4a5cc8b04003b79c3758738eed19c732055165ddd049705cc08229416146f9e9",
+      "bytes": 23570
+    },
+    {
+      "id": "adventure_gift_148",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G20",
+      "name": "Bow Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 148,
+      "file": "Crystal Globes/Bow Globe.webp",
+      "key": "burrow/adventure-gifts/v1/148-c800460df4350405.webp",
+      "sha256": "c800460df43504056f927332ea2bd6c25817087e9c817f685b20218676d1d3d4",
+      "bytes": 23934
+    },
+    {
+      "id": "adventure_gift_149",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G21",
+      "name": "Cherry Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 149,
+      "file": "Crystal Globes/Cherry Globe.webp",
+      "key": "burrow/adventure-gifts/v1/149-5040c4f79795b17d.webp",
+      "sha256": "5040c4f79795b17d6ca9905bda337fb3a7a0d09fbb4d643a1cc71640371df84e",
+      "bytes": 24792
+    },
+    {
+      "id": "adventure_gift_150",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G22",
+      "name": "Rabbit Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 150,
+      "file": "Crystal Globes/Rabbit Globe.webp",
+      "key": "burrow/adventure-gifts/v1/150-06398f87c828528f.webp",
+      "sha256": "06398f87c828528ff408ab344ca830ed881e5bcd0f9611b0d29755c5a0d61bbf",
+      "bytes": 24352
+    },
+    {
+      "id": "adventure_gift_151",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G23",
+      "name": "Crescent Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 151,
+      "file": "Crystal Globes/Crescent Globe.webp",
+      "key": "burrow/adventure-gifts/v1/151-f4602d47948b3e6d.webp",
+      "sha256": "f4602d47948b3e6d4a6fbd2d7d17df54d8a6113ea6f68c3605ae380c4fd16663",
+      "bytes": 24282
+    },
+    {
+      "id": "adventure_gift_152",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G24",
+      "name": "Daisy Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 152,
+      "file": "Crystal Globes/Daisy Globe.webp",
+      "key": "burrow/adventure-gifts/v1/152-301f1a02c620931c.webp",
+      "sha256": "301f1a02c620931c6207c06b641fa260355ec4ab58c1e3b43a5fc89bd88ce02c",
+      "bytes": 24234
+    },
+    {
+      "id": "adventure_gift_153",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G25",
+      "name": "Shell Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 153,
+      "file": "Crystal Globes/Shell Globe.webp",
+      "key": "burrow/adventure-gifts/v1/153-59d56a37dc5257bf.webp",
+      "sha256": "59d56a37dc5257bfc1dd5b40c4678a29267f64188a16145cacc473beb4baa18a",
+      "bytes": 24584
+    },
+    {
+      "id": "adventure_gift_154",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G26",
+      "name": "Whale Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 154,
+      "file": "Crystal Globes/Whale Globe.webp",
+      "key": "burrow/adventure-gifts/v1/154-75cf4ec5822cb244.webp",
+      "sha256": "75cf4ec5822cb2446900fa32931703bc508161013bac2322cc3ce200ca0ecba1",
+      "bytes": 24640
+    },
+    {
+      "id": "adventure_gift_155",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G27",
+      "name": "Jellyfish Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 155,
+      "file": "Crystal Globes/Jellyfish Globe.webp",
+      "key": "burrow/adventure-gifts/v1/155-669b444b1c801a7f.webp",
+      "sha256": "669b444b1c801a7fbefa3b2a693e7f19f39693715807d1ebc758694d108a729a",
+      "bytes": 23910
+    },
+    {
+      "id": "adventure_gift_156",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G28",
+      "name": "Castle Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 156,
+      "file": "Crystal Globes/Castle Globe.webp",
+      "key": "burrow/adventure-gifts/v1/156-20c47f0d327358f5.webp",
+      "sha256": "20c47f0d327358f58b1bf595e37b53d6b237b417472c7630b69e874b8431687b",
+      "bytes": 24432
+    },
+    {
+      "id": "adventure_gift_157",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G29",
+      "name": "Disco Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 157,
+      "file": "Crystal Globes/Disco Globe.webp",
+      "key": "burrow/adventure-gifts/v1/157-16fd03151b5a2fa7.webp",
+      "sha256": "16fd03151b5a2fa79ca917017a02980a915d762f730d451f7ba49e03998598b7",
+      "bytes": 23994
+    },
+    {
+      "id": "adventure_gift_158",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G30",
+      "name": "Horseshoe Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 158,
+      "file": "Crystal Globes/Horseshoe Globe.webp",
+      "key": "burrow/adventure-gifts/v1/158-467d45f744793513.webp",
+      "sha256": "467d45f7447935135aa832253048cdafc8de7c281a14918903141d5694685fd5",
+      "bytes": 25012
+    },
+    {
+      "id": "adventure_gift_159",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G31",
+      "name": "Peach Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 159,
+      "file": "Crystal Globes/Peach Globe.webp",
+      "key": "burrow/adventure-gifts/v1/159-5c3208c7eae5b677.webp",
+      "sha256": "5c3208c7eae5b677aad5bbd55c24435fa1c7aa2a0dd4bfa49706bb5881f79aab",
+      "bytes": 23570
+    },
+    {
+      "id": "adventure_gift_160",
+      "friendId": "adventure_friend_tb",
+      "giftId": "TB-G32",
+      "name": "Eye Globe",
+      "category": "Crystal Globes",
+      "categoryCode": "C05",
+      "sourceId": 160,
+      "file": "Crystal Globes/Eye Globe.webp",
+      "key": "burrow/adventure-gifts/v1/160-3d05b7e9b92a8b35.webp",
+      "sha256": "3d05b7e9b92a8b35dec2f7cd29740a1fd7f2fd68fb5d9b9356a035b62fd1cd78",
+      "bytes": 24232
+    }
+  ]
+}

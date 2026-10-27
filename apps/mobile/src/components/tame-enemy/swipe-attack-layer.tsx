@@ -245,6 +245,9 @@ export function SwipeAttackLayer({ enabled, target, onHit }: SwipeAttackLayerPro
   const gesture = useMemo(
     () => Gesture.Pan()
       .enabled(enabled)
+      // Reserve the left edge for the native room-back gesture, including
+      // during battle; starting a slash there must not capture navigation.
+      .hitSlop({ left: -24 })
       .minDistance(1)
       .runOnJS(true)
       .onBegin((event) => begin(event.x, event.y))

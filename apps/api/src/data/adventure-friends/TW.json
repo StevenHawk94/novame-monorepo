@@ -1,0 +1,1404 @@
+{
+  "code": "TW",
+  "id": "adventure_friend_tw",
+  "name": "Twig",
+  "gender": "she",
+  "species": "Mouse",
+  "partner": "Sage (he) - 暗恋对象",
+  "emotionalState": "暗恋中，内心戏爆棚，不敢表白",
+  "speakingStyle": "语速快，爱脑补，碎碎念",
+  "catchphrase": "Nice weather.",
+  "art": [
+    "Mouse_02_Variant1.webp",
+    "Mouse_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "TW-01",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "A tiny mouse dashes out, skids, stops.",
+      "lines": [
+        "Hi! Sorry! I was thinking. I do that. A lot.",
+        "Do I know you? I don't think I know you. Hi."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hi! I'm new.",
+          "reaction": [
+            "New! Great! I'm Twig. I overthink. Nice to meet you."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You okay?",
+          "reaction": [
+            "Totally! Mostly! Slightly spiraling. It's fine."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Slow down.",
+          "reaction": [
+            "Can't. Brain's too fast. But thanks."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-02",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I know someone's schedule. Not in a creepy way.",
+        "He goes to the berry stand at 3. I also go at 3. By coincidence. Every day."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's definitely coincidence.",
+          "reaction": [
+            "RIGHT. Thank you. Someone gets it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Bold of you.",
+          "reaction": [
+            "Is it? Is it bold? I thought it was subtle."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Does the person know?",
+          "reaction": [
+            "Absolutely not. I'd die."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-03",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Sage said 'hi' to me today.",
+        "Just 'hi.' One syllable. I've been analyzing it for three hours."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Maybe it was just 'hi.'",
+          "reaction": [
+            "Nothing is 'just.' It had a TONE."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What tone?",
+          "reaction": [
+            "Warm. Slightly curious. 70% friendly, 30% maybe."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Did you say hi back?",
+          "reaction": [
+            "I said 'ha.' I don't know why."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-04",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I wrote eleven drafts of a confession.",
+        "Draft three was too intense. Draft seven was just 'hey.' Draft eleven was a poem about cheese."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Poem about cheese?!",
+          "reaction": [
+            "It was surprisingly romantic."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Which one's your favorite?",
+          "reaction": [
+            "Five. It said 'I like talking to you.' Which is true. And scary."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Maybe skip the drafts and wing it?",
+          "reaction": [
+            "Wing it. Hah. Ha. Hah. No."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-05",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Okay. Real question.",
+        "How did you tell your partner you liked them? Like, the first time?",
+        "I need data. Not advice. Data."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I just said it. It was awkward.",
+          "reaction": [
+            "Awkward. Okay. I can do awkward."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Honestly, it kind of happened slowly.",
+          "reaction": [
+            "Slowly. Hm. That's less scary."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "I wrote them a note.",
+          "reaction": [
+            "A NOTE. Drafts are my specialty."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-06",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I almost talked to Sage today. Like, really almost.",
+        "I said 'nice weather.' It was raining. Sage said 'it IS nice weather.' ...I don't know what happened."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's kind of sweet.",
+          "reaction": [
+            "Sweet?! Okay. Okay. Sweet. I can work with sweet."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sage went along with it!",
+          "reaction": [
+            "HE DID. I'm a genius. Accidentally."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Next time, say one more word.",
+          "reaction": [
+            "One more. Okay. 'Nice weather. And you.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-07",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Twig sits quietly, for once.",
+      "lines": [
+        "What if I say it and he says no?",
+        "And then I can't go to the berry stand ever again. Berries are my whole thing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Berries aren't going anywhere.",
+          "reaction": [
+            "True. True. Okay. I'll keep the berries."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It's okay to be scared.",
+          "reaction": [
+            "...Thanks. I needed someone to say that."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Twig",
+          "reaction": [
+            "...Thank you. It's weirdly calming."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-08",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I left a berry on Sage's step today. Anonymous.",
+        "Just a berry. No note. Just a red berry.",
+        "Now I'm hiding behind a leaf."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Stay hidden.",
+          "reaction": [
+            "I'm very good at hiding. It's my second best skill."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They'll love it.",
+          "reaction": [
+            "Do you think? Do you REALLY think?"
+          ]
+        },
+        {
+          "id": "c",
+          "label": "What's the first skill?",
+          "reaction": [
+            "Overthinking. Obviously."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-09",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "Sage saw me. Saw me leave the berry.",
+        "He said 'I recognized the handwriting.' I said 'berries don't have handwriting.' He smiled.",
+        "I think my heart left my body."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a smile!",
+          "reaction": [
+            "It was a good smile. I analyzed it. 85% good."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What did you say?",
+          "reaction": [
+            "I said 'ha.' Again. It's a problem."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Grin quietly",
+          "reaction": [
+            "...Don't. I'll scream. Quietly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-10",
+      "friendId": "adventure_friend_tw",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Okay. Ten visits. I owe you a real update.",
+        "Sage asked if I wanted to walk with him tomorrow. Just walk. No agenda.",
+        "I said yes. I said it normally. I don't know how.",
+        "...How are you and your partner? Seriously. Tell me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning. I love that. I'll learn too."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Honestly, a lot of nervous energy still.",
+          "reaction": [
+            "SAME. We should start a club."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "I'm really happy, honestly.",
+          "reaction": [
+            "Honestly?? That's the best news. I'm going to cry in a leaf."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P01",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sage said 'see you tomorrow.' Which implies there's a tomorrow.",
+        "I've been thinking about that for two hours."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good sign.",
+          "reaction": [
+            "Right?? Okay. I'll take it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It might just be polite.",
+          "reaction": [
+            "Polite. Hm. Polite is a type of nice."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P02",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We walked together for twelve minutes.",
+        "I counted. I think we're friends. Or something. Or friends-plus-minus."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Plus!",
+          "reaction": [
+            "Don't say plus. I'll start believing it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Twelve minutes is great.",
+          "reaction": [
+            "It was! I almost said a full sentence."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P03",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sage laughed at my joke today.",
+        "It wasn't even a good joke. It was about cheese. I think it was a good laugh."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Cheese jokes are underrated.",
+          "reaction": [
+            "THANK YOU."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's cute.",
+          "reaction": [
+            "It WAS."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P04",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Saw Sage with another mouse. I panicked.",
+        "It was his cousin. I know because I asked. Very casually. In a voice I've never used."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Relief?",
+          "reaction": [
+            "Huge. I need to lie down."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You asked casually, right?",
+          "reaction": [
+            "I asked like a detective."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P05",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sage texted me at 11 PM. 'Do you have the notes?'",
+        "That's it. But it was 11 PM. Which means he thought of me at 11 PM."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They thought of you.",
+          "reaction": [
+            "HE DID."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you send the notes?",
+          "reaction": [
+            "In six seconds. I'm not proud."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P06",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Rehearsed 'hi' in the mirror for ten minutes. It still came out wrong."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hi is hard.",
+          "reaction": [
+            "Hi is the hardest word."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Say it to me.",
+          "reaction": [
+            "Okay. Hi. ...That was fine. Why was that fine?"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P07",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sage borrowed my scarf. Still hasn't returned it.",
+        "I don't want it back. Is that weird?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Not weird.",
+          "reaction": [
+            "Okay. Okay. I'll let it live there."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Ask for it. Gently.",
+          "reaction": [
+            "Gently. Hm. A reason to talk. Genius."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P08",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sage said I have 'good energy.' What does that MEAN.",
+        "Is it romantic? Is it friend? Is it 'you smell nice'?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's a compliment!",
+          "reaction": [
+            "A compliment. Yes. I'll frame it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Ask them what they meant.",
+          "reaction": [
+            "ASK. Hah. Hahaha. ...Maybe."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P09",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Still have all eleven drafts. In a box.",
+        "Someday I'll read them all out loud. To a wall."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Read me draft seven.",
+          "reaction": [
+            "'Hey.' ...That's it. That's the draft."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Keep them forever.",
+          "reaction": [
+            "Obviously."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P10",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Sage said he 'knew the handwriting.' I still think about that.",
+        "He noticed me noticing him."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They noticed you.",
+          "reaction": [
+            "I KNOW."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's so sweet.",
+          "reaction": [
+            "I think I'm going to be okay."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P11",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember 'nice weather'? Sage brings it up sometimes.",
+        "Like a joke between us. A joke we share. Between us."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a thing now!",
+          "reaction": [
+            "It's OUR thing. Probably. Maybe."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Aw.",
+          "reaction": [
+            "I'm fine. I'm okay. It's fine."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P12",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still go to the berry stand at three.",
+        "Not because of Sage. Because of the berries. ...Mostly the berries."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Mostly?",
+          "reaction": [
+            "I'm working on it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Berries are good.",
+          "reaction": [
+            "They really are."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P13",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. The scariest part of liking someone is being seen liking them."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so true.",
+          "reaction": [
+            "I should write that down. Draft twelve."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Deep, Twig.",
+          "reaction": [
+            "Overthinking pays off sometimes."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P14",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. Crushes are just anxiety wearing a cute outfit."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Haha, true.",
+          "reaction": [
+            "I'm serious. A very cute outfit."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Facts.",
+          "reaction": [
+            "Thank you. I contain wisdom."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P15",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. 'Nice weather' is the most romantic phrase in any language."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Honestly, yes.",
+          "reaction": [
+            "Right?!"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It was raining though.",
+          "reaction": [
+            "Details."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P16",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Be honest. Did you overthink everything when you started liking your partner?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Constantly.",
+          "reaction": [
+            "I feel so seen."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Only a little.",
+          "reaction": [
+            "Teach me your ways."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P17",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's the best first thing to say to someone you like?",
+        "I need a script. Please."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Just ask about their day.",
+          "reaction": [
+            "Their DAY. Genius. Boring. Genius."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Say something true.",
+          "reaction": [
+            "True. Hm. 'I like berries.' That's true."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P18",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you know when someone likes you back?",
+        "I'm gathering evidence."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They go out of their way for you.",
+          "reaction": [
+            "Oh no. Sage did ask for my notes at 11 PM."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You just kind of feel it.",
+          "reaction": [
+            "I feel it. I also feel dizzy. Is that the same?"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P19",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Twig pulls you aside, whispering.",
+      "lines": [
+        "Can I practice a confession? On you? Just practice.",
+        "Pretend you're Sage. Ready? ...Okay. Sage. I—I like you. A lot. Like, a lot a lot."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Nod slowly",
+          "reaction": [
+            "...Okay. That was horrible. But also kind of good?"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That was really sweet.",
+          "reaction": [
+            "Really? ...Okay. I'm taking that to the berry stand."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "TW-P20",
+      "friendId": "adventure_friend_tw",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Twig freezes. Sage appears at the edge of the path, waving. 'Hi Twig!' Twig whispers to you.",
+      "lines": [
+        "...That's him."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Nudge Twig gently",
+          "reaction": [
+            "Hi, Sage. Nice weather."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Wave at Sage too",
+          "reaction": [
+            "Sage waves back. Is that your friend? Nice to meet you!"
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_65",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G01",
+      "name": "Celestial Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 65,
+      "file": "Book Sets/Celestial Books.webp",
+      "key": "burrow/adventure-gifts/v1/65-4a05856af86364c0.webp",
+      "sha256": "4a05856af86364c071e68af2db6ce4d1af86aca51200dc60d712ce9604d81ea8",
+      "bytes": 28244
+    },
+    {
+      "id": "adventure_gift_66",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G02",
+      "name": "Botanical Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 66,
+      "file": "Book Sets/Botanical Books.webp",
+      "key": "burrow/adventure-gifts/v1/66-1edd1c4a11744f32.webp",
+      "sha256": "1edd1c4a11744f32b824d9221d93b31dba07e229c62e73c07e8cf83fbdcaffe7",
+      "bytes": 27882
+    },
+    {
+      "id": "adventure_gift_67",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G03",
+      "name": "Ocean Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 67,
+      "file": "Book Sets/Ocean Books.webp",
+      "key": "burrow/adventure-gifts/v1/67-56594dc33fa181ce.webp",
+      "sha256": "56594dc33fa181ce3345d6a711f0966e260948891aa6b5ed03dc011bd113eb27",
+      "bytes": 28724
+    },
+    {
+      "id": "adventure_gift_68",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G04",
+      "name": "Romance Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 68,
+      "file": "Book Sets/Romance Books.webp",
+      "key": "burrow/adventure-gifts/v1/68-4805e3c1a773ecb4.webp",
+      "sha256": "4805e3c1a773ecb47dfe4aafbaa1321fd1c400cd36d616009273ab261c077d6d",
+      "bytes": 28276
+    },
+    {
+      "id": "adventure_gift_69",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G05",
+      "name": "Baking Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 69,
+      "file": "Book Sets/Baking Books.webp",
+      "key": "burrow/adventure-gifts/v1/69-c2fabd0191ad444c.webp",
+      "sha256": "c2fabd0191ad444c10999f0f95658829811568f76488f287ce6e5721d0c98ec4",
+      "bytes": 27508
+    },
+    {
+      "id": "adventure_gift_70",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G06",
+      "name": "Magic Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 70,
+      "file": "Book Sets/Magic Books.webp",
+      "key": "burrow/adventure-gifts/v1/70-909adb4ef3ca2e68.webp",
+      "sha256": "909adb4ef3ca2e68d6158e7ade9c2d30594673c3dc22311941887e5ebb5f222a",
+      "bytes": 25816
+    },
+    {
+      "id": "adventure_gift_71",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G07",
+      "name": "Music Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 71,
+      "file": "Book Sets/Music Books.webp",
+      "key": "burrow/adventure-gifts/v1/71-316188bd83f1f803.webp",
+      "sha256": "316188bd83f1f803d9291b7fe138b1ae7abbd27c19e295bc94a7ddfd4a697fdf",
+      "bytes": 28692
+    },
+    {
+      "id": "adventure_gift_72",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G08",
+      "name": "Travel Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 72,
+      "file": "Book Sets/Travel Books.webp",
+      "key": "burrow/adventure-gifts/v1/72-5d31e6a6ed22210d.webp",
+      "sha256": "5d31e6a6ed22210dcc3f55d341c3277b1af3aa5b71e743c6c8218348a6259346",
+      "bytes": 28556
+    },
+    {
+      "id": "adventure_gift_73",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G09",
+      "name": "Cat Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 73,
+      "file": "Book Sets/Cat Books.webp",
+      "key": "burrow/adventure-gifts/v1/73-e7cb84d1fcfac37f.webp",
+      "sha256": "e7cb84d1fcfac37ffbb979c2e34f6d9a3d9004c376d3c507ddd1e651f26ffdfc",
+      "bytes": 27324
+    },
+    {
+      "id": "adventure_gift_74",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G10",
+      "name": "Woodland Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 74,
+      "file": "Book Sets/Woodland Books.webp",
+      "key": "burrow/adventure-gifts/v1/74-74c1587a92d5e3be.webp",
+      "sha256": "74c1587a92d5e3bee6af160a4ae4faa460a8d34872a7b49212f11c9240b7c85a",
+      "bytes": 24830
+    },
+    {
+      "id": "adventure_gift_75",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G11",
+      "name": "Art Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 75,
+      "file": "Book Sets/Art Books.webp",
+      "key": "burrow/adventure-gifts/v1/75-c289caa99640db6b.webp",
+      "sha256": "c289caa99640db6ba1a88eca99955c592887d2f5361564fe4844e70cfdb42d73",
+      "bytes": 29896
+    },
+    {
+      "id": "adventure_gift_76",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G12",
+      "name": "Garden Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 76,
+      "file": "Book Sets/Garden Books.webp",
+      "key": "burrow/adventure-gifts/v1/76-6a6e9a4a5016ddc0.webp",
+      "sha256": "6a6e9a4a5016ddc0c5388a615a2731611e9864906a046f57dabd60beb7adbb04",
+      "bytes": 27858
+    },
+    {
+      "id": "adventure_gift_77",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G13",
+      "name": "Winter Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 77,
+      "file": "Book Sets/Winter Books.webp",
+      "key": "burrow/adventure-gifts/v1/77-728b28460ff3fe81.webp",
+      "sha256": "728b28460ff3fe81b43fc8aaa05bf2223b655aa7f4202d1e22cc21f756bd514b",
+      "bytes": 27616
+    },
+    {
+      "id": "adventure_gift_78",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G14",
+      "name": "Autumn Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 78,
+      "file": "Book Sets/Autumn Books.webp",
+      "key": "burrow/adventure-gifts/v1/78-565c0eab023b953d.webp",
+      "sha256": "565c0eab023b953d8a4fb59fe81ad18fe92bcd2dab20f7092b4aa9b59e584089",
+      "bytes": 25800
+    },
+    {
+      "id": "adventure_gift_79",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G15",
+      "name": "Fairytale Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 79,
+      "file": "Book Sets/Fairytale Books.webp",
+      "key": "burrow/adventure-gifts/v1/79-6deaba946734743d.webp",
+      "sha256": "6deaba946734743dacfff0475d31c221aa94e23aaea18bb77397a0d29a5b123d",
+      "bytes": 27802
+    },
+    {
+      "id": "adventure_gift_80",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G16",
+      "name": "Adventure Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 80,
+      "file": "Book Sets/Adventure Books.webp",
+      "key": "burrow/adventure-gifts/v1/80-9e2788cba0223c3e.webp",
+      "sha256": "9e2788cba0223c3e14a13b6869d10416fd10f5efac019fa097b04e21e13a244c",
+      "bytes": 26710
+    },
+    {
+      "id": "adventure_gift_81",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G17",
+      "name": "Dinosaur Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 81,
+      "file": "Book Sets/Dinosaur Books.webp",
+      "key": "burrow/adventure-gifts/v1/81-6076f1730e8bddb7.webp",
+      "sha256": "6076f1730e8bddb7588e8db67afdb71d97352092802080e8f0ae3fb77650699d",
+      "bytes": 28908
+    },
+    {
+      "id": "adventure_gift_82",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G18",
+      "name": "Honey Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 82,
+      "file": "Book Sets/Honey Books.webp",
+      "key": "burrow/adventure-gifts/v1/82-d8c4a5fe1919feb4.webp",
+      "sha256": "d8c4a5fe1919feb4737b58dc54610e6d2f6b889582c89f3783557fbe260df6a6",
+      "bytes": 29828
+    },
+    {
+      "id": "adventure_gift_83",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G19",
+      "name": "Butterfly Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 83,
+      "file": "Book Sets/Butterfly Books.webp",
+      "key": "burrow/adventure-gifts/v1/83-eb32698d18df50cb.webp",
+      "sha256": "eb32698d18df50cb2bdea6f1a36d312fd403c44d86484a8d85b242b8fcdce1bc",
+      "bytes": 29718
+    },
+    {
+      "id": "adventure_gift_84",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G20",
+      "name": "Dog Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 84,
+      "file": "Book Sets/Dog Books.webp",
+      "key": "burrow/adventure-gifts/v1/84-947d062215e9575e.webp",
+      "sha256": "947d062215e9575e83c226b5e2835460c2efdee0a2492e14b69c6f9911424afa",
+      "bytes": 29556
+    },
+    {
+      "id": "adventure_gift_85",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G21",
+      "name": "Fruit Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 85,
+      "file": "Book Sets/Fruit Books.webp",
+      "key": "burrow/adventure-gifts/v1/85-67621d8b6d0ea9a1.webp",
+      "sha256": "67621d8b6d0ea9a1b6a2c37336567e74140dc5dcc192027ecdb1019d8e63b77d",
+      "bytes": 30500
+    },
+    {
+      "id": "adventure_gift_86",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G22",
+      "name": "Coffee Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 86,
+      "file": "Book Sets/Coffee Books.webp",
+      "key": "burrow/adventure-gifts/v1/86-05d0f69ddcb00bc0.webp",
+      "sha256": "05d0f69ddcb00bc025e13c79931f6d457cfea9d943136f4e6234cdfa214a9f5f",
+      "bytes": 27574
+    },
+    {
+      "id": "adventure_gift_87",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G23",
+      "name": "Tea Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 87,
+      "file": "Book Sets/Tea Books.webp",
+      "key": "burrow/adventure-gifts/v1/87-42a7b6fd358a76d1.webp",
+      "sha256": "42a7b6fd358a76d1feaa9670de85754bfc27594426801fd8b9790172eaf97fe9",
+      "bytes": 27258
+    },
+    {
+      "id": "adventure_gift_88",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G24",
+      "name": "Sports Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 88,
+      "file": "Book Sets/Sports Books.webp",
+      "key": "burrow/adventure-gifts/v1/88-bcdda6540d8af894.webp",
+      "sha256": "bcdda6540d8af8946d1890bfad3ef3da45432f8770a80a14289e9db3f1319a15",
+      "bytes": 31478
+    },
+    {
+      "id": "adventure_gift_89",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G25",
+      "name": "Cinema Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 89,
+      "file": "Book Sets/Cinema Books.webp",
+      "key": "burrow/adventure-gifts/v1/89-402948e8a75e159b.webp",
+      "sha256": "402948e8a75e159b8e073f33d150d5d9d936bbf5d449f45708ca337cf5093813",
+      "bytes": 30868
+    },
+    {
+      "id": "adventure_gift_90",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G26",
+      "name": "Photography Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 90,
+      "file": "Book Sets/Photography Books.webp",
+      "key": "burrow/adventure-gifts/v1/90-6b0c618113e57195.webp",
+      "sha256": "6b0c618113e571952468bf02a9bb3195de7c5149a5f7b878674a8a47bd91e4e7",
+      "bytes": 30518
+    },
+    {
+      "id": "adventure_gift_91",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G27",
+      "name": "Sewing Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 91,
+      "file": "Book Sets/Sewing Books.webp",
+      "key": "burrow/adventure-gifts/v1/91-2f3c2dc32b004731.webp",
+      "sha256": "2f3c2dc32b004731839648a26f78bff34512f2075580c21b1a40bdae21a5184b",
+      "bytes": 29536
+    },
+    {
+      "id": "adventure_gift_92",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G28",
+      "name": "Science Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 92,
+      "file": "Book Sets/Science Books.webp",
+      "key": "burrow/adventure-gifts/v1/92-52c9c745f46d0a30.webp",
+      "sha256": "52c9c745f46d0a3059a423e1abe26b8723ccb775c9c1d295c7ec018eec93b272",
+      "bytes": 29732
+    },
+    {
+      "id": "adventure_gift_93",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G29",
+      "name": "Robot Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 93,
+      "file": "Book Sets/Robot Books.webp",
+      "key": "burrow/adventure-gifts/v1/93-39b73d73b4eecb97.webp",
+      "sha256": "39b73d73b4eecb97ae0868dc4b26587909411fc4f35cff5445a25bee4139619c",
+      "bytes": 29124
+    },
+    {
+      "id": "adventure_gift_94",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G30",
+      "name": "Pirate Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 94,
+      "file": "Book Sets/Pirate Books.webp",
+      "key": "burrow/adventure-gifts/v1/94-26ab2e3538dae575.webp",
+      "sha256": "26ab2e3538dae5753e72531d1bc3bdfb441bd3ad8a593bc8dad3b1e53c865156",
+      "bytes": 31140
+    },
+    {
+      "id": "adventure_gift_95",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G31",
+      "name": "Circus Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 95,
+      "file": "Book Sets/Circus Books.webp",
+      "key": "burrow/adventure-gifts/v1/95-ede29b26f1d3798a.webp",
+      "sha256": "ede29b26f1d3798a4c77375c0230d2ecbcb8518eb20fd39f26d6dd5d03f1c7a9",
+      "bytes": 30424
+    },
+    {
+      "id": "adventure_gift_96",
+      "friendId": "adventure_friend_tw",
+      "giftId": "TW-G32",
+      "name": "Farm Books",
+      "category": "Book Sets",
+      "categoryCode": "C03",
+      "sourceId": 96,
+      "file": "Book Sets/Farm Books.webp",
+      "key": "burrow/adventure-gifts/v1/96-69ecd9e884b97aaa.webp",
+      "sha256": "69ecd9e884b97aaa3e112194e0f35865cd9c53e3a7be9e66e77afd82b450e97d",
+      "bytes": 29498
+    }
+  ]
+}

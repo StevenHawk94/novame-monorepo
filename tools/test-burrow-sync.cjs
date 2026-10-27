@@ -2,13 +2,22 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {load,clock,hooks,deferred,flush}=require('./lifecycle-test-utils.cjs');
 function syncHarness() {
-  const time=clock(),channels=[];let calls=0,invalidations=0,refresh=async()=>true;
+  const time=clock(),channels=[],marks=[];let calls=0,invalidations=0,refresh=async()=>true;
   const {createBurrowSync}=load('apps/mobile/src/lib/burrow-sync-controller.ts',{},time.globals);
   const sync=createBurrowSync({session:async()=>({userId:'a',token:'token'}),
     connect:async(_session,change,status)=>{const c={change,status,closed:false};channels.push(c);return {close:()=>{c.closed=true;}};},
-    refresh:()=>{calls++;return refresh();},invalidatePair:()=>invalidations++});
-  return {sync,time,channels,calls:()=>calls,invalidations:()=>invalidations,setRefresh:fn=>refresh=fn};
+    now:()=>time.globals.Date.now(),refresh:after=>{calls++;marks.push(after);return refresh();},invalidatePair:()=>invalidations++});
+  return {sync,time,channels,marks,calls:()=>calls,invalidations:()=>invalidations,setRefresh:fn=>refresh=fn};
 }
+test('realtime reconciliation carries the latest event time, not the later debounce firing time',async()=>{
+ const h=syncHarness();h.sync.start();await flush();h.time.advance(0);await flush();
+ h.time.advance(10);h.channels[0].change(false);h.time.advance(100);h.channels[0].change(false);
+ h.time.advance(300);await flush();assert.equal(h.marks[1],10110);
+ const pending=deferred();h.setRefresh(()=>pending.promise);h.time.advance(10);h.channels[0].change(false);h.time.advance(400);await flush();
+ h.time.advance(25);h.channels[0].change(false);const latest=h.time.globals.Date.now();h.time.advance(100);
+ h.setRefresh(async()=>true);pending.resolve(true);await flush();h.time.advance(400);await flush();
+ assert.equal(h.marks.at(-1),latest,'a followup must not move the event watermark forward and cause another duplicate read');h.sync.stop();
+});
 test('realtime bursts coalesce and changes during fetch cause one fresh fetch',async()=>{
   const h=syncHarness();h.sync.start();await flush();h.time.advance(0);await flush();
   for(let i=0;i<20;i++)h.channels[0].change(false);
@@ -36,6 +45,22 @@ test('a late session lookup after stop never creates a subscription',async()=>{
   const sync=createBurrowSync({session:()=>pending.promise,connect:async()=>{connected++;return {close(){}};},refresh:async()=>true,invalidatePair(){}});
   sync.start();sync.stop();pending.resolve({userId:'a',token:'x'});await flush();assert.equal(connected,0);
 });
+test('healthy foreground sync revalidates at 60 seconds, resets after realtime and stops in background',async()=>{
+  const h=syncHarness();h.sync.start();await flush();h.time.advance(0);await flush();
+  h.time.advance(59_999);await flush();assert.equal(h.calls(),1);
+  h.time.advance(1);await flush();assert.equal(h.calls(),2);
+  h.time.advance(10_000);h.channels[0].change(false);h.time.advance(400);await flush();assert.equal(h.calls(),3);
+  h.time.advance(59_999);await flush();assert.equal(h.calls(),3);
+  h.time.advance(1);await flush();assert.equal(h.calls(),4);
+  h.sync.stop();assert.equal(h.time.timers.size,0);h.time.advance(180_000);await flush();assert.equal(h.calls(),4);
+  h.sync.start();await flush();h.time.advance(0);await flush();assert.equal(h.calls(),5);h.sync.stop();
+});
+test('periodic sync never overlaps a slow read or overrides network failure backoff',async()=>{
+  const h=syncHarness(),pending=deferred();h.setRefresh(()=>pending.promise);
+  h.sync.start();await flush();h.time.advance(0);await flush();h.time.advance(120_000);assert.equal(h.calls(),1);
+  pending.resolve(false);await flush();h.setRefresh(async()=>true);
+  h.time.advance(1999);await flush();assert.equal(h.calls(),1);h.time.advance(1);await flush();assert.equal(h.calls(),2);h.sync.stop();
+});
 
 const scope={userId:'a',partnerId:'b',pairVersion:'a'.repeat(32)},base={entryId:null,body:'A walk together',promptId:null,expectedUpdatedAt:null};
 function localHarness(disk=new Map()) {
@@ -49,14 +74,26 @@ function localHarness(disk=new Map()) {
   return {api:load('apps/mobile/src/lib/burrow-memory-local.ts',imports),disk,calls,reload(){this.api=load('apps/mobile/src/lib/burrow-memory-local.ts',imports);},
     setPost:fn=>post=fn,failDisk:()=>writeError=true,changePair:()=>partner='c',rePair:()=>pairVersion='b'.repeat(32),changeAccount:()=>{epoch++;owner='other';}};
 }
-test('same-partner re-pair blocks old and unversioned pending saves for explicit review',async()=>{
+test('same-partner re-pair never imports old drafts or pending saves into the new epoch',async()=>{
   for(const legacy of [false,true]){
     const h=localHarness();const initial=legacy?{userId:'a',partnerId:'b'}:scope;
     h.api.queueMemoryDraft(initial,h.api.saveMemoryDraft(initial,base));
-    h.rePair();await h.api.recoverMemoryJobs(scope);
-    assert.equal(h.calls.length,0);assert.equal(h.api.readMemoryLocal(scope).jobs[0].error,'pair_changed');
-    assert.equal(h.api.readMemoryLocal(scope).jobs[0].draft.body,base.body);
+    h.rePair();const fresh={...scope,pairVersion:'b'.repeat(32)};await h.api.recoverMemoryJobs(fresh);
+    assert.equal(h.calls.length,0);
+    assert.equal(h.api.readMemoryLocal(fresh).jobs.length,0);
+    assert.equal(Object.keys(h.api.readMemoryLocal(fresh).drafts).length,0);
+    assert.equal(h.api.readMemoryLocal(initial).jobs[0].draft.body,base.body,'old bytes remain archived, never silently deleted');
   }
+});
+test('upgrade preserves a provably current submitted legacy job, never its unversioned draft or older jobs',async()=>{
+  const h=localHarness(),draft={...base,revision:'active-revision'};
+  h.disk.set('memory:a:b',JSON.stringify({version:1,drafts:{new:{...draft,body:'Unversioned archive'}},jobs:[
+    {id:'active-job',draft,blocked:false,error:null,pairVersion:scope.pairVersion},
+    {id:'old-job',draft:{...draft,body:'Old epoch'},blocked:false,error:null,pairVersion:'c'.repeat(32)}]}));
+  assert.equal(h.api.readMemoryLocal(scope).jobs.length,1);assert.equal(Object.keys(h.api.readMemoryLocal(scope).drafts).length,0);
+  await h.api.recoverMemoryJobs(scope);assert.equal(h.calls.length,1);assert.equal(h.calls[0].idempotencyKey,'active-job');
+  h.reload();await h.api.recoverMemoryJobs(scope);assert.equal(h.calls.length,1,'confirmed upgraded jobs do not resend after restart');
+  assert.ok(h.disk.has('memory:a:b'),'archive is kept, not deleted');
 });
 test('unsubmitted draft survives reload without network; explicit Save persists before send',async()=>{
   const h=localHarness();const draft=h.api.saveMemoryDraft(scope,base);h.reload();assert.equal(h.api.readMemoryLocal(scope).drafts.new.body,base.body);
@@ -92,8 +129,8 @@ test('conflicts stay blocked until review; copying cannot overwrite an existing 
 });
 test('disk failure sends nothing and corrupt storage is preserved',async()=>{
   const h=localHarness();const draft=h.api.saveMemoryDraft(scope,base);h.failDisk();assert.throws(()=>h.api.queueMemoryDraft(scope,draft));
-  await h.api.recoverMemoryJobs(scope);assert.equal(h.calls.length,0);h.disk.set('memory:a:b','broken');
-  assert.throws(()=>h.api.readMemoryLocal(scope),/local_data_unavailable/);assert.equal(h.disk.get('memory:a:b'),'broken');
+  await h.api.recoverMemoryJobs(scope);assert.equal(h.calls.length,0);const key='memory:a:b:'+scope.pairVersion;h.disk.set(key,'broken');
+  assert.throws(()=>h.api.readMemoryLocal(scope),/local_data_unavailable/);assert.equal(h.disk.get(key),'broken');
 });
 test('queue is bounded and deduplicates repeated Save of same revision',()=>{
   const h=localHarness(),draft=h.api.saveMemoryDraft(scope,base);h.api.queueMemoryDraft(scope,draft);h.api.queueMemoryDraft(scope,draft);
@@ -121,7 +158,7 @@ function composerHarness() {
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{Alert:{alert(){}},Pressable:'Pressable',Text:'Text',TextInput:'TextInput',View:'View',StyleSheet:{create:x=>x}},
     '@/lib/memory-prompt':{dailyMemoryPrompt:()=>({id:'prompt',prompt:'Today?'})},'@/lib/burrow-memory-local':local.api,
   });
-  const data={profile:{id:'a'},partner:{id:'b'},memoryEntries:[],memoryPrompts:[{id:'prompt',prompt:'Today?'}],localDate:'2026-09-27'};
+  const data={profile:{id:'a'},partner:{id:'b'},pairVersion:scope.pairVersion,memoryEntries:[],memoryPrompts:[{id:'prompt',prompt:'Today?'}],localDate:'2026-09-27'};
   return {...local,render:()=>nodes(h.render(()=>MemoryComposer({data,entryId:null,onDone:()=>done++}))),done:()=>done};
 }
 test('composer typing persists only draft; Save queues text and clears input without claiming server success',()=>{
@@ -139,7 +176,8 @@ test('composer keeps visible text when local storage fails and can retry Save',(
 
 test('durable API binds authenticated actor, partner, key and edit version before RPC',async()=>{
   const id='00000000-0000-0000-0000-000000000001',partner='00000000-0000-0000-0000-000000000002',calls=[];
-  const route=load('apps/api/src/app/api/vnext/command/route.js',{'next/server':{NextResponse:{json:(body,config={})=>({body,status:config.status??200})}},
+  const route=load('apps/api/src/app/api/vnext/command/route.js',{'@/lib/adventure-bootstrap.mjs':{readAdventureDisplay:async()=>null},'next/server':{NextResponse:{json:(body,config={})=>({body,status:config.status??200})}},
+    '@/lib/burrow-reward-wallet.mjs':{withRewardWallet:async(_,__,result)=>result},
     '@/lib/app-major-update':{authenticatedUserId:async()=>id,majorUpdateEnabled:async()=>true,commandStatus:e=>e?409:200,
       appMajorUpdateServiceClient:()=>({rpc:async(name,args)=>{calls.push({name,args});return {data:{error:'memory_conflict'}};}})}});
   const body={action:'save_memory_durable',actorId:id,partnerId:partner,pairVersion:scope.pairVersion,body:'text',idempotencyKey:id,entryId:id,expectedUpdatedAt:'2026-09-27T10:00:00.123456Z'};

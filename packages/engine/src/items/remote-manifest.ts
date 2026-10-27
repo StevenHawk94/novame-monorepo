@@ -1,22 +1,10 @@
-import type { ItemDef, ItemDictionary } from './item-matcher';
-
-export type RemoteKeywordMode = 'AUTO' | 'AUTO_UNLESS_EXCLUDED' | 'NEVER_AUTO';
-export type RemoteKeywordType = 'Word' | 'Phrase';
-
-export interface RemoteKeywordSafety {
-  keyword: string;
-  triggerMode: RemoteKeywordMode;
-  keywordType: RemoteKeywordType;
-  exclusions?: string[];
-}
+import type { ItemDef, ItemDictionary } from './item-types';
 
 export type RemoteItemEntry = Omit<ItemDef, 'displayName'> & {
   itemId: string;
   iconName: string;
   imageKey: string;
   assetVersion: string;
-  keywordsMapping: string[];
-  keywordSafety: RemoteKeywordSafety[];
   replacesBundled: boolean;
   /** One of Reflect_Subcategory_Map's ten Main_Category values. */
   promptCategory?: string;
@@ -30,9 +18,6 @@ export interface RemoteItemManifest {
   items: RemoteItemEntry[];
 }
 
-const normalize = (value: string): string =>
-  (value.toLowerCase().replace(/[’‘`´]/g, "'").match(/[a-z0-9']+/g) || []).join(' ');
-
 export function isRemoteItemManifest(value: unknown): value is RemoteItemManifest {
   if (!value || typeof value !== 'object') return false;
   const manifest = value as Partial<RemoteItemManifest>;
@@ -44,21 +29,25 @@ export function isRemoteItemManifest(value: unknown): value is RemoteItemManifes
     && manifest.items.every((item) => item && typeof item.itemId === 'string'
       && typeof item.iconName === 'string' && typeof item.imageKey === 'string'
       && typeof item.assetVersion === 'string' && typeof item.category === 'string'
-      && ['common', 'uncommon', 'rare'].includes(String(item.rarity))
-      && Array.isArray(item.keywordsMapping) && item.keywordsMapping.every((word) => typeof word === 'string')
-      && Array.isArray(item.keywordSafety) && item.keywordSafety.every((safety) => safety
-        && typeof safety.keyword === 'string'
-        && ['AUTO', 'AUTO_UNLESS_EXCLUDED', 'NEVER_AUTO'].includes(safety.triggerMode)
-        && ['Word', 'Phrase'].includes(safety.keywordType)
-        && (safety.exclusions == null || (Array.isArray(safety.exclusions)
-          && safety.exclusions.every((word) => typeof word === 'string')))));
+      && ['common', 'uncommon', 'rare'].includes(String(item.rarity)));
+}
+
+/** Read old immutable manifests without carrying their retired rule payloads. */
+export function projectItemDisplayManifest(manifest: RemoteItemManifest): RemoteItemManifest {
+  return { schemaVersion: 1, version: manifest.version, baseCatalogVersion: manifest.baseCatalogVersion,
+    publishedAt: manifest.publishedAt, items: manifest.items.map(item => ({
+      itemId: item.itemId, iconName: item.iconName, imageKey: item.imageKey, assetVersion: item.assetVersion,
+      category: item.category, rarity: item.rarity, replacesBundled: item.replacesBundled,
+      ...(item.bagsCategory ? { bagsCategory: item.bagsCategory } : {}),
+      ...(item.emoji ? { emoji: item.emoji } : {}),
+      ...(item.visualConcept ? { visualConcept: item.visualConcept } : {}),
+      ...(item.promptCategory ? { promptCategory: item.promptCategory } : {}),
+    })) };
 }
 
 /**
- * Apply the published remote overlay to the bundled catalog. Existing item IDs
- * are preserved, so replacing artwork/rules never breaks old memories. A
- * replacement owns its complete keyword set: bundled rules for that item are
- * removed before the reviewed remote rules are installed.
+ * Display-only overlay. Existing IDs and historical art remain available;
+ * journal text is never inspected and no matching index is built.
  */
 export function applyRemoteItemManifest(
   base: ItemDictionary,
@@ -66,37 +55,16 @@ export function applyRemoteItemManifest(
 ): ItemDictionary {
   if (!manifest) return base;
   const items = { ...base.items };
-  const synonyms = { ...base.synonyms };
-  const exclusions = { ...(base.exclusions ?? {}) };
 
   for (const entry of manifest.items) {
-    if (entry.replacesBundled && items[entry.itemId]) {
-      for (const [keyword, owner] of Object.entries(synonyms)) {
-        if (owner === entry.itemId) {
-          delete synonyms[keyword];
-          delete exclusions[keyword];
-        }
-      }
-    }
     items[entry.itemId] = {
       displayName: entry.iconName,
       rarity: entry.rarity,
       category: entry.category,
       ...(entry.bagsCategory ? { bagsCategory: entry.bagsCategory } : {}),
       ...(entry.emoji ? { emoji: entry.emoji } : {}),
-      keywords: entry.keywordsMapping,
       ...(entry.visualConcept ? { visualConcept: entry.visualConcept } : {}),
     };
-    for (const safety of entry.keywordSafety) {
-      const keyword = normalize(safety.keyword);
-      if (!keyword || safety.triggerMode === 'NEVER_AUTO') continue;
-      synonyms[keyword] = entry.itemId;
-      if (safety.triggerMode === 'AUTO_UNLESS_EXCLUDED' && safety.exclusions?.length) {
-        exclusions[keyword] = safety.exclusions.map(normalize).filter(Boolean);
-      } else {
-        delete exclusions[keyword];
-      }
-    }
   }
-  return { items, synonyms, exclusions };
+  return { items };
 }

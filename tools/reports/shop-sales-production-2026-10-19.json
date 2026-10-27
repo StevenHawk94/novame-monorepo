@@ -1,0 +1,68 @@
+{
+  "verifiedAt": "2026-10-19T08:39:26.015Z",
+  "status": "API and Admin complete working-tree release promoted and verified",
+  "feature": {
+    "adminTab": "Shop Sales",
+    "scope": "16 customer-facing Shop categories; category and style purchase rankings",
+    "periods": ["all", "7", "30", "90"],
+    "purchaseTypes": ["all", "self", "gift"],
+    "source": "Committed paid catalog_purchases receipts, including Decorate checkout items",
+    "excludes": ["refunded receipts", "starter items", "free unlocks", "reward gifts", "Games", "Surprise"],
+    "coins": "Historical price snapshots, not current prices or cash revenue",
+    "rowLimit": "Single JSON SQL aggregate; verified with more than 1000 styles",
+    "noBuyerIdentitiesInReport": true
+  },
+  "migration": {
+    "version": "20261019000248",
+    "sourceMd5": "33cd99fb60412f067683ebf1d0e31c7e",
+    "applied": true,
+    "scope": "Add reporting index and read-only security-invoker function; no balances, inventory or purchase rows changed",
+    "anonCanExecute": false,
+    "authenticatedCanExecute": false,
+    "serviceCanExecute": true
+  },
+  "deployments": {
+    "api": {
+      "projectId": "prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4",
+      "deploymentId": "dpl_9ACMckmVWahfbSMJF2MzVniiJeqT",
+      "url": "https://api.soulsayit.com",
+      "readyState": "READY",
+      "productionDomainVerified": true,
+      "exactCurrentWorkspaceFilesVerified": 269,
+      "sourceManifestSha256": "8b43b7fa79d51f7274e33c54d4ce405bfd0647058cf00e3caf194f593055d0d2"
+    },
+    "admin": {
+      "projectId": "prj_uQSVQISOpSpHUgV6sjO4NEqaDASH",
+      "deploymentId": "dpl_5rZDMHsLE1D79P9VsPxEyRh1yy1f",
+      "url": "https://novame-monorepo-admin.vercel.app",
+      "readyState": "READY",
+      "productionDomainVerified": true,
+      "exactCurrentWorkspaceFilesVerified": 875,
+      "sourceManifestSha256": "cef33fcadd18fe5d570d619e4a2e567533a699f3d0a6a9f4bbe03cbd63d5db10"
+    },
+    "scope": "All current API/Admin sources and shared runtime packages, including uncommitted work; local environment files and native app excluded",
+    "sourceVerification": "Actual Vercel source-file receipts matched SHA-1 bytes against both release snapshots and working tree; no runtime source omitted"
+  },
+  "mobileIcons": {
+    "updatedFiles": ["burrow.webp", "burrow-selected.webp"],
+    "location": "apps/mobile/assets/burrow-webp/home tab icons",
+    "mapping": "Existing Home tab-bar neutral/selected local image paths match new files",
+    "sourceDimensions": "500x500; rendered contain in unchanged 64*scale slots",
+    "nativeAppPublished": false
+  },
+  "verification": {
+    "relatedRegressionTestsPassed": 220,
+    "finalFocusedTestsPassed": 6,
+    "mobileAssetTestsPassed": 7,
+    "typeChecks": ["api", "admin", "mobile"],
+    "localProductionBuilds": ["api", "admin"],
+    "vercelProductionBuilds": ["api", "admin"],
+    "productionCatalogStyles": 359,
+    "productionTotals": {"purchases": 5, "coins": 900, "selfPurchases": 4, "giftPurchases": 1},
+    "independentReceiptTotalsMatch": true,
+    "publicChecks": {"apiConfig": 200, "unauthenticatedBootstrap": 401, "adminLogin": 200, "unauthenticatedSales": 401, "unauthenticatedPricing": 401},
+    "authenticatedReporting": "Production service-role SQL verified; authorized HTTP handler tested locally. No existing administrator login was impersonated.",
+    "userDataWrites": 0,
+    "simulatorOpened": false
+  }
+}

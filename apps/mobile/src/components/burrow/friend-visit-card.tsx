@@ -5,16 +5,20 @@ import { router, type Href } from 'expo-router';
 import { respondFriendVisit, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { runBurrowAction } from '@/lib/burrow-store';
 import { burrowFriendArt } from '@/lib/burrow-ui-assets';
+import { CoupleFriendVisitCard } from './couple-friend-visit-card';
+import { openPreparedBurrow } from '@/lib/burrow-page-entry';
 
 /** The server snapshots dialogue and owns completion/gifting. Reopening this
  * card after a lost response or a restart cannot reroll or double-claim it. */
 export function FriendVisitCard({ data, busy, showArt = true }: { data: MajorUpdateBootstrap; busy: boolean; showArt?: boolean }) {
   const [openedVisit,setOpenedVisit]=useState<string|null>(null);
   const visit = data.friendVisit;
+  if (data.friendVisitsVersion===2 || visit?.version===2) return <CoupleFriendVisitCard
+    key={`${data.profile.id}:${data.partner?.id}:${data.pairVersion}`} data={data} busy={busy} showArt={showArt}/>;
   const friend = data.friends.find(item => item.stable_id === visit?.friend_id);
   const goToBattle = () => {
     if (!visit?.content_snapshot.rage_monster_id) return;
-    router.push({ pathname: '/(main)/tame-enemy', params: {
+    openPreparedBurrow({ pathname: '/(main)/tame-enemy', params: {
       monsterId: visit.content_snapshot.rage_monster_id, friendVisitId: visit.id,
     } } as Href);
   };
@@ -34,7 +38,7 @@ export function FriendVisitCard({ data, busy, showArt = true }: { data: MajorUpd
   if (!visit) return <View style={[styles.card, styles.emptyCard]}>
     <View style={styles.emptySymbol}><Text style={styles.emptySymbolText}>♧</Text></View>
     <Text style={[styles.heading, styles.emptyHeading]}>No visitors right now</Text>
-    <Text style={[styles.copy, styles.emptyCopy]}>The room is quiet for now. We’ll let you know when a friend stops by.</Text>
+    <Text style={[styles.copy, styles.emptyCopy]}>We'll let you know when a friend stops by.</Text>
     {button('Back to Burrow', () => router.back())}
   </View>;
   if (!visit.completed_at && !visit.declined_at && openedVisit !== visit.id) return <View style={[styles.card,styles.emptyCard]}>

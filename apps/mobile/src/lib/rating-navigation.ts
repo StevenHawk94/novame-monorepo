@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from 'react';
+import { uiWorkPriority } from './ui-work-priority';
+import { markInteractionTiming } from './interaction-timing';
 
 type TransitionEvent = { target?: string; data: { closing: boolean } };
 type StackNavigation = { getState(): { index: number; routes: readonly { key: string }[] } };
@@ -23,6 +25,7 @@ function notify() {
 }
 
 export function resetNavigationTransitions() {
+  uiWorkPriority.transition('native-stack', false);
   clearTimeout(recoveryTimer);
   recoveryTimer = undefined;
   nativeTransitionTarget = null;
@@ -44,12 +47,16 @@ export function ratingNavigationListeners({ navigation }: { navigation: StackNav
       // They must not recreate a lock, nor may an old opening event do so.
       if (!isFocused(event.target)) return;
       nativeTransitionTarget = event.target!;
+      uiWorkPriority.transition('native-stack', true);
+      markInteractionTiming('transitionStart');
       armRecovery();
       notify();
     },
     transitionEnd: (event: TransitionEvent) => {
       if ((!event.data.closing && isFocused(event.target))
-        || (event.data.closing && event.target === nativeTransitionTarget)) resetNavigationTransitions();
+        || (event.data.closing && event.target === nativeTransitionTarget)) {
+        markInteractionTiming('transitionEnd'); resetNavigationTransitions();
+      }
     },
     gestureCancel: (event: { target?: string }) => {
       if (isFocused(event.target)) resetNavigationTransitions();

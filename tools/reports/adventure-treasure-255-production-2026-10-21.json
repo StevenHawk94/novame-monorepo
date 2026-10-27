@@ -1,0 +1,80 @@
+{
+  "task": "Adventure chest furniture and coin pool",
+  "production": {
+    "migration": "20261021000255",
+    "deploymentId": "dpl_7BFw3tvH46P15u5by7GVdeP54V8M",
+    "previousDeploymentId": "dpl_VM2DcE7qsiJ6ZpMSMMBr1y5nwixU",
+    "url": "https://api.soulsayit.com",
+    "candidateUrl": "https://novame-monorepo-cx0ihm03q-soulsayit.vercel.app",
+    "verifiedAt": "2026-10-21T07:39:34.706Z",
+    "changedApiFiles": ["apps/api/src/app/api/vnext/command/route.js"],
+    "verifiedProductionSourceFiles": 272,
+    "productionLockfileSha1": "f8e4946b392815f23687329b348806711d0ba829",
+    "adminUnchanged": true,
+    "notificationCronUnchanged": true,
+    "avatarCleanupCronUnchanged": true
+  },
+  "rules": {
+    "pool": "N eligible unowned/unreserved furniture items plus one 50-coin ticket and one 100-coin ticket, all equally weighted",
+    "emptyFurniturePool": "100 coins every time",
+    "excluded": ["Plus-only", "Starter", "Outfits", "Wallpapers", "Plushies", "Game unlocks", "Surprise unlocks"],
+    "artwork": "apps/mobile/assets/burrow-webp/Coin-purchase-page/400.webp",
+    "duplicateItemAtClaim": "100 coins instead of an empty inventory grant",
+    "friendGiftExhaustion": "Independent chest remains available; no invented friend encounter",
+    "friendSelectionDialogueAndGiftsUnchanged": true,
+    "durationAndNotificationsUnchanged": true,
+    "historicalFrozenRewardsPreserved": true,
+    "unstartedPlushieReservationsRefreshOnly": true
+  },
+  "moneyAndAnimation": {
+    "claimWalletAndMarkerAtomic": true,
+    "idempotencyKey": "adventure-treasure:{adventureId}",
+    "walletFailureRollsBackClaim": true,
+    "retryDoesNotGrantOrAnimateAgain": true,
+    "serverOnlyMonetaryAuthority": true,
+    "noAwardOnOpenOrAnimationCompletion": true,
+    "order": "Existing Open/Claim flow retained: opening completes and coin art reaches full opacity/scale before Claim can dispatch; a verified monetary receipt then uses the shared top-right wallet animation and auto-dismissal",
+    "localIntentDurableAndBackgroundRetryRetained": true,
+    "coinArtworkPrewarmedBeforeEntry": true
+  },
+  "compatibility": {
+    "newClientEncounterVersion": 4,
+    "oldClientsNeverReceiveNewCoinSnapshotsForNewV3Starts": true,
+    "newApiFallbackToV3IfMigrationMissing": true,
+    "oldBoundAndClaimedRewardsNotRerolled": true,
+    "rollbackScript": "tools/rollback-adventure-treasure-255.sql",
+    "rollbackBehavior": "Pause only future V4 starts by delegating to V3; retain additive schema, balances, ledger and all outstanding V4 coin claims",
+    "rollbackIsolatedTestPassed": true,
+    "rollbackExecutedOnProduction": false
+  },
+  "verification": {
+    "scopedRegressionTestsPassed": 255,
+    "scopedRegressionTestsFailed": 0,
+    "broaderRegressionTestsPassed": 259,
+    "broaderRegressionTestsFailed": 1,
+    "knownUnrelatedFailure": "32 local Mushroom Domes image bytes differ from the existing adventure gift manifest SHA-256 values. Existing assets and manifest retained unchanged; not uploaded or modified by this release.",
+    "newMigrationDatabaseAssertionsPassed": 40,
+    "threeTicketSampling450Draws": {"50Coins": 155, "100Coins": 135, "item": 160},
+    "legacyAdventureDatabaseBaseline": {"journeys": 483, "assertionsPassed": 9097},
+    "coinRevealTimingAndSharedAnimationTests": "passed for 50 and 100 coins, early double press, confirmed award, dismissal and replay",
+    "mobileTypecheck": "passed",
+    "apiProductionBuild": "passed",
+    "iosProductionExport": "passed",
+    "androidProductionExport": "passed",
+    "candidatePermissionSmokeChecks": 12,
+    "productionPermissionSmokeChecks": 12,
+    "protectedDatabaseFunctionDefinitionsUnchanged": 397,
+    "allExistingDatabaseTriggersUnchanged": true,
+    "previousDispatcherDefinitionRetainedInAlias": true,
+    "atomicMigrationDataComparison": "passed: profiles, pairings, adventures, adventure_results, inventory, wallets, ledger, friend discoveries and dialogue completions unchanged; plans only allowed unstarted Plushie refresh",
+    "accountsCreatedOnProduction": 0,
+    "manualRewardClaimsOnProduction": 0,
+    "nativeDeviceUiTest": "not run; deterministic motion tests and production exports only"
+  },
+  "clientDelivery": {
+    "mobileSourceUpdated": true,
+    "storeBuildOrOtaPublished": false,
+    "newClientCodeAndNewAdventureRequiredForV4Pool": true
+  },
+  "evidenceDirectory": "/private/tmp/burrow-treasure255-release.c8N12A"
+}

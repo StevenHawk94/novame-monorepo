@@ -1,0 +1,1490 @@
+{
+  "code": "DL",
+  "id": "adventure_friend_dl",
+  "name": "Dillon",
+  "gender": "he",
+  "species": "Armadillo",
+  "partner": "Ash (she)",
+  "emotionalState": "曾被欺骗，正在重建信任，外壳厚",
+  "speakingStyle": "谨慎，少话，爱说 ...Maybe.",
+  "catchphrase": "...Maybe.",
+  "art": [
+    "Armadillo_02_Variant1.webp",
+    "Armadillo_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "DL-01",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "An armadillo rolls out from behind a rock, uncurls slowly, and watches you.",
+      "lines": [
+        "...Hi.",
+        "I'm Dillon. I'm just... out for a walk. Slowly. You don't have to talk if you don't want to."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hi, Dillon. No rush.",
+          "reaction": [
+            "Thanks. Most people rush. You don't. That's... nice. I'll stay for a bit. Maybe."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Nice shell.",
+          "reaction": [
+            "Thanks. It's been through a lot. It's thick for a reason.",
+            "But it's also kind of comfortable. Don't tell anyone I said that."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Wait quietly.",
+          "reaction": [
+            "...Okay. That's a good start. Most folks fill the silence. You didn't. That tells me something.",
+            "Not sure what yet. But something good."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-02",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I keep a list of things I trust. It's short.",
+        "The sun. A good rock. My shell. A very specific kind of berry."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What's the berry?",
+          "reaction": [
+            "Blue-ish. Slightly tart. It never lies about its flavor. That's all I ask of a berry.",
+            "Or anyone, really."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Is the list getting longer?",
+          "reaction": [
+            "Slowly. Maybe. There's one new item I'm not ready to talk about. It's... a person."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Short lists are fine.",
+          "reaction": [
+            "Thank you. Everyone says I should trust more.",
+            "I say I trust exactly as much as I should. It's just a carefully chosen amount."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-03",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Someone's been leaving tea outside my burrow. Every morning for a month.",
+        "Her name's Ash. I don't know what to do with that kindness. I'm... not used to it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What do you do with the tea?",
+          "reaction": [
+            "Drink it. Obviously. It's very good tea. I haven't said thank you yet.",
+            "I'm working on it. It's a surprisingly big step."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's really sweet.",
+          "reaction": [
+            "Yeah. It is. It's also a little scary.",
+            "Sweet things can feel suspicious when you've been surprised before.",
+            "But I'm trying to let it be sweet."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Maybe say thank you?",
+          "reaction": [
+            "...Yeah. Maybe. I wrote it on a note. I haven't left it yet.",
+            "It's in my shell. Next to my other emergency notes."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-04",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I left a note for Ash. It said 'thanks.' Just that.",
+        "She left one back. It said 'you're welcome. No pressure.' I read it eleven times."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "No pressure is a good phrase.",
+          "reaction": [
+            "It's the best phrase. Most people say 'no pressure' and then apply pressure.",
+            "Ash actually means it. I can tell. The tea kept coming. No questions."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Eleven times?",
+          "reaction": [
+            "I counted. It's a lot.",
+            "But it's the first note in a long time that didn't make me nervous.",
+            "It made me... warm. A weird feeling."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Ash sounds kind.",
+          "reaction": [
+            "Kind, steady, quiet. A little like a good rock. I mean that as a huge compliment.",
+            "Rocks are my favorite thing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-05",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Can I ask you something? It's a weird one.",
+        "How do you know someone's safe? Not 'nice.' Safe.",
+        "I've been wrong before. I'd like a better method."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Their words match their actions.",
+          "reaction": [
+            "Words match actions. That's... practical. Not romantic, but real. I like that. I'll watch for it.",
+            "Quietly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Go slow and notice how they treat you when it's inconvenient.",
+          "reaction": [
+            "When it's inconvenient. Yes. That's the test. Anyone's kind when it's easy.",
+            "I'll keep an eye out. Thank you."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, you just have to take small risks.",
+          "reaction": [
+            "Small risks. Hm. Like leaving a note. I did that. So I'm technically a risk-taker.",
+            "That's a bold sentence for an armadillo."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-06",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Ash came by today. We sat on a log and said nothing.",
+        "It was the longest silence I've had with another person in years. I didn't curl up once."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's big.",
+          "reaction": [
+            "It felt big. Like a door that didn't need to be opened, but was left unlatched.",
+            "I didn't feel the urge to leave. That's rare."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did it feel safe?",
+          "reaction": [
+            "...It did. It felt like sitting next to a warm rock.",
+            "A rock that happens to care. I don't have a better comparison. Sorry."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Silence can say a lot.",
+          "reaction": [
+            "It really can. I used to think silence meant trouble. Today it meant company.",
+            "That's a very different thing. I'm still adjusting."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-07",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Dillon sits with his shell half-closed, looking at the ground.",
+      "lines": [
+        "Can I tell you something? It's the heavy kind.",
+        "Someone I trusted once lied to me. For a long time. I found out in a way that... I won't describe.",
+        "I keep waiting for it to happen again. Even though Ash has given me no reason."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That makes sense, and you're allowed to take your time.",
+          "reaction": [
+            "...Thank you.",
+            "Most people say 'just trust.' You said 'take your time.' That's the first time anyone's said it that way.",
+            "I think I needed it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Have you told Ash?",
+          "reaction": [
+            "A little. I said 'I'm slow to trust.' She said 'okay.' Just 'okay.' No questions.",
+            "Maybe I should tell her more. Slowly. In pieces."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Dillon.",
+          "reaction": [
+            "...Thanks. It's easier to say heavy things when someone's just sitting there. Not fixing. Just sitting.",
+            "It's weirdly comforting."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-08",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I told Ash. The heavy thing. Not all of it. Some of it.",
+        "She didn't flinch. She said 'thank you for trusting me with that.' Then she asked if I wanted more tea.",
+        "I said yes. And then I almost cried into the cup."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good response.",
+          "reaction": [
+            "It's the best response. No pity. No panic. Just 'thank you' and tea.",
+            "I don't know how she knew exactly what I needed. Maybe she just cares. Quietly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Ash sounds really kind.",
+          "reaction": [
+            "She is. I'm learning that kindness doesn't have to be loud. It can be tea.",
+            "It can be a note. It can be someone who stays when the story gets heavy."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You were brave.",
+          "reaction": [
+            "I didn't feel brave. I felt like a snail crossing a road. But I did it.",
+            "Maybe that's what brave is. Moving slowly while scared."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-09",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "I opened my shell a little today.",
+        "Not all the way. Just a crack. Enough for Ash to see a bit of me. She said 'hi.' I said 'hi.' We sat there like two shy rocks.",
+        "It was perfect."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds beautiful.",
+          "reaction": [
+            "It was. A crack is a lot, when you've been closed for a long time.",
+            "Light comes in through a crack. I never knew that before."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How did it feel?",
+          "reaction": [
+            "Terrifying. Warm. A little silly. Like stepping outside after a long rain. The air smelled different.",
+            "I think it was hope."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and listen.",
+          "reaction": [
+            "Thanks. I'm not used to saying things out loud. But you listen well.",
+            "Maybe I'm learning that I can say things. Slowly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-10",
+      "friendId": "adventure_friend_dl",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "...Ten visits.",
+        "I counted. I don't tell people that. It means you matter. A little.",
+        "Ash and I are... something. We haven't named it. We just keep showing up. It's enough. For now.",
+        "Your turn. How are you and your partner doing? Honestly. I can handle honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning. Good. Keep doing that. Come by sometime. Ash makes tea. I make silence.",
+            "It's a good combo."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We've had some tough moments.",
+          "reaction": [
+            "Tough moments don't mean the end. I'm proof. Take your time with them.",
+            "And if you need to sit quietly, I'm good at that."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You've helped me open up too.",
+          "reaction": [
+            "...Hm. That's... nice. Thank you.",
+            "I think I'll let that sit in my shell for a while.",
+            "A good thing to keep in there."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P01",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Ash left tea at my door again. This time with a tiny cookie.",
+        "I stared at it for a full minute. Then I ate it. It was good. I'm not used to good things being simple."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Simple is nice.",
+          "reaction": [
+            "It really is. I used to think good things had to be complicated.",
+            "Ash taught me that a cookie can just be a cookie.",
+            "And a gesture can just be a gesture."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How was the cookie?",
+          "reaction": [
+            "Perfect. Slightly crumbly. A bit of cinnamon. I'm convinced Ash read my mind. Or paid attention.",
+            "Which is almost the same thing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P02",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I walked with Ash through the berry field.",
+        "I didn't curl up once. I did check the exit twice. But I'm calling it a win."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a win.",
+          "reaction": [
+            "Thanks. Two exit checks is a record low. Ash noticed and squeezed my paw. No words.",
+            "Just a squeeze. It said 'you're okay.' I almost believed it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Exit checks are normal.",
+          "reaction": [
+            "They are for me. It's a habit from before.",
+            "I'm slowly retraining my brain to look at the view instead. It's working.",
+            "The view is better."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P03",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Ash asked me to come to a small gathering. Four people. Maybe five.",
+        "I said 'maybe.' Then I said 'yes.' Then I curled up for ten minutes. Then I went."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Proud of you.",
+          "reaction": [
+            "Thanks. It was... fine. Actually it was nice. A little loud.",
+            "But Ash stayed next to me the whole time. I didn't feel alone in the room.",
+            "That's new."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you enjoy it?",
+          "reaction": [
+            "About sixty percent. Which is a lot for me.",
+            "The other forty percent was me sitting by the snack table. It's a good spot.",
+            "I recommend it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P04",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Ash forgot to message me yesterday. Just once.",
+        "I felt the old worry. The loud one. But I said to myself, 'Ash is probably busy.' And I was right. She was napping. A big nap."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's growth.",
+          "reaction": [
+            "It is. Old Dillon would have spiraled.",
+            "This Dillon sent a 'hope you're resting.' Ash replied with a heart. It was fine.",
+            "It was just fine."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How did you calm down?",
+          "reaction": [
+            "I counted breaths. Four in, four out. And I reminded myself that Ash has been consistent.",
+            "Consistent is my favorite word. It's a good anchor."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P05",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I told Ash I like her. Out loud.",
+        "Just 'I like you.' Four words. It took me six tries. Ash said 'I like you too' immediately. I curled up. Then uncurled. Then curled."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "It felt like a small explosion in my chest. A gentle one. Warm, not scary.",
+            "I still can't believe I said it. Ash keeps smiling at me. I keep curling."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Four words is perfect.",
+          "reaction": [
+            "Four words, total. It felt like a speech. I might do it again someday.",
+            "When I'm brave. Or when there's tea. Probably tea."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P06",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Ash and I made a pact. If either of us needs space, we say 'shell time.'",
+        "No explanation needed. No guilt. Just 'shell time,' and the other person says 'okay.' It's the best rule we have."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's genius.",
+          "reaction": [
+            "It's Ash's idea.",
+            "She said 'I want you to feel safe saying no.' Nobody's ever said that to me.",
+            "I curled up for a long time after that. But it was a good curl."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Do you use it a lot?",
+          "reaction": [
+            "Twice. Both times Ash said 'okay' and checked in later. She didn't take it personally.",
+            "That's the thing that gets me. She just respected it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P07",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I made Ash a tiny stone cup. It's crooked.",
+        "I left it on her doorstep with a note. 'For tea.' She's used it every day since."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so sweet.",
+          "reaction": [
+            "It leaks a little.",
+            "Ash says 'it's a feature.' I think she's being kind, but I'm choosing to believe it.",
+            "Every time she drinks from it, I feel something warm. In my shell."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A crooked cup is the best.",
+          "reaction": [
+            "Right? It's imperfect, like me. And Ash uses it anyway. That's the whole thing, isn't it?",
+            "Using the imperfect things and loving them."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P08",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I had a hard day. The old kind. I didn't tell Ash right away.",
+        "I told her the next morning. She said 'I'm glad you told me.' No lecture. No hurt. Just that."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good response.",
+          "reaction": [
+            "It was. I keep expecting some kind of penalty for being late with my feelings.",
+            "There isn't one. Ash is just... soft. In the best way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Telling later still counts.",
+          "reaction": [
+            "I'm starting to believe that. A slow 'I'm struggling' is better than a silent one.",
+            "Ash agrees. She said 'whenever you're ready.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P09",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember my list? The things I trust?",
+        "It's longer. I added 'Ash.' And 'tea.' And 'a crooked cup.' It's now seven things."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's lovely.",
+          "reaction": [
+            "It's the longest list I've had. I keep it in my shell.",
+            "Next to the note Ash wrote. It's getting crowded in there. In a good way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Seven is a lot.",
+          "reaction": [
+            "It's a lot. I'm shocked. I'm still the same careful Dillon. But the list is growing.",
+            "Slowly. Like a plant I keep forgetting to water but somehow thrives."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P10",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Ash still brings tea every morning. Even now.",
+        "I don't flinch anymore. I just say 'thanks' and drink. It's the best part of my day."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's consistent.",
+          "reaction": [
+            "Consistent. My favorite word. Ash is a living example. Every morning, same time, same smile.",
+            "I've started waiting at the door. Don't tell anyone."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Do you leave notes back?",
+          "reaction": [
+            "Sometimes. Little ones. 'Good tea.' 'Thanks.' 'It rained.' Ash keeps them in a jar.",
+            "I know because I saw the jar. It's half-full."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P11",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "'No pressure.' Ash said it again yesterday.",
+        "I told her I wanted to sit closer. She said 'no pressure.' And I realized I wasn't feeling any. That's rare."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's the magic phrase.",
+          "reaction": [
+            "It is. And the reason it works is that Ash means it.",
+            "You can feel when someone's pushing and when they're not. Ash never pushes. It's very soothing."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You were comfortable.",
+          "reaction": [
+            "Surprisingly. I sat close and didn't curl.",
+            "I'm trying to remember how it felt, so I can find it again. It was warm.",
+            "Like leaning on a patient wall."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P12",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "'Shell time.' We used it again. It's still working.",
+        "Ash said 'okay,' and later brought me a snack without a word. I'd say it's a perfect system."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's smart.",
+          "reaction": [
+            "Smart and gentle. It lets me protect myself without hurting her. Before, I'd just vanish.",
+            "Now I ask. And she says okay. That's all I ever wanted. A simple 'okay.'"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Snacks help.",
+          "reaction": [
+            "Snacks always help. A snack says 'I'm here, I'm not mad.' I've started leaving snacks too.",
+            "Ash says 'you're getting good at this.' I'm still not sure I am."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P13",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Trust isn't a leap. It's a lot of tiny steps in the same direction."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good way to see it.",
+          "reaction": [
+            "I think so too. I've never been good at leaps. But steps? I can do steps.",
+            "One tea, one note, one 'okay.' It adds up."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Some people leap though.",
+          "reaction": [
+            "Some do. I admire that. I just think the people who step slowly can also arrive.",
+            "It just takes longer. And it's usually quieter."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P14",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Being guarded isn't the same as being closed."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good distinction.",
+          "reaction": [
+            "It took me years to realize that. A guard is just a gate.",
+            "A gate can open. A wall can't. I'm a gate. Ash knows the code. Slowly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Hm, interesting.",
+          "reaction": [
+            "Thanks. I'm still working on it. Some days I feel like a wall.",
+            "Some days like a gate. Most days like a gate with a nap."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P15",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: The best love stories have a lot of boring, kind moments in them."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Totally.",
+          "reaction": [
+            "The boring ones are the real ones. Tea. A nod. A shared silence.",
+            "I'd take a thousand of those over one big dramatic scene."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I like some drama too.",
+          "reaction": [
+            "Fair. Drama has its charms. But for me, drama feels like a storm.",
+            "Boring feels like shelter. I've had enough storms. I'll take the shelter."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P16",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's something small your partner does that makes you feel safe?",
+        "I'm trying to learn what 'safe' looks like for other people."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They check in on me.",
+          "reaction": [
+            "Check-ins. Yes. Ash does that. A quick 'how are you?' that doesn't need a long answer.",
+            "Just a tiny hello for the heart."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They keep their promises.",
+          "reaction": [
+            "Keeping promises. That's my number one. Even the small ones.",
+            "'I'll bring tea.' And then she does. That's the whole foundation of trust. Tea."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P17",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Do you and your partner ever need space from each other?",
+        "I'm curious how other people ask for it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We just say it honestly.",
+          "reaction": [
+            "Honestly. That's it. No big speech.",
+            "Just 'I need a little space.' It's simple, but it's hard. I'm practicing.",
+            "Ash and I have 'shell time.'"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It's tricky, we're still figuring it out.",
+          "reaction": [
+            "Same. It's a skill. Like walking on stilts. You wobble, and then you improve.",
+            "Please be gentle with yourself. I'm trying to do the same."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P18",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What does your partner do that makes you feel seen?",
+        "I'm collecting. For a project."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They notice small things.",
+          "reaction": [
+            "Small things. I like that. Ash noticed I like my tea at exactly the right temperature.",
+            "I never said it. She just knew. It made me feel like a person."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They remember what I said.",
+          "reaction": [
+            "Remembering. That's huge. People forget so easily. Ash remembers I said I dislike loud noises.",
+            "So she brings a quiet picnic. That's what attention looks like."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P19",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Dillon uncurls fully, which you've never seen before.",
+      "lines": [
+        "Okay. I want you to see this.",
+        "This is my shell, open. All the way. Just for a second. It's a lot. Please don't make it weird."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Thank you for showing me.",
+          "reaction": [
+            "...Okay. That's enough. That felt like jumping off a small cliff.",
+            "But it was a soft one. I'm curling back up now. But thank you.",
+            "For being kind about it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Smile gently.",
+          "reaction": [
+            "...That's all I needed. A gentle smile. No comment.",
+            "You're very good at not making things weird. I'm going to remember this. Maybe."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DL-P20",
+      "friendId": "adventure_friend_dl",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Ash appears carrying two cups of tea and sets one down quietly next to Dillon.",
+      "lines": [
+        "Hi. You must be the friend. Dillon told me about you.",
+        "Thanks for being patient with Dillon. It means a lot. I'm Ash."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Dillon's lovely.",
+          "reaction": [
+            "I know. Dillon doesn't say it, but I think so too.",
+            "Dillon has a very careful heart. I'm honored to be near it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Nice to meet you, Ash.",
+          "reaction": [
+            "Nice to meet you. Want some tea? Dillon will pretend not to be nervous.",
+            "He's very good at it. He's also very bad at it. It's endearing."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_161",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G01",
+      "name": "Tulip Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 161,
+      "file": "Cups/Tulip Mug.webp",
+      "key": "burrow/adventure-gifts/v1/161-549b94c186d883d8.webp",
+      "sha256": "549b94c186d883d80bba5c7d5c6c81c2b51cf21345fc92fa57d780e3c0d12698",
+      "bytes": 25498
+    },
+    {
+      "id": "adventure_gift_162",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G02",
+      "name": "Wave Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 162,
+      "file": "Cups/Wave Mug.webp",
+      "key": "burrow/adventure-gifts/v1/162-9c5aba9d621c59b3.webp",
+      "sha256": "9c5aba9d621c59b33ffb39650d53c47c46fcc2507733336f9d9c55107a4115d9",
+      "bytes": 27914
+    },
+    {
+      "id": "adventure_gift_163",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G03",
+      "name": "Crescent Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 163,
+      "file": "Cups/Crescent Mug.webp",
+      "key": "burrow/adventure-gifts/v1/163-df2bfe8c57d6b5ee.webp",
+      "sha256": "df2bfe8c57d6b5eed80517ea8dabe5f9f6d4281d245e69ce8071ed1d6a4d4090",
+      "bytes": 24982
+    },
+    {
+      "id": "adventure_gift_164",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G04",
+      "name": "Leaf Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 164,
+      "file": "Cups/Leaf Mug.webp",
+      "key": "burrow/adventure-gifts/v1/164-e11940a3a964e7d6.webp",
+      "sha256": "e11940a3a964e7d67281a3d5c224cf110527180124b3bbab107cf6594bb6a3cb",
+      "bytes": 28504
+    },
+    {
+      "id": "adventure_gift_165",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G05",
+      "name": "Checker Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 165,
+      "file": "Cups/Checker Mug.webp",
+      "key": "burrow/adventure-gifts/v1/165-cff0f6cc34732a2f.webp",
+      "sha256": "cff0f6cc34732a2fc2bebe66a09aa07ba72bc28c2bb1e8ae3c8f8ef6c33fe6a5",
+      "bytes": 27014
+    },
+    {
+      "id": "adventure_gift_166",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G06",
+      "name": "Strawberry Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 166,
+      "file": "Cups/Strawberry Mug.webp",
+      "key": "burrow/adventure-gifts/v1/166-33d38264804ba89f.webp",
+      "sha256": "33d38264804ba89ff7454fb6bbb905dc15ea9bc2e8de2b53eb45635396928b9d",
+      "bytes": 28988
+    },
+    {
+      "id": "adventure_gift_167",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G07",
+      "name": "Sun Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 167,
+      "file": "Cups/Sun Mug.webp",
+      "key": "burrow/adventure-gifts/v1/167-60b8c795bd2879c9.webp",
+      "sha256": "60b8c795bd2879c97b0b45f443821ab0e61dd5745f3280d3c1c7836c79d88439",
+      "bytes": 27782
+    },
+    {
+      "id": "adventure_gift_168",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G08",
+      "name": "Arch Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 168,
+      "file": "Cups/Arch Mug.webp",
+      "key": "burrow/adventure-gifts/v1/168-55e3f3a3113e433b.webp",
+      "sha256": "55e3f3a3113e433be1b1cdcb693c5f2a76320873e6e4d77ddc8591d91187c706",
+      "bytes": 25050
+    },
+    {
+      "id": "adventure_gift_169",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G09",
+      "name": "Daisy Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 169,
+      "file": "Cups/Daisy Mug.webp",
+      "key": "burrow/adventure-gifts/v1/169-d8da37019a0aed5d.webp",
+      "sha256": "d8da37019a0aed5d15ddc558ce7251432c3564e6644e9a8743b2ccbe451232c7",
+      "bytes": 26608
+    },
+    {
+      "id": "adventure_gift_170",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G10",
+      "name": "Ribbon Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 170,
+      "file": "Cups/Ribbon Mug.webp",
+      "key": "burrow/adventure-gifts/v1/170-e41bb10c0e2b3d20.webp",
+      "sha256": "e41bb10c0e2b3d206f3e8f48bf26f8f288d337b5d7dc4e0677cb55376331eca3",
+      "bytes": 27280
+    },
+    {
+      "id": "adventure_gift_171",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G11",
+      "name": "Diamond Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 171,
+      "file": "Cups/Diamond Mug.webp",
+      "key": "burrow/adventure-gifts/v1/171-c7cc9ae91c89fc40.webp",
+      "sha256": "c7cc9ae91c89fc40e4d0eed9721857c853381a1ced690a311777e3996708a911",
+      "bytes": 28800
+    },
+    {
+      "id": "adventure_gift_172",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G12",
+      "name": "Fish Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 172,
+      "file": "Cups/Fish Mug.webp",
+      "key": "burrow/adventure-gifts/v1/172-0a79b9522471efdf.webp",
+      "sha256": "0a79b9522471efdf5f1f5cb25d2ae5affbcfec82c39de6711c214e34e216da54",
+      "bytes": 27506
+    },
+    {
+      "id": "adventure_gift_173",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G13",
+      "name": "Heart Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 173,
+      "file": "Cups/Heart Mug.webp",
+      "key": "burrow/adventure-gifts/v1/173-83ba8616b351a04e.webp",
+      "sha256": "83ba8616b351a04e19bcae2da350882900f2b0f2a065676d0f95ecb0eca1866b",
+      "bytes": 24132
+    },
+    {
+      "id": "adventure_gift_174",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G14",
+      "name": "Petal Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 174,
+      "file": "Cups/Petal Mug.webp",
+      "key": "burrow/adventure-gifts/v1/174-73db6706363f3c0b.webp",
+      "sha256": "73db6706363f3c0bc1a15c8714ce196cb0336859ec3ee3a4d5fb5a09c19eb0be",
+      "bytes": 27690
+    },
+    {
+      "id": "adventure_gift_175",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G15",
+      "name": "Mushroom Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 175,
+      "file": "Cups/Mushroom Mug.webp",
+      "key": "burrow/adventure-gifts/v1/175-7ff3c4b6d6c98073.webp",
+      "sha256": "7ff3c4b6d6c98073eef7a269ca6246296e8c4c15f2837a7ee1cab6bc98c60009",
+      "bytes": 25982
+    },
+    {
+      "id": "adventure_gift_176",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G16",
+      "name": "Mountain Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 176,
+      "file": "Cups/Mountain Mug.webp",
+      "key": "burrow/adventure-gifts/v1/176-6e2f8069a0c31664.webp",
+      "sha256": "6e2f8069a0c31664497d7e8665660247cac0b5e67aeb93628b7ec193fda417ef",
+      "bytes": 25410
+    },
+    {
+      "id": "adventure_gift_177",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G17",
+      "name": "Cherry Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 177,
+      "file": "Cups/Cherry Mug.webp",
+      "key": "burrow/adventure-gifts/v1/177-edc68c9a3bfeb5ac.webp",
+      "sha256": "edc68c9a3bfeb5acfb4f4d652c83b6c0a152ba6e49d3a89f47fd9738398f3acb",
+      "bytes": 28894
+    },
+    {
+      "id": "adventure_gift_178",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G18",
+      "name": "Saturn Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 178,
+      "file": "Cups/Saturn Mug.webp",
+      "key": "burrow/adventure-gifts/v1/178-fef4e20536175992.webp",
+      "sha256": "fef4e20536175992a7056beb74fc5c3fd50dc7ff8f2e2fa91cd5ac78c45062f8",
+      "bytes": 25956
+    },
+    {
+      "id": "adventure_gift_179",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G19",
+      "name": "Koi Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 179,
+      "file": "Cups/Koi Mug.webp",
+      "key": "burrow/adventure-gifts/v1/179-9ea9e578dd62a6ee.webp",
+      "sha256": "9ea9e578dd62a6ee2c76a4e65d6b13ea71a5caec378b020a5e613f0d610f7802",
+      "bytes": 26664
+    },
+    {
+      "id": "adventure_gift_180",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G20",
+      "name": "Harlequin Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 180,
+      "file": "Cups/Harlequin Mug.webp",
+      "key": "burrow/adventure-gifts/v1/180-1635b645e521902e.webp",
+      "sha256": "1635b645e521902e1933d0187f6dc2935d29c2a4d20fc01f4a3901a913e9ef47",
+      "bytes": 29758
+    },
+    {
+      "id": "adventure_gift_181",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G21",
+      "name": "Bee Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 181,
+      "file": "Cups/Bee Mug.webp",
+      "key": "burrow/adventure-gifts/v1/181-cec77211b2898b19.webp",
+      "sha256": "cec77211b2898b1945ecf8af72047ef10c28f052fa67b867580e89ab0f9614cf",
+      "bytes": 29526
+    },
+    {
+      "id": "adventure_gift_182",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G22",
+      "name": "Chain Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 182,
+      "file": "Cups/Chain Mug.webp",
+      "key": "burrow/adventure-gifts/v1/182-c3a9a9fecfeee84f.webp",
+      "sha256": "c3a9a9fecfeee84fef935790512f5d1bcef916c3e0daf104d934306e84ee32a3",
+      "bytes": 27776
+    },
+    {
+      "id": "adventure_gift_183",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G23",
+      "name": "Grape Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 183,
+      "file": "Cups/Grape Mug.webp",
+      "key": "burrow/adventure-gifts/v1/183-609dcda21090fd3e.webp",
+      "sha256": "609dcda21090fd3e6e7c550d94548cca6faebbfc17dc379669cb24e07b3276c1",
+      "bytes": 30168
+    },
+    {
+      "id": "adventure_gift_184",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G24",
+      "name": "Ginkgo Cup",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 184,
+      "file": "Cups/Ginkgo Cup.webp",
+      "key": "burrow/adventure-gifts/v1/184-4c039a6e2eb8ac23.webp",
+      "sha256": "4c039a6e2eb8ac231addc66920f92816bfe770de64ba85ff73582530156542ab",
+      "bytes": 27582
+    },
+    {
+      "id": "adventure_gift_185",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G25",
+      "name": "Rainbow Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 185,
+      "file": "Cups/Rainbow Mug.webp",
+      "key": "burrow/adventure-gifts/v1/185-078addc79af95a2c.webp",
+      "sha256": "078addc79af95a2c41de43a1b803666c6704ff48decbaeed2b788723da123ffd",
+      "bytes": 34198
+    },
+    {
+      "id": "adventure_gift_186",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G26",
+      "name": "Acorn Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 186,
+      "file": "Cups/Acorn Mug.webp",
+      "key": "burrow/adventure-gifts/v1/186-45a588455dc73614.webp",
+      "sha256": "45a588455dc736148cee177c722ac1023b33a5e74f0f5e5c27d8c3075a1feb9c",
+      "bytes": 28556
+    },
+    {
+      "id": "adventure_gift_187",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G27",
+      "name": "Scallop Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 187,
+      "file": "Cups/Scallop Mug.webp",
+      "key": "burrow/adventure-gifts/v1/187-e3a8664fac4e2f0d.webp",
+      "sha256": "e3a8664fac4e2f0dbf4ac481d70f3eeece240da9e82b1cdfdc8e97f1263a5808",
+      "bytes": 29822
+    },
+    {
+      "id": "adventure_gift_188",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G28",
+      "name": "Bow Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 188,
+      "file": "Cups/Bow Mug.webp",
+      "key": "burrow/adventure-gifts/v1/188-c827c7c046a8d2e0.webp",
+      "sha256": "c827c7c046a8d2e02844e6c27ee2681e9ef9f670d5dbd898343fb885cea798ae",
+      "bytes": 29774
+    },
+    {
+      "id": "adventure_gift_189",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G29",
+      "name": "Whale Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 189,
+      "file": "Cups/Whale Mug.webp",
+      "key": "burrow/adventure-gifts/v1/189-b37f86fdc75904fe.webp",
+      "sha256": "b37f86fdc75904fe58490090850489987a4ce85f08263048b710fd522120734c",
+      "bytes": 28432
+    },
+    {
+      "id": "adventure_gift_190",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G30",
+      "name": "Lightning Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 190,
+      "file": "Cups/Lightning Mug.webp",
+      "key": "burrow/adventure-gifts/v1/190-edeef1f53b86b603.webp",
+      "sha256": "edeef1f53b86b60397428177bc393e59a4edeaa209ad95508e8eb34f0c1393e9",
+      "bytes": 28164
+    },
+    {
+      "id": "adventure_gift_191",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G31",
+      "name": "Floral Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 191,
+      "file": "Cups/Floral Mug.webp",
+      "key": "burrow/adventure-gifts/v1/191-63083134479328f5.webp",
+      "sha256": "63083134479328f57e7e24f103f98be1bc617377a09abae6afc6422c3c041f93",
+      "bytes": 28968
+    },
+    {
+      "id": "adventure_gift_192",
+      "friendId": "adventure_friend_dl",
+      "giftId": "DL-G32",
+      "name": "Peach Mug",
+      "category": "Cups",
+      "categoryCode": "C06",
+      "sourceId": 192,
+      "file": "Cups/Peach Mug.webp",
+      "key": "burrow/adventure-gifts/v1/192-07711f107114f336.webp",
+      "sha256": "07711f107114f336664d4b4510655f409e0250bf8200d143f07ab9bd7e0686f3",
+      "bytes": 30624
+    }
+  ]
+}

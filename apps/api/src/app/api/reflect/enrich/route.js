@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 import { verifyToken } from '@/lib/auth-guard'
 import { serviceClient } from '@/lib/reflect-draft'
 import { generateSavedReflectCopy } from '@/lib/reflect-settlement'
@@ -18,7 +19,7 @@ export async function POST(request) {
       supabase.from('reflect_drafts').select('*').eq('id', draftId).eq('user_id', userId).maybeSingle(),
     ])
     if (!draft) return NextResponse.json({ error: 'draft_not_found' }, { status: 404 })
-    if ((profile?.subscription_tier || 'free') === 'free') {
+    if (!await effectiveHasPlus(supabase,userId)) {
       return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     }
     if (!draft.saved_reflect_id) return NextResponse.json({ error: 'saved_reflect_required' }, { status: 409 })

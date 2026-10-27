@@ -1,5 +1,15 @@
 {
+  "functions": {
+    "src/app/api/vnext/bootstrap/route.js": {
+      "regions": [
+        "pdx1"
+      ]
+    }
+  },
   "crons": [
+    {"path":"/api/cron/plushie-touch-cleanup","schedule":"15 * * * *"},
+    {"path":"/api/cron/store-reconcile","schedule":"*/5 * * * *"},
+    {"path":"/api/cron/avatar-cleanup","schedule":"50 * * * *"},
     {
       "path": "/api/cron/surprise-cleanup",
       "schedule": "25 * * * *"
@@ -17,16 +27,12 @@
       "schedule": "5 * * * *"
     },
     {
-      "path": "/api/cron/item-learning",
-      "schedule": "*/15 * * * *"
-    },
-    {
       "path": "/api/cron/connection-analysis",
       "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/push-notifications",
-      "schedule": "*/5 * * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/bunny-court",

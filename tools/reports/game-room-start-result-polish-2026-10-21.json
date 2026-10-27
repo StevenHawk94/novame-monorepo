@@ -1,0 +1,19 @@
+{
+  "changes": [
+    "Free game Start opens durable local questions immediately; zero-price entitlement registration is queued and retried in the background before server session submission.",
+    "Paid games retain explicit consent, authoritative price/ownership checks and purchase receipts. Zero-price jobs always submit expectedPrice=0; repricing blocks rather than charging.",
+    "Missing unfinished-round progress is prefetched on the rules page. Unknown previous answers are never replaced by a new or fabricated round.",
+    "Historical results do not mount confetti; live results retain their celebration.",
+    "Both comparison labels use equal 20-point rows. Result markers are 18 points, use 13-point symbols, green for correct and the existing red for incorrect."
+  ],
+  "verification": {
+    "relatedTestsPassed": 121,
+    "mobileTypeCheck": "passed",
+    "iosProductionExport": "passed",
+    "codeDerivedResultLayoutScreenshot": "/private/tmp/game-polish-proof/results-check.png",
+    "nativeDeviceTesting": "not run"
+  },
+  "apiAdminChanges": false,
+  "migrationRequired": false,
+  "clientPublished": false
+}

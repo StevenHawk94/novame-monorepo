@@ -1,0 +1,1077 @@
+{
+  "code": "DL",
+  "name": "Dillon",
+  "friendId": "adventure_friend_dl",
+  "waitingLines": [
+    "...I’ll wait for {partner}. If that’s okay. ...I’ll be quiet.",
+    "...Didn’t get to say hi to {partner} yet. I’ll stay a bit. ...Maybe."
+  ],
+  "questions": [
+    {
+      "id": "DL-V01",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon pulls out four identical small stickers and lines them up on the table.",
+      "lines": [
+        "...These are me and my siblings. We're identical."
+      ],
+      "question": "What's unusual about how nine-banded armadillos are born?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Always just one baby",
+          "reply": [
+            "...Nope. Always four.",
+            "Nine-banded armadillos give birth to identical quadruplets.",
+            "One egg, split four ways. Built-in group chat."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Always identical quadruplets",
+          "reply": [
+            "...Correct. Four of us. Same everything.",
+            "One egg splits into four identical babies. Every time.",
+            "Imagine four of me at a party. Silent. Very silent."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They hatch from eggs",
+          "reply": [
+            "...No eggs. Live babies.",
+            "Nine-banded armadillos are born as identical quadruplets, every time.",
+            "Four matching shells. Family photos are confusing."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Nine-banded armadillos typically give birth to identical quadruplets.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V02",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon looks at a picture of a pink smiling salamander. He smiles back, a tiny bit.",
+      "lines": [
+        "...This one can heal. Like, really heal."
+      ],
+      "question": "What can axolotls regrow?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Limbs, and even parts of their heart and brain",
+          "reply": [
+            "...Correct. Amazing.",
+            "Axolotls can regrow lost legs and even repair heart and brain tissue.",
+            "Healing takes time. But it happens. ...I like that."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only their tail",
+          "reply": [
+            "...More than that. Much more.",
+            "Axolotls can regrow whole limbs and parts of organs.",
+            "Scientists study them to learn about healing."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Nothing at all",
+          "reply": [
+            "...No. They're healing champions.",
+            "They regrow limbs and repair parts of organs.",
+            "Some wounds heal. That's hopeful."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Axolotls regenerate limbs and parts of heart, spinal cord and brain.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V03",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon holds a seashell and gently taps it against his own shell.",
+      "lines": [
+        "...This one's about moving homes. And trust. Kind of."
+      ],
+      "question": "When a new shell washes up, what do hermit crabs sometimes do?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fight until one crab wins all the shells",
+          "reply": [
+            "...Sometimes there's drama. But not this time.",
+            "They line up by size and swap shells one after another.",
+            "It's called a vacancy chain. Teamwork in tiny houses."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Line up by size and swap shells in a chain",
+          "reply": [
+            "...Yes. It's beautiful.",
+            "When a bigger shell appears, crabs queue up and each moves up a size.",
+            "Everyone gets a better home. Takes patience. Takes trust."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Ignore it and stay in their old shell forever",
+          "reply": [
+            "...I relate. But no.",
+            "They line up by size and trade up, one crab at a time.",
+            "Letting go of an old shell. That's growth. ...Maybe."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Hermit crabs form vacancy chains, swapping shells by size.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V04",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon blinks hard, then turns away. 'Dust,' he says.",
+      "lines": [
+        "...Crying question. It's not about me."
+      ],
+      "question": "Which animal is known for crying emotional tears?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Humans, as far as we know",
+          "reply": [
+            "...Correct. As far as science knows.",
+            "Many animals make tears to clean their eyes, but emotional tears seem uniquely human.",
+            "So crying is part of being human. ...It's okay to do it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Crocodiles",
+          "reply": [
+            "...That's a myth phrase. 'Crocodile tears.'",
+            "Emotional tears seem to be uniquely human, as far as we know.",
+            "Crocodiles tear up to keep their eyes wet, not from feelings."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Dogs",
+          "reply": [
+            "...Dogs show feelings. Not with tears, though.",
+            "Emotional crying seems to be uniquely human.",
+            "Dogs cry with their eyes in other ways. Big ones."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Emotional tearing appears to be unique to humans; other animals produce basal/reflex tears.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V05",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon taps his fingernail against his shell twice, thoughtfully.",
+      "lines": [
+        "...Another armored friend."
+      ],
+      "question": "What are a pangolin's scales made of?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Bone",
+          "reply": [
+            "...That's more like my plates.",
+            "Pangolin scales are keratin, the same stuff as fingernails.",
+            "Imagine being covered in fingernails. ...Actually kind of cool."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Tree bark",
+          "reply": [
+            "...Creative. No.",
+            "They're keratin, like your fingernails.",
+            "Pangolins are the only mammals fully covered in scales."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Keratin, like fingernails",
+          "reply": [
+            "...Correct. Nail armor.",
+            "Pangolins are the only mammals covered in keratin scales.",
+            "They roll up too. ...Better than me at it. Fine."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Pangolin scales are keratin; pangolins are the only mammals with scales covering most of the body.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V06",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon peeks at your fish tank, very still, very curious.",
+      "lines": [
+        "...Water question. Don't worry. It's safe. ...Mostly."
+      ],
+      "question": "How do armadillos sometimes cross small streams?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They ride on turtles",
+          "reply": [
+            "...That would be a nice friendship. No.",
+            "They hold their breath and walk across the bottom.",
+            "Up to about six minutes without air. Very peaceful."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They hold their breath and walk along the bottom",
+          "reply": [
+            "...Yes. Nice.",
+            "They can hold their breath for about six minutes.",
+            "Walking underwater is calming. No one can talk to you down there."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They refuse to cross water, ever",
+          "reply": [
+            "...I wanted to. But we're braver than that.",
+            "They hold their breath and stroll along the bottom.",
+            "Or gulp air to float across. Two options. Good options."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Armadillos can hold breath ~6 min and walk underwater, or inflate gut to float.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V07",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon pulls out a picture of a duck-billed creature with a beaver tail.",
+      "lines": [
+        "...This one is confusing. Like me."
+      ],
+      "question": "What's surprising about the platypus?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It can fly short distances",
+          "reply": [
+            "...That would be even more confusing.",
+            "Nope. It's a mammal that lays eggs. Like a bird. But not.",
+            "Plus, males have venomous ankle spurs. ...Complex."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It's a mammal that lays eggs",
+          "reply": [
+            "...Correct. Breaks the rules.",
+            "Platypuses lay eggs but still make milk for their babies.",
+            "Weird and wonderful. ...Being different is okay."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It's actually a type of bird",
+          "reply": [
+            "...It has a bill, but no.",
+            "It's a mammal that lays eggs.",
+            "One of the only egg-laying mammals."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Platypuses are monotremes: egg-laying mammals.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V08",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon sits very still, like he's trying to survive something by not moving.",
+      "lines": [
+        "...This one's about surviving things. ...Maybe I relate."
+      ],
+      "question": "Which tiny animal can survive extreme cold, heat, and even space?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A tardigrade, or 'water bear'",
+          "reply": [
+            "...Yes. Tiny legend.",
+            "Tardigrades can dry out, curl up, and survive conditions that would destroy most life.",
+            "They've even survived the vacuum of space. ...Goals."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A housefly",
+          "reply": [
+            "...Flies are tough, but not that tough.",
+            "It's the tardigrade, also called a water bear.",
+            "They can survive drying out for years, then wake back up."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A goldfish",
+          "reply": [
+            "...No. Please protect your goldfish.",
+            "It's the tardigrade, a tiny 'water bear.'",
+            "Space, freezing, boiling-ish. They just shrug. Tiny armor."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Tardigrades survive extreme conditions in a dried 'tun' state, including space exposure.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V09",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon touches a little seed pod in your plant pot. It bursts. He jumps a foot.",
+      "lines": [
+        "...I didn't jump. Okay. I jumped. Plant question."
+      ],
+      "question": "What happens when you touch a ripe 'touch-me-not' seed pod?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It closes tighter",
+          "reply": [
+            "...That's the shy plant. Different one.",
+            "The pod pops open and throws seeds.",
+            "Launching seeds away so they can grow somewhere new."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It glows",
+          "reply": [
+            "...No. Scary enough without glowing.",
+            "The pod bursts and flings its seeds.",
+            "That's how it spreads. Explosive. Startling."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It bursts open and flings its seeds",
+          "reply": [
+            "...Correct. It startled me too.",
+            "The pod twists open fast and launches seeds away.",
+            "Very dramatic. Very relatable."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Impatiens ('touch-me-not') pods dehisce explosively when touched.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V10",
+      "friendId": "adventure_friend_dl",
+      "type": "Trivia",
+      "scene": "Dillon closes one eye, keeps the other open, and stares at the door.",
+      "lines": [
+        "...Guarding. Half asleep. Ducks do it."
+      ],
+      "question": "How can some ducks sleep while staying alert?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They don't sleep at all",
+          "reply": [
+            "...They do. Just cleverly.",
+            "They can rest half the brain and keep one eye open.",
+            "The edge ducks guard the group. Teamwork."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They take turns sitting on each other",
+          "reply": [
+            "...Cute. Not real.",
+            "They sleep with half their brain and one eye open.",
+            "Ducks on the edge stay most alert. Like a lookout."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "By sleeping with half their brain, one eye open",
+          "reply": [
+            "...Correct. Half on guard.",
+            "Ducks at the edge of a group often keep one eye open toward danger.",
+            "Resting while staying safe. ...I understand that."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Rattenborg et al. (1999): mallards use unihemispheric sleep with one eye open at group edges.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DL-V11",
+      "friendId": "adventure_friend_dl",
+      "type": "Preference",
+      "scene": "Dillon holds a small box. He opens it a crack, then closes it again.",
+      "lines": [
+        "...Secrets. They're hard for me."
+      ],
+      "question": "Sharing something personal: all at once, or a little at a time?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "All at once",
+          "reply": [
+            "...All at once. Brave. Very brave.",
+            "Rip the bandage off. I've never done that. ...Yet."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A little at a time",
+          "reply": [
+            "...A little at a time. Same. Very same.",
+            "Small doors before big doors."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...You both share all at once. Wow.",
+          "So {partner} and you just open the whole box. No warning.",
+          "That takes a lot of trust. ...I'm proud of you two."
+        ],
+        "A:B": [
+          "...You go slow. {partner} shares everything at once.",
+          "They'll hand you the whole story. You'll offer a sentence.",
+          "That's okay. One sentence from you probably means a lot to them."
+        ],
+        "B:A": [
+          "...You share all at once. {partner} shares a little at a time.",
+          "You'll open the whole box. They'll hand you one page.",
+          "Be patient with their pages. They're still worth reading."
+        ],
+        "B:B": [
+          "...You both share slowly. Gentle couple.",
+          "Honestly, you and {partner} let each other in one small door at a time.",
+          "That's how Ash and I are doing it. It works. ...Mostly."
+        ]
+      }
+    },
+    {
+      "id": "DL-V12",
+      "friendId": "adventure_friend_dl",
+      "type": "Preference",
+      "scene": "Dillon checks his phone. A text from Ash says 'home safe?' He smiles very slightly.",
+      "lines": [
+        "...Ash checks in on me. I pretend it's no big deal. ...It's a big deal."
+      ],
+      "question": "When you're apart: 'got home safe' texts always, or only if it's late?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Always",
+          "reply": [
+            "...Always. Every time. Even next door.",
+            "That's the kind of thing that rebuilds trust."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only if it's late",
+          "reply": [
+            "...Only if it's late. Reasonable.",
+            "No need to report every grocery trip."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...Always, for both of you. Safe couple.",
+          "I can picture it: {partner} and you text 'home!' even after a two-minute walk.",
+          "...That's sweet. I like that. A lot."
+        ],
+        "A:B": [
+          "...Only late for you. {partner} texts every time.",
+          "They'll send 'home safe' after the grocery store. Lean into it.",
+          "A one-word reply makes their whole day. ...Trust me."
+        ],
+        "B:A": [
+          "...You'd text always. {partner} only when it's late.",
+          "They might not reply to your daytime 'home!' Don't spiral.",
+          "It's not about trust. It's just their style. ...I'm learning that too."
+        ],
+        "B:B": [
+          "...Only late at night for both of you. Relaxed couple.",
+          "Pretty sure you and {partner} trust the daytime. Fair.",
+          "Late night 'home safe?' still hits different. ...Nice."
+        ]
+      }
+    },
+    {
+      "id": "DL-V13",
+      "friendId": "adventure_friend_dl",
+      "type": "Preference",
+      "scene": "Dillon pulls a soft blanket over his shell. Only his nose sticks out.",
+      "lines": [
+        "...Everyone needs a safe place. Mine is under this blanket. Obviously."
+      ],
+      "question": "Where do you feel safest talking with your partner?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "On the couch at home",
+          "reply": [
+            "...The couch. Soft. Familiar.",
+            "No exits. In a good way."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "On a long car ride",
+          "reply": [
+            "...A long drive. Side by side.",
+            "No eye contact needed. Very helpful."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "On a night walk",
+          "reply": [
+            "...A night walk. Dark and quiet.",
+            "Easier to say hard things to the stars."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...The couch for both of you. Cozy.",
+          "Lowkey, {partner} and you probably have all your big talks there.",
+          "That couch has heard everything. ...Respect the couch."
+        ],
+        "A:B": [
+          "...Long drive for you. {partner} likes the couch.",
+          "You talk better facing the road. They talk better facing you.",
+          "Start in the car. Park. Finish on the couch."
+        ],
+        "A:C": [
+          "...Night walk for you. {partner} likes the couch.",
+          "You need the sky. They need the cushions.",
+          "Walk to a bench. Bring a blanket. Compromise."
+        ],
+        "B:A": [
+          "...Couch for you. {partner} prefers a long drive.",
+          "You want the blanket. They want the open road.",
+          "Talk on the drive home, then finish on the couch."
+        ],
+        "B:B": [
+          "...Long drives for both of you. Road talkers.",
+          "You and {partner} save the deep stuff for highway hour two.",
+          "No eye contact. Just honesty. ...It works."
+        ],
+        "B:C": [
+          "...Night walk for you. {partner} likes long drives.",
+          "Drive somewhere pretty. Walk under the stars.",
+          "Best of both. ...Very nice."
+        ],
+        "C:A": [
+          "...Couch for you. {partner} likes night walks.",
+          "You want cushions. They want streetlights.",
+          "Walk first, couch second. Big feelings, then blankets."
+        ],
+        "C:B": [
+          "...Drives for you. {partner} likes night walks.",
+          "Both of you like moving while talking. ...Interesting.",
+          "Drive somewhere quiet. Then walk. Two safe spaces."
+        ],
+        "C:C": [
+          "...Night walks for both of you. Starlit talks.",
+          "So {partner} and you probably solve life problems under streetlights.",
+          "Quiet sky. Loud hearts. ...I like that."
+        ]
+      }
+    },
+    {
+      "id": "DL-V14",
+      "friendId": "adventure_friend_dl",
+      "type": "Preference",
+      "scene": "Dillon writes 'sorry' on a napkin, then crosses it out, then writes it again.",
+      "lines": [
+        "...Apologies. I'm slow at them."
+      ],
+      "question": "Saying sorry: right away, or once you know exactly what to say?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Right away",
+          "reply": [
+            "...Right away. Brave and fast.",
+            "Fixes things before they get heavy."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Once I know what to say",
+          "reply": [
+            "...Once you know what to say. Thoughtful.",
+            "Better words, fewer regrets."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...Both of you say sorry right away. Healthy.",
+          "Honestly, {partner} and you never let things sit too long.",
+          "...That's rare. Keep that."
+        ],
+        "A:B": [
+          "...You need time. {partner} apologizes right away.",
+          "They'll say sorry fast. You'll still be drafting.",
+          "Say 'I'm thinking.' Then take your time. ...That counts."
+        ],
+        "B:A": [
+          "...You say sorry right away. {partner} needs time to find words.",
+          "You'll apologize in seconds. They'll take an afternoon.",
+          "Their sorry is coming. It'll be a good one. ...Wait for it."
+        ],
+        "B:B": [
+          "...Both of you need time to find the words. Gentle couple.",
+          "I can picture it: you and {partner} would rather say it right than fast.",
+          "Just let each other know you're thinking. ...It helps."
+        ]
+      }
+    },
+    {
+      "id": "DL-V15",
+      "friendId": "adventure_friend_dl",
+      "type": "Preference",
+      "scene": "Dillon flinches slightly when your doorbell rings.",
+      "lines": [
+        "...Surprises. They scare me. ...A little."
+      ],
+      "question": "Surprises: love them, or warn me first?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Love them",
+          "reply": [
+            "...Love them. Fearless.",
+            "Confetti doesn't scare you. Wow."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Warn me first",
+          "reply": [
+            "...Warn me first. Same.",
+            "A heads-up is kindness."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...You both love surprises. Bold.",
+          "Pretty sure {partner} and you surprise each other constantly.",
+          "...Exciting. Exhausting. Mostly exciting."
+        ],
+        "A:B": [
+          "...You want a warning. {partner} loves surprises.",
+          "They'll plan secret things. You'll sense it and panic.",
+          "Ask for one hint. Just one. ...Then enjoy it."
+        ],
+        "B:A": [
+          "...You love surprises. {partner} wants a warning.",
+          "Give them a small heads-up. 'Something's coming. It's good.'",
+          "They'll relax. Then enjoy it more. ...Trust me."
+        ],
+        "B:B": [
+          "...You both want a warning. Safe couple.",
+          "Lowkey, you and {partner} say 'surprise on Friday!' before the surprise. Love it.",
+          "Predictable is cozy. ...Very cozy."
+        ]
+      }
+    },
+    {
+      "id": "DL-V16",
+      "friendId": "adventure_friend_dl",
+      "type": "Guess",
+      "scene": "Dillon's paws fidget with a pebble the whole time he talks.",
+      "lines": [
+        "...I fidget when I'm nervous. You'll notice the pebble. Don't mention it."
+      ],
+      "question": "When your partner is nervous, what do their hands do?",
+      "selfQuestion": "When you're nervous, what do your hands do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fidget with anything nearby",
+          "reply": [
+            "...Fidget. Pens, sleeves, pebbles.",
+            "Relatable. Very relatable."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Reach for a hand to hold",
+          "reply": [
+            "...Reach for a hand. Brave.",
+            "Asking for comfort is strong."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...Fidgeting, and {partner} knew it.",
+          "They've noticed you clicking the same pen twelve times.",
+          "Maybe hold their hand instead. ...Good fidget."
+        ],
+        "A:B": [
+          "...You reach for a hand. {partner} expected fidgeting.",
+          "They didn't realize their hand is your comfort.",
+          "Tell them. They'll keep it free for you. ...Always."
+        ],
+        "B:A": [
+          "...You fidget. {partner} thought you'd reach for their hand.",
+          "They're waiting with an open hand. You're holding a pebble.",
+          "Put the pebble down. Take the hand. ...Just try once."
+        ],
+        "B:B": [
+          "...Reaching for a hand, and {partner} knew it.",
+          "They know your hand finds theirs when things get tense.",
+          "That's trust. ...Real trust."
+        ]
+      }
+    },
+    {
+      "id": "DL-V17",
+      "friendId": "adventure_friend_dl",
+      "type": "Guess",
+      "scene": "Dillon stares out the window at the road, deep in thought.",
+      "lines": [
+        "...Opening up is hard. Like a shell with a rusty hinge."
+      ],
+      "question": "What helps your partner open up the most?",
+      "selfQuestion": "What helps you open up the most?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "A late-night drive",
+          "reply": [
+            "...A drive. Side by side. Eyes on the road.",
+            "Easier to talk without staring."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A long walk",
+          "reply": [
+            "...A walk. Moving helps the words.",
+            "Footsteps make room for feelings."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Being under a blanket",
+          "reply": [
+            "...A blanket. Safe little cave.",
+            "Feelings come out when you're cozy."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...A late-night drive, and {partner} knew it.",
+          "They've learned to take the long way home. On purpose.",
+          "...That's kind of beautiful."
+        ],
+        "A:B": [
+          "...A walk opens you up. {partner} guessed a drive.",
+          "They're starting the car. You're tying your shoes.",
+          "Drive to a park. Then walk. ...Both."
+        ],
+        "A:C": [
+          "...A blanket opens you up. {partner} guessed a drive.",
+          "They're grabbing car keys. You're grabbing the throw.",
+          "Tell them: no keys needed. Just blankets."
+        ],
+        "B:A": [
+          "...A drive opens you up. {partner} guessed a walk.",
+          "Close. You both like moving while talking.",
+          "Next time they say 'walk?', say 'drive?'"
+        ],
+        "B:B": [
+          "...A long walk, and {partner} knew it.",
+          "They know your best talks happen around mile two.",
+          "Comfortable shoes. Open hearts."
+        ],
+        "B:C": [
+          "...A blanket opens you up. {partner} guessed a walk.",
+          "They're waiting by the door. You're on the couch.",
+          "Short walk, long blanket. ...Works for me."
+        ],
+        "C:A": [
+          "...A drive opens you up. {partner} guessed a blanket.",
+          "They're building a blanket fort. You're grabbing the keys.",
+          "Bring the blanket in the car. ...Compromise."
+        ],
+        "C:B": [
+          "...A walk opens you up. {partner} guessed a blanket.",
+          "They want you cozy. You want fresh air.",
+          "Walk first. Blanket after. ...Perfect evening."
+        ],
+        "C:C": [
+          "...A blanket, and {partner} knew it.",
+          "They know you talk best when you're wrapped up like a burrito.",
+          "...I'd do the same. Shell plus blanket."
+        ]
+      }
+    },
+    {
+      "id": "DL-V18",
+      "friendId": "adventure_friend_dl",
+      "type": "Guess",
+      "scene": "Dillon shrugs one shoulder and says, very softly, '...Maybe.'",
+      "lines": [
+        "...What does that mean? Good question."
+      ],
+      "question": "When your partner says 'maybe,' what do they usually mean?",
+      "selfQuestion": "When you say 'maybe,' what do you usually mean?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Yes, but nervous",
+          "reply": [
+            "...Yes, but nervous. That's my 'maybe.'",
+            "Means 'I want to. I'm scared.'"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "No, but polite",
+          "reply": [
+            "...No, but polite. Diplomatic.",
+            "'Maybe' is the nicest 'no.'"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...'Maybe' means 'yes, nervously,' and {partner} knew it.",
+          "They hear the hidden 'yes' every time.",
+          "...That's real understanding. Keep it."
+        ],
+        "A:B": [
+          "...Your 'maybe' means no. {partner} thought it meant yes.",
+          "Oops. They've been buying tickets.",
+          "Try 'probably not.' ...Kinder in the long run."
+        ],
+        "B:A": [
+          "...Your 'maybe' means yes. {partner} thought it meant no.",
+          "They've been canceling plans you secretly wanted.",
+          "Next time, say 'maybe yes.' ...Tiny upgrade."
+        ],
+        "B:B": [
+          "...'Maybe' means 'no, politely,' and {partner} knew it.",
+          "They know not to buy the concert tickets.",
+          "...Saves everyone some money."
+        ]
+      }
+    },
+    {
+      "id": "DL-V19",
+      "friendId": "adventure_friend_dl",
+      "type": "Guess",
+      "scene": "Dillon hands you the TV remote very slowly, like it's a sacred object.",
+      "lines": [
+        "...This is a big deal. I don't hand this to just anyone."
+      ],
+      "question": "How does your partner show they really trust you?",
+      "selfQuestion": "How do you show your partner you really trust them?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Lets you see them cry",
+          "reply": [
+            "...Crying in front of someone. Huge.",
+            "That's real armor coming off."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hands over the TV remote",
+          "reply": [
+            "...The remote. Sacred trust.",
+            "Giving up control. ...Huge too."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...Crying in front of them, and {partner} knew it.",
+          "They know your tears are the deepest trust you have.",
+          "...That means they're safe. Very safe."
+        ],
+        "A:B": [
+          "...You show trust with the remote. {partner} guessed tears.",
+          "They think it's deep. It's... also deep. In a TV way.",
+          "Both count. ...Remote trust is real trust."
+        ],
+        "B:A": [
+          "...You show trust through tears. {partner} guessed the remote.",
+          "They think it's the remote. It's much deeper.",
+          "Tell them. ...They'll treasure it."
+        ],
+        "B:B": [
+          "...The remote, and {partner} knew it.",
+          "They know handing over the remote is basically a marriage proposal.",
+          "...Ha. Respect."
+        ]
+      }
+    },
+    {
+      "id": "DL-V20",
+      "friendId": "adventure_friend_dl",
+      "type": "Guess",
+      "scene": "A door slams down the hall. Dillon jumps a full foot, lands, and stares at you.",
+      "lines": [
+        "...Obviously relevant. Don't laugh."
+      ],
+      "question": "When your partner gets startled, what happens?",
+      "selfQuestion": "When you get startled, what happens?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Jumps like an armadillo",
+          "reply": [
+            "...Jumps. Fellow jumper.",
+            "Vertical panic. I respect it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Freezes completely",
+          "reply": [
+            "...Freezes. Statue mode.",
+            "If I don't move, it can't see me."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "...Jumper, and {partner} knew it.",
+          "They've seen you leave the ground over a sneeze.",
+          "...Welcome to the club. I'm the president."
+        ],
+        "A:B": [
+          "...You freeze. {partner} thought you'd jump.",
+          "They're waiting for a leap. You just... stop.",
+          "...Statue mode. Also valid. Also scary."
+        ],
+        "B:A": [
+          "...You jump. {partner} thought you'd freeze.",
+          "They're about to see you hit the ceiling.",
+          "...Warn them. Or don't. It's funnier."
+        ],
+        "B:B": [
+          "...Freezer, and {partner} knew it.",
+          "They know you turn into a statue when a door slams.",
+          "...Very calm. Very still. Very scared."
+        ]
+      }
+    }
+  ]
+}

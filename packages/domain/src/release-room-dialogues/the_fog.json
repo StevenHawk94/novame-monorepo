@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "You don’t even know where you’re going. Why move?",
+    "replies": [
+      "I don’t need the whole map today.",
+      "I can choose one direction for now.",
+      "Not knowing yet is not being lost forever.",
+      "I’ll follow what feels meaningful next."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "You have no plan. You’ll just get it wrong.",
+    "replies": [
+      "I can find my way by moving.",
+      "One small choice creates direction.",
+      "I don’t need certainty to continue.",
+      "I trust myself to adjust."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "What if this isn’t the right path?",
+    "replies": [
+      "I can change course later.",
+      "There may not be one perfect path.",
+      "I’ll choose what matters today.",
+      "Clarity can come after movement."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I’m keeping you still until you feel certain.",
+    "replies": [
+      "I can move before certainty arrives.",
+      "It’s okay to explore.",
+      "One step can teach me something.",
+      "I can trust the next small signal."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "everyone knows",
+    "monster": "Everyone else knows what they’re doing.",
+    "replies": [
+      "Many people are guessing, too.",
+      "I only see their outside.",
+      "Not knowing is more common than it looks.",
+      "I can figure it out at my pace."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "too late",
+    "monster": "It’s too late to change direction.",
+    "replies": [
+      "It’s never too late to turn.",
+      "I can start a new path at any age.",
+      "A late turn is still a turn.",
+      "My story isn’t finished."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "wasted time",
+    "monster": "You’ve wasted so much time already.",
+    "replies": [
+      "Nothing I’ve learned is wasted.",
+      "Every road taught me something.",
+      "I’m exactly where I can begin from.",
+      "The time behind me made me who I am."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "purpose demand",
+    "monster": "You need a big purpose before you do anything.",
+    "replies": [
+      "Purpose often grows from small steps.",
+      "I can start with curiosity.",
+      "I don’t need a grand mission today.",
+      "One interesting thing is enough."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "fear of wrong choice",
+    "monster": "Choose wrong and you’ll waste years.",
+    "replies": [
+      "Most choices can be adjusted.",
+      "A wrong turn still teaches the road.",
+      "I’ll choose and keep my eyes open.",
+      "I can change my mind."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "blank future",
+    "monster": "You can’t picture your future. That means something’s wrong.",
+    "replies": [
+      "Not seeing it yet isn’t failing.",
+      "The future is built, not found.",
+      "I can live one day at a time.",
+      "I’ll draw the picture as I go."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "comparison",
+    "monster": "Look at how far along everyone else is.",
+    "replies": [
+      "Their route isn’t mine.",
+      "I’m not behind. I’m on a different road.",
+      "My timing is my own.",
+      "I’ll follow my own compass."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "waiting for signs",
+    "monster": "Wait for a sign. Don’t move yet.",
+    "replies": [
+      "I can create a sign by trying something.",
+      "Action brings new information.",
+      "I’ll test a small step.",
+      "Waiting for a sign can last forever."
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "all or nothing",
+    "monster": "If you can’t see the whole path, don’t take any step.",
+    "replies": [
+      "I’ll take the part I can see.",
+      "Light only reaches a few steps at a time.",
+      "One foot forward is enough.",
+      "I can walk in the fog."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "regret",
+    "monster": "You should have chosen differently years ago.",
+    "replies": [
+      "I chose with what I knew then.",
+      "Regret can teach, not rule.",
+      "I can choose again from here.",
+      "I’m allowed to begin from now."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "fear of commitment",
+    "monster": "If you pick one thing, you lose everything else.",
+    "replies": [
+      "Choosing isn’t losing forever.",
+      "I can explore and still commit.",
+      "Picking one gives me traction.",
+      "I can try one and keep growing."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "overwhelming options",
+    "monster": "There are too many options. Stay still.",
+    "replies": [
+      "I can narrow them to two.",
+      "I’ll pick one to try this week.",
+      "Too many options is a sign to simplify.",
+      "I’ll start with what I’m drawn to."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "self-trust",
+    "monster": "You can’t trust your own judgment.",
+    "replies": [
+      "I’ve made good calls before.",
+      "I can trust myself a little.",
+      "I can test my judgment gently.",
+      "I’m learning to listen to me."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "expectation",
+    "monster": "You were supposed to have it figured out by now.",
+    "replies": [
+      "No one handed me that timeline.",
+      "“Supposed to” isn’t a map.",
+      "I’m allowed to still be finding out.",
+      "I’m right on time for my own life."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "emptiness",
+    "monster": "Nothing excites you anymore.",
+    "replies": [
+      "Maybe I haven’t found it yet.",
+      "I can try small things and notice.",
+      "Curiosity can come back slowly.",
+      "A spark can start tiny."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "outside approval",
+    "monster": "What would others say about your path?",
+    "replies": [
+      "It’s my life to live.",
+      "I’ll listen to my own sense first.",
+      "Others’ opinions aren’t a compass.",
+      "I’m allowed to choose for me."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "stagnation",
+    "monster": "Stay where you are. It’s safe here.",
+    "replies": [
+      "Safe isn’t the same as fulfilling.",
+      "I can step out a little.",
+      "I’m allowed to want more.",
+      "Comfort can be a quiet cage."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "fear of regret",
+    "monster": "What if you move and it’s worse?",
+    "replies": [
+      "It might be better, too.",
+      "I can come back if I need to.",
+      "Trying gives me real answers.",
+      "I’ll risk a small step."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "shame about confusion",
+    "monster": "Being confused makes you look weak.",
+    "replies": [
+      "Confusion is part of finding my way.",
+      "It takes courage to admit I’m unsure.",
+      "I’m not weak. I’m searching.",
+      "Searching is a strength."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "perfect plan",
+    "monster": "Don’t move until you have a perfect plan.",
+    "replies": [
+      "A rough plan is enough.",
+      "I’ll draft one and revise.",
+      "Plans improve with movement.",
+      "Done is better than perfect."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "big question",
+    "monster": "What is the meaning of your life? Answer now.",
+    "replies": [
+      "I don’t have to answer that today.",
+      "Meaning can unfold slowly.",
+      "I can start with what matters this week.",
+      "That question can be lived, not solved."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "lonely path",
+    "monster": "Nobody else is lost like you.",
+    "replies": [
+      "Many people feel this way.",
+      "I’m not alone in not knowing.",
+      "I can talk to someone who’s been here.",
+      "Being lost is a shared human feeling."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "comfort zone",
+    "monster": "Just keep doing what you’ve always done.",
+    "replies": [
+      "I can try a small change.",
+      "Routine can be a base, not a cage.",
+      "One new thing won’t break me.",
+      "I’m open to a little different."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "fear of disappointing",
+    "monster": "You’ll let everyone down if you change.",
+    "replies": [
+      "I can’t live for others’ expectations.",
+      "The right people will adjust.",
+      "My life isn’t a performance.",
+      "I owe myself some honesty."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "fog thinking",
+    "monster": "Everything is a blur. Stop trying.",
+    "replies": [
+      "Even in a blur I can take one step.",
+      "Fog lifts as I walk.",
+      "I’ll focus on what’s right here.",
+      "I can see the next few feet."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "quit early",
+    "monster": "If it were your path, it would be easier.",
+    "replies": [
+      "Paths aren’t always easy.",
+      "Hard doesn’t mean wrong.",
+      "I can try a bit longer.",
+      "Clarity can show up mid-climb."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "measuring success",
+    "monster": "You need to be successful to be on the right path.",
+    "replies": [
+      "Success looks different for everyone.",
+      "I can define it myself.",
+      "The right path can look quiet.",
+      "I’ll measure by what feels true."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "pressure of age",
+    "monster": "At your age, you should know by now.",
+    "replies": [
+      "There’s no deadline on discovery.",
+      "I’m allowed to explore at any age.",
+      "Many people change course late.",
+      "Age doesn’t decide my direction."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "identity",
+    "monster": "If you’re not that anymore, who are you?",
+    "replies": [
+      "I can be someone new.",
+      "Who I am is still unfolding.",
+      "I’m more than one role.",
+      "I can explore without a label."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "fear of the unknown",
+    "monster": "The unknown is scary. Stay with the familiar.",
+    "replies": [
+      "The unknown also holds good things.",
+      "I can go slowly into it.",
+      "I’ve handled the unknown before.",
+      "Fear and curiosity can walk together."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "outsourcing",
+    "monster": "Let someone else tell you what to do.",
+    "replies": [
+      "I can ask for advice without handing over the wheel.",
+      "I’ll listen, then decide.",
+      "My choice matters most.",
+      "Guidance helps; I still steer."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "shortcuts",
+    "monster": "There must be a shortcut to finding your way.",
+    "replies": [
+      "There’s no shortcut, but there are small steps.",
+      "I’ll learn by trying.",
+      "The path appears as I walk.",
+      "I’ll enjoy the trying."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "sorting through",
+    "monster": "You have to figure out your whole life first.",
+    "replies": [
+      "I can start with this week.",
+      "A whole life is too big for one day.",
+      "I’ll figure out one piece.",
+      "I’ll take it chapter by chapter."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "dismissing small",
+    "monster": "Small steps don’t matter when you’re this lost.",
+    "replies": [
+      "Small steps are how people find their way.",
+      "Tiny moves create direction.",
+      "A small step is still a step.",
+      "I’ll take one and see."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "hesitation",
+    "monster": "What if you’re wasting time exploring?",
+    "replies": [
+      "Exploring isn’t wasting.",
+      "I learn what I like by trying.",
+      "Curiosity is time well spent.",
+      "Wandering can lead to something real."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "hopeless",
+    "monster": "You’ll never find your way.",
+    "replies": [
+      "I’ve found my way before.",
+      "I don’t know yet, and that’s different from never.",
+      "I can keep looking.",
+      "Hope is allowed."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "past self",
+    "monster": "You used to know what you wanted.",
+    "replies": [
+      "I can learn what I want now.",
+      "I’ve changed, and that’s okay.",
+      "I can get to know myself again.",
+      "The old map doesn’t fit the new me."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "rigid goals",
+    "monster": "If you change your goal, you’ve failed.",
+    "replies": [
+      "Changing a goal is growth.",
+      "I can update my plan.",
+      "A new goal isn’t failure.",
+      "I’m allowed to evolve."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "fear of mistakes",
+    "monster": "A wrong step will ruin everything.",
+    "replies": [
+      "One step can’t ruin everything.",
+      "I can recover from a wrong turn.",
+      "Mistakes are part of finding my way.",
+      "I’ll step lightly and learn."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "quiet signals",
+    "monster": "You can’t even hear what you want.",
+    "replies": [
+      "I can listen a little more.",
+      "Quiet signals still count.",
+      "I’ll notice what feels lighter.",
+      "I’m learning to hear myself."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "loop",
+    "monster": "You’ve been here before. Nothing changes.",
+    "replies": [
+      "This time I can try one small difference.",
+      "Patterns can shift.",
+      "I’m changing a little each time.",
+      "A new step breaks the loop."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "trust",
+    "monster": "The universe is giving you no answers.",
+    "replies": [
+      "I can give myself some.",
+      "I’ll make my own next move.",
+      "Answers come from trying.",
+      "I can start without a cosmic nod."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "fear of arriving",
+    "monster": "What if you get there and it’s not what you wanted?",
+    "replies": [
+      "Then I’ll learn something and adjust.",
+      "I can enjoy the walking too.",
+      "Arrival isn’t a final verdict.",
+      "I can change direction again."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "compass",
+    "monster": "You have no compass. Give up.",
+    "replies": [
+      "My values are a compass.",
+      "I can follow what matters to me.",
+      "I’ll steer by what feels true.",
+      "I have more direction than I think."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "final",
+    "monster": "If you’re lost, just stay here forever.",
+    "replies": [
+      "I won’t stay. I’ll take one step.",
+      "Forever is a long time.",
+      "I’m ready to move, even a little.",
+      "One step is a beginning."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "quiet nudge",
+    "monster": "Maybe it’s better not to want anything too much.",
+    "replies": [
+      "Wanting something is how I find direction.",
+      "I’m allowed to want things.",
+      "Desire can be a compass.",
+      "I’ll follow a small want."
+    ]
+  }
+]

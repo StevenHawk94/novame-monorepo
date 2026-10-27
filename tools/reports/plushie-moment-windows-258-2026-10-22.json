@@ -1,0 +1,42 @@
+{
+  "rules": {
+    "window": "60 minutes anchored to first eligible interaction; not sliding or aligned to the clock",
+    "toySwitch": "all photographed toys share the same actor/relation window",
+    "blankPhoto": "no Moments count or daily-task progress; interaction animation unchanged",
+    "midnight": "one Moment window may cross midnight; task progress uses each batch's occurrence date",
+    "pendingLocalPhoto": "durable local count, background confirmation after upload; rejected upload earns no credit",
+    "history": "existing daily Moments preserved"
+  },
+  "verification": {
+    "relatedTestsPassed": 150,
+    "assetTestsPassed": 7,
+    "mobileTypeCheck": "passed",
+    "apiProductionBuild": "passed",
+    "iosProductionExport": "passed",
+    "databaseTests": "actual migration 258 executed in isolated PGlite, including hour boundaries, photo eligibility, midnight tasks, duplicate receipts, solo and re-pair isolation"
+  },
+  "production": {
+    "migration": "20261022000258",
+    "migrationVerified": true,
+    "existingMomentsTasksAndReceiptsUnchanged": true,
+    "unrelatedFunctionsAndTriggersUnchanged": true,
+    "newRpcServiceRoleOnly": true,
+    "apiDeployment": "dpl_ZCtR9kftvzrqXqzVBW65MrW1eJwJ",
+    "apiUrl": "https://api.soulsayit.com",
+    "apiReadyState": "READY",
+    "apiAliasVerified": true,
+    "apiHealthStatus": 200,
+    "unauthenticatedWriteStatus": 401,
+    "adminUnchanged": true,
+    "verifiedUploadedSourceFiles": 272,
+    "sourceManifestSha256": "cce440806970e3f523062f7c1c2664b53d1eb9da3b2c8b465d9cd71d84b96c7a",
+    "previousApiDeployment": "dpl_C1GtsQhvVj3ExXRahcwdTsaeHUhc",
+    "databaseRollback": "/private/tmp/burrow-toy258-release.wSQfF3/rollback.sql",
+    "legacyClients": "same API signatures; server checks equipped toy photo and groups by server-time anchored hour; new client's exact occurrence batching ships in its next binary"
+  },
+  "mobile": {
+    "requiresNewBinaryForClientChanges": true,
+    "easBuildDispatchedThisTurn": false,
+    "gitCommitCreated": false
+  }
+}

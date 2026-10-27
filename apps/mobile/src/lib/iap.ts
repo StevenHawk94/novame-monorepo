@@ -33,7 +33,10 @@
  * lines) -- we only call it.
  */
 import { Platform } from 'react-native';
+import { androidTrialDuration, iosTrialDuration, formatSubscriptionCurrency } from './paywall-presentation';
 import { isCarrotProduct,handleCarrotPurchase,handleCarrotError,coinPurchaseBusy,setSubscriptionPurchaseGuard } from './carrot-iap';
+import { prewarmCoinPrices } from './coin-store-prices';
+import { sessionEpoch } from './session-lifecycle';
 import * as Crypto from 'expo-crypto';
 import {
   initConnection,
@@ -163,6 +166,7 @@ let initIAPInFlight: Promise<void> | null = null;
 let purchaseUpdateSub: { remove: () => void } | null = null;
 let purchaseErrorSub: { remove: () => void } | null = null;
 let reconciliationInFlight: Promise<boolean> | null = null;
+let coinReconciliationInFlight: Promise<boolean> | null = null;
 let alreadyOwnedRecoveryInFlight: Promise<boolean> | null = null;
 let recentAlreadyOwnedRecovery: { at: number; recovered: boolean } | null = null;
 
@@ -173,6 +177,8 @@ let recentAlreadyOwnedRecovery: { at: number; recovered: boolean } | null = null
 // re-upload the same transaction many times. Server is upsert-safe
 // but the UI complete-callback is not.
 const processedTransactionIds = new Set<string>();
+// Processing/dedup is not proof of a granted entitlement (e.g. a 409).
+const verifiedTransactionIds = new Set<string>();
 
 // Stage 5.IAP fix: distinguishes user-initiated purchases from queue
 // replays / auto-renewals. Set to true only inside purchaseSubscription
@@ -326,7 +332,7 @@ function purchaseOwnershipConflict(error: unknown): PurchaseOwnershipConflict | 
 async function finishOwnershipConflict(
   purchase: Purchase,
   conflict: PurchaseOwnershipConflict,
-): Promise<void> {
+): Promise<boolean> {
   try {
     // A verified transaction rejected for account ownership is a permanent
     // business failure for the CURRENT app account, not a transient upload
@@ -339,8 +345,10 @@ async function finishOwnershipConflict(
       String(purchase.id),
       conflict.storeEnvironment,
     );
+    return true;
   } catch (finishError) {
     console.warn('[iap] could not finish account-conflict transaction:', finishError);
+    return false;
   }
 }
 
@@ -430,29 +438,45 @@ async function initializeIAP(): Promise<void> {
     handlePurchaseError(error);
   });
   initialized = true;
+  // Query official coin prices as soon as the store connects, in parallel with
+  // receipt recovery; opening the coin shop normally needs no new price wait.
+  prewarmCoinPrices();
 
   // Recover active/unacknowledged transactions silently. The same idempotent
   // reconciliation runs again on auth restoration and every foreground entry.
-  await reconcileAvailablePurchasesInternal();
+  void reconcileAvailablePurchasesInternal();
 }
 
 async function reconcileAvailablePurchasesInternal(): Promise<boolean> {
   if (reconciliationInFlight) return reconciliationInFlight;
   reconciliationInFlight = (async () => {
+    const epoch = sessionEpoch();
     const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session?.user?.id) return false;
+    if (epoch !== sessionEpoch() || !sessionData.session?.user?.id) return false;
 
     let restored = false;
     const purchases = await getAvailablePurchases();
-    for (const purchase of purchases ?? []) {
-      if (isCarrotProduct(purchase.productId)) { await handleCarrotPurchase(purchase); continue; }
+    if (epoch !== sessionEpoch()) return false;
+    // Separate lanes: an old subscription timeout cannot hold paid coins hostage.
+    const coins = (purchases ?? []).filter(purchase => isCarrotProduct(purchase.productId));
+    const subscriptions = (purchases ?? []).filter(purchase => !isCarrotProduct(purchase.productId));
+    const coinRecovery = (async () => {
+      for (const purchase of coins) {
+        if (epoch !== sessionEpoch()) return;
+        try { await handleCarrotPurchase(purchase); }
+        catch (error) { console.warn('[iap] coin recovery pending:', error); }
+      }
+    })();
+    for (const purchase of subscriptions) {
+      if (epoch !== sessionEpoch()) break;
       if (!getPurchaseEntitlement(purchase) || isAndroidPurchasePending(purchase)) continue;
-      const txnId = String(purchase.id);
-      const before = processedTransactionIds.has(txnId);
+      const txnId = `${epoch}:${purchase.id}`;
+      const before = verifiedTransactionIds.has(txnId);
       await handlePurchaseUpdate(purchase);
-      if (!before && processedTransactionIds.has(txnId)) restored = true;
+      if (!before && verifiedTransactionIds.has(txnId)) restored = true;
     }
-    if (restored) await refreshSubscriptionCache({ preserveExisting: true });
+    if (restored && epoch === sessionEpoch()) void refreshSubscriptionCache({ preserveExisting: true });
+    await coinRecovery;
     return restored;
   })();
   try {
@@ -466,9 +490,25 @@ async function reconcileAvailablePurchasesInternal(): Promise<boolean> {
 }
 
 /** Reconcile purchases after auth restore and whenever the app returns active. */
-export async function reconcileAvailablePurchases(): Promise<boolean> {
+export async function reconcileAvailablePurchases(options?: { coinsOnly?: boolean }): Promise<boolean> {
   if (!initialized) await initIAP();
   if (!initialized) return false;
+  if (options?.coinsOnly) {
+    if (coinReconciliationInFlight) return coinReconciliationInFlight;
+    const epoch = sessionEpoch();
+    const task = (async () => {
+      let recovered = false;
+      const purchases = await getAvailablePurchases();
+      for (const purchase of purchases ?? []) {
+        if (epoch !== sessionEpoch()) break;
+        if (isCarrotProduct(purchase.productId)) recovered = await handleCarrotPurchase(purchase) || recovered;
+      }
+      return recovered;
+    })().catch(error => { console.warn('[iap] coin reconciliation pending:', error); return false; })
+      .finally(() => { if (coinReconciliationInFlight === task) coinReconciliationInFlight = null; });
+    coinReconciliationInFlight = task;
+    return task;
+  }
   return reconcileAvailablePurchasesInternal();
 }
 
@@ -496,6 +536,7 @@ export async function cleanupIAP(): Promise<void> {
     }
     initialized = false;
     processedTransactionIds.clear();
+    verifiedTransactionIds.clear();
   }
 }
 
@@ -513,6 +554,8 @@ type AndroidOffer = {
       formattedPrice: string;
       priceAmountMicros: string;
       priceCurrencyCode: string;
+      billingPeriod?: string;
+      billingCycleCount?: number;
     }>;
   } | null;
 };
@@ -529,6 +572,8 @@ export type StoreSubscriptionPricing = {
   yearlyPerMonth: string;
   monthlyAnnualized: string;
   yearlyTrialEligible: boolean;
+  /** Display metadata only; offer selection and settlement remain unchanged. */
+  yearlyTrialDuration?: import('./paywall-presentation').TrialDuration | null;
 };
 
 function hasFreePhase(offer: AndroidOffer): boolean {
@@ -645,20 +690,7 @@ export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]
 }
 
 function formatStoreCurrency(amount: number, currency: string): string {
-  if (!Number.isFinite(amount) || amount < 0 || !currency) {
-    throw new Error('The store returned incomplete subscription pricing.');
-  }
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
-    }).format(amount);
-  } catch {
-    // Currency and amount still come from the store. This fallback is only for
-    // runtimes that cannot format a valid ISO currency code.
-    return `${currency} ${amount.toFixed(2)}`;
-  }
+  return formatSubscriptionCurrency(amount, currency);
 }
 
 /**
@@ -685,6 +717,9 @@ export async function fetchStoreSubscriptionPricing(): Promise<StoreSubscription
     yearlyPerMonth: formatStoreCurrency(yearly.price / 12, yearly.currency),
     monthlyAnnualized: formatStoreCurrency(monthly.price * 12, monthly.currency),
     yearlyTrialEligible,
+    yearlyTrialDuration: yearlyTrialEligible ? (Platform.OS === 'android'
+      ? androidTrialDuration(selectAndroidOffer((products.find(p => p.id === 'novame.plus.yearly') as { subscriptionOffers?: AndroidOffer[] } | undefined)?.subscriptionOffers ?? [], 'yearly'))
+      : iosTrialDuration(products.find(p => p.id === 'novame.plus.yearly'))) : null,
   };
 }
 
@@ -950,6 +985,7 @@ export async function restoreSubscriptions(): Promise<{
 
 async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   if (isCarrotProduct(purchase.productId)) { await handleCarrotPurchase(purchase); return; }
+  const epoch = sessionEpoch();
   const productId = purchase.productId;
   const entitlement = getPurchaseEntitlement(purchase);
   if (!entitlement) {
@@ -984,7 +1020,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   // replays the same transaction every initConnection AND every
   // auto-renewal (~5min in sandbox). Without this, the listener
   // would re-upload + re-fire UI callbacks on every replay.
-  const txnId = String(purchase.id);
+  const txnId = `${epoch}:${purchase.id}`;
   if (processedTransactionIds.has(txnId)) {
     console.log('[iap] skipping already-processed transaction', txnId);
     return;
@@ -1011,13 +1047,16 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   try {
     verified = await uploadPurchaseToServer(purchase, expectedUserId);
   } catch (e) {
-    console.error('[iap] server upload failed:', e);
+    if (epoch !== sessionEpoch()) { processedTransactionIds.delete(txnId); return; }
     const conflict = purchaseOwnershipConflict(e);
     if (conflict) {
-      await finishOwnershipConflict(purchase, conflict);
-      notifyOwnershipConflict(conflict, productId);
+      console.warn('[iap] purchase account conflict:', conflict.storeEnvironment);
+      if (!await finishOwnershipConflict(purchase, conflict)) processedTransactionIds.delete(txnId);
+      // Queue recovery is not a new user purchase and must not interrupt any UI.
+      if (wasUserInitiated && epoch === sessionEpoch()) notifyOwnershipConflict(conflict, productId);
       return;
     }
+    console.warn('[iap] server upload pending:', e);
     // Don't finish the transaction -- StoreKit replays it on next
     // launch and we can retry the upload then. Also remove from the
     // dedup set so a future retry can attempt again.
@@ -1034,12 +1073,15 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     return;
   }
 
+  if (epoch !== sessionEpoch()) { processedTransactionIds.delete(txnId); return; }
+  verifiedTransactionIds.add(txnId);
   // Server accepted -- finish the transaction so StoreKit drops it.
   try {
     await finishTransaction({ purchase, isConsumable: false });
   } catch (e) {
     console.warn('[iap] finishTransaction failed (non-fatal):', e);
   }
+  if (epoch !== sessionEpoch()) return;
 
   // The verification endpoint is authoritative and already returns the
   // granted tier. Persist it immediately so closing the paywall cannot flash

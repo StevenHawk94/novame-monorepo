@@ -1,105 +1,45 @@
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const { load, hooks, deferred, flush } = require('./lifecycle-test-utils.cjs');
-const jsx = (type, props) => ({ type, props });
-
-function harness(platform, outfit) {
-  const h = hooks(), download = deferred();
-  let resolves = 0, priorityResolves = 0, ready = 0, errors = 0, key = outfit;
-  const players = [];
-  const video = load('apps/mobile/src/components/main/companion-video.tsx', {
-    react: h.react, 'react/jsx-runtime': { jsx, jsxs: jsx },
-    'react-native': { Platform: { OS: platform }, Pressable: 'Pressable', StyleSheet: { create: x => x },
-      AppState: { currentState: 'active', addEventListener: () => ({ remove() {} }) } },
-    'expo-router': { useFocusEffect: fn => h.react.useEffect(fn, [fn]) },
-    'expo-video': { VideoView: 'Video', useVideoPlayer(source, init) {
-      const player = h.react.useRef(null);
-      if (!player.current) {
-        player.current = { play() {}, addListener: () => ({ remove() {} }), replaceAsync: async () => {} };
-        init(player.current); players.push(source);
-      }
-      return player.current;
-    } },
-    'expo-image': { Image: 'Image' },
-    './companion-video-source': { DEFAULT_COMPANION_VIDEO: 42 },
-    '../../lib/outfits': {
-      getEquippedOutfitKey: () => key,
-      resolveEquippedOutfitVideo() { resolves++; return download.promise; },
-      getCachedOutfitCatalog: () => [{ key, bunny: 'preview' }],
-      outfitAssetUrl: () => 'https://preview',
-      fetchOutfitCatalog: async () => [],
-    },
-    '../../lib/download-queue': {
-      async ensurePriorityOutfitVideo() {
-        priorityResolves++;
-        const resolved = await download.promise;
-        return resolved?.uri ?? null;
-      },
-    },
-  }, { setTimeout, clearTimeout });
-  const root = video.CompanionVideo({ waitForInitialAsset: true, onReady: () => ready++, onError: () => errors++ });
-  const render = () => h.render(() => root.type(root.props));
-  return { render, dispose: h.unmount, download, players, get ready() { return ready; }, get errors() { return errors; },
-    get resolves() { return resolves; }, changeKey(value) { key = value; },
-    get priorityResolves() { return priorityResolves; },
-    mountNative(prepared) {
-      const native = prepared.type(prepared.props);
-      const nativeHooks = hooks();
-      // The native component uses the same mocked React implementation, but a
-      // separate component mount must start its hook storage from empty.
-      h.unmount();
-      Object.assign(h.react, nativeHooks.react);
-      const renderNative = () => nativeHooks.render(() => native.type(native.props)).props.children;
-      return { view: renderNative(), render: renderNative, dispose: nativeHooks.unmount };
-    } };
+// The old MOV/WebP companion renderer has been retired, not restored.
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {load}=require('./lifecycle-test-utils.cjs');
+const jsx=(type,props)=>({type,props});
+const read=file=>fs.readFileSync(file,'utf8');
+for(const [route,section] of [['index','home'],['bags','collection'],['friends','moments'],['quests','quests']]) {
+  test(`current ${route} tab mounts only Burrow without rollout or old assets`,()=>{
+    const file=`apps/mobile/app/(main)/(tabs)/${route}.tsx`;
+    const screen=load(file,{'react/jsx-runtime':{jsx,jsxs:jsx},
+      'expo-router':{useLocalSearchParams:()=>({care:'feed'})},
+      '@/components/burrow/burrow-screen':{BurrowScreen:'Burrow'},
+    });
+    const tree=screen.default();assert.equal(tree.type,'Burrow');assert.equal(tree.props.section,section);
+    if(route==='index')assert.equal(tree.props.homeIntent,'feed');
+    assert.doesNotMatch(read(file),/Legacy|CompanionVideo|useMajorUpdateEnabled/);
+  });
 }
-
-test('bundled default needs no network and only the actual native display/first frame is ready', () => {
-  for (const platform of ['ios', 'android']) {
-    const h = harness(platform, null), prepared = h.render();
-    assert.equal(h.resolves, 0); assert.equal(h.ready, 0);
-    assert.equal(prepared.props.initialSource, 42);
-    const native = h.mountNative(prepared);
-    assert.equal(h.ready, 0);
-    (platform === 'ios' ? native.view.props.onFirstFrameRender : native.view.props.onDisplay)();
-    assert.equal(h.ready, 1); native.dispose();
+test('only the existing retained tab navigator is mounted',()=>{
+  const source=read('apps/mobile/app/(main)/(tabs)/_layout.tsx');
+  assert.match(source,/<RetainedTabs /);assert.doesNotMatch(source,/<Tabs|BurrowLaunchScreen|useMajorUpdateReady/);
+});
+test('retired companion video, card deck and guide modules stay absent',()=>{
+  for(const file of ['components/main/companion-video.tsx','components/main/companion-video-source.ts',
+    'components/main/companion-video-source.android.ts','components/main/companion-sheet.tsx',
+    'components/main/memory-bubbles.tsx','components/main/feature-guide-modal.tsx','lib/tame-cards.ts'])
+    assert.equal(fs.existsSync('apps/mobile/src/'+file),false,file);
+  for(const file of ['default.mov','default.webp'])assert.equal(fs.existsSync('apps/mobile/assets/videos/'+file),false);
+});
+test('old entry aliases redirect without fetching or spending currency',()=>{
+  for(const [route,href]of [['visit-master','/(main)/(tabs)'],['companion-sheet','/(main)/(tabs)'],
+    ['quest-custom','/(main)/(tabs)/quests'],['quest-pick','/(main)/(tabs)/quests'],['quest-write-own','/(main)/(tabs)/quests'],
+    ['(modals)/skin-select','/(main)/(tabs)/shop'],['(modals)/scene-select','/(main)/(tabs)/shop']]){
+    const file='apps/mobile/app/(main)/'+route+'.tsx';
+    const screen=load(file,{'react/jsx-runtime':{jsx,jsxs:jsx},'@/components/main/native-tab-redirect':{NativeTabRedirect:'Redirect'}});
+    assert.equal(screen.default().props.href,href);assert.doesNotMatch(read(file),/fetch|purchase|submit|require\(/);
   }
 });
-
-test('equipped outfit mounts directly from its local animation without a default/preview frame', async () => {
-  const ios = harness('ios', 'coat');
-  assert.equal(ios.render(), null); assert.equal(ios.resolves, 1); assert.equal(ios.ready, 0);
-  ios.download.resolve({ key: 'coat', uri: 'file:///cached-coat' }); await flush();
-  const iosPrepared = ios.render();
-  assert.equal(iosPrepared.props.initialSource.uri, 'file:///cached-coat');
-  const iosNative = ios.mountNative(iosPrepared);
-  assert.equal(ios.resolves, 1, 'focus must not replace the prepared animation with a preview');
-  assert.equal(ios.players[0].uri, 'file:///cached-coat');
-  assert.equal(ios.ready, 0); iosNative.dispose();
-
-  // Android releases the Home gate with the bundled animation, then its one
-  // priority file-cache lane swaps in the selected animated WebP when ready.
-  const android = harness('android', 'coat');
-  const androidPrepared = android.render();
-  assert.equal(androidPrepared.props.initialSource, 42);
-  const androidNative = android.mountNative(androidPrepared);
-  assert.equal(androidNative.view.props.source, 42);
-  assert.equal(android.priorityResolves, 1);
-  android.download.resolve({ key: 'coat', uri: 'file:///cached-coat' }); await flush();
-  assert.equal(androidNative.render().props.source.uri, 'file:///cached-coat');
-  androidNative.dispose();
-});
-
-test('failed, stale or unmounted outfit resolutions never release Home readiness', async () => {
-  for (const scenario of ['missing', 'rejected', 'changed', 'unmounted']) {
-    const h = harness('ios', 'coat'); h.render();
-    if (scenario === 'changed') h.changeKey('other');
-    if (scenario === 'unmounted') h.dispose();
-    if (scenario === 'rejected') h.download.reject(Error('offline'));
-    else h.download.resolve(scenario === 'missing' ? null : { key: 'coat', uri: 'file:///coat' });
-    await flush();
-    assert.equal(h.ready, 0);
-    assert.equal(h.errors, scenario === 'unmounted' ? 0 : 1);
-    h.dispose();
-  }
+test('preset journal deep links preserve their prompt; plain Reflect opens Adventure',()=>{
+  let params={presetPrompt:'A new perspective',sourceKit:'new_lens'};
+  const screen=load('apps/mobile/app/(main)/reflect.tsx',{'react/jsx-runtime':{jsx,jsxs:jsx},
+    'expo-router':{Redirect:'Redirect',useLocalSearchParams:()=>params}});
+  assert.equal(screen.default().props.href.pathname,'/(main)/reflect-typing');
+  assert.equal(screen.default().props.href.params,params);
+  params={};assert.equal(screen.default().props.href,'/(main)/burrow-detail?section=adventure');
 });

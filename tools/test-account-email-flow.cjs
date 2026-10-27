@@ -7,11 +7,11 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('connected-account email entry stays visible above the keyboard', () => {
-  const source = read('apps/mobile/app/(main)/(modals)/connect-account.tsx');
+  const source = read('apps/mobile/src/components/auth/connect-account-view.tsx');
   assert.match(source, /KeyboardAvoidingView/);
-  assert.match(source, /behavior=\{Platform\.OS === 'ios' \? 'padding' : 'height'\}/);
+  assert.match(source, /behavior=\{Platform\.OS\s*===\s*'ios'\s*\?\s*'padding'\s*:\s*'height'\}/);
   assert.match(source, /keyboardShouldPersistTaps="handled"/);
-  assert.match(source, /inner: \{ flexGrow: 1/);
+  assert.match(source, /inner:\s*\{flexGrow:1/);
 });
 
 test('email binding verifies an email-change OTP and existing email restores its account', () => {

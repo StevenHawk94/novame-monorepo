@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-25",
+  "scope": "Pair-after-start cooperative Adventure and presentation-only countdown correction",
+  "authorization": "User explicitly approved production migration 275 after isolated validation; no App, announcement or force-update publication",
+  "rootCauses": [
+    "v5 trips started while unpaired retained null party partner/version after reciprocal pairing, so the new partner could not find a joinable trip",
+    "adventure_team_snapshot_v1 used a PL/pgSQL pair_version variable with the same name as a queried column; paired same-domain reads raised an ambiguous-column error",
+    "team presentation bypassed the existing monotonic display clock and subtracted a stale server-time estimate directly from a newer receipt deadline"
+  ],
+  "changes": [
+    "Migration 275 replaces only the ambiguous snapshot function body while retaining its response contract and existing grants",
+    "Statement-level pairing triggers bind only originally unbound, active v5 parties to a reciprocal current same-economic-domain pair with more than 600 seconds remaining",
+    "Statement-level transition tables ensure both pairing generation triggers have completed before freezing the party relationship version",
+    "Backfill uses the same locking, eligibility and safety checks; originally bound former-pair trips are never rebound",
+    "Team countdown now uses the existing display-only monotonic clock, bounded by the authoritative progress segment, with stable animation lifetime and nondecreasing progress",
+    "Clock-drift detection compares the uncapped deadline estimate so the initial duration cap does not introduce repeated corrections",
+    "Presentation-clock regressions are included in the domain-isolation gate",
+    "Old Unpair test doubles now provide the existing bunny-sync and nudge lifecycle interfaces; no runtime Unpair behavior changed"
+  ],
+  "unchanged": [
+    "Free 6 hours / Plus 3 hours, only the remaining duration divided by 1.5 on a valid join",
+    "Inclusive 600-second no-join boundary, immutable intent replay, daily quota and same-domain eligibility",
+    "Personal logs, adventure records, encounter plans, treasure rewards, wallets and inventory",
+    "Two already-started solo trips are not automatically merged; old protocol trips are not converted",
+    "Notification readiness, read consumption, launch priority and unrelated feature subscriptions",
+    "Current development standards: this restores the approved contract rather than changing it"
+  ],
+  "validation": {
+    "domainIsolation": {"passed": 630, "failed": 0, "log": "/private/tmp/burrow-pair-adventure-domain-final.log"},
+    "mobileTypeCheck": {"passed": true, "log": "/private/tmp/burrow-pair-adventure-types.log"},
+    "clockAndDualBunnyUnitTests": {"passed": 24, "failed": 0, "log": "/private/tmp/burrow-pair-adventure-clock-after.log"},
+    "additionalAdventureAndPairingTests": {"passed": 57, "failed": 0, "log": "/private/tmp/burrow-pair-adventure-regression.log"},
+    "isolatedDatabase": {
+      "passed": 20,
+      "failed": 0,
+      "engine": "Disposable PGlite PostgreSQL",
+      "log": "/private/tmp/burrow-pair-adventure-db-final.log",
+      "checks": [
+        "Negative reproduction of v274 paired snapshot ambiguity",
+        "Real migration backfill leaves the entire personal adventure row unchanged",
+        "Exact production wrapper and protected-data/ACL guards rehearsed in isolation",
+        "Injected wallet corruption rejects the transaction and rolls back both wallet data and migration DDL",
+        "A starts unpaired, pairs with B, B inherits progress and joins; remaining 4 hours becomes 9600 seconds",
+        "600 seconds rejects, 601 seconds permits joining",
+        "Two pre-existing trips remain independent; repeated pair metadata updates do not rebind or signal again",
+        "Failed/one-sided pair, old relationship and cross-economic-domain binding rejected",
+        "Personal record/reward-plan ownership, daily quotas, receipt replay and Nudge outbox eligibility retained",
+        "No anon/authenticated table or sensitive RPC grants"
+      ],
+      "limitation": "PGlite serializes statements; this is not an independent multi-session production PostgreSQL lock-scheduling stress test"
+    },
+    "native": {
+      "device": "iPhone 17 Pro simulator, iOS 26.2",
+      "build": "Minified production JS with Hermes in a compatible isolated Release host",
+      "businessApi": "Local fixtures, not a two-device live-production journey",
+      "realWidget": "AdventureProgressScreen with actual digging route, native animation and image assets",
+      "observed": [
+        "Free initial display 06:00:00 and subsequent decrement",
+        "Plus initial display 03:00:00 and subsequent decrement",
+        "Free join shortens remaining time, shows two heads and Couple Mode",
+        "Plus join shortens remaining time, shows two heads and Plus+Couple Mode",
+        "Leading head does not cover the shovel at the start; following head may overlap it as approved"
+      ],
+      "sample": [
+        {"phase": "free-solo", "count": 3967, "p50Ms": 16.666, "p95Ms": 17.025, "maxMs": 59.101, "over50Ms": 4, "meanFps": 59.744},
+        {"phase": "free-duo", "count": 1452, "p50Ms": 16.665, "p95Ms": 16.978, "maxMs": 40.384, "over50Ms": 0, "meanFps": 59.917},
+        {"phase": "plus-solo", "count": 3466, "p50Ms": 16.666, "p95Ms": 16.983, "maxMs": 41.162, "over50Ms": 0, "meanFps": 59.965},
+        {"phase": "plus-duo", "count": 1466, "p50Ms": 16.667, "p95Ms": 16.899, "maxMs": 46.319, "over50Ms": 0, "meanFps": 59.756}
+      ],
+      "limitations": "Local RAF intervals include cold entry and QA activity, not native UI-thread instrumentation or tap-to-photon measurement. Some host-side work overlapped this regression run. No continuous freeze observed, but not a dedicated performance benchmark, 20-entry navigation study, zero-dropped-frame guarantee or all-device certification."
+    }
+  },
+  "production": {
+    "migration": "20261025000275",
+    "md5": "8e63ec22d2793a0cddeb75d3ac3bae4e",
+    "verifiedAt": "2026-10-25T13:41:05.674Z",
+    "changedParties": 1,
+    "protectedTables": 27,
+    "protectedRowsUnchanged": true,
+    "unrelatedFunctionsAndExistingPermissionsUnchanged": true,
+    "smoke": [
+      {"route": "/api/vnext/bunny", "unauthenticatedStatus": 401},
+      {"route": "/api/vnext/bootstrap", "unauthenticatedStatus": 401}
+    ],
+    "apiDeploymentPerformed": false,
+    "adminDeploymentPerformed": false,
+    "appPublished": false,
+    "evidenceDirectory": "/private/tmp/burrow-adventure275-release.HrvhAw",
+    "clientAvailability": "Countdown changes require current development bundle reload or a subsequent App release. Database snapshot and binding fixes are already live."
+  },
+  "countsNote": "Suites overlap; counts must not be summed into a unique-test or all-scenarios claim."
+}

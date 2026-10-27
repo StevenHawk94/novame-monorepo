@@ -1,142 +1,206 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { homeDesignKey, markHomeDesignCommitted, retainHomeDesignHost } from '@/lib/home-design-handoff';
+import { roomDesignIds } from '@/lib/room-edit-design';
+import { uiWorkPriority } from '@/lib/ui-work-priority';
+import { useBurrowDestinationPreload } from '@/lib/burrow-destination-preload';
+import { beginInteractionTiming, markInteractionTiming } from '@/lib/interaction-timing';
+import { BunnyActor } from './bunny-actor';
+import {OutfitThumbnail} from './outfit-thumbnail';
+import { ActivityIndicator, Alert, AppState, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
+import {AppModal as Modal} from '@/components/layout/app-modal';
 import { router, type Href } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
+import { dismissToRetainedTab } from '@/lib/retained-tab-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { BURROW_PAGE_COLORS, burrowFlatSurface, burrowPageScrollBehavior } from '@/lib/burrow-surface';
 import { Image } from './burrow-image';
-import { AFFECTION_TYPES, BURROW_DECOR_SHOP_CATEGORIES } from '@novame/domain';
+import { CoinLabel } from './coin-ui';
+import {CoinWallet} from './coin-wallet';
+import { requirePartner, showPartnerPairing } from '@/lib/partner-pairing';
+import { usePartnerEntryGate } from '@/lib/use-partner-entry-gate';
+import { BURROW_DECOR_SHOP_CATEGORIES } from '@novame/domain';
 import {
-  claimAdventureResult, claimDailyQuest, claimSpecialQuest, claimGift,
-  deleteMemoryRoomEntry, deleteRoomFramePhoto, interactBurrowToy, saveBunnyOutfit, saveMemoryRoomEntry, setRoomSleep,
-  markAffectionRead, purchaseCatalogItem, refillRoomNeed, saveRoomLoadout, settleAdventure,
+  claimGift,
+  deleteMemoryRoomEntry, saveBunnyOutfit, saveMemoryRoomEntry, setRoomSleep,
+  markAffectionRead, refillRoomNeed, saveRoomLoadout,
   startAdventure, visitPartnerRoom, type MajorUpdateBootstrap, type MajorUpdateCatalogItem,
 } from '@/lib/app-major-update-api';
-import { burrowClock, burrowErrorMessage, refreshBurrow, runBurrowAction, setBurrowLoadoutLocally, startBurrowAdventureLocally, useBurrow } from '@/lib/burrow-store';
-import { careCoolingDown, careCooldownMessage } from '@/lib/burrow-care-cooldown';
+import { burrowClock, burrowErrorMessage, enqueueBurrowPurchase, getBurrowSnapshot, refreshBurrow, runBurrowAction, setBurrowLoadoutLocally, startBurrowAdventureLocally, useBurrow } from '@/lib/burrow-store';
+import { showInsufficientCoins } from '@/lib/insufficient-coins';
+import { useCoinPurchaseConfirmation } from '@/lib/use-coin-purchase-confirmation';
+import { ScreenOverlay } from '@/components/ui/screen-overlay';
+import { careCoolingDown } from '@/lib/burrow-care-cooldown';
+import { showBurrowToast } from '@/lib/burrow-toast';
+import { careCooldownMessage } from '@/lib/burrow-care-cooldown';
+import { ROOM_TITLE_STYLE } from '@/lib/room-header-typography';
 import { adventureHasArrived, adventureIsAway, careProgress, roomNeedDisplay, roomSlots } from '@/lib/burrow-presentation';
 import { markHomeEntryAsset } from '@/lib/home-entry-readiness';
+import { isHomeArtPrepared, prepareHomeArt,prepareHomeBunnyVariant } from '@/lib/home-art-preparation';
+import {adoptBunnyOnHome} from '@/lib/bunny-identity';
+import { retainPageImages } from '@/lib/prepared-burrow-images';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { registerOverlay } from '@/lib/overlay-presence';
 import { RoomSceneArt as RoomScene } from './room-scene-art';
 import { HomeArtScene } from './home-art-scene';
+import { DailyPlusBonus } from './daily-plus-bonus';
+import { AdventureNappingDialog } from './adventure-napping-dialog';
+import { adventureFinishedToday } from '@/lib/burrow-daily-entry';
+import type { HomeWalletAnchor } from '@/lib/daily-plus-bonus';
+import { PartnerRoomScreen } from './partner-room-screen';
 import { HomeArtPreview } from './home-art-preview';
-import { CarrotShop } from './carrot-shop';
 import { AFFECTION_COPY } from './affection-gesture';
 import { FriendVisitCard } from './friend-visit-card';
-import { AdventureFriendCard } from './adventure-friend-card';
+import { AdventureCompletionScreen } from './adventure-completion-screen';
+import { AdventureProgressScreen } from './adventure-progress-screen';
+import { CollectionRoomScreen } from './collection-room-screen';
+import { prefetchAdventureRewards } from '@/lib/adventure-prefetch';
+import {useAdventureTeamPrefetch} from '@/lib/use-adventure-team-prefetch';
 import { pickRoomPhoto, uploadRoomPhoto } from './room-photo';
+import { toyPhotoFor } from '@/lib/burrow-toy-photos';
 import { invalidateRoomPhotoCache } from '@/lib/burrow-room-photo-cache';
 import { PhotoFrameSheet } from './photo-frame-sheet';
 import { FramePhotoCropper } from './frame-photo-cropper';
 import { InteractiveDoll } from './interactive-doll';
-import { BurrowMusicPicker } from './burrow-music';
-import { BunnyActor } from './bunny-actor';
 import { MemoryPhotos } from './memory-photos';
 import { BurrowHistory } from './burrow-history';
 import { MomentsTimeline } from './moments-timeline';
-import { adventureTrail } from '@/lib/adventure-trail';
-import { AdventureTreasure } from './adventure-treasure';
+import { AdventureReady } from './adventure-record-completion';
+import { startPendingAdventureJournal } from '@/lib/adventure-journal-jobs';
+import { AdventureEntry } from './adventure-entry';
+import { AdventureStageTransition } from './adventure-stage-transition';
 import { burrowLocalDay } from '@/lib/burrow-local-day';
 import { AffectionHub } from './affection-hub';
 import { BURROW_BACKGROUNDS, burrowArtFor, burrowArtForItem } from '@/lib/burrow-art-assets';
+import { SeasonalWindowArtwork } from './window-artwork';
 import { FRAME_ART_REFERENCE_BOUNDS } from '@/lib/room-photo-crop';
 import { BURROW_AFFECTION_ICONS, BURROW_QUEST_ICONS, burrowFriendArt } from '@/lib/burrow-ui-assets';
 import { BurrowMap } from './burrow-map';
+import { BurrowMapScrollView } from './burrow-map-scroll-view';
+import { useBurrowAttention, dismissHomeLetterReminder, dismissAdventureReminder } from '@/lib/burrow-attention';
 import { QuestBoard } from './quest-board';
+import { claimQuestOptimistically } from '@/lib/coin-command-outbox';
+import { recordToyInteraction as queueToyInteraction } from '@/lib/toy-interaction-records';
+import { recordPhotoToyPlayForRating } from '@/lib/official-rating-milestones';
 import { BurrowShop } from './burrow-shop';
 import { haptics } from '@/lib/haptics';
 import { BurrowBackButton } from './burrow-back-button';
+import { burrowPageIsReady, cancelBurrowPageEntry, enterBurrowPage, openPreparedBurrow } from '@/lib/burrow-page-entry';
 
-export type BurrowSection = 'home'|'burrow'|'quests'|'shop'|'moments'|'collection'|'adventure'|'affection'|'decorate'|'partner_room'|'our_room'|'friends_room'|'game_room'|'memories_room'|'self_care_room'|'carrot_shop';
-const titles: Record<BurrowSection,string> = {home:'Our Room',burrow:'Our Burrows',quests:'Quests',shop:'Shop',moments:'Our Moments',collection:'Collection',adventure:'Adventure',affection:'Affection',decorate:'Decorate',partner_room:'Partner’s Room',our_room:'Our Room',friends_room:'Friends’ Room',game_room:'Game Room',memories_room:'Memories Room',self_care_room:'Rage Room',carrot_shop:'Carrot Shop'};
-const roomInfo:Record<string,{title:string;icon:string;subtitle:string}>={
-  my_room:{title:'My Room',icon:'🐰',subtitle:'A cozy place to come home to'},
-  partner_room:{title:'Partner’s Room',icon:'💌',subtitle:'Stop by and leave a little care'},
-  our_room:{title:'Our Room',icon:'💕',subtitle:'A quiet corner, just for us'},
-  friends_room:{title:'Friends’ Room',icon:'🦊',subtitle:'Meet the keepers of little stories'},
-  game_room:{title:'Game Room',icon:'🏆',subtitle:'70 little ways to know each other'},
-  rage_room:{title:'Rage Room',icon:'⚡',subtitle:'Make space around a difficult feeling'},
-  self_care_room:{title:'Self Care',icon:'🌿',subtitle:'A gentler next step'},
-  memories_room:{title:'Memories Room',icon:'📖',subtitle:'Little moments worth keeping'},
-  collection_room:{title:'Collection',icon:'🎒',subtitle:'Everything you’ve found along the way'},
-};
+export type BurrowSection = 'home'|'burrow'|'quests'|'shop'|'moments'|'collection'|'adventure'|'affection'|'decorate'|'partner_room'|'our_room'|'friends_room'|'game_room'|'memories_room'|'carrot_shop';
+const titles: Record<BurrowSection,string> = {home:'Our Room',burrow:'Our Burrows',quests:'Quests',shop:'Shop',moments:'Our Moments',collection:'Collection',adventure:'Adventure',affection:'Affection',decorate:'Decorate',partner_room:'Partner’s Room',our_room:'Our Room',friends_room:"Friend's Room",game_room:'Game Room',memories_room:'Memories Room',carrot_shop:'Carrot Shop'};
 const questNames:Record<string,string>={write_adventure_record:'Complete today’s Adventure record',send_affection:'Send an Affection',water_partner_flower:'Water a flower',feed_partner_bunny:'Feed your bunny',interact_with_toy:'Play with your doll',visit_partner_room:'Visit your partner’s room',finish_adventure:'Finish an adventure',play_game:'Play a game with your partner'};
-const decorCategories=BURROW_DECOR_SHOP_CATEGORIES;
+const decorCategories=BURROW_DECOR_SHOP_CATEGORIES.filter(category=>category!=='shelf_decor');
 const categoryName=(value:string)=>value.replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
-export function openBurrow(section:BurrowSection,extra?:Record<string,string>){
-  if(section==='game_room'){router.push({pathname:'/(main)/game-room',params:extra} as Href);return;}
-  if(section==='burrow'||section==='shop'){
-    router.push({pathname:'/(main)/burrow-detail',params:{section,...extra}} as Href);return;
+export function openBurrow(section:BurrowSection,extra?:Record<string,string>,fromStack=false){
+  uiWorkPriority.action();beginInteractionTiming(section);
+  const entry={kind:section==='game_room'?'game' as const:section==='shop'?'shop' as const
+    :section==='friends_room'?'visit' as const:section==='memories_room'?'journal' as const:section==='moments'||section==='partner_room'?'private' as const
+    :section==='affection'?'affection' as const:section==='adventure'?'adventure' as const:'page' as const,
+    sessionId:extra?.sessionId,intent:JSON.stringify([section,extra,fromStack])};
+  const dispatch=()=>{
+  if(section==='adventure'){
+    const snapshot=getBurrowSnapshot(),data=snapshot.data;
+    if(data)dismissAdventureReminder(data,Date.parse(data.serverNow)+Math.max(0,burrowClock()-snapshot.receivedAt));
   }
-  if(section==='moments'){
-    router.push({pathname:'/(main)/burrow-detail',params:{section:'moments'}} as Href);return;
+  if(section==='partner_room'&&requirePartner())return;
+  markInteractionTiming('dispatch');
+  if(section==='our_room'){router.push('/(main)/surprise-room' as Href);return;}
+  if(section==='carrot_shop'){router.push('/(main)/coin-shop' as Href);return;}
+  if(section==='game_room'){router.push({pathname:'/(main)/game-room',params:extra} as Href);return;}
+  if(section==='burrow'||section==='collection'||section==='moments'||(section==='shop'&&!extra)){
+    const href=`/(main)/(tabs)/${section==='moments'?'friends':section}`;
+    if(fromStack)dismissToRetainedTab(href);else router.navigate(href as Href);return;
   }
   if(section==='quests'||section==='home'){
     const route=section==='home'? '/(main)/(tabs)' : '/(main)/(tabs)/quests';
-    router.navigate(route as Href);return;
+    if(fromStack)dismissToRetainedTab(route);else router.navigate(route as Href);return;
   }
   router.push({pathname:'/(main)/burrow-detail',params:{section,...extra}} as Href);
+  };
+  if(section==='home'){cancelBurrowPageEntry();dispatch();}
+  else enterBurrowPage(entry,dispatch);
 }
+const navigateToBurrow=openBurrow;
 const iconFor=(item:MajorUpdateCatalogItem)=>({windows:'🪟',lamps:'💡',vases:'🌼',decor:'🪴',cushions:'🛏️',tables:'🪵',rugs:'🧶',cabinets:'🗄️',posters:'🍃',music_players:'📻',frames:'🖼️',couple_dolls:'🧸',outfits:'🧥',our_room:'💕',gifts:'🎁',rooms:'🏡',music:'🎵'}[item.category]??'✨');
 function CatalogArtwork({item,large=false,compact=false,sizePx}:{item:MajorUpdateCatalogItem;large?:boolean;compact?:boolean;sizePx?:number}){
   const asset=burrowArtForItem(item);
-  if(!asset)return <Text style={s.itemIcon}>{iconFor(item)}</Text>;
+  if(item.category==='outfits')return <OutfitThumbnail outfit={item} size={sizePx??(large?160:compact?74:110)}/>;
+  if(!asset)return asset===null||item.status==='retired'?null:<Text style={s.itemIcon}>{iconFor(item)}</Text>;
   const size=sizePx??(large?160:compact?74:110);
+  if(item.category==='dresser_plants'||item.category==='couple_dolls'||item.tags.includes('adventure_v2_gift'))return <Image source={asset.source} contentFit="contain" style={{width:size,height:size}} accessibilityLabel={item.title}/>;
   const [left,top,right,bottom]=item.category==='frames'?FRAME_ART_REFERENCE_BOUNDS:asset.bounds;
   const ratio=Math.min(size/(right-left),size/(bottom-top));
+  const imageStyle={position:'absolute' as const,left:(size-(right-left)*ratio)/2-left*ratio,top:(size-(bottom-top)*ratio)/2-top*ratio,width:asset.width*ratio,height:asset.height*ratio};
   return <View style={[large?s.itemArtLarge:compact?s.itemArtCompact:s.itemArt,sizePx!=null&&{width:size,height:size}]} accessibilityLabel={item.title}>
-    <Image source={asset.source} contentFit="fill" style={{position:'absolute',left:(size-(right-left)*ratio)/2-left*ratio,top:(size-(bottom-top)*ratio)/2-top*ratio,width:asset.width*ratio,height:asset.height*ratio}}/>
+    {item.category==='windows'?<SeasonalWindowArtwork asset={asset} style={imageStyle}/>:<Image source={asset.source} contentFit="fill" style={imageStyle}/>}
   </View>;
 }
 function Action({label,onPress,disabled=false,secondary=false}:{label:string;onPress:()=>void;disabled?:boolean;secondary?:boolean}){
   return <Pressable accessibilityRole="button" accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
-    style={({pressed})=>[s.action,secondary&&s.secondary,(pressed||disabled)&&{opacity:.5}]}><Text style={[s.actionText,secondary&&{color:'#64402C'}]}>{label}</Text></Pressable>;
+    style={({pressed})=>[s.action,secondary&&s.secondary,(pressed||disabled)&&{opacity:.5}]}><CoinLabel style={[s.actionText,secondary&&{color:'#64402C'}]}>{label}</CoinLabel></Pressable>;
 }
 function Card({title,body,children}:{title:string;body?:string;children?:React.ReactNode}){
   return <View style={s.card}><Text style={s.cardTitle}>{title}</Text>{body&&<Text style={s.body}>{body}</Text>}{children}</View>;
 }
 
-export function BurrowScreen({section,roomType='home',initialCategory='cushions',asTab=false,homeIntent,initialInbox=false,ownedOnly=false,initialItemId,collectionOwnerId}:{section:BurrowSection;roomType?:'home'|'our';initialCategory?:string;asTab?:boolean;homeIntent?:string;initialInbox?:boolean;ownedOnly?:boolean;initialItemId?:string;collectionOwnerId?:string}){
+export function BurrowScreen({section,roomType='home',initialCategory='cushions',asTab=false,homeIntent,initialInbox=false,ownedOnly=false,initialItemId,collectionOwnerId,giftRecipientId,giftActorId}:{section:BurrowSection;roomType?:'home'|'our';initialCategory?:string;asTab?:boolean;homeIntent?:string;initialInbox?:boolean;ownedOnly?:boolean;initialItemId?:string;collectionOwnerId?:string;giftRecipientId?:string;giftActorId?:string}){
+  const isTab=asTab||['home','quests','moments'].includes(section);
+  const openBurrow=(destination:BurrowSection,extra?:Record<string,string>)=>navigateToBurrow(destination,extra,!isTab);
   const focused = useIsFocused();
-  const {data,loading,error,busy,receivedAt}=useBurrow();
-  const {attempt}=useHomeEntry();
+  const focusedRef = useRef(focused); focusedRef.current = focused;
+  const retainedPage=section==='home'?'home':section==='affection'?'affection':section==='adventure'?'adventure':section==='partner_room'?'partner_room':asTab&&['burrow','quests','shop','moments','collection'].includes(section)
+    ? section as 'burrow'|'quests'|'shop'|'moments'|'collection' : undefined;
+  const {data,loading,error,busy,receivedAt}=useBurrow(section==='home',retainedPage);
+  useEffect(()=>{
+    if(section!=='home'||!focused)return;
+    let live=true;
+    const current=getBurrowSnapshot().data;
+    if(current)void adoptBunnyOnHome(variant=>prepareHomeBunnyVariant(current,variant),()=>live).catch(()=>{});
+    return()=>{live=false;};
+  },[section,focused,data?.profile.id]);
+  useBurrowDestinationPreload(section,focused,data);
+  const checkout=useCoinPurchaseConfirmation(`${data?.profile.id??''}:${data?.partner?.id??''}:${data?.pairVersion??''}`);
+  const purchaseLock=useRef(false);
+  usePartnerEntryGate(data,section==='moments');
+  const {attempt,pending:homeEntering}=useHomeEntry();
+  const [preparedHome,setPreparedHome]=useState<MajorUpdateBootstrap|null>(null);
+  const homeDesign=useMemo(()=>section==='home'?data:null,[section,data?.catalog,data?.loadouts,data?.roomPhotos,data?.adventureCollection?.displays,
+    data?.profile,data?.partner,data?.pairVersion]);
   const insets=useSafeAreaInsets();
   const {width:screenWidth,height:screenHeight}=useWindowDimensions();
   const [clock,setClock]=useState(burrowClock());
+  const [walletAnchor,setWalletAnchor]=useState<HomeWalletAnchor|null>(null);
   const [category,setCategory]=useState<string>(initialCategory);
-  const [collectionTab,setCollectionTab]=useState<'items'|'gifts'|'friends'>('items');
-  const [collectionItemFilter,setCollectionItemFilter]=useState<'all'|'furniture'|'outfits'|'rooms'>('all');
-  const [collectionOwner,setCollectionOwner]=useState<'mine'|'partner'>('mine');
   const [selected,setSelected]=useState<MajorUpdateCatalogItem|null>(null);
   const [draft,setDraft]=useState<Record<string,MajorUpdateCatalogItem>|null>(null);
-  const [feedback,setFeedback]=useState<string|null>(null);
   const [editingMemory,setEditingMemory]=useState<string|null>(null);
   const [frameSheetOpen,setFrameSheetOpen]=useState(false);
   const [frameCropAsset,setFrameCropAsset]=useState<{uri:string;width:number;height:number}|null>(null);
-  const [musicOpen,setMusicOpen]=useState(false);
   const [inboxOpen,setInboxOpen]=useState(false);
   const [letterOpen,setLetterOpen]=useState(false);
   const [letterText,setLetterText]=useState('');
   const [careKind,setCareKind]=useState<'food'|'water'|null>(null);
+  const [nappingOpen,setNappingOpen]=useState(false);
+  useEffect(()=>setNappingOpen(false),[data?.profile.id,data?.partner?.id,data?.pairVersion,data?.localDate,focused]);
   const [toyOpen,setToyOpen]=useState(false);
   const toyPhotoTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   useEffect(()=>()=>{if(toyPhotoTimer.current)clearTimeout(toyPhotoTimer.current);},[]);
   const [pullRefreshing,setPullRefreshing]=useState(false);
-  const toyInteractionSerial=useRef(0);
-  const [pairPrompt,setPairPrompt]=useState<string|null>(null);
-  const modalOpen=frameSheetOpen||!!frameCropAsset||toyOpen||musicOpen||!!selected||inboxOpen||letterOpen||!!careKind||!!pairPrompt;
+  const modalOpen=frameSheetOpen||!!frameCropAsset||toyOpen||!!selected||inboxOpen||letterOpen||!!careKind||nappingOpen;
   useEffect(()=>{if(modalOpen)return registerOverlay({});},[modalOpen]);
-  const isTab=asTab||['home','quests','moments'].includes(section);
-  const openHomeInteraction=(kind:'toy'|'food'|'water'|'frame'|'letter')=>{
-    if(data&&(kind==='food'||kind==='water')&&careCoolingDown(data,kind)){
-      Alert.alert('All cared for',careCooldownMessage(kind));
+  const openHomeInteraction=(kind:'toy'|'food'|'water'|'frame'|'letter',compose=false)=>{
+    if(!burrowPageIsReady()){enterBurrowPage({},()=>openHomeInteraction(kind,compose));return;}
+    const current=getBurrowSnapshot().data;
+    if(kind==='letter'&&requirePartner(current))return;
+    if(current&&(kind==='food'||kind==='water')&&careCoolingDown(current,kind)){
+      showBurrowToast(careCooldownMessage(kind));
       return;
     }
-    router.push({pathname:'/(main)/room-interaction',params:{kind}} as Href);
+    openPreparedBurrow({pathname:'/(main)/room-interaction',params:{kind,...(kind==='letter'&&compose?{compose:'1'}:{})}} as Href);
   };
   useEffect(()=>{
-    if (!focused || !['home','partner_room','our_room','adventure','burrow'].includes(section)) return;
+    if (!focused || !['home','partner_room','our_room','adventure','burrow','friends_room'].includes(section)) return;
     let timer: ReturnType<typeof setInterval> | undefined;
     const update = () => { if (AppState.currentState === 'active') setClock(burrowClock()); };
     const resume = () => {
@@ -147,30 +211,74 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
     return () => { clearInterval(timer); sub.remove(); };
   },[focused,section]);
   useEffect(()=>{if(data)markHomeEntryAsset('burrow-data',attempt);},[data,attempt]);
+  useEffect(()=>{if(section==='home'&&focused)retainPageImages([]);},[section,focused]);
+  useEffect(()=>{
+    if(section!=='home'||!homeDesign)return;
+    let live=true;
+    void prepareHomeArt(homeDesign).then(()=>{if(live){setPreparedHome(homeDesign);markHomeEntryAsset('burrow-art',attempt);
+      requestAnimationFrame(()=>{if(live)markHomeEntryAsset('burrow-layout',attempt);});
+    }}).catch(()=>{});
+    return()=>{live=false;};
+  },[section,homeDesign,attempt]);
   useEffect(()=>{if(section==='partner_room'&&data?.partner)void runBurrowAction('visit-partner',()=>visitPartnerRoom(),{silent:true});},[section,data?.partner?.id]);
-  const now=data?new Date(data.serverNow).getTime()+Math.max(0,clock-receivedAt):clock;
+  // burrowClock is monotonic elapsed time, NEVER an epoch/calendar date.
+  // A preloaded Adventure's React timer was paused while hidden. Seek from
+  // the current monotonic clock on every Adventure render, including hidden
+  // cache updates. Otherwise stale hidden React ticks look like a server-clock
+  // correction to the display model. This does not enable a hidden timer.
+  const renderClock=section==='adventure'?Math.max(clock,burrowClock()):clock;
+  const now=data&&Number.isFinite(Date.parse(data.serverNow))?Date.parse(data.serverNow)+Math.max(0,renderClock-receivedAt):Date.now();
+  let bonusDayCurrent=false;
+  if(section==='home'&&data?.dailyPlusBonus) {
+    try { bonusDayCurrent=burrowLocalDay(now,data.economicTimezone ?? data.profile.timezone_name)===data.localDate; } catch { /* Wait for a fresh, valid server day. */ }
+  }
+  const attention=useBurrowAttention(data,now,section==='home'?'home':section==='burrow'?'rooms':section==='affection'?'affection':'none');
+  // Deep links and arrival while already viewing Adventure also acknowledge
+  // immediately, not during cleanup after Home is visible again.
+  useEffect(()=>{
+    if(section==='adventure'&&focused&&data)dismissAdventureReminder(data,now);
+  },[section,focused,data?.profile.id,data?.partner?.id,data?.pairVersion,data?.activeAdventure?.id,data?.activeAdventure?.status,now]);
   const midnightRetry=useRef(0);
   useEffect(()=>{
-    if(section!=='home'||!data||loading||busy||AppState.currentState!=='active'||clock<midnightRetry.current)return;
+    if(!focused||section!=='home'||!data||loading||busy||AppState.currentState!=='active'||clock<midnightRetry.current)return;
     try {
-      if(burrowLocalDay(now,data.profile.timezone_name)!==data.localDate){
+      if(burrowLocalDay(now,data.economicTimezone ?? data.profile.timezone_name)!==data.localDate){
         midnightRetry.current=clock+60_000;
         void refreshBurrow();
       }
     } catch { /* Invalid profile timezone must not start a refresh loop. */ }
-  },[section,data,loading,busy,clock,now]);
+  },[focused,section,data,loading,busy,clock,now]);
   const adventure=data?.activeAdventure;
+  useAdventureTeamPrefetch(section==='adventure'&&!adventure);
+  const completion = useRef<MajorUpdateBootstrap | null>(null);
+  // Keep the mounted final conversation/modal through the receipt's immediate
+  // cache clear, until its explicit navigation to Home has completed.
+  if (!data || (completion.current && (completion.current.profile.id !== data.profile.id
+    || completion.current.partner?.id !== data.partner?.id || completion.current.pairVersion !== data.pairVersion))) completion.current = null;
+  if (section === 'adventure' && focused && data?.activeAdventure && data.adventureResult
+    && ['result_ready', 'interaction_required'].includes(data.activeAdventure.status)) completion.current = data;
+  useEffect(() => { if (!focused) completion.current = null; }, [focused]);
+  const adventureEntry=section==='adventure'&&!!data&&!adventure&&!data.dailyAdventureUsed&&!data.readyRecordId;
+  const adventureLogged=section==='adventure'&&!!data&&!adventure&&!data.dailyAdventureUsed&&!!data.readyRecordId;
   const displayedCareProgress=careProgress(data,careKind,now);
-  const remaining=adventure?Math.max(0,new Date(adventure.ends_at).getTime()-now):0;
-  const countdown=(ms:number)=>`${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m ${Math.floor(ms%60000/1000)}s`;
   const owner=section==='partner_room'&&data?.partner?data.partner.id:data?.profile.id;
-  const sceneSlots=useMemo(()=>data?roomSlots(data,owner??data.profile.id,section==='our_room'||roomType==='our'):{},[data,owner,section,roomType]);
-  const background=section==='adventure'?(data?.adventureResult?BURROW_BACKGROUNDS.adventureFinish:BURROW_BACKGROUNDS.adventure)
-    :section==='affection'?BURROW_BACKGROUNDS.affectionSelect
+  const needsRoomSlots=['home','partner_room','our_room','decorate'].includes(section);
+  const sceneSlots=useMemo(()=>data&&needsRoomSlots?roomSlots(data,owner??data.profile.id,section==='our_room'||roomType==='our'):{},
+    [needsRoomSlots,data?.catalog,data?.loadouts,data?.adventureCollection?.displays,data?.profile.id,data?.partner?.id,owner,section,roomType]);
+  const preparedDesign=useMemo(()=>homeDesign&&isHomeArtPrepared(homeDesign)?homeDesign:null,[homeDesign,preparedHome,attempt]);
+  const homeVisual=section==='home'&&preparedDesign?preparedDesign:preparedHome&&data&&preparedHome.profile.id===data.profile.id
+    &&preparedHome.partner?.id===data.partner?.id&&preparedHome.pairVersion===data.pairVersion?preparedHome:null;
+  const homeSlots=useMemo(()=>homeVisual?roomSlots(homeVisual,homeVisual.profile.id):sceneSlots,[homeVisual,sceneSlots]);
+  useLayoutEffect(()=>section==='home'?retainHomeDesignHost():undefined,[section]);
+  useLayoutEffect(()=>{
+    if(section==='home'&&homeVisual)markHomeDesignCommitted(homeDesignKey(homeVisual.profile.id,
+      homeVisual.partner?.id,homeVisual.pairVersion,roomDesignIds(homeVisual)));
+  },[section,homeVisual]);
+  const background=section==='adventure'?(data?.adventureResult?BURROW_BACKGROUNDS.adventureFinish:BURROW_BACKGROUNDS.common)
+    :section==='affection'?BURROW_BACKGROUNDS.affectionSend
     :section==='friends_room'?BURROW_BACKGROUNDS.friendsRoom
-    :section==='carrot_shop'?BURROW_BACKGROUNDS.carrotShop
     :BURROW_BACKGROUNDS.common;
-  const askToPair=(reason='Connect with your person to use this shared feature.')=>{setSelected(null);setPairPrompt(reason);};
+  const askToPair=()=>{setSelected(null);showPartnerPairing();};
   useEffect(()=>{
     if(section!=='home'||!homeIntent||!data)return;
     router.setParams({care:undefined});
@@ -183,6 +291,8 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   },[section,homeIntent,data?.profile.id,data?.partner?.id]);
   const act=(name:string,fn:(key:string)=>Promise<unknown>)=>{void runBurrowAction(name,fn,{silent:true});};
   const beginAdventure=(recordId:string)=>{
+    try { if(startPendingAdventureJournal(recordId))return; }
+    catch { Alert.alert('Your day is safe','Couldn’t save the start on this device. Please try again.'); return; }
     startBurrowAdventureLocally(recordId);
     void runBurrowAction(`start:${recordId}`,key=>startAdventure(recordId,key),{silent:true}).then(ok=>{
       if(!ok)void refreshBurrow({silent:true});
@@ -190,8 +300,9 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   };
   function recordToyInteraction(){
     if(!data)return;
-    const serial=++toyInteractionSerial.current;
-    void runBurrowAction(`toy:${data.profile.id}:${data.localDate}:${Date.now()}:${serial}`,key=>interactBurrowToy(key),{silent:true});
+    const toyId=sceneSlots.couple_doll?.stable_id;
+    queueToyInteraction(toyId);
+    recordPhotoToyPlayForRating(data.profile.id,toyId,toyPhotoFor(data.roomPhotos,data.profile.id,toyId)?.id);
   }
   function openToyPhoto(){
     setToyOpen(false);
@@ -214,17 +325,27 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
       }
     })();},320);
   }
-  function buy(item:MajorUpdateCatalogItem,gift=false){
-    if(!data)return;
+  async function buy(item:MajorUpdateCatalogItem,gift=false){
+    if(!data||purchaseLock.current)return;
     if(gift&&!data.partner){Alert.alert('Gift later','You can buy this for your own burrow now. Sending a gift will be available after you connect.');return;}
     if(item.plus_only&&!data.hasPlus){setSelected(null);router.push('/(main)/(modals)/subscription-paywall' as Href);return;}
-    if((item.price??0)>data.wallet.balance){setSelected(null);openBurrow('carrot_shop');return;}
+    if((item.price??0)>0&&(item.price??0)>data.wallet.balance){setSelected(null);showInsufficientCoins();return;}
     const recipient=gift?data.partner?.id:data.profile.id;
     if(!recipient)return;
-    Alert.alert(gift?'Send this gift?':'Make it yours?',`${item.title} · ${item.price} carrots`,[
-      {text:'Cancel',style:'cancel'},
-      {text:gift?'Send gift':'Buy',onPress:()=>{setSelected(null);void runBurrowAction(`buy:${item.stable_id}:${recipient}`,key=>purchaseCatalogItem(item.stable_id,recipient,key),{silent:true});}},
-    ]);
+    const actor=data.profile.id,pairVersion=data.pairVersion;
+    purchaseLock.current=true;
+    try {
+        if(!await checkout.confirm({name:item.title,price:item.price??0,artwork:<CatalogArtwork item={item} large/>,
+          ...(gift?{description:`A gift for ${data.partner?.display_name?.trim()||'your partner'}.`}:{})}))return;
+        const current=getBurrowSnapshot().data;
+        if(!checkout.isCurrent())return;
+        if(current?.profile.id!==actor||(gift&&(current.partner?.id!==recipient||current.pairVersion!==pairVersion)))return;
+        setSelected(null);
+        enqueueBurrowPurchase(item.stable_id,recipient,item.price??0,item.title);
+    } catch(error) {
+        if(error instanceof Error&&error.message==='insufficient_balance')showInsufficientCoins();
+        else Alert.alert('Purchase not saved','Please try again. Your purchase could not be saved on this device.');
+    } finally {purchaseLock.current=false;}
   }
   function questGo(id:string){
     if(id==='send_affection')openBurrow('affection');
@@ -244,7 +365,8 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
     }
     else if(slot==='frame')setFrameSheetOpen(true);
     else if(slot==='couple_doll')openHomeInteraction('toy');
-    else if(slot==='music_player')setMusicOpen(true);
+    else if(slot==='music_player')router.push('/(main)/music-player');
+    else if(slot==='shelf_decor')router.push('/(main)/gift-library');
   }
   function content(){
     if(!data)return null;
@@ -254,6 +376,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
       const partnerOutfit=data.partner?roomSlots(data,data.partner.id).outfit:undefined;
       return <>
         <RoomScene slots={section==='our_room'?{...sceneSlots,outfit:mineOutfit}:sceneSlots} partnerOutfit={partnerOutfit}
+          ownerId={section==='our_room'?data.profile.id:owner??data.profile.id} partnerOwnerId={data.partner?.id}
           busy={busy} canFeed={needs.food<100} away={section!=='our_room'&&adventureIsAway(section==='partner_room'?data.partnerAdventure:adventure,now)} shared={section==='our_room'}
           photos={data.roomPhotos?.filter(photo=>photo.ownerId===owner)}
           sleeping={{mine:data.sharedRoom.mySleeping,partner:data.sharedRoom.partnerSleeping}} onSlot={slot=>{
@@ -263,7 +386,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
           else if(slot==='frame')setFrameSheetOpen(true);
           else if(slot==='couple_doll')setToyOpen(true);
           else if(slot==='doll_photo')openToyPhoto();
-          else if(slot==='music_player'&&section==='home')setMusicOpen(true);
+          else if(slot==='music_player'&&section==='home')router.push('/(main)/music-player');
           else if(slot==='music_player')Alert.alert('Your person’s radio','Choose background music from the radio in your own room.');
         }} />
         {section!=='our_room'&&<View style={s.row}>
@@ -275,7 +398,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
           {adventureHasArrived(adventure,now)&&<Text accessibilityLiveRegion="polite" style={s.creamCopy}>Your bunny is home. Open Adventure to finish the story.</Text>}
           <Action secondary label="Decorate my burrow" onPress={()=>openBurrow('decorate')}/>
           <Action secondary label="Dress my bunny" onPress={()=>openBurrow('decorate',{category:'outfits'})}/>
-          <Action secondary label="Music · choose a tune" onPress={()=>setMusicOpen(true)}/>
+          <Action secondary label="Music · choose a tune" onPress={()=>router.push('/(main)/music-player')}/>
           {(data.unread.affection>0||data.unread.gifts>0)&&<Card title="🔴 A little love arrived" body={`${data.unread.affection} gestures · ${data.unread.gifts} gifts`}><Action label="Open inbox" onPress={()=>setInboxOpen(true)}/></Card>}
         </>:section==='our_room'?<>
           <Card title={data.sharedRoom.mySleeping?'Resting together':'A little place to rest'} body={`Your bunny is ${data.sharedRoom.mySleeping?'asleep':'awake'}. Your person’s bunny is ${data.sharedRoom.partnerSleeping?'asleep':'awake'}.`}>
@@ -287,43 +410,37 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
         </>:<Text style={s.creamCopy}>Small acts of care make the distance feel smaller.</Text>}
       </>;
     }
-    if(section==='burrow')return <BurrowMap now={now} timeZone={data.profile.timezone_name} visiting={!!data.friendVisit&&!data.friendVisit.completed_at&&!data.friendVisit.declined_at} onRoom={id=>{
-      if(id==='my_room')router.navigate('/(main)/(tabs)' as Href);
-      else if(id==='partner_room'&&!data.partner)askToPair('Connect with your person to visit their den.');
-      else if(id==='rage_room')router.push('/(main)/tame-enemy' as Href);
+    if(section==='burrow')return <BurrowMap now={now} timeZone={data.profile.timezone_name} partnerId={data.partner?.id} pairVersion={data.pairVersion} badges={attention.rooms} onRoom={id=>{
+      if(id==='my_room')openBurrow('home');
+      else if(id==='surprise_room')openPreparedBurrow('/(main)/surprise-room');
+      else if(id==='partner_room'&&!data.partner)askToPair();
+      else if(id==='rage_room')openPreparedBurrow('/(main)/tame-enemy');
       else openBurrow(id==='collection_room'?'collection':id);
     }}/>;
     if(section==='quests')return <QuestBoard data={data} busy={busy}
       onGo={questGo}
       onClaim={async q=>{
-        let reward=0;
-        const ok=await runBurrowAction(`quest:${q.assignmentId}`,async()=>{const result=await claimDailyQuest(q.assignmentId);reward=Number(result.reward??0);},{silent:true});
-        if (!ok) throw Error('claim_failed');
-        return reward;
+        return claimQuestOptimistically('claim_daily_quest',{assignmentId:q.assignmentId});
       }}
       onSpecialClaim={async(id,stage)=>{
-        let reward=0;
-        const ok=await runBurrowAction(`special:${id}:${stage}`,async()=>{const result=await claimSpecialQuest(id,stage);reward=Number(result.reward??0);},{silent:true});
-        if (!ok) throw Error('claim_failed');
-        return reward;
-      }}
-      onSpecialGo={id=>id==='games_played'?openBurrow('game_room'):id==='items_collected'?openBurrow('collection'):openBurrow('adventure')}/>;
-    if(section==='carrot_shop')return <CarrotShop balance={data.wallet.balance}/>;
+        return claimQuestOptimistically('claim_special_quest',{questId:id,stage});
+      }}/>;
     if(section==='shop'||section==='decorate'){
       const decorating=section==='decorate';
       const outfitMode=decorating&&initialCategory==='outfits';
       const preview=draft??sceneSlots;
+      const inUse=Object.entries(preview).every(([slot,item])=>item.stable_id===sceneSlots[slot]?.stable_id);
       const owned=(item:MajorUpdateCatalogItem)=>data.inventory.some(i=>i.item_id===item.stable_id&&(i.owner_id===data.profile.id||(!outfitMode&&i.owner_id===data.partner?.id)));
       const unownedPreview=Object.entries(preview).filter(([slot,item])=>outfitMode?slot==='outfit'&&!owned(item):slot!=='outfit'&&!owned(item)).map(([,item])=>item);
       const categories=outfitMode?['outfits']:decorCategories;
       const effectiveCategory=outfitMode?'outfits':category;
       const items=data.catalog.filter(item=>item.category===effectiveCategory&&(decorating||!!item.price));
       return <>
-        {decorating&&<><HomeArtPreview slots={preview} ownerId={data.profile.id}
+        {decorating&&<><HomeArtPreview timeZone={data.profile.timezone_name} now={now} slots={preview} ownerId={data.profile.id}
           photos={data.roomPhotos?.filter(photo=>photo.ownerId===data.profile.id)}
           away={adventureIsAway(adventure,now)}/><View style={s.row}>
           <Action secondary label="Cancel" disabled={busy} onPress={()=>router.back()}/>
-          <Action label="Done" disabled={busy||unownedPreview.length>0} onPress={()=>{
+          <Action label={inUse?'In use':'Replace'} disabled={inUse||busy||unownedPreview.length>0} onPress={()=>{
             if(outfitMode&&!preview.outfit){Alert.alert('Choose an outfit','Pick something for your bunny first.');return;}
             const chosen=Object.fromEntries(Object.entries(preview).filter(([slot])=>outfitMode?slot==='outfit':slot!=='outfit').map(([slot,item])=>[slot,item.stable_id]));
             setBurrowLoadoutLocally(chosen,data.profile.id,outfitMode);
@@ -336,13 +453,13 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
         }}/></>}
         <View style={!decorating&&shopStyles.surface}>
         <View style={shopStyles.categoryRail}><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={shopStyles.categoryItems}>{categories.map(cat=>{const art=burrowArtFor(cat);return <Pressable accessibilityRole="button" accessibilityState={{selected:effectiveCategory===cat}} key={cat} onPress={()=>setCategory(cat)} style={[shopStyles.category,effectiveCategory===cat&&shopStyles.activeCategory]}>{art&&<Image source={art.source} contentFit="contain" style={shopStyles.categoryArt}/>}<Text numberOfLines={1} style={[shopStyles.categoryText,effectiveCategory===cat&&shopStyles.activeCategoryText]}>{categoryName(cat)}</Text></Pressable>;})}</ScrollView></View>
-        <View style={shopStyles.sectionHeading}><Text style={[shopStyles.sectionTitle,!decorating&&shopStyles.lightTitle]}>{categoryName(effectiveCategory)}</Text><Text style={[shopStyles.sectionSubtitle,!decorating&&shopStyles.lightSubtitle]}>{decorating?'Tap an item to see it in your room. Save when it feels right.':'Make your burrow feel like yours.'}</Text></View>
+        <View style={shopStyles.sectionHeading}><Text style={[shopStyles.sectionTitle,!decorating&&shopStyles.lightTitle]}>{categoryName(effectiveCategory)}</Text>{decorating&&<Text style={shopStyles.sectionSubtitle}>Tap an item to see it in your room. Save when it feels right.</Text>}</View>
         {decorating&&unownedPreview.length>0&&<Card title="Just a preview" body="Own these items before saving. Cancel restores your saved room.">
           {unownedPreview.map(item=><Action key={item.stable_id} secondary label={item.title} onPress={()=>setSelected(item)}/>)}
         </Card>}
         <View style={s.grid}>{items.map(item=><Pressable key={item.stable_id} accessibilityRole="button" accessibilityLabel={item.title} style={[s.tile,!decorating&&s.shopTile,!decorating&&shopStyles.productTile,preview[item.metadata.slot??'']?.stable_id===item.stable_id&&decorating&&s.selectedTile]} onPress={()=>{
           if(decorating&&item.metadata.slot){setDraft({...preview,[item.metadata.slot]:item});if(!owned(item))setSelected(item);}else setSelected(item);
-        }}><CatalogArtwork item={item} sizePx={!decorating?Math.max(66,Math.min(110,Math.floor((Math.min(screenWidth,560)-60)/3)-10)):undefined}/><Text numberOfLines={2} style={[s.tileTitle,!decorating&&s.shopTileTitle]}>{item.title}</Text><Text style={s.price}>{owned(item)?'✓ Owned':item.plus_only&&!data.hasPlus?'✦ PLUS':`🥕 ${item.price??'Adventure find'}`}</Text></Pressable>)}</View>
+        }}><CatalogArtwork item={item} sizePx={!decorating?Math.max(66,Math.min(110,Math.floor((Math.min(screenWidth,560)-60)/3)-10)):undefined}/><Text numberOfLines={2} style={[s.tileTitle,!decorating&&s.shopTileTitle]}>{item.title}</Text><CoinLabel style={s.price}>{owned(item)?'✓ Owned':item.plus_only&&!data.hasPlus?'✦ PLUS':item.price==null?'Adventure find':`{coin} ${item.price}`}</CoinLabel></Pressable>)}</View>
         {!items.length&&<Card title="More little things are on their way" body="This category has no published items yet."/>}
         {!decorating&&<View style={shopStyles.footer}><Action secondary label="My collection" onPress={()=>openBurrow('collection')}/><Action label="Decorate room" onPress={()=>openBurrow('decorate')}/></View>}
         </View>
@@ -354,125 +471,87 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
       </View>
       <FriendVisitCard data={data} busy={busy} showArt={false}/>
     </>;
-    if(section==='collection'){
-      const tab=collectionTab;
-      const whose=collectionOwner==='mine'?data.profile.id:data.partner?.id;
-      const inventory=data.inventory.filter(i=>i.owner_id===whose);
-      const ownedIds=new Set(inventory.map(i=>i.item_id));
-      const ownedItems=data.catalog.filter(item=>ownedIds.has(item.stable_id)&&['decor','our_room','outfit'].includes(item.item_type));
-      const giftItems=data.catalog.filter(item=>inventory.some(i=>i.item_id===item.stable_id&&['friend_visit','gift','adventure_gift'].includes(i.source)));
-      const list=tab==='gifts'?giftItems:ownedItems.filter(item=>collectionItemFilter==='all'||(collectionItemFilter==='furniture'?item.item_type==='decor':collectionItemFilter==='outfits'?item.item_type==='outfit':item.item_type==='our_room'));
-      const ownedFriends=data.discoveries.filter(d=>d.user_id===whose&&!!d.interaction_completed_at).length;
-      const tileSize=Math.max(52,Math.floor((Math.min(screenWidth,560)-68-(tab==='friends'?16:24))/(tab==='friends'?3:4)));
-      return <>
-        <Text style={collectionStyles.subtitle}>Everything we’ve found along the way</Text>
-        <View style={collectionStyles.board}>
-        {!!data.partner&&<View style={collectionStyles.ownerRow}>{(['mine','partner'] as const).map(value=><Pressable accessibilityRole="button" accessibilityState={{selected:collectionOwner===value}} key={value} style={[collectionStyles.owner,collectionOwner===value&&collectionStyles.ownerSelected]} onPress={()=>setCollectionOwner(value)}><Text style={[collectionStyles.ownerText,collectionOwner===value&&collectionStyles.ownerTextSelected]}>{value==='mine'?'My collection':'Partner’s'}</Text></Pressable>)}</View>}
-        <View style={collectionStyles.tabs}>{(['items','gifts','friends'] as const).map(value=><Pressable accessibilityRole="button" accessibilityState={{selected:tab===value}} key={value} style={[collectionStyles.tab,tab===value&&collectionStyles.activeTab]} onPress={()=>setCollectionTab(value)}><Text style={[collectionStyles.tabText,tab===value&&collectionStyles.activeTabText]}>{value==='items'?'▣  Items':value==='gifts'?'▧  Gifts':'♣  Friends'}</Text></Pressable>)}</View>
-        <View style={collectionStyles.headingRow}><Text style={collectionStyles.heading}>{tab==='items'?'Items':tab==='gifts'?'Gifts':'Friends'}</Text><Text style={collectionStyles.count}>{tab==='items'?ownedItems.length:tab==='gifts'?giftItems.length:ownedFriends} {tab==='friends'?'met':'collected'}</Text></View>
-        {tab==='items'&&<View style={collectionStyles.filters}>{(['all','furniture','outfits','rooms'] as const).map(value=><Pressable accessibilityRole="button" accessibilityState={{selected:collectionItemFilter===value}} key={value} style={collectionStyles.filter} onPress={()=>setCollectionItemFilter(value)}><Text style={[collectionStyles.filterText,collectionItemFilter===value&&collectionStyles.activeFilterText]}>{categoryName(value)}</Text>{collectionItemFilter===value&&<View style={collectionStyles.filterUnderline}/>}</Pressable>)}</View>}
-        {collectionOwner==='mine'&&data.affectionInbox.length>0&&<Card title="Your person thought of you" body={AFFECTION_TYPES.map(type=>{const count=data.affectionInbox.filter(e=>e.affection_type===type).length;return count?`${AFFECTION_COPY[type].symbol} ${count}`:'';}).filter(Boolean).join('   ')}><Action label="Love received" disabled={busy} onPress={()=>act('read-affection',()=>markAffectionRead(data.affectionInbox.map(e=>e.id)))}/></Card>}
-        {collectionOwner==='mine'&&data.gifts.map(gift=><Card key={gift.id} title={data.catalog.find(i=>i.stable_id===gift.item_id)?.title??'A little gift'}><Action label="Open gift" disabled={busy} onPress={()=>act(`gift:${gift.id}`,()=>claimGift(gift.id))}/></Card>)}
-        <View style={collectionStyles.grid}>{tab==='friends'?data.friends.map(friend=>{
-          const found=data.discoveries.some(d=>d.user_id===whose&&d.friend_id===friend.stable_id&&!!d.interaction_completed_at);const friendArt=burrowFriendArt(friend.name);return <View key={friend.stable_id} style={[collectionStyles.tile,{width:tileSize}]}>{found&&friendArt?<Image source={friendArt} contentFit="contain" style={{width:tileSize-12,height:tileSize-12}}/>:<Text style={collectionStyles.unknown}>?</Text>}<Text numberOfLines={2} style={collectionStyles.tileTitle}>{found?friend.name:'Undiscovered'}</Text></View>;
-        }):list.map(item=><Pressable key={item.stable_id} style={[collectionStyles.tile,{width:tileSize}]} accessibilityRole="button" accessibilityLabel={`Decorate with ${item.title}`} onPress={()=>router.push({pathname:'/(main)/burrow-detail',params:{section:'decorate',category:item.category,ownedOnly:'1',itemId:item.stable_id,ownerId:whose}} as Href)}><CatalogArtwork item={item} sizePx={tileSize-12}/><Text numberOfLines={2} style={collectionStyles.tileTitle}>{item.title}</Text><Text style={collectionStyles.owned}>✓ Owned</Text></Pressable>)}
-          {((tab==='items'&&collectionItemFilter==='all')||tab==='gifts')&&data.catalog.filter(item=>!ownedIds.has(item.stable_id)&&(tab==='gifts'?item.item_type==='souvenir':['decor','our_room','outfit'].includes(item.item_type))).slice(0,tab==='gifts'?8:4).map(item=><View key={item.stable_id} style={[collectionStyles.tile,collectionStyles.unknownTile,{width:tileSize}]} accessibilityLabel="Undiscovered item"><Text style={collectionStyles.unknown}>?</Text><Text style={collectionStyles.unknownLabel}>Undiscovered</Text></View>)}
-        </View>
-        {tab!=='friends'&&!list.length&&<Text style={collectionStyles.empty}>Your story is just beginning. Finds and purchases will appear here.</Text>}
-        </View>
-        <Pressable accessibilityRole="button" onPress={()=>tab==='items'?router.push({pathname:'/(main)/burrow-detail',params:{section:'decorate',ownedOnly:'1',ownerId:whose}} as Href):tab==='gifts'?router.navigate('/(main)/(tabs)/shop' as Href):openBurrow('friends_room')} style={collectionStyles.footerButton}><Text style={collectionStyles.footerText}>{tab==='items'?'Decorate My Burrow':tab==='gifts'?'Find a Gift':'Visit Friends’ Room'}</Text></Pressable>
-      </>;
-    }
     if(section==='moments')return null;
     if(section==='affection')return null;
     if(section==='adventure'){
-      const result=data.adventureResult;
-      const friend=result?.metadata?.friendSnapshot;
-      const trail=adventure?adventureTrail(adventure.started_at,adventure.ends_at,now):null;
       return <>
-        {adventure?.status==='in_progress'?<View style={adventureStyles.diggingHero}><BunnyActor standalone outfit={roomSlots(data,data.profile.id).outfit} pose="digging" standaloneSize={{width:175,height:215}}/></View>:<View style={{height:Math.min(300,screenWidth*.7)}}/>}
-        {feedback?<Card title="A little story to keep" body={feedback}><Action label="Back to home" onPress={()=>router.back()}/></Card>:adventure?adventure.status==='in_progress'?<View style={adventureStyles.progressPage}>
-          {data.hasPlus&&<Text style={adventureStyles.plusBadge}>PLUS</Text>}
-          <Text style={adventureStyles.progressTitle}>Your adventure is ongoing</Text>
-          <View style={adventureStyles.progressCard}>
-            <View style={adventureStyles.progressTop}><Text style={adventureStyles.progressHeading}>Digging…</Text><Text style={adventureStyles.progressTime}>Back in {countdown(remaining)}</Text></View>
-            <View style={adventureStyles.progressTrack}><View style={[adventureStyles.progressFill,{width:`${Math.min(100,Math.max(0,100*(1-remaining/(new Date(adventure.ends_at).getTime()-new Date(adventure.started_at).getTime()))))}%`}]}/></View>
-            <View style={adventureStyles.progressTop}><Text style={adventureStyles.progressDistance}>{trail?.meters??0} m dug</Text><Text style={adventureStyles.progressTime}>Next: {trail?.nextMeters??'treasure'} m</Text></View>
-          </View>
-          <View style={adventureStyles.logCard}><Text style={adventureStyles.progressHeading}>Adventure Logs</Text>
-            {(trail?.logs??[]).length?trail!.logs.map(log=><Text key={log.meters} style={adventureStyles.logText}>• {log.meters} m · {log.copy}</Text>)
-              :<Text style={adventureStyles.logText}>Your bunny has just begun the journey.</Text>}
-            <Text style={adventureStyles.logHint}>You can leave. We’ll save your place.</Text>
-            {remaining===0?<Action label="Your bunny is back · Open" disabled={busy} onPress={()=>act(`settle:${adventure.id}`,()=>settleAdventure(adventure.id))}/>
-              :<Action label="Back to Home" onPress={()=>router.navigate('/(main)/(tabs)' as Href)}/>}
-          </View>
-        </View>:adventure.status==='interaction_required'?<AdventureFriendCard data={data} busy={busy} onComplete={setFeedback}/>:result?.result_type==='item'?<AdventureTreasure key={adventure.id} title={result.metadata?.itemSnapshot?.title??'A little discovery'} busy={busy} onClaim={()=>act(`claim:${adventure.id}`,()=>claimAdventureResult(adventure.id))}/>:<Card title={result?.result_type==='quiet'?'A quiet journey home':result?.result_type==='friend'?`You met ${friend?.name??'a new friend'}!`:'A treasure chest!'}
-          body={result?.result_type==='quiet'?'You’ve found every available treasure on this trail. Today’s adventure still counts.':result?.item_id?result.metadata?.itemSnapshot?.title:'A little discovery is waiting for you.'}>
-          <Action label={result?.result_type==='quiet'?'Welcome home':result?.result_type==='friend'?'Say hello':'Claim item'} disabled={busy} onPress={()=>act(`claim:${adventure.id}`,()=>claimAdventureResult(adventure.id))}/>
-        </Card>:data.dailyAdventureUsed?<Card title="Your bunny is home for today" body="Another adventure will be ready after your local midnight."/>:<View style={adventureStyles.entry}>
-          <Text style={adventureStyles.entryTitle}>Start Today’s Adventure</Text>
-          <Text style={adventureStyles.entrySubtitle}>Your bunny’s waiting on today’s story</Text>
-          {data.readyRecordId?<Pressable accessibilityRole="button" disabled={busy} onPress={()=>beginAdventure(data.readyRecordId!)} style={adventureStyles.choice}>
-            <View style={{flex:1}}><Text style={adventureStyles.choiceTitle}>Your story is ready</Text><Text style={adventureStyles.choiceText}>Start exploring · 1 minute (test)</Text></View><Text style={adventureStyles.choiceIcon}>➜</Text>
-          </Pressable>:<><Pressable accessibilityRole="button" onPress={()=>router.push('/(main)/reflect-typing' as Href)} style={adventureStyles.choice}>
-            <View style={{flex:1}}><Text style={adventureStyles.choiceTitle}>Write Freely</Text><Text style={adventureStyles.choiceText}>Write anything you feel worth remembering.</Text></View><Text style={adventureStyles.choiceIcon}>✎</Text>
-          </Pressable><Pressable accessibilityRole="button" onPress={()=>router.push('/(main)/reflect-guided' as Href)} style={adventureStyles.choice}>
-            <View style={{flex:1}}><Text style={adventureStyles.choiceTitle}>Tap your day</Text><Text style={adventureStyles.choiceText}>Select little things that tell your day.</Text></View><Text style={adventureStyles.choiceIcon}>♡</Text>
-          </Pressable></>}
-          <Text style={adventureStyles.note}>What you share will shape what the adventure looks like, what you find, and who you meet.</Text>
-        </View>}
+        {adventure?<Card title="Your discovery is safe" body="Refresh to load the end of your adventure.">
+          <Action label="Refresh" disabled={busy||loading} onPress={()=>void refreshBurrow()}/>
+        </Card>:data.dailyAdventureUsed?<Card title="Your bunny is home for today" body="Another adventure will be ready after your local midnight."/>:data.readyRecordId?<AdventureReady disabled={busy} onStart={()=>beginAdventure(data.readyRecordId!)}/>:<AdventureEntry
+          onWrite={()=>{prefetchAdventureRewards(data.adventureCollection?.enabled);router.push('/(main)/reflect-typing' as Href);}} onTap={()=>{prefetchAdventureRewards(data.adventureCollection?.enabled);router.push('/(main)/reflect-guided' as Href);}}/>}
       </>;
     }
     if(section==='memories_room')return <BurrowHistory data={data} kind="memories" busy={busy}/>;
-    if(section==='self_care_room')return <>{[['New Lens','new-lens'],['True North','true-north'],['Small Wins','quiet-wins']].map(([label,path])=><Card key={path} title={label}><Action label="Take a little time" onPress={()=>router.push(`/(main)/${path}` as Href)}/></Card>)}</>;
     if(section==='game_room')return <Card title="Game Room" body="Choose a game to discover how well you know each other."><Action label="Open games" onPress={()=>router.replace('/(main)/game-room' as Href)}/></Card>;
-    return <Card title="Our Burrows" body="Choose a room to spend a little time together."><Action label="Explore rooms" onPress={()=>router.navigate('/(main)/(tabs)/burrow' as Href)}/></Card>;
+    return <Card title="Our Burrows" body="Choose a room to spend a little time together."><Action label="Explore rooms" onPress={()=>openBurrow('burrow')}/></Card>;
   }
-  if(section==='affection')return <AffectionHub data={data} loading={loading} initialInbox={initialInbox}/>;
+  if(section==='friends_room'&&data&&(data.friendVisitsVersion===2||data.friendVisit?.version===2))return <FriendVisitCard data={data} busy={busy}/>;
+  if(section==='adventure'&&completion.current)return <AdventureStageTransition stageKey={`settlement:${completion.current.activeAdventure!.id}`}>
+    <AdventureCompletionScreen key={completion.current.activeAdventure!.id} data={completion.current}/></AdventureStageTransition>;
+  if(section==='adventure'&&data&&adventure?.status==='in_progress')return <AdventureStageTransition stageKey="ongoing">
+    <AdventureProgressScreen data={data} now={now} onHome={()=>dismissToRetainedTab('/(main)/(tabs)')}/></AdventureStageTransition>;
+  if(section==='affection')return <AffectionHub data={data} loading={loading} receivedAt={receivedAt} initialInbox={initialInbox||attention.affection>0}/>;
+  if(section==='partner_room')return <PartnerRoomScreen/>;
   if(section==='moments'&&data)return <MomentsTimeline data={data}/>;
+  if(section==='collection')return <CollectionRoomScreen data={data} loading={loading} error={error} busy={busy}
+    onRefresh={()=>void refreshBurrow({silent:!!data})} onClaimGift={id=>act(`gift:${id}`,()=>claimGift(id))}/>;
+  if((section==='shop'||section==='decorate')&&data&&!data.catalogComplete)return <View style={[s.loading,{backgroundColor:'#FFF4E1',paddingTop:insets.top}]}><BurrowBackButton onPress={()=>router.back()}/><View style={{alignItems:'center',gap:18,padding:24}}><ActivityIndicator color="#673019"/><Text style={s.body}>Preparing your shop…</Text><View style={{width:180}}><Action label="Retry" onPress={()=>void refreshBurrow({silent:true})}/></View></View></View>;
   if ((section==='shop'||section==='decorate')&&data) return <BurrowShop data={data} section={section}
-    initialCategory={initialCategory} away={adventureIsAway(adventure,now)} ownedOnly={ownedOnly}
-    initialItemId={initialItemId} collectionOwnerId={collectionOwnerId}/>;
-  return <LinearGradient colors={section==='burrow'?['#572b1a','#572b1a']:['#793D29','#B85B35','#D6834B']} style={s.root}>
-    {section!=='home'&&section!=='burrow'&&<Image source={background} contentFit="cover" contentPosition="top" style={StyleSheet.absoluteFillObject} pointerEvents="none"/>}
-    <View style={[s.frame,section==='home'||section==='burrow'?s.homeFrame:{paddingTop:insets.top}]}>
-      {section==='home'?data?<View style={s.homeCanvas} onLayout={()=>markHomeEntryAsset('burrow-layout',attempt)}><HomeArtScene
-        balance={data.wallet.balance} slots={sceneSlots} photos={data.roomPhotos} ownerId={data.profile.id}
-        away={adventureIsAway(adventure,now)} busy={busy}
+    initialCategory={initialCategory} away={adventureIsAway(giftRecipientId?data.partnerAdventure:adventure,now)} ownedOnly={ownedOnly}
+    initialItemId={initialItemId} collectionOwnerId={collectionOwnerId} giftRecipientId={giftRecipientId} giftActorId={giftActorId} retainedTab={asTab}/>;
+  const flatSurface=burrowFlatSurface(section,adventureEntry||adventureLogged);
+  const PageScrollView=section==='burrow'?BurrowMapScrollView:ScrollView;
+  const page = <View style={[s.root,{backgroundColor:flatSurface??BURROW_PAGE_COLORS[0],overflow:'hidden'}]}>
+    {section!=='home'&&section!=='burrow'&&section!=='quests'&&!adventureEntry&&!adventureLogged&&!(section==='adventure'&&adventure?.status==='in_progress')&&<Image source={background} contentFit="cover" contentPosition="top" style={StyleSheet.absoluteFillObject} pointerEvents="none"/>}
+    <View style={[s.frame,section==='home'||section==='burrow'||section==='quests'||adventureEntry?s.homeFrame:{paddingTop:insets.top}]}>
+      {/* Keep the complete cached room under the cover. A first launch waits
+          for its own data/art; never invent a wallet or expose partial setup. */}
+      {section==='home'?<View style={s.homeCanvas} onLayout={()=>markHomeEntryAsset('burrow-layout',attempt)}><HomeArtScene
+        timeZone={data?.profile.timezone_name} now={now}
+        balance={data?.wallet.balance??null} slots={homeSlots} photos={homeVisual?.roomPhotos??data?.roomPhotos} ownerId={data?.profile.id??''}
+        onWalletAnchor={setWalletAnchor}
+        away={adventureIsAway(adventure,now)} busy={busy} updates={attention}
+        pullToPeekEnabled={focused&&!!homeVisual&&!homeEntering&&!modalOpen}
         onToyInteract={()=>openHomeInteraction('toy')} onToyPhoto={()=>openHomeInteraction('toy')}
-        onMenu={()=>router.push('/(main)/(modals)/me' as Href)} onCarrots={()=>openBurrow('carrot_shop')}
-        onAffection={()=>openBurrow('affection')} onAdventure={()=>openBurrow('adventure')}
-        onLetter={()=>openHomeInteraction('letter')}
+        onMenu={()=>openPreparedBurrow('/(main)/menu')} onCarrots={()=>openBurrow('carrot_shop')}
+        onAffection={()=>openBurrow('affection')} onAdventure={()=>{
+          if(adventureFinishedToday(data,now)){setNappingOpen(true);return;}
+          openBurrow('adventure');
+        }}
+        onLetter={()=>{if(data)dismissHomeLetterReminder(data);openHomeInteraction('letter',true);}}
         onBurrows={()=>openBurrow('burrow')}
-        onDecorate={()=>openBurrow('decorate')} onSlot={homeSlot}/></View>
-        :<View style={s.loading}>{loading?<ActivityIndicator color="#FFF1DB"/>:<Text style={s.creamCopy}>Your burrow could not load. Pull down on another tab to retry.</Text>}</View>
-      :<>{section!=='burrow'&&section!=='moments'&&section!=='quests'&&<View style={[s.header,{paddingVertical:12},section==='shop'&&shopStyles.topHeader]}>{!isTab&&<BurrowBackButton onPress={()=>section==='shop'?openBurrow('home'):router.back()}/>}<Text style={[s.heading,section==='shop'&&shopStyles.topTitle]}>{titles[section]}</Text>{data&&<Pressable accessibilityRole="button" accessibilityLabel={`Carrot Shop. Balance ${data.wallet.balance}`} disabled={section==='carrot_shop'} onPress={()=>openBurrow('carrot_shop')} style={[s.wallet,section==='shop'&&shopStyles.topWallet]}><Text style={s.walletText}>🥕 {data.wallet.balance.toLocaleString()}{section==='carrot_shop'?'':' ＋'}</Text></Pressable>}</View>}
-      {!data?<View style={s.loading}>{loading?<ActivityIndicator color="#FFF1DB"/>:<Text style={s.creamCopy}>Your burrow needs a connection to load.</Text>}</View>:<ScrollView key={section} style={{flex:1}} onLayout={()=>markHomeEntryAsset('burrow-layout',attempt)} contentContainerStyle={section==='burrow'?s.mapContent:[s.content,{paddingBottom:isTab?24:insets.bottom+24}]} bounces={section!=='burrow'&&section!=='carrot_shop'} alwaysBounceVertical={false} overScrollMode="never" refreshControl={section==='burrow'||section==='carrot_shop'?undefined:<RefreshControl refreshing={pullRefreshing} onRefresh={()=>{setPullRefreshing(true);void refreshBurrow().finally(()=>setPullRefreshing(false));}} tintColor="#FFF1DB"/>}>{content()}</ScrollView>}</>}
+        onSlot={homeSlot}/></View>
+      :<>{section!=='burrow'&&section!=='moments'&&section!=='quests'&&!adventureEntry&&!adventureLogged&&!(section==='adventure'&&adventure?.status==='in_progress')&&<View style={[s.header,{paddingVertical:12},section==='shop'&&shopStyles.topHeader]}>{!isTab&&<BurrowBackButton onPress={()=>router.back()}/>}<Text style={[s.heading,['friends_room','game_room','memories_room','collection'].includes(section)&&ROOM_TITLE_STYLE,section==='shop'&&shopStyles.topTitle]}>{titles[section]}</Text>{data&&section!=='friends_room'&&<CoinWallet balance={data.wallet.balance} disabled={section==='carrot_shop'} onPress={()=>openBurrow('carrot_shop')}/>}</View>}
+      {!data?<View style={s.loading}>{loading?<ActivityIndicator color="#FFF1DB"/>:<Text style={s.creamCopy}>Your burrow needs a connection to load.</Text>}</View>:<PageScrollView key={section} style={{flex:1}} onLayout={()=>markHomeEntryAsset('burrow-layout',attempt)} contentContainerStyle={section==='burrow'?s.mapContent:[adventureEntry?adventureStyles.entryScroll:section==='quests'?s.mapContent:s.content,{paddingBottom:adventureEntry?insets.bottom:isTab?24:insets.bottom+24}]} {...burrowPageScrollBehavior(section)} refreshControl={section==='burrow'||section==='carrot_shop'||section==='quests'?undefined:<RefreshControl refreshing={pullRefreshing} onRefresh={()=>{setPullRefreshing(true);void refreshBurrow().finally(()=>setPullRefreshing(false));}} tintColor="#FFF1DB"/>}>{content()}</PageScrollView>}</>}
       {error&&<View style={[s.error,section==='home'&&s.homeError]} accessibilityRole="alert"><Text style={s.body}>{burrowErrorMessage(error)}</Text><Action secondary label="Refresh" disabled={busy||loading} onPress={()=>void refreshBurrow()}/></View>}
       {busy&&<View style={s.busy} pointerEvents="none"><ActivityIndicator color="#FFF"/><Text style={s.creamCopy}>Saving your little moment…</Text></View>}
-      {section==='burrow'&&!isTab&&<BurrowBackButton onPress={()=>router.back()} style={{position:'absolute',top:insets.top+12,left:18,zIndex:10}}/>}
+      {(section==='burrow'||(adventureEntry&&!isTab))&&<BurrowBackButton onPress={()=>router.canGoBack()?router.back():openBurrow('home')} style={{position:'absolute',top:insets.top+12,left:18,zIndex:10}}/>}
     </View>
-    <Modal visible={toyOpen&&!!data} transparent presentationStyle="overFullScreen" animationType="fade" onRequestClose={()=>setToyOpen(false)}>
+    {section==='home'&&data&&<DailyPlusBonus key={`${data.profile.id}:${data.localDate}`} userId={data.profile.id}
+      bonus={data.dailyPlusBonus} localDate={data.localDate} balance={data.wallet.balance} anchor={walletAnchor}
+      enabled={focused&&bonusDayCurrent&&!homeEntering&&!busy&&!toyOpen&&!inboxOpen&&!letterOpen&&!careKind&&!selected&&!frameSheetOpen&&!nappingOpen}/>}
+    {section==='home'&&focused&&nappingOpen&&<AdventureNappingDialog onClose={()=>setNappingOpen(false)}/>}
+    <ScreenOverlay visible={toyOpen&&!!data} transparent onRequestClose={()=>setToyOpen(false)}>
       <View style={[s.scrim,{justifyContent:'center',paddingHorizontal:20}]}><View style={[s.sheet,s.toySheet]} accessibilityViewIsModal>
         <Text accessibilityRole="header" style={s.cardTitle}>A little love for your toy</Text>
         <Text style={s.body}>Tap, press or gently drag the doll. It bounces back and sends up little hearts.</Text>
         {(()=>{const asset=burrowArtForItem(sceneSlots.couple_doll,'couple_dolls');if(!asset)return <Text style={s.itemIcon}>🧸</Text>;
-          const [left,top,right,bottom]=asset.bounds;const ratio=Math.min(214/(right-left),238/(bottom-top));
-          return <InteractiveDoll asset={asset} photo={data?.roomPhotos?.find(photo=>photo.ownerId===data.profile.id&&photo.kind==='doll')}
-            disabled={busy} onInteract={recordToyInteraction}
+          const ratio=Math.min(214/asset.width,238/asset.height);
+          return <InteractiveDoll asset={asset} photo={data?toyPhotoFor(data.roomPhotos,data.profile.id,sceneSlots.couple_doll?.stable_id):undefined}
+            disabled={busy} onInteract={recordToyInteraction} interactionScope={data?`${data.profile.id}:${data.partner?.id??''}:${data.pairVersion??''}:${sceneSlots.couple_doll?.stable_id}:${toyPhotoFor(data.roomPhotos,data.profile.id,sceneSlots.couple_doll?.stable_id)?.id??'empty'}`:undefined}
             onEditPhoto={openToyPhoto} style={s.toyStage}
-            artStyle={{position:'absolute',left:(240-(right-left)*ratio)/2-left*ratio,top:(250-(bottom-top)*ratio)/2-top*ratio,width:asset.width*ratio,height:asset.height*ratio}}/>;})()}
+            artStyle={{position:'absolute',left:(240-asset.width*ratio)/2,top:(250-asset.height*ratio)/2,width:asset.width*ratio,height:asset.height*ratio}}/>;})()}
         <Action label="Add or change face photo" onPress={openToyPhoto}/>
         <Action secondary label="Done" onPress={()=>setToyOpen(false)}/>
       </View></View>
-    </Modal>
-    {frameSheetOpen&&data&&<PhotoFrameSheet photo={data.roomPhotos?.find(photo=>photo.ownerId===data.profile.id&&photo.kind==='frame')}
+    </ScreenOverlay>
+    {data&&(section==='home'||frameSheetOpen)&&<PhotoFrameSheet visible={frameSheetOpen} photo={data.roomPhotos?.find(photo=>photo.ownerId===data.profile.id&&photo.kind==='frame')}
       onClose={()=>setFrameSheetOpen(false)} onChoose={chooseFramePhoto}
-      onRemove={async()=>{const photo=data.roomPhotos?.find(item=>item.ownerId===data.profile.id&&item.kind==='frame');if(!photo)return;await deleteRoomFramePhoto(photo.id,data.profile.id);invalidateRoomPhotoCache(photo);await refreshBurrow();}}/>}
+      remaining={data.photoUsage?.frame.remaining} limit={data.photoUsage?.frame.limit}
+      onHistory={()=>{setFrameSheetOpen(false);requestAnimationFrame(()=>router.push('/(main)/frame-photo-history' as Href));}}/>}
     {frameCropAsset&&data&&<FramePhotoCropper asset={frameCropAsset}
       onCancel={()=>{setFrameCropAsset(null);setFrameSheetOpen(true);}}
       onConfirm={async crop=>{await uploadRoomPhoto(data,data.profile.id,'frame',frameCropAsset,crop);setFrameCropAsset(null);setFrameSheetOpen(true);}}/>}
-    {musicOpen&&data&&<BurrowMusicPicker data={data} onClose={()=>setMusicOpen(false)}/>}
     <Modal visible={inboxOpen&&!!data} transparent animationType="slide" onRequestClose={()=>setInboxOpen(false)}>
       <View style={s.scrim}><ScrollView style={s.sheet} contentContainerStyle={{gap:16,paddingBottom:35}}>{data&&<>
         <Text accessibilityRole="header" style={s.cardTitle}>A little love arrived</Text>
@@ -508,25 +587,19 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
         <Action secondary label="Later" disabled={busy} onPress={()=>setCareKind(null)}/>
       </View></View>
     </Modal>
-    <Modal visible={!!selected} transparent animationType="slide" onRequestClose={()=>setSelected(null)}>
+    {/* No exiting native Modal may compete with the next checkout overlay. */}
+    <ScreenOverlay visible={!!selected} transparent onRequestClose={()=>setSelected(null)}>
       <View style={s.scrim}><ScrollView style={[s.sheet,{maxHeight:'88%'}]} contentContainerStyle={{gap:14,paddingBottom:30}}>{selected&&data&&<>
         <CatalogArtwork item={selected} large/><Text style={s.cardTitle}>{selected.title}</Text><Text style={s.body}>{selected.description}</Text>
         <Text style={s.body}>More {categoryName(selected.category)} choices</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:10}}>{data.catalog.filter(item=>item.category===selected.category&&item.stable_id!==selected.stable_id&&!!item.price).slice(0,8).map(item=><Pressable key={item.stable_id} accessibilityRole="button" accessibilityLabel={`Preview ${item.title}`} onPress={()=>setSelected(item)} style={{width:108,padding:8,borderRadius:14,backgroundColor:'#F7E5CC',alignItems:'center'}}><CatalogArtwork item={item}/><Text numberOfLines={2} style={s.tileTitle}>{item.title}</Text></Pressable>)}</ScrollView>
-        {selected.price!=null&&selected.price>0&&!data.inventory.some(i=>i.owner_id===data.profile.id&&i.item_id===selected.stable_id)&&<Action label={selected.plus_only&&!data.hasPlus?'Plus required':`Buy for 🥕 ${selected.price}`} disabled={busy} onPress={()=>buy(selected)}/>}
-        {!!selected.price&&selected.tradable&&!!data.partner&&<Action secondary label={`Gift my partner · 🥕 ${selected.price}`} disabled={busy||data.inventory.some(i=>i.owner_id===data.partner?.id&&i.item_id===selected.stable_id)} onPress={()=>buy(selected,true)}/>}
+        {selected.price!=null&&selected.price>0&&!data.inventory.some(i=>i.owner_id===data.profile.id&&i.item_id===selected.stable_id)&&<Action label={selected.plus_only&&!data.hasPlus?'Plus required':`Buy for {coin} ${selected.price}`} disabled={busy} onPress={()=>buy(selected)}/>}
+        {!!selected.price&&selected.tradable&&!!data.partner&&<Action secondary label={`Gift my partner · {coin} ${selected.price}`} disabled={busy||data.inventory.some(i=>i.owner_id===data.partner?.id&&i.item_id===selected.stable_id)} onPress={()=>buy(selected,true)}/>}
         <Action secondary label="Close" disabled={busy} onPress={()=>setSelected(null)}/>
       </>}</ScrollView></View>
-    </Modal>
-    <Modal visible={!!pairPrompt} transparent animationType="fade" onRequestClose={()=>setPairPrompt(null)}>
-      <View style={s.scrim}><View style={s.sheet} accessibilityViewIsModal>
-        <Text accessibilityRole="header" style={s.cardTitle}>Connect with your person</Text>
-        <Text style={s.body}>{pairPrompt}</Text>
-        <Action label="Connect now" onPress={()=>{setPairPrompt(null);router.push('/(main)/friend-add');}}/>
-        <Action secondary label="Not now" onPress={()=>setPairPrompt(null)}/>
-      </View></View>
-    </Modal>
-  </LinearGradient>;
+    </ScreenOverlay>
+  </View>;
+  return section==='adventure' ? <AdventureStageTransition stageKey={data?.readyRecordId?'ready':'entry'}>{page}</AdventureStageTransition> : page;
 }
 
 const s=StyleSheet.create({
@@ -559,60 +632,7 @@ const shopStyles=StyleSheet.create({
   footer:{flexDirection:'row',gap:10,paddingVertical:16},
 });
 
-const collectionStyles=StyleSheet.create({
-  subtitle:{color:'#FCE6D0',fontSize:15,marginTop:-12,marginBottom:8},
-  board:{backgroundColor:'#FFF4E3',borderRadius:25,paddingHorizontal:16,paddingTop:22,paddingBottom:30,gap:16,shadowColor:'#2B140B',shadowOffset:{width:0,height:6},shadowOpacity:.3,shadowRadius:0,elevation:5},
-  ownerRow:{flexDirection:'row',alignSelf:'center',padding:3,borderRadius:16,backgroundColor:'#EBD4B8',gap:3},
-  owner:{paddingHorizontal:17,paddingVertical:9,borderRadius:14},
-  ownerSelected:{backgroundColor:'#FFF9EF'},
-  ownerText:{color:'#75543D',fontSize:13,fontWeight:'700'},
-  ownerTextSelected:{color:'#A44929'},
-  tabs:{flexDirection:'row',borderWidth:1,borderColor:'#E9CFAC',borderRadius:20,padding:4,gap:3},
-  tab:{flex:1,minHeight:50,justifyContent:'center',alignItems:'center',borderRadius:16},
-  activeTab:{backgroundColor:'#BD5F38'},
-  tabText:{color:'#533221',fontWeight:'800',fontSize:15},
-  activeTabText:{color:'#FFF9EF'},
-  headingRow:{flexDirection:'row',alignItems:'baseline',justifyContent:'space-between'},
-  heading:{fontSize:27,fontWeight:'900',color:'#3D2118'},
-  count:{fontSize:13,color:'#88654D'},
-  filters:{flexDirection:'row',justifyContent:'space-between',gap:2},
-  filter:{flex:1,alignItems:'center',paddingVertical:9,gap:6},
-  filterText:{fontSize:12,color:'#805F4A',fontWeight:'600'},
-  activeFilterText:{color:'#BF572B',fontWeight:'800'},
-  filterUnderline:{height:3,width:'72%',backgroundColor:'#C5592B',borderRadius:3},
-  grid:{flexDirection:'row',flexWrap:'wrap',gap:8},
-  tile:{minHeight:145,backgroundColor:'#FFF9EE',borderRadius:15,borderWidth:1,borderColor:'#F2E3CA',alignItems:'center',padding:5,gap:3,justifyContent:'flex-start'},
-  tileTitle:{color:'#3D251A',fontSize:11,lineHeight:14,fontWeight:'800',textAlign:'center',minHeight:28},
-  owned:{fontSize:10,fontWeight:'700',color:'#2F8D72'},
-  unknownTile:{backgroundColor:'#F3E8D9'},
-  unknown:{height:87,textAlignVertical:'center',fontSize:42,color:'#BCA28B',fontWeight:'900'},
-  unknownLabel:{fontSize:9,color:'#8A6F5C',textAlign:'center'},
-  empty:{color:'#7B6049',textAlign:'center',lineHeight:21},
-  footerButton:{backgroundColor:'#FFC653',borderRadius:17,minHeight:57,alignItems:'center',justifyContent:'center',marginHorizontal:16,shadowColor:'#402217',shadowOpacity:.25,shadowOffset:{width:0,height:4},shadowRadius:0,elevation:3},
-  footerText:{color:'#542E1C',fontSize:17,fontWeight:'800'},
-});
 
 const adventureStyles=StyleSheet.create({
-  diggingHero:{height:230,justifyContent:'center',backgroundColor:'#2A1109AA',borderRadius:24,marginTop:12},
-  progressPage:{gap:16,paddingBottom:30},
-  plusBadge:{alignSelf:'center',backgroundColor:'#F4BA5C',color:'#3C1D0F',fontWeight:'900',fontSize:15,overflow:'hidden',paddingHorizontal:22,paddingVertical:6,borderRadius:20},
-  progressTitle:{color:'#FFF8E9',fontSize:23,fontWeight:'800',textAlign:'center'},
-  progressCard:{backgroundColor:'#FFF9EF',borderRadius:24,padding:20,gap:17},
-  progressTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10},
-  progressHeading:{fontSize:22,fontWeight:'800',color:'#553521'},
-  progressTime:{fontSize:14,color:'#664330'},
-  progressTrack:{height:10,borderRadius:7,backgroundColor:'#E8DBC9',overflow:'hidden'},
-  progressFill:{height:'100%',backgroundColor:'#CC7650'},
-  progressDistance:{fontSize:19,color:'#553521',fontWeight:'800'},
-  logCard:{backgroundColor:'#FFF9EF',borderRadius:24,padding:22,gap:14},
-  logText:{fontSize:15,lineHeight:23,color:'#74533E'},
-  logHint:{fontSize:13,color:'#987761',textAlign:'center'},
-  entry:{alignItems:'center',gap:12,paddingBottom:26},
-  entryTitle:{fontSize:25,fontWeight:'900',color:'#FFF9EB',textAlign:'center'},
-  entrySubtitle:{fontSize:15,color:'#FFF2DF',textAlign:'center',marginBottom:17},
-  choice:{width:'100%',minHeight:78,backgroundColor:'#FFF6E8',borderRadius:21,paddingHorizontal:20,paddingVertical:14,flexDirection:'row',alignItems:'center',gap:12,shadowColor:'#2C150D',shadowOffset:{width:0,height:5},shadowOpacity:.5,shadowRadius:0,elevation:5},
-  choiceTitle:{fontSize:19,fontWeight:'800',color:'#402519'},
-  choiceText:{fontSize:14,lineHeight:20,color:'#694932'},
-  choiceIcon:{fontSize:29,fontWeight:'800',color:'#B46E48'},
-  note:{marginTop:18,fontSize:13,lineHeight:19,color:'#FFF3E2',textAlign:'center'},
+  entryScroll:{paddingHorizontal:0,flexGrow:1},
 });

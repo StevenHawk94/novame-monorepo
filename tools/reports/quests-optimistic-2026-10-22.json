@@ -1,0 +1,27 @@
+{
+  "feature": "Local-first quest completion and optimistic claims",
+  "date": "2026-10-22",
+  "scope": "Mobile client only; no production migrations or API deployment",
+  "behavior": [
+    "Durable, user/day/pair-scoped completion facts project daily task readiness immediately",
+    "Daily and special claims persist before optimistic coins are presented",
+    "Wire claims wait for valid completion receipts; special milestone claims settle in stage order",
+    "Unknown network failures retain intents, predicted balances and stable retry IDs",
+    "Definitive rejection corrects shared claimed/progress state and predicted coins",
+    "Stale bootstrap reads cannot erase local task facts or replay reward animations",
+    "Raw personal bootstrap caches exclude projected completion and claim data",
+    "Photo-less plushies do not qualify; rejected photo uploads invalidate their speculative completion",
+    "Game eligibility remains both players completing a round; old history cannot complete today's task",
+    "Saved journal text alone does not prove supplementary quest registration; a receipt or authoritative refresh releases Claim",
+    "Toy delivery uses bounded exponential retry without changing non-sliding hourly Moments aggregation"
+  ],
+  "verification": {
+    "regressionTests": { "passed": 235, "failed": 0 },
+    "mobileTypeCheck": "passed",
+    "iosExport": "passed",
+    "iosBundle": "index-a31fb58dbf86d8498a648cbfe08d3313.hbc",
+    "iosExportDirectory": "/private/tmp/burrow-quests-local-20261022",
+    "nativeDeviceQA": "not performed",
+    "easBuildOrSubmit": "not requested or performed"
+  }
+}

@@ -11,6 +11,7 @@ function card(kind, acceptedAt) {
   const calls=[],routes=[],done=[],alerts=[];
   let result={ feedback:'Frozen feedback' }, ok=true;
   const { AdventureFriendCard }=load('apps/mobile/src/components/burrow/adventure-friend-card.tsx',{
+    '@/lib/burrow-page-entry':{openPreparedBurrow:r=>routes.push(r)},
     'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{Alert:{alert:(...args)=>alerts.push(args)},Pressable:'Pressable',Text:'Text',View:'View',StyleSheet:{create:x=>x}},
 './burrow-image': { Image: 'Image' }, 'expo-image': { Image: 'Image' },
@@ -72,7 +73,7 @@ for (const [route,method,body] of [
   assert.equal((await api[method](request(body))).status,410);assert.equal(checked,1);
   authenticated=false;assert.equal((await api[method](request(body))).status,401);assert.equal(checked,1);
 });
-test('new durable journal keeps Memory AI but passes zero old XP; legacy rollout keeps original XP',async()=>{
+test('new durable journal skips Memory AI and old XP; legacy rollout keeps both',async()=>{
   for(const enabled of [true,false]) {
     const calls=[];let memory=0;
     const draft={id:'draft',saved_reflect_id:'reflect',local_date:'2026-09-27',matches:[]};
@@ -87,7 +88,8 @@ test('new durable journal keeps Memory AI but passes zero old XP; legacy rollout
       '@/lib/reflect-settlement':{generateSavedReflectCopy:async(_db,d)=>{memory++;return d;}},
     });
     const saved=await route.POST(request({promptId:1,idempotencyKey:'test-key-1'}));
-    assert.equal(saved.status,200);assert.equal(calls.find(c=>c.name==='begin_saved_reflect').args.p_xp,enabled?0:30);assert.equal(memory,1);
+    assert.equal(saved.status,200);assert.equal(calls.find(c=>c.name==='begin_saved_reflect').args.p_xp,enabled?0:30);assert.equal(memory,enabled?0:1);
+    assert.equal(calls.filter(c=>c.name==='claim_reflect_ai_enhancement').length,enabled?0:1);
   }
 });
 test('legacy draft finalization passes zero XP in new mode and original XP in old mode',async()=>{

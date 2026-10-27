@@ -78,9 +78,12 @@ export async function GET(request) {
     // the pairing itself.
     const sinceIso = row.relationship_since || (row.created_at ? row.created_at.slice(0, 10) : null)
     const days = sinceIso ? daysBetweenDateKeys(sinceIso, dateInTimeZone(viewer?.timezone_name)) : 0
+    const initiator=await supabase.from('friendships').select('requested_by').eq('user_a',[userId,row.partner_user_id].sort()[0])
+      .eq('user_b',[userId,row.partner_user_id].sort()[1]).eq('status','accepted').maybeSingle()
     return NextResponse.json({
       success: true,
       paired: true,
+      initiatorId:initiator.data?.requested_by??null,
       partner: {
         userId: row.partner_user_id,
         displayName: prof?.display_name || 'Partner',

@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from './burrow-image';
 import type { MajorUpdateBootstrap, MajorUpdateQuest } from '@/lib/app-major-update-api';
-import { BURROW_QUEST_ICONS } from '@/lib/burrow-ui-assets';
-import { QuestClaimBurst } from './care-quest-celebration';
+import { BURROW_QUEST_BANNER, BURROW_QUEST_ICONS } from '@/lib/burrow-ui-assets';
+import { setNextCoinRewardOrigin, type CoinRewardPoint } from '@/lib/coin-reward-store';
+import { QuestClaimConfetti } from './quest-claim-confetti';
+import { QuestProgress } from './quest-progress';
+import { QuestAction } from './quest-action';
 
 const dailyOrder = ['write_adventure_record', 'send_affection', 'play_game', 'water_partner_flower', 'feed_partner_bunny', 'interact_with_toy'] as const;
 type DailyId = typeof dailyOrder[number];
@@ -23,40 +26,69 @@ const specialCopy: Record<string, { title: string; subtitle: string }> = {
 };
 const specialOrder = ['items_collected', 'adventures_completed', 'friends_met', 'games_played'];
 
-export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecialGo }: {
+/** Full-width artwork scrolls together with the quest list. */
+export function QuestBanner() {
+  return <Image source={BURROW_QUEST_BANNER} contentFit="contain" accessibilityLabel="Finish quests and earn coins" style={styles.banner}/>;
+}
+
+export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim }: {
   data: MajorUpdateBootstrap;
   busy: boolean;
   onGo: (id: DailyId) => void;
   onClaim: (quest: MajorUpdateQuest) => Promise<number>;
   onSpecialClaim: (questId: string, stage: number) => Promise<number>;
-  onSpecialGo: (questId: string) => void;
 }) {
   const [localClaims,setLocalClaims]=useState<Set<string>>(()=>new Set());
-  const [celebration,setCelebration]=useState<number|null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const claiming = useRef(new Set<string>());
   const activeScope = useRef('');
+  const burstSequence = useRef(0);
+  const [bursts, setBursts] = useState<{ scope: string; keys: Record<string, number> }>({ scope: '', keys: {} });
   const scope = `${data.profile.id}:${data.localDate}:${data.pairVersion ?? ''}`;
   activeScope.current = scope;
-  useEffect(() => { claiming.current.clear(); setLocalClaims(new Set()); setCelebration(null); setClaimError(null); }, [scope]);
+  useEffect(() => { claiming.current.clear(); setLocalClaims(new Set()); setClaimError(null); setBursts({ scope, keys: {} }); }, [scope]);
+  useEffect(() => {
+    setLocalClaims(previous => {
+      const next=new Set([...previous].filter(key=>!data.quests.quests.some(q=>q.assignmentId===key&&q.claimedAt)
+        &&!data.specialQuests.some(q=>key.startsWith(`${q.questId}:`)&&Number(key.split(':').at(-1))<q.stage)));
+      return next.size===previous.size?previous:next;
+    });
+  },[data.quests,data.specialQuests]);
   useEffect(() => { if (!claimError) return; const timer = setTimeout(() => setClaimError(null), 2000); return () => clearTimeout(timer); }, [claimError]);
-  const claim=(key:string,expectedReward:number,request:()=>Promise<number>)=>{
+  const claim=(key:string,request:()=>Promise<number>,origin?:CoinRewardPoint,burstKey=key)=>{
     if(localClaims.has(key) || claiming.current.has(key))return;
     claiming.current.add(key);
     const owner = scope;
-    // Claim is optimistic: the card settles on this frame, while the server
-    // confirms the actual credit in the background. A rejection rolls it back.
+    // Daily cards settle immediately; special cards show the next milestone
+    // while the server confirms the credit. A rejection rolls either back.
+    // Claimed/stage state lives in the shared durable projection, not this
+    // mounted page. Rejection/relaunch/tab switches must show the same state.
     setLocalClaims(previous=>new Set(previous).add(key));
-    setCelebration(expectedReward);
-    void request().then(reward=>{
+    const burstId = ++burstSequence.current;
+    setBursts(previous => ({ scope: owner, keys: { ...(previous.scope === owner ? previous.keys : {}), [burstKey]: burstId } }));
+    if(origin)setNextCoinRewardOrigin(origin);
+    void request().catch(()=>{
       if (activeScope.current !== owner) return;
-      // Zero can be a replay of an already credited claim, not a rejection.
-      if (reward > 0 && reward !== expectedReward) setCelebration(reward);
-    }).catch(()=>{
-      if (activeScope.current !== owner) return;
-      setCelebration(null); setClaimError('Couldn’t claim the reward. Tap Claim to retry.');
+      setClaimError('Couldn’t claim the reward. Tap Claim to retry.');
       setLocalClaims(previous=>{const next=new Set(previous);next.delete(key);return next;});
-    }).finally(() => { if (activeScope.current === owner) claiming.current.delete(key); });
+      setBursts(previous => {
+        if (previous.scope !== owner || previous.keys[burstKey] !== burstId) return previous;
+        const keys = { ...previous.keys }; delete keys[burstKey]; return { scope: owner, keys };
+      });
+    }).finally(() => { if (activeScope.current === owner) {
+      claiming.current.delete(key);
+      // A very fast rejection may be batched before React ever renders the
+      // projected claimed state. Never leave this transient tap guard stuck.
+      setLocalClaims(previous=>{if(!previous.has(key))return previous;const next=new Set(previous);next.delete(key);return next;});
+    } });
+  };
+  const confetti = (key: string) => {
+    const id = bursts.scope === scope ? bursts.keys[key] : undefined;
+    return id === undefined ? null : <QuestClaimConfetti key={id} onComplete={() => setBursts(previous => {
+      // An older run cannot remove a retry, another task, or another account.
+      if (previous.scope !== scope || previous.keys[key] !== id) return previous;
+      const keys = { ...previous.keys }; delete keys[key]; return { scope, keys };
+    })} />;
   };
   // An older API snapshot can be empty on the first visit. Keep the complete
   // board visible while its real assignments are being created/refreshed.
@@ -72,6 +104,8 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
     reward: 15,
   });
   return <View style={styles.board}>
+    <QuestBanner/>
+    <View style={styles.questContent}>
     <Text accessibilityRole="header" style={styles.heading}>Daily Quests</Text>
     <View style={styles.list}>{shown.map(quest => {
       const id = quest.questId as DailyId;
@@ -79,42 +113,53 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
       const claimed = !!quest.claimedAt || localClaims.has(quest.assignmentId);
       const pending = quest.assignmentId.startsWith('pending:');
       return <Pressable key={id} accessibilityRole="button" accessibilityLabel={`${dailyCopy[id] ?? id}, ${claimed ? 'reward collected' : done ? 'collect reward' : 'open'}`}
-        disabled={busy || claimed} onPress={() => done && !pending ? claim(quest.assignmentId,10,()=>onClaim(quest)) : onGo(id)}
-        style={({ pressed }) => [styles.dailyCard, done && styles.doneCard, pressed && styles.pressed]}>
-        <Image source={BURROW_QUEST_ICONS[id]} contentFit="contain" style={styles.dailyIcon} />
-        <Text numberOfLines={2} style={[styles.dailyTitle, (done || claimed) && styles.claimedTitle]}>{dailyCopy[id] ?? id}</Text>
-        {!claimed&&(done&&!pending?<View style={styles.claimButton}><Text style={styles.claimText}>Claim</Text></View>
-          :<View style={styles.status}><Text style={styles.statusText}>➜</Text></View>)}
+        disabled={claimed} onPress={event => done && !pending ? claim(quest.assignmentId,()=>onClaim(quest),event?.nativeEvent?{x:event.nativeEvent.pageX,y:event.nativeEvent.pageY}:undefined) : onGo(id)}
+        style={({ pressed }) => [styles.dailyCard, claimed && styles.doneCard, pressed && styles.pressed]}>
+        {({pressed})=><><Image source={BURROW_QUEST_ICONS[id]} contentFit="contain" style={styles.dailyIcon} />
+        <Text numberOfLines={2} style={[styles.dailyTitle, claimed && styles.claimedTitle]}>{dailyCopy[id] ?? id}</Text>
+        {!claimed&&<QuestAction ready={done&&!pending} arrow={!done||pending} pressed={pressed}/>}
+        {confetti(quest.assignmentId)}
+        </>}
       </Pressable>;
     })}</View>
     <Text accessibilityRole="header" style={[styles.heading, styles.specialHeading]}>Special Quests</Text>
-    <View style={styles.list}>{specials.map(quest => {
+    <View style={styles.list}>{specials.map(current => {
+      const localClaimed=localClaims.has(`${current.questId}:${current.stage}`);
+      // Targets are cumulative, one equal-sized step per stage. Keep earned
+      // progress and raise the goal immediately, so the bar falls back without
+      // treating this repeatable quest as a crossed-out completed daily card.
+      const quest=localClaimed?{...current,stage:current.stage+1,
+        target:current.target+current.target/Math.max(1,current.stage)}:current;
       const complete = quest.progress >= quest.target;
-      const claimable = complete && data.specialQuests.some(item => item.questId === quest.questId);
-      const localClaimed=localClaims.has(`${quest.questId}:${quest.stage}`);
+      const claimable = !localClaimed && complete && data.specialQuests.some(item => item.questId === quest.questId);
       const copy = specialCopy[quest.questId] ?? { title: quest.questId, subtitle: 'Keep going' };
-      return <Pressable key={quest.questId} accessibilityRole="button" accessibilityLabel={`${copy.title}, ${quest.progress} of ${quest.target}, ${complete ? 'collect reward' : 'open'}`}
-        disabled={busy||localClaimed} onPress={() => claimable
-          ? claim(`${quest.questId}:${quest.stage}`,quest.reward,()=>onSpecialClaim(quest.questId, quest.stage)) : onSpecialGo(quest.questId)}
+      return <Pressable key={quest.questId} accessibilityRole="button" accessibilityLabel={`${copy.title}, ${quest.progress} of ${quest.target}, ${localClaimed ? 'updating reward' : claimable ? 'collect reward' : 'reward not ready'}`}
+        accessibilityState={{disabled:!claimable}} disabled={!claimable} onPress={event => {
+          if(!claimable)return;
+          claim(`${quest.questId}:${quest.stage}`,()=>onSpecialClaim(quest.questId, quest.stage),event?.nativeEvent?{x:event.nativeEvent.pageX,y:event.nativeEvent.pageY}:undefined,`special:${quest.questId}`);
+        }}
         style={({ pressed }) => [styles.specialCard, pressed && styles.pressed]}>
-        <Image source={BURROW_QUEST_ICONS[quest.questId as keyof typeof BURROW_QUEST_ICONS]} contentFit="contain" style={styles.specialIcon} />
+        {({pressed})=><><Image source={BURROW_QUEST_ICONS[quest.questId as keyof typeof BURROW_QUEST_ICONS]} contentFit="contain" style={styles.specialIcon} />
         <View style={styles.specialText}>
           <Text style={styles.specialTitle}>{copy.title}</Text>
           <Text numberOfLines={2} style={styles.subtitle}>{copy.subtitle}</Text>
-          <View style={styles.track}><View style={[styles.fill, { width: `${Math.min(100, Math.max(0, quest.progress / Math.max(1, quest.target) * 100))}%` }]} /></View>
+          <QuestProgress key={`${scope}:${quest.questId}`} progress={quest.progress} target={quest.target}/>
           <Text style={styles.progress}>{Math.min(quest.progress, quest.target)}/{quest.target}</Text>
         </View>
-        {!localClaimed&&(claimable?<View style={styles.claimButton}><Text style={styles.claimText}>Claim</Text></View>
-          :<View style={styles.status}><Text style={styles.statusText}>➜</Text></View>)}
+        <View style={styles.specialRewardSlot}><QuestAction ready={claimable} pressed={pressed} disabled={!claimable}/></View>
+        {confetti(`special:${quest.questId}`)}
+        </>}
       </Pressable>;
     })}</View>
-    {celebration!=null&&<QuestClaimBurst reward={celebration} onClose={()=>setCelebration(null)}/>}
     {claimError && <Text accessibilityRole="alert" style={{ color: '#FFF8EC', textAlign: 'center' }}>{claimError}</Text>}
+    </View>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  board: { gap: 13, paddingTop: 10, paddingBottom: 30 },
+  board: { backgroundColor: '#844624', paddingBottom: 30 },
+  banner: { width: '100%', aspectRatio: 2, flexShrink: 0 },
+  questContent: { paddingHorizontal: 18, paddingTop: 16, gap: 13 },
   heading: { color: '#FFF8EC', fontSize: 27, fontWeight: '800', marginBottom: 3 },
   specialHeading: { marginTop: 20 },
   list: { gap: 12 },
@@ -123,17 +168,12 @@ const styles = StyleSheet.create({
   dailyIcon: { width: 55, height: 55 },
   dailyTitle: { flex: 1, color: '#24150D', fontSize: 16, fontWeight: '700', lineHeight: 21 },
   claimedTitle: { textDecorationLine: 'line-through', color: '#FFF9EF' },
-  status: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#8B8A86', alignItems: 'center', justifyContent: 'center' },
-  claimButton: { minWidth: 70, height: 38, paddingHorizontal: 10, borderRadius: 19, backgroundColor: '#31A36C', alignItems: 'center', justifyContent: 'center' },
-  claimText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
-  statusText: { color: '#FFF', fontSize: 28, lineHeight: 32, fontWeight: '800' },
   specialCard: { minHeight: 106, borderRadius: 22, backgroundColor: '#FFFDF8', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 10, paddingVertical: 12, shadowColor: '#231008', shadowOffset: { width: 0, height: 5 }, shadowOpacity: .4, shadowRadius: 0, elevation: 4 },
   specialIcon: { width: 58, height: 58 },
   specialText: { flex: 1, gap: 2 },
+  specialRewardSlot: { width: 76, alignItems: 'center', justifyContent: 'center' },
   specialTitle: { color: '#1F120C', fontSize: 18, fontWeight: '800' },
   subtitle: { color: '#493629', fontSize: 12, lineHeight: 16 },
-  track: { marginTop: 5, height: 7, borderRadius: 4, backgroundColor: '#E8E5DC', overflow: 'hidden' },
-  fill: { height: '100%', backgroundColor: '#CF744C' },
   progress: { color: '#24150D', fontSize: 12, fontWeight: '800' },
   pressed: { opacity: .8 },
 });

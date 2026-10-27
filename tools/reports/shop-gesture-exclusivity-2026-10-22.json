@@ -1,0 +1,25 @@
+{
+  "scope": "Client-only Shop category browser gestures and category taps",
+  "edgeBack": {
+    "reservedWidthPt": 24,
+    "mechanism": "Non-collapsible transparent native sibling over category rail and product pager edge; edge touches have neither scroll view in their ancestry",
+    "navigationOwner": "Existing retained-tab/native-stack back recognizer unchanged",
+    "headerAndFooter": "Not covered by browser guard"
+  },
+  "categoryTaps": {
+    "distant": "Immediate native offset jump, with no traversal animation through intermediate categories",
+    "adjacent": "Short native slide preserved",
+    "manualSwipes": "Native paging preserved",
+    "staleEvents": "Instant target owns offset until new gesture; interrupted momentum cannot change selection",
+    "layoutTiming": "Offset update in layout effect"
+  },
+  "verification": {
+    "regressionTestsPassed": 105,
+    "mobileTypeCheck": "passed",
+    "iosProductionExport": "passed",
+    "simulatorGestureTestPerformed": false
+  },
+  "businessRulesChanged": false,
+  "apiDeploymentNeeded": false,
+  "easBuildDispatched": false
+}

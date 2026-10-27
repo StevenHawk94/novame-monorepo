@@ -6,9 +6,9 @@ const path=`${actor}/00000000-0000-0000-0000-000000000002.jpg`;
 async function cleanup(options={}) {
   const removed=[],acked=[];let rpcCalls=0;
   const helper=await import('../apps/api/src/lib/burrow-photo.mjs');
-  const db={rpc:async name=>{assert.equal(name,'collect_room_photo_garbage_v1');rpcCalls++;return {data:options.paths??[path],error:options.queryError};},
+  const db={rpc:async name=>{assert.equal(name,'collect_room_photo_garbage_v1');rpcCalls++;return {data:options.paths??(rpcCalls===1||options.ackError?[path]:[]),error:options.queryError};},
     storage:{from:bucket=>{assert.equal(bucket,'burrow-room-photos');return {remove:async keys=>{removed.push(keys);return {error:options.storageError};}};}},
-    from:table=>{assert.equal(table,'room_photo_garbage');return {delete:()=>({eq:async(key,value)=>{assert.equal(key,'private_path');acked.push(value);return {error:options.ackError};}})};}};
+    from:table=>{assert.equal(table,'room_photo_garbage');return {delete:()=>({in:async(key,values)=>{assert.equal(key,'private_path');acked.push(...values);return {error:options.ackError};}})};}};
   const route=load('apps/api/src/app/api/cron/room-photo-cleanup/route.js',{
     'next/server':{NextResponse:{json:(body,config={})=>({body,status:config.status??200,headers:config.headers})}},
     '@/lib/app-major-update':{appMajorUpdateServiceClient:()=>db},'@/lib/burrow-photo.mjs':helper,
@@ -103,34 +103,27 @@ test('direct Court worker recovery fails closed before claiming work or invoking
   }
 });
 
-test('push delivery excludes paused Court before limit, retaining ordinary partner notifications',async()=>{
-  for(const enabled of [true,false]) {
+test('push allowlist excludes retired Court and partner-reflect before limit, retaining game notifications',async()=>{
     const queries=[],writes=[];
-    const db={from:table=>{
+    const db={rpc:async()=>({data:{allowed:true,partnerName:'Sam'}}),from:table=>{
       const q={table,ops:[],patch:null};queries.push(q);
       for(const method of ['select','eq','in','lt','lte','order','limit','not','maybeSingle'])q[method]=(...args)=>{q.ops.push([method,...args]);return q;};
       q.update=patch=>{q.patch=patch;writes.push(q);return q;};
       q.then=(resolve,reject)=>Promise.resolve().then(()=>{
         if(table==='device_push_tokens')return {data:[]};
         if(q.patch)return {data:q.patch.status==='sending'?{id:'claimed'}:null};
-        const rows=[{id:'court',event_type:'court_ready'},{id:'partner',event_type:'partner_reflect'}];
-        return {data:q.ops.some(x=>x[0]==='not')?rows.filter(x=>x.id==='partner'):rows};
+        const rows=[{id:'court',event_type:'court_ready'},{id:'partner',event_type:'partner_reflect'},{id:'game',event_type:'game_ready'}];
+        const allowed=q.ops.find(x=>x[0]==='in'&&x[1]==='event_type')?.[2]??[];
+        return {data:rows.filter(row=>allowed.includes(row.event_type))};
       }).then(resolve,reject);
       return q;
     }};
-    const api=load('apps/api/src/lib/push-notifications.js',{'./app-major-update':{majorUpdateEnabled:async()=>enabled}});
+    const api=load('apps/api/src/lib/push-notifications.js');
     const result=await api.drainPushNotificationOutbox(db);
-    assert.equal(result.processed,enabled?1:2);
+    assert.equal(result.processed,1);
     const pending=queries.find(q=>!q.patch&&q.table==='notification_outbox');
-    if(enabled){assert.ok(pending.ops.findIndex(x=>x[0]==='not')<pending.ops.findIndex(x=>x[0]==='limit'));
+    assert.ok(pending.ops.findIndex(x=>x[0]==='in'&&x[1]==='event_type')<pending.ops.findIndex(x=>x[0]==='limit'));
       assert.equal(writes.some(q=>q.ops.some(x=>x[0]==='eq'&&x[2]==='court')),false);
-      assert.ok(writes[0].ops.some(x=>x[0]==='not'));
-    }else assert.equal(pending.ops.some(x=>x[0]==='not'),false);
-    assert.ok(writes.some(q=>q.ops.some(x=>x[0]==='eq'&&x[2]==='partner')));
-  }
-});
-test('push configuration failure touches no queue rows and sends nothing',async()=>{
-  let touched=0;
-  const api=load('apps/api/src/lib/push-notifications.js',{'./app-major-update':{majorUpdateEnabled:async()=>{throw Error('config');}}});
-  await assert.rejects(()=>api.drainPushNotificationOutbox({from(){touched++;}}),/config/);assert.equal(touched,0);
+    assert.equal(writes.some(q=>q.ops.some(x=>x[0]==='eq'&&x[2]==='partner')),false);
+    assert.ok(writes.some(q=>q.ops.some(x=>x[0]==='eq'&&x[2]==='game')));
 });

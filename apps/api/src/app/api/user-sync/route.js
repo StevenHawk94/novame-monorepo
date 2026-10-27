@@ -87,6 +87,11 @@ export async function GET(request) {
       }
     }
 
+    // Refresh the cached projection from current expiry/domain authority. No
+    // store network calls, and no listener/polling added to foreground buttons.
+    const entitlement=await supabase.rpc('refresh_economic_entitlements_v1',{p_user:userId})
+    if(entitlement.error||typeof entitlement.data?.hasPlus!=='boolean')throw Error('entitlement_unavailable')
+    profile={...profile,subscription_tier:entitlement.data.hasPlus?'plus':'free'}
     return Response.json({
       success: true,
       data: {
@@ -125,7 +130,7 @@ export async function POST(request) {
 
     const updates = { updated_at: new Date().toISOString() }
     if (body.displayName !== undefined) {
-      updates.display_name = body.displayName ? String(body.displayName).slice(0, 15) : body.displayName
+      updates.display_name = body.displayName ? String(body.displayName).slice(0, 20) : body.displayName
     }
     if (body.birthday !== undefined) updates.birthday = body.birthday
     if (body.defaultAvatarId !== undefined) {

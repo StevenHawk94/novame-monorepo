@@ -1,0 +1,1077 @@
+{
+  "code": "KK",
+  "name": "Kiki",
+  "friendId": "adventure_friend_kk",
+  "waitingLines": [
+    "GUESS WHAT!! I’m not leaving till I see {partner}!! I have SO much to tell them!!",
+    "Where’s {partner}?? I’ve been here two minutes and I already miss them!!"
+  ],
+  "questions": [
+    {
+      "id": "KK-V01",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki bursts through your door, stands up tall on his hind legs, and scans the room like a security camera.",
+      "lines": [
+        "GUESS WHAT!! I'm on lookout duty! Also quiz duty! Multitasking!!"
+      ],
+      "question": "What job do meerkats take turns doing while the others eat?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Cooking dinner",
+          "reply": [
+            "Ha!! I wish! Moss would love a chef!",
+            "Nope, it's sentry duty: one stands watch while the others forage.",
+            "They even call out 'all clear' with little peeps. Tiny security guards!!"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "DJ-ing the party",
+          "reply": [
+            "Okay, that would slap. But no!!",
+            "The real job is sentry duty. One meerkat keeps watch for danger.",
+            "They peep softly to say 'all good.' Best coworkers ever."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Standing guard as a sentry",
+          "reply": [
+            "YES!! Sentry duty! My favorite job!",
+            "One meerkat climbs up high and watches for danger while the group eats.",
+            "They make little 'all clear' peeps. I do that at parties too."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Meerkats take turns as sentinels while others forage.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V02",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki bleats like a goat, then giggles at himself.",
+      "lines": [
+        "GUESS WHAT!! Goats have accents! I'm not joking!"
+      ],
+      "question": "What did scientists find about young goats' calls?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They can sing in harmony",
+          "reply": [
+            "That would be iconic!! But no!",
+            "Their calls shift to sound like their social group's.",
+            "Goat accents. Real science. Best fact ever."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Their calls change to sound like their friends'",
+          "reply": [
+            "YES!! Goat accents!!",
+            "Young goats in the same group start to sound more alike.",
+            "Peer pressure but make it adorable. I'd have the loudest accent."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They only bleat at night",
+          "reply": [
+            "Nope! They bleat all day!",
+            "Kid goats' calls become more similar to their group mates'.",
+            "Friends influence how they sound. Like me and my vocabulary."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Briefer & McElligott (2012): pygmy goat kids' calls converge within social groups.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V03",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki tiptoes, very quietly, which for him is still kind of loud.",
+      "lines": [
+        "This one's about Moss! He's a dormouse!"
+      ],
+      "question": "How long can a hazel dormouse hibernate?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Around six months or more",
+          "reply": [
+            "YES!! Half the year!",
+            "Dormice can hibernate from autumn until spring.",
+            "I miss him SO much in winter. I text him anyway. He reads them in April."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About one week",
+          "reply": [
+            "Ha!! Moss would be OFFENDED!",
+            "Hazel dormice can hibernate for around six months, sometimes more.",
+            "Half the year asleep. Moss calls it 'peak introvert.'"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They never hibernate",
+          "reply": [
+            "Oh, they absolutely do!!",
+            "Hazel dormice hibernate around six months, sometimes longer.",
+            "Their name may even come from an old word for 'sleepy.' Moss agrees."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Hazel dormice hibernate roughly Oct–Apr, around 6+ months.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V04",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki tickles the air near your side, then laughs.",
+      "lines": [
+        "Guess what!! Rats laugh!! When you tickle them!!"
+      ],
+      "question": "What do rats do when they're tickled?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Run away screaming",
+          "reply": [
+            "Nope!! They come back for more!",
+            "They make ultrasonic laughing sounds, too high for us to hear.",
+            "They even chase the tickling hand. Adorable."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Make high-pitched 'laughing' squeaks",
+          "reply": [
+            "YES!! Rat giggles!!",
+            "They make ultrasonic chirps, and even seek more tickles.",
+            "Tickle fights are universal. I'm so happy."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Fall asleep instantly",
+          "reply": [
+            "Ha!! No!!",
+            "They make high-pitched chirps, like laughter.",
+            "Scientists found they love being tickled. Same."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Panksepp's research: rats emit 50-kHz ultrasonic chirps when tickled and seek it out.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V05",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki whistles a little three-note tune, then points at himself.",
+      "lines": [
+        "That was my name! In whistle! Moss has his own whistle too. He never uses it."
+      ],
+      "question": "How do bottlenose dolphins call each other by name?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They use signature whistles",
+          "reply": [
+            "YES!! Each dolphin has its own whistle name!",
+            "Others can copy a dolphin's signature whistle to call it.",
+            "Name tags but make it music. I'm OBSESSED."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They splash in Morse code",
+          "reply": [
+            "Okay, that's genius, but no!",
+            "They use signature whistles that work like names.",
+            "Dolphins can copy a friend's whistle to call them. Iconic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They don't have names",
+          "reply": [
+            "They totally do!!",
+            "Each dolphin develops a signature whistle, basically its name.",
+            "Others whistle it back to get their attention. Group chat goals."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Bottlenose dolphins use individual signature whistles that function like names.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V06",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki spots a tiny bug on your wall, then crouches like he's teaching a class.",
+      "lines": [
+        "Guess what!! Meerkat school is in session!"
+      ],
+      "question": "How do adult meerkats teach pups to eat dangerous scorpions?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They draw diagrams in the sand",
+          "reply": [
+            "Ha!! Adorable! Not real!",
+            "Adults bring pups dead or de-stung scorpions to practice on.",
+            "As pups get older, the scorpions get more 'real.' Level up!"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They don't. Pups figure it out alone",
+          "reply": [
+            "Nope! Meerkat parents are way more supportive!",
+            "Adults bring pups practice scorpions with the stinger removed.",
+            "Step by step. Very gentle parenting. Very Finch-approved."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They bring practice scorpions with the stinger removed",
+          "reply": [
+            "CORRECT!! Training wheels for snacks!",
+            "Adults bring dead or stingless scorpions first, then gradually harder ones.",
+            "Real teaching! Scientists actually studied this. Smart teachers!!"
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Meerkat helpers teach pups by providing disabled scorpions (McAuliffe & Thornton studies).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V07",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki grins at you. Then grins wider. Then waits for you to grin back.",
+      "lines": [
+        "Guess what!! You just smiled back! I KNEW it!"
+      ],
+      "question": "Why do people often smile back when someone smiles at them?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It's rude not to",
+          "reply": [
+            "Manners help! But there's more!",
+            "We automatically mimic facial expressions, often without noticing.",
+            "Smiles are basically emotional Wi-Fi."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "We naturally mimic others' facial expressions",
+          "reply": [
+            "YES!! Smiles are contagious!",
+            "People often copy expressions without thinking, helping us connect.",
+            "That's why I smile at everyone. Spreading the vibe!!"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Smiling burns calories",
+          "reply": [
+            "Ha!! If only!",
+            "It's because we naturally mimic others' facial expressions.",
+            "Copying smiles helps us bond. Science of good vibes."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Facial mimicry: people spontaneously mimic observed expressions, including smiles.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V08",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki wiggles his whole body in a figure-eight on your rug.",
+      "lines": [
+        "Guess what!! This dance is a MAP!"
+      ],
+      "question": "What does a honeybee's 'waggle dance' do?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Celebrates a bee's birthday",
+          "reply": [
+            "Adorable!! But no!",
+            "It shows other bees where to find food.",
+            "The direction and duration of the waggle point to the flowers."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Tells other bees where to find food",
+          "reply": [
+            "YES!! A dance that gives directions!",
+            "The angle and length of the waggle show direction and distance to flowers.",
+            "Imagine giving directions through choreography. I'd never stop dancing."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Scares away wasps",
+          "reply": [
+            "Brave! But not it!",
+            "It tells hive-mates the direction and distance to food.",
+            "A whole dance-based map system. Bees are geniuses."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Honeybee waggle dance communicates direction and distance to food.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V09",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki fills your bathtub and sits in it, sighing dramatically, like a spa guest.",
+      "lines": [
+        "Guess what!! Monkeys do this! In SNOW!"
+      ],
+      "question": "What do some Japanese macaques do in winter?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Soak in natural hot springs",
+          "reply": [
+            "YES!! Monkey spa day!!",
+            "Some groups bathe in hot springs to stay warm in snowy winters.",
+            "Studies even suggest it lowers their stress. Self-care queens."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Build snowmen",
+          "reply": [
+            "That would be the cutest!! No!",
+            "They soak in hot springs to stay warm.",
+            "Steamy baths in the snow. Peak luxury."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Migrate to the beach",
+          "reply": [
+            "Ha!! Too far!",
+            "Some soak in natural hot springs in winter.",
+            "Snow monkeys with spa routines. I'm jealous."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Some Japanese macaques bathe in hot springs in winter; linked to lower stress hormones.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V10",
+      "friendId": "adventure_friend_kk",
+      "type": "Trivia",
+      "scene": "Kiki rolls a tiny ball across the floor and chases it, delighted.",
+      "lines": [
+        "Guess what!! Bees PLAY! With BALLS! For FUN!"
+      ],
+      "question": "What did a study find bumblebees do with tiny balls?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Use them to build hives",
+          "reply": [
+            "Nope!! Hives are wax!",
+            "They rolled them around with no reward, seemingly for fun.",
+            "Tiny bees, tiny balls, big joy."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Throw them at wasps",
+          "reply": [
+            "Ha!! Bee dodgeball! No!",
+            "They just rolled them, with no food reward. Possibly play!",
+            "Even busy bees take breaks. Lesson learned."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Roll them around, apparently just for fun",
+          "reply": [
+            "YES!! Bees playing!!",
+            "They rolled balls with no reward, and young bees did it most.",
+            "Play is for everyone. Even bees. I'm crying happy tears."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Dona et al. (2022): bumblebees rolled balls without reward, suggestive of play.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "KK-V11",
+      "friendId": "adventure_friend_kk",
+      "type": "Preference",
+      "scene": "Kiki bounces on your couch holding two invitations: one glittery, one plain.",
+      "lines": [
+        "GUESS WHAT!! It's Friday! Moss already said no."
+      ],
+      "question": "Friday night: a big party, or a cozy night in?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A big party",
+          "reply": [
+            "A big party!! YES!! My people!",
+            "Music! Snacks! Forty new best friends!"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A cozy night in",
+          "reply": [
+            "A cozy night in. Moss would adore you.",
+            "Blankets, a movie, and zero small talk. Honestly? Fair."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Big party for both of you!! Unstoppable!",
+          "So you and {partner} probably leave the party with three new group chats.",
+          "Bring me next time. I'll bring confetti."
+        ],
+        "A:B": [
+          "Cozy night for you. {partner} wants the party.",
+          "Let them go for an hour. You keep the couch warm.",
+          "They'll come home with stories. You'll have the snacks ready. Team."
+        ],
+        "B:A": [
+          "Party for you!! {partner} wants a cozy night in.",
+          "Moss and I have this exact fight every week.",
+          "Our fix: party till ten, then home for blankets. Works every time."
+        ],
+        "B:B": [
+          "Cozy night in for both of you. Very Moss of you.",
+          "Honestly, {partner} and you on the couch, phones down, snacks up. Peaceful.",
+          "I'm not crying. I'm just loud about feelings."
+        ]
+      }
+    },
+    {
+      "id": "KK-V12",
+      "friendId": "adventure_friend_kk",
+      "type": "Preference",
+      "scene": "Kiki flops dramatically after dancing, then immediately springs back up.",
+      "lines": [
+        "Battery check!! Mine is at 200%!"
+      ],
+      "question": "After a big social event: fully charged, or totally drained?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fully charged",
+          "reply": [
+            "Fully charged!! Same!!",
+            "People are basically my phone charger."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Totally drained",
+          "reply": [
+            "Totally drained. Valid! Moss is the same.",
+            "Social battery at 2%. Must lie down. Must not speak."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both fully charged!! Extrovert power couple!",
+          "I can picture it: you and {partner} go to an afterparty after the afterparty.",
+          "Sleep is optional. Fun is mandatory."
+        ],
+        "A:B": [
+          "You're drained. {partner} is fully charged.",
+          "They'll want to replay the whole night. You'll want a blanket burrito.",
+          "Let them talk while you lie down. Listening counts. Nodding counts."
+        ],
+        "B:A": [
+          "You're fully charged. {partner} is totally drained.",
+          "You want to debrief every conversation. They want the void.",
+          "Give them one hour of quiet. THEN tell them all the gossip."
+        ],
+        "B:B": [
+          "Both drained. Very understandable.",
+          "Pretty sure {partner} and you need a full day of silence after a wedding.",
+          "Honestly, a quiet Sunday together sounds perfect."
+        ]
+      }
+    },
+    {
+      "id": "KK-V13",
+      "friendId": "adventure_friend_kk",
+      "type": "Preference",
+      "scene": "Kiki practices a handshake on the coat rack.",
+      "lines": [
+        "Guess what!! New people!!"
+      ],
+      "question": "At a party full of strangers, what do you do?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Say hi to everyone",
+          "reply": [
+            "Say hi to everyone!! A legend!",
+            "Name tags? Who needs them. You remember everyone."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Stick to people I know",
+          "reply": [
+            "Stick to people you know. Safe and smart.",
+            "Your circle, your comfort zone."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Befriend the host's pet",
+          "reply": [
+            "Befriend the pet. Moss's strategy exactly.",
+            "Pets don't ask 'so what do you do?'"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both say hi to everyone!! Party tornado couple!",
+          "Lowkey, you and {partner} probably know the host's cousin's roommate by the end.",
+          "Networking but make it fun."
+        ],
+        "A:B": [
+          "You stick to who you know. {partner} talks to everyone.",
+          "They'll keep bringing new people over to meet you.",
+          "Smile. Nod. Let them do the heavy lifting."
+        ],
+        "A:C": [
+          "You find the pet. {partner} greets everyone.",
+          "They're networking. You're making a lifelong friend with four paws.",
+          "Honestly, you'll have the better story tomorrow."
+        ],
+        "B:A": [
+          "You say hi to everyone. {partner} sticks to familiar faces.",
+          "You're the social butterfly. They're the home base.",
+          "Bring new friends back to them. One at a time. Gently."
+        ],
+        "B:B": [
+          "You both stick to people you know. Cozy circle.",
+          "{partner} and you probably end up chatting in the same corner all night.",
+          "A two-person party within a party. Cute."
+        ],
+        "B:C": [
+          "Pet for you. {partner} sticks to familiar faces.",
+          "They're with friends. You're with the dog. Everyone's safe.",
+          "Bring the dog to their circle. Instant icebreaker."
+        ],
+        "C:A": [
+          "You greet the whole room. {partner} finds the pet.",
+          "They'll be on the floor with the cat while you work the crowd.",
+          "Check in on them. And the cat. Both deserve attention."
+        ],
+        "C:B": [
+          "Familiar people for you. {partner} befriends the pet.",
+          "You're in a cozy corner. They're under the table with the dog.",
+          "Join them. Pets are great listeners."
+        ],
+        "C:C": [
+          "You both go straight for the pet. Iconic.",
+          "So you and {partner} spend the whole party on the floor with a golden retriever.",
+          "Best party ever. No notes."
+        ]
+      }
+    },
+    {
+      "id": "KK-V14",
+      "friendId": "adventure_friend_kk",
+      "type": "Preference",
+      "scene": "Kiki hides behind your door, then jumps out yelling 'SURPRISE!!'",
+      "lines": [
+        "Birthday planning! Moss hates surprises!"
+      ],
+      "question": "Birthday: surprise party, or a small dinner you planned yourself?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Surprise party",
+          "reply": [
+            "Surprise party!! Confetti in your face! Love it!",
+            "Pure chaos. Pure love."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Small planned dinner",
+          "reply": [
+            "Small planned dinner. Respect.",
+            "You choose the menu, the people, the vibe. Smart."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Surprise parties for both of you!! Chaos lovers!",
+          "Honestly, you and {partner} will spend every birthday trying to out-surprise each other.",
+          "Escalation is guaranteed. I'm here for it."
+        ],
+        "A:B": [
+          "Small dinner for you. {partner} wants a surprise party.",
+          "Careful. They're probably planning one for you RIGHT NOW.",
+          "Drop hints. Very clear hints. 'I don't want a party.' Repeatedly."
+        ],
+        "B:A": [
+          "Surprise party for you!! {partner} wants a small dinner.",
+          "Throw them the dinner. Let them throw you the surprise.",
+          "Everyone gets the birthday they actually want. Wow, I'm good."
+        ],
+        "B:B": [
+          "Small dinners for both of you. Thoughtful couple.",
+          "I can picture it: {partner} and you would rather have three close friends than thirty strangers.",
+          "Very mature. Very cozy. Very not me."
+        ]
+      }
+    },
+    {
+      "id": "KK-V15",
+      "friendId": "adventure_friend_kk",
+      "type": "Preference",
+      "scene": "Kiki holds his phone up to his ear, then texts instead, then calls again.",
+      "lines": [
+        "I love phone calls! Moss doesn't!"
+      ],
+      "question": "Phone calls: love them, or please just text?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Love phone calls",
+          "reply": [
+            "Love calls!! Hearing voices is the best!",
+            "Why type when you can TALK?"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Please just text",
+          "reply": [
+            "Please just text. Totally fair.",
+            "Phone ringing = mild panic. Same for Moss."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both love calls!! Long chats forever!",
+          "Pretty sure you and {partner} have three-hour calls about nothing.",
+          "That's love. Also your phone bill."
+        ],
+        "A:B": [
+          "You prefer text. {partner} loves calls.",
+          "They'll call. You'll stare at the phone. Classic.",
+          "Pick up once a week. They'll be thrilled. You'll survive."
+        ],
+        "B:A": [
+          "You love calls. {partner} prefers texts.",
+          "They'll see your name pop up and briefly panic.",
+          "Text first: 'can I call?' Tiny warning, big kindness."
+        ],
+        "B:B": [
+          "Both team text. Peaceful.",
+          "Lowkey, {partner} and you probably send voice notes only in emergencies.",
+          "Silence and emojis. Perfect communication."
+        ]
+      }
+    },
+    {
+      "id": "KK-V16",
+      "friendId": "adventure_friend_kk",
+      "type": "Guess",
+      "scene": "Kiki stands on a chair, scanning the room like a lighthouse.",
+      "lines": [
+        "Guess what!! I'm the party detective now! I have a tiny notebook!"
+      ],
+      "question": "One hour into a party, where do you find your partner?",
+      "selfQuestion": "One hour into a party, where are you?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Center of the dance floor",
+          "reply": [
+            "Dance floor!! Main character energy!",
+            "Everyone's watching. Everyone's jealous."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "In the kitchen by the snacks",
+          "reply": [
+            "Kitchen snacks. Smart.",
+            "The kitchen is where the real party is."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Quietly petting the host's cat",
+          "reply": [
+            "Petting the cat. Moss's favorite move.",
+            "Cats are the best introvert support."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Dance floor, and {partner} knew it!",
+          "They've seen you take over a dance floor before.",
+          "Just grab them for the slow song. Mandatory."
+        ],
+        "A:B": [
+          "Kitchen snacks for you. {partner} pictured you dancing.",
+          "They're looking for you on the dance floor. You're eating dip.",
+          "Dance in the kitchen. Everyone wins."
+        ],
+        "A:C": [
+          "Petting the cat. {partner} pictured you dancing.",
+          "They're looking at the dance floor. You're upstairs with a fluffball.",
+          "Moss would do the exact same. You two should hang out."
+        ],
+        "B:A": [
+          "You're on the dance floor. {partner} pictured you by the snacks.",
+          "Surprise!! You're out there dancing.",
+          "Grab a chip on your way to the next song."
+        ],
+        "B:B": [
+          "Kitchen snacks, and {partner} knew it!",
+          "They know you'll be guarding the guacamole.",
+          "Save them a plate. That's love."
+        ],
+        "B:C": [
+          "Cat for you. {partner} pictured you by the snacks.",
+          "Okay but the cat is technically next to the snacks.",
+          "You're both kind of right. Bring the cat a treat."
+        ],
+        "C:A": [
+          "Dance floor for you. {partner} pictured you with the cat.",
+          "They think you're shy. You're doing the worm.",
+          "Plot twist of the night. Iconic."
+        ],
+        "C:B": [
+          "Snacks for you. {partner} pictured you with the cat.",
+          "Close! You and the cat are both near the food.",
+          "Share the cheese. With the cat. Lightly."
+        ],
+        "C:C": [
+          "Petting the cat, and {partner} knew it!",
+          "They know you'd rather chat with a cat than a crowd.",
+          "Respect. Cats are elite company."
+        ]
+      }
+    },
+    {
+      "id": "KK-V17",
+      "friendId": "adventure_friend_kk",
+      "type": "Guess",
+      "scene": "Kiki makes very intense eye contact, then tilts his head at the door.",
+      "lines": [
+        "That's my 'let's go' face!"
+      ],
+      "question": "How does your partner signal they're ready to leave a party?",
+      "selfQuestion": "How do you signal you're ready to leave a party?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Subtle secret eye contact",
+          "reply": [
+            "Secret eye contact. Spy couple!",
+            "One look. Mission understood."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Announces it to the whole room",
+          "reply": [
+            "Announces it loudly. Honest!",
+            "'I'M TIRED, BYE EVERYONE.'"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Secret eye contact, and {partner} knew!",
+          "Your one look means 'please get me out of here.' They get it instantly.",
+          "Spy-level communication. I'm impressed."
+        ],
+        "A:B": [
+          "You announce it loudly. {partner} expected subtle eye contact.",
+          "They're waiting for your secret signal. You just yelled 'BYE.'",
+          "Efficient. Slightly chaotic. Very effective."
+        ],
+        "B:A": [
+          "You use secret eye contact. {partner} expected an announcement.",
+          "They might miss your subtle look.",
+          "Upgrade to a gentle tug on their sleeve."
+        ],
+        "B:B": [
+          "Loud announcement, and {partner} knew!",
+          "Everyone at the party now knows you're leaving.",
+          "Honesty is a gift. A loud gift."
+        ]
+      }
+    },
+    {
+      "id": "KK-V18",
+      "friendId": "adventure_friend_kk",
+      "type": "Guess",
+      "scene": "Kiki pretends to sleep for exactly three seconds, then pops up.",
+      "lines": [
+        "That's how long I can nap! Moss naps for hours!"
+      ],
+      "question": "After a busy week, how does your partner recharge?",
+      "selfQuestion": "After a busy week, how do you recharge?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "A long solo nap",
+          "reply": [
+            "Long solo nap. Moss approves!",
+            "Silence, pillows, zero alarms."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Brunch with friends",
+          "reply": [
+            "Brunch with friends!! Social recharge!",
+            "Mimosas and gossip. Ideal!"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Long nap, and {partner} knew!",
+          "They tiptoe around the house while you sleep. True love.",
+          "Snore proudly. They'll pretend it's cute. It is."
+        ],
+        "A:B": [
+          "Brunch for you. {partner} expected a nap.",
+          "They're tiptoeing around the house. You're out with friends.",
+          "Text them a pic of the pancakes. Bring one home."
+        ],
+        "B:A": [
+          "You nap. {partner} expected you at brunch.",
+          "They imagined you with friends. You're under a blanket.",
+          "Hang a 'do not disturb' sign. They'll understand."
+        ],
+        "B:B": [
+          "Brunch with friends, and {partner} knew!",
+          "They know your social battery fills up with pancakes and gossip.",
+          "Bring them back a muffin. Mandatory."
+        ]
+      }
+    },
+    {
+      "id": "KK-V19",
+      "friendId": "adventure_friend_kk",
+      "type": "Guess",
+      "scene": "Kiki squeezes into the middle of a group photo frame on your shelf.",
+      "lines": [
+        "Guess what!! Picture time! Moss always hides!"
+      ],
+      "question": "Where is your partner in a group photo?",
+      "selfQuestion": "Where are you in a group photo?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Front row, peace sign",
+          "reply": [
+            "Front row!! Peace sign! Iconic!",
+            "Main character in every pic."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Half hidden behind someone",
+          "reply": [
+            "Half hidden. Mysterious.",
+            "Just one eyebrow visible."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Front row, peace sign, and {partner} knew it!",
+          "Every group photo has you, center, mid-pose.",
+          "You're the moment. Always."
+        ],
+        "A:B": [
+          "You're half hidden. {partner} pictured you front row.",
+          "They thought you'd be posing. You're behind someone's hat.",
+          "Next time, give them one peace sign. For them."
+        ],
+        "B:A": [
+          "You're front and center. {partner} pictured you hiding.",
+          "They'll be scanning the back row. You're doing a peace sign up front.",
+          "Steal the spot next to them. Photo-bomb with love."
+        ],
+        "B:B": [
+          "Half hidden, and {partner} knew it!",
+          "They've zoomed in to find you behind someone's shoulder.",
+          "Eyebrow-only cameo. Very exclusive. Very you."
+        ]
+      }
+    },
+    {
+      "id": "KK-V20",
+      "friendId": "adventure_friend_kk",
+      "type": "Guess",
+      "scene": "Kiki holds up his phone, about to text a big announcement, finger hovering.",
+      "lines": [
+        "GUESS WHAT!! I have news! The news is this question!"
+      ],
+      "question": "When your partner has big news, who hears it first?",
+      "selfQuestion": "When you have big news, who hears it first?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Partner first, always",
+          "reply": [
+            "Partner first. Sweet.",
+            "Inner circle of two."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The group chat, all at once",
+          "reply": [
+            "Group chat! Everyone at once!",
+            "Efficient. Loud. Iconic."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Partner first, and {partner} knew it!",
+          "They know they're your first call. Every time.",
+          "That's a VIP spot. Treasure it."
+        ],
+        "A:B": [
+          "Group chat for you. {partner} expected to hear first.",
+          "Oops. They found out with everyone else.",
+          "Next time, text them one minute earlier. Huge difference."
+        ],
+        "B:A": [
+          "Partner first for you. {partner} expected the group chat.",
+          "They didn't realize they're your first call.",
+          "Tell them. They'll be secretly thrilled."
+        ],
+        "B:B": [
+          "Group chat, and {partner} knew it!",
+          "They know your news goes out to everyone at once.",
+          "Efficient. Still, save them a personal text."
+        ]
+      }
+    }
+  ]
+}

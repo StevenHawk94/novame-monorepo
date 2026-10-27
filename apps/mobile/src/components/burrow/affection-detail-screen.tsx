@@ -1,62 +1,132 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
+import {AppModal as Modal} from '@/components/layout/app-modal';
 import { Image } from './burrow-image';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { randomUUID } from 'expo-crypto';
 import type { AffectionType } from '@novame/domain';
-import { completeAffection } from '@/lib/app-major-update-api';
+import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { BURROW_BACKGROUNDS } from '@/lib/burrow-art-assets';
-import { burrowErrorMessage, getBurrowSnapshot, runBurrowAction, useBurrow } from '@/lib/burrow-store';
+import { burrowClock, burrowErrorMessage, enqueueBurrowAffection, getBurrowSnapshot, useBurrow } from '@/lib/burrow-store';
+import { coinOperations } from '@/lib/coin-command-outbox';
+import { questScope } from '@/lib/quest-progress-model';
+import { freeAffectionUsedToday } from '@/lib/burrow-daily-entry';
+import { AffectionLimitScreen } from './affection-limit-screen';
 import { AffectionDelivery, type DeliveryPhase } from './affection-delivery';
 import { AFFECTION_COPY, AffectionGesture } from './affection-gesture';
 import { BurrowBackButton } from './burrow-back-button';
+import { releaseCoinReward } from '@/lib/coin-reward-store';
+import { usePageBackGesture } from '@/lib/use-page-back-gesture';
+import { recordRatingMilestone, registerInlineAffectionRating } from '@/lib/official-rating-milestones';
+import { registerOverlay } from '@/lib/overlay-presence';
+
+function sendErrorMessage(error:unknown){
+  const failure=error as {message?:string;body?:{error?:string}};
+  const code=failure?.body?.error??failure?.message??'network_error';
+  if(code==='daily_limit_reached')return 'You’ve reached today’s affection limit. Come back after your local midnight.';
+  if(code==='intent_not_saved')return 'Your send could not be saved on this device. Please try again.';
+  return burrowErrorMessage(code);
+}
 
 export function AffectionDetailScreen({ type }: { type: AffectionType }) {
-  const { data } = useBurrow();
+  const { data, receivedAt } = useBurrow(false,'affection');
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [phase, setPhase] = useState<DeliveryPhase>('ready');
-  const [server, setServer] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [server, setServer] = useState<'idle' | 'queued' | 'success' | 'error'>('idle');
   const [transitEnded, setTransitEnded] = useState(false);
   const [help, setHelp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const metrics = useRef<Record<string, number> | null>(null);
-  const operation = useRef(`affection:${type}:${Date.now()}`);
+  const operation = useRef<string | null>(null);
+  const sendScope = useRef<MajorUpdateBootstrap | null>(null);
   const attempt = useRef(false);
+  const rewardDelivery = useRef<string | null>(null);
+  const ratingReceipt = useRef<string | null>(null);
+  const closing = useRef(false);
   const compact = height < 740;
   const cardHeight = Math.max(350, Math.min(520, height * (compact ? .51 : .48)));
   const ready = !!data?.partner;
+  const dailyUsed = freeAffectionUsedToday(data, data ? Date.parse(data.serverNow) + Math.max(0, burrowClock() - receivedAt) : 0);
+  usePageBackGesture(phase !== 'sending');
 
   useEffect(() => {
-    if (server === 'success' && transitEnded) setPhase('sent');
-    if (server === 'error' && transitEnded) setPhase('ready');
+    if ((server === 'queued' || server === 'success') && transitEnded) {
+      setPhase('sent');
+      if (rewardDelivery.current) releaseCoinReward(rewardDelivery.current);
+    }
+    if (server === 'error') setPhase('ready');
   }, [server, transitEnded]);
-  async function send(value: Record<string, number>) {
+  useEffect(() => {
+    if (phase === 'sent' && server === 'success' && data && ratingReceipt.current) {
+      const release=registerInlineAffectionRating(data.profile.id, ratingReceipt.current);
+      recordRatingMilestone(data.profile.id, 'affection', ratingReceipt.current);
+      return release;
+    }
+  }, [phase, server, data?.profile.id]);
+  useEffect(() => coinOperations.subscribeSettled(event => {
+    const current=getBurrowSnapshot().data, scope=sendScope.current;
+    if(!scope||!current||event.operation.id!==rewardDelivery.current||event.operation.owner!==scope.profile.id
+      ||questScope(current).scope!==questScope(scope).scope||closing.current)return;
+    if(event.error){
+      attempt.current=false;
+      setError(sendErrorMessage(event.error));setServer('error');
+    } else {
+      ratingReceipt.current=operation.current;setServer('success');
+    }
+  }), []);
+  useEffect(() => {
+    if(sendScope.current&&data&&questScope(data).scope!==questScope(sendScope.current).scope){
+      attempt.current=false;metrics.current=null;
+      setError('Your connection has changed. Please return and try again.');setServer('error');
+    }
+  }, [data?.profile.id,data?.partner?.id,data?.pairVersion]);
+  useEffect(() => { if (help) return registerOverlay({}); }, [help]);
+  useEffect(() => () => { if (rewardDelivery.current) releaseCoinReward(rewardDelivery.current); }, []);
+  function send(value: Record<string, number>) {
     if (!data?.partner) { Alert.alert('Connect first', 'Connect with your person to send affection.'); return; }
     if (attempt.current) return;
+    const latest = getBurrowSnapshot();
+    if (freeAffectionUsedToday(latest.data, latest.data ? Date.parse(latest.data.serverNow) + Math.max(0, burrowClock() - latest.receivedAt) : 0)) {
+      setError('You’ve reached today’s affection limit. Come back after your local midnight.');setServer('error');return;
+    }
     attempt.current = true;
     metrics.current = value;
-    setError(null); setServer('pending'); setTransitEnded(false); setPhase('sending');
-    const succeeded = await runBurrowAction(operation.current, key => completeAffection(type, value, key), { silent: true });
-    if (succeeded) { setServer('success'); return; }
-    attempt.current = false;
-    setError(burrowErrorMessage(getBurrowSnapshot().error ?? 'network_error'));
-    setServer('error');
+    operation.current ??= randomUUID();
+    sendScope.current ??= data;
+    try {
+      rewardDelivery.current=enqueueBurrowAffection(type,value,operation.current,sendScope.current);
+      setError(null);setServer('queued');setTransitEnded(false);setPhase('sending');
+    } catch(error) {
+      attempt.current=false;
+      setError(sendErrorMessage(error));setServer('error');
+    }
   }
   function retry() {
     if (!metrics.current || attempt.current) return;
-    void send(metrics.current);
+    send(metrics.current);
   }
+  function close(){
+    if(closing.current)return;closing.current=true;setHelp(false);
+    // A direct link/restored route may not have a native screen to pop.
+    if(router.canGoBack())router.back();else router.replace('/(main)/(tabs)/love');
+  }
+  // A deep link or stale retained selection must not bypass today's entry.
+  // Keep the successful delivery's own Sent screen intact until Done.
+  if (dailyUsed && phase === 'ready') return <AffectionLimitScreen hasPlus={data?.hasPlus}/>;
   return <View style={styles.root}>
     <Image source={BURROW_BACKGROUNDS.affectionSend} contentFit="cover" contentPosition="top" style={StyleSheet.absoluteFillObject}/>
     <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-      <BurrowBackButton onPress={() => router.back()}/>
+      <BurrowBackButton onPress={close}/>
       <Text style={styles.pageTitle} numberOfLines={1} adjustsFontSizeToFit>{AFFECTION_COPY[type].pageTitle}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="How to send this affection" onPress={() => setHelp(true)} style={styles.helpButton}><Text style={styles.helpText}>?</Text></Pressable>
     </View>
     <View style={styles.deliveryArea}>
       {data ? <AffectionDelivery sender={data.profile} recipient={data.partner} type={type} phase={phase}
+        deliveryId={operation.current??undefined}
         onTransitEnd={() => setTransitEnded(true)}/>
         : <ActivityIndicator color="#FFF8F4"/>}
     </View>
@@ -64,14 +134,14 @@ export function AffectionDetailScreen({ type }: { type: AffectionType }) {
       {server === 'error' ? <View style={styles.errorCard}>
           <Text style={styles.sentTitle}>Not sent yet</Text>
           <Text style={styles.sentBody}>{error ?? 'Please try again.'}</Text>
-          <Pressable accessibilityRole="button" onPress={retry} style={styles.doneButton}><Text style={styles.doneText}>Try sending again</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={metrics.current?retry:close} style={styles.doneButton}><Text style={styles.doneText}>{metrics.current?'Try sending again':'Back'}</Text></Pressable>
         </View>
           : ready ? <AffectionGesture key={type} type={type} status={phase} disabled={phase !== 'ready'}
               recipientName={data.partner?.display_name?.trim() || 'your person'}
-              onComplete={value => { void send(value); }} onDone={() => router.back()}/>
+              onComplete={value => { void send(value); }} onDone={close}/>
               : <View style={styles.errorCard}><Text style={styles.sentTitle}>Connect first</Text>
                 <Text style={styles.sentBody}>Choose your person before sending affection.</Text>
-                <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.doneButton}><Text style={styles.doneText}>Back</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={close} style={styles.doneButton}><Text style={styles.doneText}>Back</Text></Pressable>
               </View>}
     </View>
     <Modal transparent visible={help} animationType="fade" onRequestClose={() => setHelp(false)}>

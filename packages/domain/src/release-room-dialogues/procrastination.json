@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "Not now. You’ll feel more ready tomorrow.",
+    "replies": [
+      "I only need to start for two minutes.",
+      "Small progress still counts.",
+      "I can do this badly before I do it well.",
+      "Tomorrow doesn’t need to carry today’s work."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "Just scroll a little longer. Starting can wait.",
+    "replies": [
+      "I’m starting before I feel ready.",
+      "Two minutes begins now.",
+      "I choose progress over avoidance.",
+      "Later is not in charge today."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "You’re tired. Skipping it won’t matter.",
+    "replies": [
+      "Rest and avoidance are not the same.",
+      "I can make this smaller.",
+      "I’ll do the first tiny part.",
+      "I can stop after I begin."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I’m giving you a break from pressure.",
+    "replies": [
+      "A small start can be gentle too.",
+      "I can do less, not nothing.",
+      "I don’t have to finish it all today.",
+      "Let’s begin with the easiest part."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "perfect moment",
+    "monster": "Wait for the perfect moment to start.",
+    "replies": [
+      "The perfect moment rarely arrives.",
+      "Now is a good enough moment.",
+      "I can create the moment by starting.",
+      "Starting messy beats waiting perfect."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "overwhelm",
+    "monster": "Look how big this is. You’ll never finish.",
+    "replies": [
+      "I don’t have to finish it. Just begin.",
+      "Big things get done in small bites.",
+      "I can look at only the first step.",
+      "I’ll shrink it until it’s doable."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "mood waiting",
+    "monster": "Wait until you’re in the mood.",
+    "replies": [
+      "Motivation often follows action.",
+      "I can start without the mood.",
+      "Mood is not a requirement.",
+      "I’ll let the doing bring the feeling."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "fear of failing",
+    "monster": "If you never start, you can’t fail.",
+    "replies": [
+      "Not starting is also a result.",
+      "A rough attempt teaches me more.",
+      "I’d rather try than wonder.",
+      "Failing small is still moving."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "tomorrow promise",
+    "monster": "You’ll do it first thing tomorrow. Promise.",
+    "replies": [
+      "Tomorrow-me deserves a lighter load.",
+      "I’ll do a bit now so tomorrow is easier.",
+      "I’ve heard that promise before.",
+      "I can keep a promise to myself today."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "tiny reward",
+    "monster": "Treat yourself first. Work later.",
+    "replies": [
+      "I can work a little, then enjoy it for real.",
+      "The reward tastes better after a start.",
+      "A short start earns a better break.",
+      "I’ll earn the rest without guilt."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "clean first",
+    "monster": "You should organize your desk before starting.",
+    "replies": [
+      "I can start in the mess.",
+      "Tidying is another way to avoid.",
+      "The desk can wait.",
+      "I’ll begin with what’s already in front of me."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "endless prep",
+    "monster": "Get ready a little more before you begin.",
+    "replies": [
+      "I’m ready enough to take a step.",
+      "Prepping isn’t doing.",
+      "I’ll learn the rest in motion.",
+      "I can start with what I have."
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "just one episode",
+    "monster": "One more episode. Then you’ll start.",
+    "replies": [
+      "One more turns into five.",
+      "I’ll start first, then watch.",
+      "The episode will still be there.",
+      "I’m choosing a different next minute."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "deadline later",
+    "monster": "It’s not due for ages.",
+    "replies": [
+      "Future-me will thank me for starting.",
+      "Early minutes are easier than late panic.",
+      "Small steps now lighten the load later.",
+      "A deadline far away is a gift. I’ll use it."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "last-minute rush",
+    "monster": "You work better under pressure.",
+    "replies": [
+      "I also work well with calm.",
+      "Pressure costs me more than it gives.",
+      "I can try a calmer way.",
+      "I’d rather skip the panic."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "shame",
+    "monster": "You’re so lazy. What’s wrong with you?",
+    "replies": [
+      "I’m not lazy. I’m stuck, and that’s fixable.",
+      "Shame doesn’t help me move.",
+      "I can be kind and still begin.",
+      "I’ll talk to myself like a friend."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "too late",
+    "monster": "It’s too late to start now.",
+    "replies": [
+      "Starting late beats not starting.",
+      "Any amount of time is enough to begin.",
+      "Even ten minutes counts.",
+      "It’s never too late for a first step."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "all or nothing",
+    "monster": "If you can’t do it all, don’t do any.",
+    "replies": [
+      "Some is better than none.",
+      "I can do a part today.",
+      "Partial progress is still progress.",
+      "I’ll take the small win."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "phone pull",
+    "monster": "Check your phone first. Just for a second.",
+    "replies": [
+      "I’ll put the phone out of reach.",
+      "A second becomes twenty minutes.",
+      "The phone can wait for my break.",
+      "I’m choosing focus for two minutes."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "difficulty",
+    "monster": "This is going to be hard and boring.",
+    "replies": [
+      "Hard things get easier once started.",
+      "Boring is allowed. I can still do it.",
+      "I can pair it with something I like.",
+      "Starting is the hardest part, and I’m here."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "needs energy",
+    "monster": "Wait until you have more energy.",
+    "replies": [
+      "Small tasks can fit low energy.",
+      "I can do the lightest version.",
+      "Action sometimes creates energy.",
+      "I’ll start with what I can manage."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "unclear steps",
+    "monster": "You don’t even know where to start.",
+    "replies": [
+      "I can start by writing the first step.",
+      "Any step is a start.",
+      "I’ll figure out the next one after.",
+      "Clarity comes from beginning."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "comparison",
+    "monster": "Other people do this so easily. Why can’t you?",
+    "replies": [
+      "Their ease isn’t my timeline.",
+      "I’m doing this my way.",
+      "I’ll focus on my own two minutes.",
+      "Easy for them doesn’t mean hard for me forever."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "self-trust",
+    "monster": "You never finish things anyway.",
+    "replies": [
+      "I can finish one small thing today.",
+      "Past patterns aren’t a verdict.",
+      "I’m building trust with myself now.",
+      "One finished piece changes the story."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "distraction trap",
+    "monster": "Do something else that feels productive.",
+    "replies": [
+      "I know the difference between busy and doing.",
+      "I’ll do the real thing first.",
+      "The side tasks can wait.",
+      "I’m choosing the one that matters."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "setup",
+    "monster": "You need the right tools before you begin.",
+    "replies": [
+      "I have enough tools to start.",
+      "I can begin with a pen or a note.",
+      "Perfect tools aren’t required.",
+      "I’ll upgrade as I go."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "future you",
+    "monster": "Future you will handle it.",
+    "replies": [
+      "Future me is tired of cleaning up.",
+      "I’ll be kind to future me now.",
+      "I can lend a hand to the person I’ll be.",
+      "Future me starts with present me."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "fear of judgment",
+    "monster": "What if they hate what you make?",
+    "replies": [
+      "A first draft isn’t for judging.",
+      "I can make it and fix it later.",
+      "Not everything needs an audience yet.",
+      "I’m only starting, not presenting."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "rest disguise",
+    "monster": "You deserve a break. Take a long one.",
+    "replies": [
+      "I do deserve rest, and I’ll take it after a start.",
+      "A true break feels better after progress.",
+      "I’ll rest with a clear mind.",
+      "Rest and avoidance feel different."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "overcommitment",
+    "monster": "If you can’t do it properly, why bother?",
+    "replies": [
+      "Doing it imperfectly still moves it forward.",
+      "I can do my version, not the ideal one.",
+      "“Properly” can come in the second draft.",
+      "I’m allowed to start small."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "clock watching",
+    "monster": "You only have a short time. It’s not enough.",
+    "replies": [
+      "Short time is still time.",
+      "Ten minutes can move a lot.",
+      "I’ll use what I have.",
+      "A little time beats no time."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "fear of the first step",
+    "monster": "The first step is the scariest. Skip it.",
+    "replies": [
+      "I only have to take the first step.",
+      "It gets lighter after the first move.",
+      "I’ll make the first step tiny.",
+      "Scary things shrink when I begin."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "guilt cycle",
+    "monster": "You’ve already wasted so much time today.",
+    "replies": [
+      "The rest of the day is still mine.",
+      "I can start from here.",
+      "Guilt won’t help me move.",
+      "The best time to begin is right now."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "pretend progress",
+    "monster": "Make a to-do list. That counts as working.",
+    "replies": [
+      "A list is a start, but I’ll do one thing on it.",
+      "I’ll pick the first item and begin.",
+      "Lists don’t finish themselves.",
+      "I’ll turn a list into a step."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "unfair task",
+    "monster": "Why should you have to do this?",
+    "replies": [
+      "Because I want it done and off my mind.",
+      "I’ll do it so I can stop thinking about it.",
+      "Finishing it will feel good.",
+      "I can do hard things I don’t love."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "self-sabotage",
+    "monster": "If you fail, at least you’ll know you didn’t try.",
+    "replies": [
+      "I’d rather know I tried.",
+      "Trying gives me real information.",
+      "I’m not hiding behind ‘didn’t try’.",
+      "I’m worth a real attempt."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "big goal",
+    "monster": "This isn’t going to change anything anyway.",
+    "replies": [
+      "Small actions add up.",
+      "I don’t need it to change everything.",
+      "One step is still a step.",
+      "Progress doesn’t have to be dramatic."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "freeze",
+    "monster": "You’re frozen. Might as well stay that way.",
+    "replies": [
+      "I can move one finger at a time.",
+      "Frozen things thaw.",
+      "I’ll start with one small motion.",
+      "I’m allowed to unfreeze slowly."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "snack break",
+    "monster": "You should eat something first. Then start.",
+    "replies": [
+      "I’ll start for two minutes, then snack.",
+      "The snack isn’t going anywhere.",
+      "I can begin and grab it on the way.",
+      "Hunger is real, but starting is small."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "later tonight",
+    "monster": "You’ll have more time tonight.",
+    "replies": [
+      "Tonight I’ll be tired too.",
+      "I’ll start now so tonight can be lighter.",
+      "Time rarely appears on its own.",
+      "I’ll make time with a small start."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "perfectionism",
+    "monster": "It won’t be good enough anyway.",
+    "replies": [
+      "Good enough is allowed.",
+      "I can improve it after starting.",
+      "The first version isn’t the last.",
+      "Done beats perfect."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "avoid discomfort",
+    "monster": "This feels uncomfortable. Stop.",
+    "replies": [
+      "I can feel uncomfortable and keep going.",
+      "Discomfort fades once I’m moving.",
+      "I’ll breathe through it for two minutes.",
+      "I’m stronger than this feeling."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "hopeless pile",
+    "monster": "Look at the pile. It’s hopeless.",
+    "replies": [
+      "I only have to tackle one item.",
+      "A pile shrinks one piece at a time.",
+      "I’ll start with the smallest piece.",
+      "Hopeless is a mood, not a fact."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "reward later",
+    "monster": "You’ll be happier if you rest now.",
+    "replies": [
+      "I’ll be happier after a small start.",
+      "Tomorrow’s relief starts now.",
+      "A quick start brings real rest.",
+      "I’ll rest without the weight."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "secret fear",
+    "monster": "What if you do it and it matters? That’s scary.",
+    "replies": [
+      "Mattering is okay.",
+      "I can handle things that matter.",
+      "I’m allowed to care about this.",
+      "Scary doesn’t mean wrong."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "busy day",
+    "monster": "It’s been a busy day. Nobody expects more.",
+    "replies": [
+      "I can do one small thing and call it good.",
+      "I’m allowed to be proud of a little.",
+      "A tiny step still counts.",
+      "I’ll do a minute and decide again."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "last push",
+    "monster": "Just five more minutes of nothing.",
+    "replies": [
+      "Five minutes of starting beats five of waiting.",
+      "I’m starting now.",
+      "I’ve had enough nothing.",
+      "Let’s make it two minutes of something."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "tiny start",
+    "monster": "Starting small is pointless.",
+    "replies": [
+      "Small starts are how big things begin.",
+      "A tiny start beats a big wait.",
+      "I’ll do something small and call it a win.",
+      "Tiny is plenty."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "morning promise",
+    "monster": "You’ll be more productive after coffee, a walk, and a nap.",
+    "replies": [
+      "I’ll do the first step, then the coffee.",
+      "A short start now won’t block the rest.",
+      "I can fit a little in before the routine.",
+      "Productive begins with one move."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "self-trust",
+    "monster": "You’ve put it off this long. What’s another day?",
+    "replies": [
+      "Another day adds weight.",
+      "I can lighten it today.",
+      "I’m done adding to the pile.",
+      "Today is a better day to start."
+    ]
+  }
+]

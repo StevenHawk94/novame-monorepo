@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { Image as NativeImage } from 'react-native';
 import { fetchRoomPhoto } from './app-major-update-api';
 import { sessionEpoch, subscribeSessionIdentity } from './session-lifecycle';
 import { storage } from './storage';
@@ -9,8 +10,26 @@ export type RoomPhotoVersion = { id: string; updatedAt: string };
 type Index = Record<string, string>;
 const memory = new Map<string, string>();
 const inflight = new Map<string, Promise<string>>();
+const verified = new Set<string>();
+const validating = new Map<string, Promise<void>>();
 let downloadGeneration = 0;
-subscribeSessionIdentity(() => { memory.clear(); inflight.clear(); });
+subscribeSessionIdentity(() => { memory.clear(); inflight.clear(); verified.clear(); validating.clear(); });
+
+// SVG images do not expose a native decode-error event. Verify private files
+// here once per URI/session so SVG, Skia and ordinary images share recovery.
+// This runs only in the background resource read, never in page navigation or
+// optimistic photo acceptance. No second photo cache or retained bitmap.
+function verifyPhotoFile(uri: string, epoch: number): Promise<void> {
+  if (verified.has(uri)) return Promise.resolve();
+  const active = validating.get(uri); if (active) return active;
+  const task = NativeImage.getSize(uri).then(({width,height}) => {
+    if (epoch !== sessionEpoch()) throw Error('session_changed');
+    if (!(width > 0 && height > 0)) throw Error('photo_decode_failed');
+    verified.add(uri);
+    if (verified.size > 64) verified.delete(verified.values().next().value!);
+  }).finally(() => { if (validating.get(uri) === task) validating.delete(uri); });
+  validating.set(uri, task); return task;
+}
 
 export const roomPhotoVersionKey = (photo: RoomPhotoVersion) => `${photo.id}:${photo.updatedAt}`;
 
@@ -71,6 +90,14 @@ export async function keepRoomPhotoPreview(photo: RoomPhotoVersion, sourceUri: s
   return path;
 }
 
+/** The cloud receipt adopts the already durable crop: no second encode/copy,
+ * and a local cache failure can never be reported as a failed cloud upload. */
+export function adoptRoomPhotoPreview(photo:RoomPhotoVersion,preview:RoomPhotoVersion) {
+  const uri=cachedRoomPhotoUri(preview);if(!uri)return;
+  persist(roomPhotoVersionKey(photo),uri);
+  invalidateRoomPhotoCache(preview);
+}
+
 /** Single-flight download uses a fresh signed link only on a cache miss. */
 export function loadRoomPhoto(photo: RoomPhotoVersion): Promise<string> {
   const key = roomPhotoVersionKey(photo);
@@ -81,9 +108,19 @@ export function loadRoomPhoto(photo: RoomPhotoVersion): Promise<string> {
     const cached = cachedRoomPhotoUri(photo);
     if (cached) {
       if (!BURROW_ROOM_PHOTO_DIRECTORY || !cached.startsWith(BURROW_ROOM_PHOTO_DIRECTORY)) return cached;
-      if ((await FileSystem.getInfoAsync(cached)).exists) return cached;
+      if ((await FileSystem.getInfoAsync(cached)).exists) {
+        try {
+          await verifyPhotoFile(cached, epoch);
+          if (epoch !== sessionEpoch()) throw Error('session_changed');
+          return cached;
+        }
+        catch (error) { if (epoch !== sessionEpoch()) throw error; }
+      }
+      if (epoch !== sessionEpoch()) throw Error('session_changed');
       invalidateRoomPhotoCache(photo);
     }
+    // A local intent is never an addressable cloud photo/permission token.
+    if(photo.id.startsWith('local-plushie-')||photo.id.startsWith('local-frame-'))throw Error('photo_local_unavailable');
     const signedUrl = await fetchRoomPhoto(photo.id, photo.updatedAt);
     if (epoch !== sessionEpoch()) throw new Error('session_changed');
     const basePath = filePath(key);
@@ -103,6 +140,11 @@ export function loadRoomPhoto(photo: RoomPhotoVersion): Promise<string> {
     await FileSystem.deleteAsync(path, { idempotent: true });
     await FileSystem.moveAsync({ from: temporary, to: path });
     if (epoch !== sessionEpoch()) { await FileSystem.deleteAsync(path, { idempotent: true }); throw new Error('session_changed'); }
+    try {
+      await verifyPhotoFile(path, epoch);
+      if (epoch !== sessionEpoch()) throw Error('session_changed');
+    }
+    catch (error) { await FileSystem.deleteAsync(path, { idempotent: true }); throw error; }
     persist(key, path);
     return path;
   })().finally(() => { if (inflight.get(key) === task) inflight.delete(key); });
@@ -114,9 +156,10 @@ export function loadRoomPhoto(photo: RoomPhotoVersion): Promise<string> {
 export function invalidateRoomPhotoCache(photo: RoomPhotoVersion) {
   const key = roomPhotoVersionKey(photo);
   const uri = cachedRoomPhotoUri(photo);
+  if (uri) verified.delete(uri);
   memory.delete(key);
   const next = index();
   delete next[key];
   storage.set(kBurrowRoomPhotoCache.name, JSON.stringify(next));
-  if (uri?.startsWith(BURROW_ROOM_PHOTO_DIRECTORY ?? '\0')) void FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+  if (uri?.startsWith(BURROW_ROOM_PHOTO_DIRECTORY ?? '\0')&&!Object.values(next).includes(uri)) void FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
 }

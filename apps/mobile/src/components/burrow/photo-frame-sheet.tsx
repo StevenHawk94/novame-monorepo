@@ -1,22 +1,16 @@
-import { useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
+import {AppModal as Modal} from '@/components/layout/app-modal';
 import { Feather } from '@expo/vector-icons';
 import { RoomPhoto } from './room-photo';
 import { FRAME_PHOTO_ASPECT } from '@/lib/room-photo-crop';
 
 type Photo = { id: string; updatedAt: string };
 
-export function PhotoFrameSheet({photo,onClose,onChoose,onRemove}:{photo?:Photo;onClose:()=>void;onChoose:(source:'camera'|'library')=>void;onRemove:()=>Promise<void>}){
+export function PhotoFrameSheet({visible=true,photo,onClose,onChoose,onHistory,remaining,limit}:{visible?:boolean;photo?:Photo;onClose:()=>void;onChoose:(source:'camera'|'library')=>void;onHistory:()=>void;remaining?:number;limit?:number}){
   const {height}=useWindowDimensions();
-  const [busy,setBusy]=useState(false);
   const frameSize=Math.min(270,Math.max(195,height*.27));
-  async function remove(){
-    setBusy(true);
-    try{await onRemove();onClose();}
-    catch{Alert.alert('Could not remove photo','Please check your connection and try again.');}
-    finally{setBusy(false);}
-  }
-  return <Modal transparent presentationStyle="overFullScreen" animationType="slide" onRequestClose={onClose}>
+  return <Modal visible={visible} transparent presentationStyle="overFullScreen" animationType="slide" onRequestClose={onClose}>
     <View style={styles.overlay}>
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} accessibilityLabel="Close Photo Frame"/>
       <View style={[styles.sheet,{minHeight:Math.min(height*.69,650)}]} accessibilityViewIsModal>
@@ -29,8 +23,8 @@ export function PhotoFrameSheet({photo,onClose,onChoose,onRemove}:{photo?:Photo;
           </View>
         </View>
         <Text style={styles.caption}>{photo?'Your photo is in the room':'Add a photo to this frame'}</Text>
-        <Pressable accessibilityRole="button" onPress={()=>onChoose('library')} style={styles.primary}><Feather name={photo?'camera':'upload'} size={23} color="#FFF"/><Text style={styles.primaryText}>{photo?'Change Photo':'Upload Photo'}</Text></Pressable>
-        <Pressable accessibilityRole="button" disabled={busy} onPress={()=>photo?Alert.alert('Remove Photo?','Your photo will disappear from the room.',[{text:'Cancel',style:'cancel'},{text:'Remove',style:'destructive',onPress:()=>void remove()}]):onChoose('camera')} style={styles.secondary}><Text style={styles.secondaryText}>{photo?'Remove Photo':'Take Photo'}</Text></Pressable>
+        <Pressable accessibilityRole="button" disabled={remaining===0} onPress={()=>onChoose('library')} style={[styles.primary,remaining===0&&{opacity:.45}]}><Feather name={photo?'camera':'upload'} size={23} color="#FFF"/><Text style={styles.primaryText}>{remaining===0?'Today’s limit reached':photo?'Change Photo':'Upload Photo'}</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={onHistory} style={styles.secondary}><Text style={styles.secondaryText}>History</Text></Pressable>
       </View>
     </View>
   </Modal>;

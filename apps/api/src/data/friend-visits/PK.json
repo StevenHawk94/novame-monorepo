@@ -1,0 +1,1110 @@
+{
+  "code": "PK",
+  "name": "Pickles",
+  "friendId": "adventure_friend_pk",
+  "waitingLines": [
+    "I’m NOT staying just to see {partner}. I’m just... resting. Okay, I’m staying.",
+    "Tell {partner} I’m here. Not because I missed them. I’m FINE."
+  ],
+  "questions": [
+    {
+      "id": "PK-V01",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles sniffs your candle, then suddenly starts licking her own back. Then stops.",
+      "lines": [
+        "Don't. Look. At me. It's a hedgehog thing."
+      ],
+      "question": "When hedgehogs find a new smell, they sometimes do what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Sneeze three times for good luck",
+          "reply": [
+            "Cute. Not real. I wish it was.",
+            "They actually make frothy spit and lick it onto their spines.",
+            "It's called self-anointing. Scientists are still confused."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Foam at the mouth and lick it onto their spines",
+          "reply": [
+            "Yes. It's called self-anointing. It's NORMAL.",
+            "Nobody knows exactly why. Maybe scent camouflage.",
+            "Basil saw me do it on our second date. He stayed. Hero."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Write it down in a diary",
+          "reply": [
+            "I DO have a diary. Not the point.",
+            "They self-anoint: froth up spit and spread it on their spines.",
+            "Very weird. Very hedgehog. Zero explanation."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Hedgehogs self-anoint, spreading frothy saliva on their spines.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V02",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles pokes a Venus flytrap on your windowsill. It doesn't close. She pokes it again. SNAP.",
+      "lines": [
+        "It WAITED. It counted. That's so me."
+      ],
+      "question": "How does a Venus flytrap avoid snapping shut on raindrops?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It can see the bug with tiny eyes",
+          "reply": [
+            "Plants with eyes? Terrifying. No.",
+            "It counts touches. Two in a short window triggers the snap.",
+            "No eyes. Just math. And snacks."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It waits for two touches in a short time",
+          "reply": [
+            "Correct! It literally counts!",
+            "Two hair triggers touched within about 20 seconds, then SNAP.",
+            "One touch could be nothing. Two means business. I respect that boundary."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It only closes at night",
+          "reply": [
+            "Nope, it's open for business all day.",
+            "It needs two touches on its trigger hairs within seconds.",
+            "A plant with trust issues. Same, flytrap. Same."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Venus flytraps typically require two trigger-hair stimulations within ~20–30 seconds to close.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V03",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles flinches dramatically at a pinecone on your shelf.",
+      "lines": [
+        "I thought that was a porcupine. Long day."
+      ],
+      "question": "Can a porcupine shoot its quills at you?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "No, quills come off on contact",
+          "reply": [
+            "Correct. No sniper porcupines.",
+            "Quills pop off when touched, and tiny barbs make them stick.",
+            "Mine stay on. I'm the safe spiky friend. Mostly."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Yes, like darts",
+          "reply": [
+            "Nope. Myth. Movies lied to you.",
+            "Porcupines can't shoot quills. They just detach easily on contact.",
+            "Back into one and you'll learn. Painfully."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Only when it's really mad",
+          "reply": [
+            "Mad or not, no shooting.",
+            "Quills detach on contact. Barbs make them hard to pull out.",
+            "Rule one: don't hug a porcupine. Rule two: see rule one."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Porcupines can't shoot quills; barbed quills detach on contact.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V04",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles grabs your hand, holds it for a second, then lets go and crosses her arms.",
+      "lines": [
+        "That was a test. For science. Don't make it a thing."
+      ],
+      "question": "What did a famous study find about holding a partner's hand during stress?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It made people sweat more",
+          "reply": [
+            "Rude to sweaty hands everywhere. No.",
+            "Holding a partner's hand reduced brain responses to threat.",
+            "Hand-holding is basically a chill pill. Free. No prescription."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It did nothing at all",
+          "reply": [
+            "It did SOMETHING. Don't be a cactus.",
+            "Holding a partner's hand calmed brain responses to stress.",
+            "Even more than holding a stranger's hand. Basil is very smug about this."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It calmed the brain's threat response",
+          "reply": [
+            "YES. Science says holding hands helps.",
+            "In the study, holding a partner's hand reduced brain activity linked to threat.",
+            "So when Basil grabs my hand, it's medical. Not cute. Medical."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Coan et al. (2006): spousal hand-holding attenuated neural threat responses.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V05",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles pokes a cactus on your windowsill and gasps.",
+      "lines": [
+        "A fellow spiky queen."
+      ],
+      "question": "What are cactus spines, technically?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Hardened hairs",
+          "reply": [
+            "Close in vibe, wrong in biology.",
+            "Cactus spines are modified leaves.",
+            "No big leaves means less water lost in the desert. Smart."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Tiny bones",
+          "reply": [
+            "Bones?? In a plant?? Spooky.",
+            "They're modified leaves.",
+            "Tiny spines lose less water and say 'back off' to hungry animals."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Modified leaves",
+          "reply": [
+            "Correct. Leaves that chose violence.",
+            "Spines lose less water than leaves and guard the plant from snackers.",
+            "Honestly? Relatable. Protect yourself, queen."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Cactus spines are modified leaves.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V06",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles shows you a photo of a tiny hedgehog wearing a sock, then hides her face.",
+      "lines": [
+        "It's not cute. It's SO cute. Ugh."
+      ],
+      "question": "What's a baby hedgehog called?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A hedgie",
+          "reply": [
+            "Close. Cute. Not official.",
+            "It's a hoglet. Yes, really.",
+            "Hoglets are born with soft spines under their skin, so mom doesn't get poked."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A hoglet",
+          "reply": [
+            "YES. Hoglet. Say it again. Hoglet.",
+            "Their spines are tucked under a fluid-filled skin at birth.",
+            "Then they pop through within hours. Spiky from day one."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A spikelet",
+          "reply": [
+            "That's a grass part. But I love it.",
+            "Baby hedgehogs are hoglets.",
+            "Their spines are soft and covered at birth. Nature's bubble wrap."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Baby hedgehogs are hoglets; spines emerge shortly after birth.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V07",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles stares at a deep-sea documentary on your TV in horror.",
+      "lines": [
+        "That's not romantic. That's a hostage situation."
+      ],
+      "question": "What do males of some anglerfish species do after finding a mate?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fuse permanently to her body",
+          "reply": [
+            "Correct. Permanently attached. Forever. Literally.",
+            "The tiny male bites on and their bodies fuse, sharing her bloodstream.",
+            "And Basil thinks I'M clingy. HA."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Write her a love song",
+          "reply": [
+            "In the deep sea? With what pen?",
+            "The tiny male latches on and fuses to her body permanently.",
+            "Commitment level: absolutely unhinged."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Swim away immediately",
+          "reply": [
+            "The opposite. Terrifyingly opposite.",
+            "He bites on and fuses with her, forever.",
+            "Some females carry several males. Nobody talks about this enough."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "In some anglerfish (e.g., Ceratiidae), males permanently fuse to females (sexual parasitism).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V08",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles holds up a rose and looks at you very seriously.",
+      "lines": [
+        "Rose question. Do NOT make a pun about my name."
+      ],
+      "question": "Botanists say roses don't have true thorns. What do they have?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Spikes",
+          "reply": [
+            "Close. Botanists are pickier.",
+            "Roses technically have prickles, from the outer skin layer.",
+            "Yes. Prickles. Basil laughed for ten minutes."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Prickles",
+          "reply": [
+            "Yes. Roses have PRICKLES. I'm in this question.",
+            "Thorns grow from deeper stem tissue. Rose prickles come from the outer skin layer.",
+            "So technically, roses are named after me. Kidding. Unless?"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Splinters",
+          "reply": [
+            "Ow. No.",
+            "Roses technically have prickles, not thorns.",
+            "Prickles grow from the outer layer, so they snap off easily."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Rose 'thorns' are botanically prickles (epidermal outgrowths).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V09",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles bites into a chili pepper, turns red, and fans her mouth furiously.",
+      "lines": [
+        "I'm FINE. It's FINE. Birds don't even feel this. Unfair."
+      ],
+      "question": "Why can birds eat spicy chili peppers without feeling the burn?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Their bodies don't react to capsaicin, the spicy chemical",
+          "reply": [
+            "Correct! Spice-proof!",
+            "Birds lack the receptor response that makes chili feel hot to mammals.",
+            "So they eat peppers and spread the seeds. Smart pepper. Evil pepper."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They drink milk afterward",
+          "reply": [
+            "Birds with milk mustaches? No.",
+            "Birds simply don't feel capsaicin's burn the way mammals do.",
+            "They spread chili seeds far away. Nature's delivery service."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They swallow without tasting",
+          "reply": [
+            "Not the reason, though they do gulp.",
+            "Their bodies don't respond to capsaicin, so no burn.",
+            "Peppers might have evolved spice to keep mammals away. Rude. Effective."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Birds' TRPV1 receptors are insensitive to capsaicin; birds disperse chili seeds.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V10",
+      "friendId": "adventure_friend_pk",
+      "type": "Trivia",
+      "scene": "Pickles looks into a mirror, then at you, then back at the mirror, eyes wide.",
+      "lines": [
+        "My pupils are huge right now. It's the lighting. Not the snacks. Not Basil."
+      ],
+      "question": "What can make your pupils get bigger, besides darkness?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Eating something sour",
+          "reply": [
+            "Sour makes you squint, not dilate.",
+            "Interest and emotional arousal can make pupils widen.",
+            "Your eyes are snitches. Remember that."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Blinking really fast",
+          "reply": [
+            "Just makes you look suspicious.",
+            "Pupils can widen when you see something exciting or attractive.",
+            "Eyes: the worst at keeping secrets."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Looking at something or someone you find really interesting",
+          "reply": [
+            "Correct. Interest makes pupils widen.",
+            "Emotional arousal, like attraction or excitement, can dilate pupils.",
+            "Basil says my pupils go huge around him. Lies. Probably. Ugh."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Pupil dilation reflects emotional/cognitive arousal, including interest and attraction.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "PK-V11",
+      "friendId": "adventure_friend_pk",
+      "type": "Preference",
+      "scene": "Pickles hides her hands in her sleeves when you mention Basil.",
+      "lines": [
+        "Hypothetical question. NOT about me and Basil."
+      ],
+      "question": "PDA: hold hands in public, or keep it subtle?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Hold hands in public",
+          "reply": [
+            "Hold hands? Bold. Cute. Ugh.",
+            "Basil tried once. I rolled into a ball. Progress."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Keep it subtle",
+          "reply": [
+            "Subtle. Respect. That's me.",
+            "Cool on the outside, screaming on the inside."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both hold hands in public. Disgusting. I love it.",
+          "So you and {partner} are a walking rom-com.",
+          "Sigh. I'm FINE."
+        ],
+        "A:B": [
+          "Subtle for you. {partner} wants to hold hands.",
+          "Their hand will keep drifting toward yours.",
+          "Hold it for three seconds. Then act casual. Trust me."
+        ],
+        "B:A": [
+          "You want to hold hands. {partner} likes subtle.",
+          "Try pinky fingers. Barely counts as PDA.",
+          "Basil and I started there. Now it's full palm."
+        ],
+        "B:B": [
+          "You both keep it subtle. Secret agents of love.",
+          "Just one eyebrow wiggle between you and {partner}. Everyone else misses it.",
+          "Super cute. Super sneaky."
+        ]
+      }
+    },
+    {
+      "id": "PK-V12",
+      "friendId": "adventure_friend_pk",
+      "type": "Preference",
+      "scene": "Pickles mutters 'pumpkin' under her breath, then looks horrified.",
+      "lines": [
+        "I didn't say anything."
+      ],
+      "question": "Pet names: cute nicknames, or just real names?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Cute nicknames",
+          "reply": [
+            "Nicknames? Sweet pea, honey bun, everything.",
+            "Basil calls me 'Pickle.' I pretend to hate it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Just real names",
+          "reply": [
+            "Real names. Classy.",
+            "Your name is a name. That's romance."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both nickname people. Prepare for 'sugar plum.'",
+          "Honestly, you and {partner} will invent ten new ones a month.",
+          "The weirder, the cuter. Rules."
+        ],
+        "A:B": [
+          "Real names for you. {partner} loves nicknames.",
+          "They'll call you 'bean' at some point. Brace.",
+          "Smile through it. It's love. Sticky, sticky love."
+        ],
+        "B:A": [
+          "Nicknames for you. {partner} likes real names.",
+          "Start small. 'Babe.' Watch their face.",
+          "If they blush, upgrade to 'honey bun.'"
+        ],
+        "B:B": [
+          "Both real names. Straight shooters.",
+          "When {partner} says your name, it lands. Simple.",
+          "Respect. No 'snookums' crisis here."
+        ]
+      }
+    },
+    {
+      "id": "PK-V13",
+      "friendId": "adventure_friend_pk",
+      "type": "Preference",
+      "scene": "Pickles holds her phone, thumb hovering over 'send', for a very long time.",
+      "lines": [
+        "This is a theoretical fight. I'm FINE."
+      ],
+      "question": "After a fight, who should text first?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Whoever was wrong",
+          "reply": [
+            "Whoever was wrong. Fair. Rare.",
+            "But who admits it? Not me."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Whoever's less stubborn",
+          "reply": [
+            "Less stubborn. Smart. Mature.",
+            "Being stubborn is my cardio though."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Whoever gets hungry first",
+          "reply": [
+            "Hungry first. Honestly genius.",
+            "Hunger ends wars. Snacks are diplomacy."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Whoever was wrong. You both agree.",
+          "Now you and {partner} just have to agree on who was wrong.",
+          "Good luck. Get snacks."
+        ],
+        "A:B": [
+          "You say less stubborn. {partner} says whoever's wrong.",
+          "So you're saying THEY'RE stubborn. Bold.",
+          "Text first. Prove you're the chill one."
+        ],
+        "A:C": [
+          "Hunger rule for you. {partner} wants whoever was wrong.",
+          "They want an apology. You want snacks.",
+          "Apologize WITH snacks. Unstoppable."
+        ],
+        "B:A": [
+          "You say whoever's wrong. {partner} says whoever's less stubborn.",
+          "Plot twist: that might be the same person.",
+          "Text first and call it 'being the bigger hedgehog.'"
+        ],
+        "B:B": [
+          "Less stubborn first. You both agree.",
+          "So you and {partner} just have to admit who's stubborn.",
+          "Ha. Ha. Ha. Good luck."
+        ],
+        "B:C": [
+          "Hunger rule for you. {partner} picks less stubborn.",
+          "Snack-powered peace vs principle. Classic.",
+          "Bring fries to the negotiation. Win-win."
+        ],
+        "C:A": [
+          "You say whoever's wrong. {partner} says whoever's hungry.",
+          "They just want snacks. Let them win this one.",
+          "Text 'want pizza?' Done. Fight over."
+        ],
+        "C:B": [
+          "Less stubborn for you. {partner} picks hunger.",
+          "Stubborn people still get hungry. That's just science.",
+          "Wait an hour. They'll text 'want food?' That's their sorry."
+        ],
+        "C:C": [
+          "Hunger rule for both of you. Brilliant.",
+          "I can picture it: you and {partner} will make up over pizza every time.",
+          "Best fight resolution system. I'm stealing it."
+        ]
+      }
+    },
+    {
+      "id": "PK-V14",
+      "friendId": "adventure_friend_pk",
+      "type": "Preference",
+      "scene": "Pickles stares at her phone screen. Three dots appear. Disappear. Appear.",
+      "lines": [
+        "WHY does Basil type so slow. Unrelated. Totally unrelated."
+      ],
+      "question": "Texting: instant replies, or reply whenever?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Instant replies",
+          "reply": [
+            "Instant. A hero.",
+            "Read receipts on, nerves of steel."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Reply whenever",
+          "reply": [
+            "Whenever. A free spirit.",
+            "I wish I was this chill."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Instant replies from both of you. A speedrun couple.",
+          "Pretty sure you and {partner} text faster than you talk.",
+          "Your phones must be tired."
+        ],
+        "A:B": [
+          "You reply whenever. {partner} replies instantly.",
+          "They're refreshing the chat. Be kind.",
+          "Send a quick 'busy, love you.' Instant peace."
+        ],
+        "B:A": [
+          "You reply instantly. {partner} replies whenever.",
+          "You'll stare at the screen. Don't spiral.",
+          "Put the phone down. They'll text. Probably with a meme."
+        ],
+        "B:B": [
+          "Both reply whenever. Calm, collected icons.",
+          "Lowkey, you and {partner} trust the silence. Amazing.",
+          "I could never. Teach me."
+        ]
+      }
+    },
+    {
+      "id": "PK-V15",
+      "friendId": "adventure_friend_pk",
+      "type": "Preference",
+      "scene": "Pickles hugs a pillow, then rolls up around it.",
+      "lines": [
+        "Cuddle question. This is NOT personal research."
+      ],
+      "question": "Cuddling: big spoon or little spoon?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Big spoon",
+          "reply": [
+            "Big spoon. Protector energy.",
+            "Careful. Some of us are spiky."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Little spoon",
+          "reply": [
+            "Little spoon. Cozy legend.",
+            "Being held is a whole vibe."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Both big spoons. Uh oh.",
+          "You and {partner} will fight for the back position forever.",
+          "Take turns. Or invent a spork."
+        ],
+        "A:B": [
+          "Little spoon for you. {partner} wants to be big spoon.",
+          "Perfect fit. You get held, they get to feel heroic.",
+          "Ugh. Too cute. I'm leaving. I'm not leaving. Tell me more."
+        ],
+        "B:A": [
+          "Big spoon for you. {partner} wants to be little spoon.",
+          "Perfect fit. Like two puzzle pieces, but cuddlier.",
+          "Basil and I are the same combo. Except my spikes. He wears a hoodie."
+        ],
+        "B:B": [
+          "Both little spoons. Chaos.",
+          "Nobody's holding anybody. You and {partner} are just two spoons, sad.",
+          "Flip a coin. Winner gets held."
+        ]
+      }
+    },
+    {
+      "id": "PK-V16",
+      "friendId": "adventure_friend_pk",
+      "type": "Guess",
+      "scene": "Pickles' cheeks go pink when you compliment her quills.",
+      "lines": [
+        "Stop. I'm not blushing."
+      ],
+      "question": "When your partner gets embarrassed, what happens?",
+      "selfQuestion": "When you get embarrassed, what happens?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Turns red instantly",
+          "reply": [
+            "Red instantly. Tomato mode.",
+            "Can't hide it. It's beautiful."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Gets extra sassy",
+          "reply": [
+            "Extra sassy. Defense mechanism.",
+            "Sass is armor. I would know."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You go red, and {partner} knew. Tomato twins.",
+          "They've seen your face switch colors. They live for it.",
+          "Accept it. It's adorable."
+        ],
+        "A:B": [
+          "Extra sassy. {partner} thought you'd just blush.",
+          "Oops. They'll get the attitude now.",
+          "Tell them it means you're flustered. Save yourself."
+        ],
+        "B:A": [
+          "You go red. {partner} expected sass.",
+          "They're waiting for attitude. Your cheeks already confessed.",
+          "Now they know the blush. They'll be chasing it forever. Sorry."
+        ],
+        "B:B": [
+          "Extra sass, and {partner} knew.",
+          "They know the attitude means you're flustered.",
+          "Sass equals blushing, but louder. They speak fluent you."
+        ]
+      }
+    },
+    {
+      "id": "PK-V17",
+      "friendId": "adventure_friend_pk",
+      "type": "Guess",
+      "scene": "Pickles snips a thread with scissors, then yelps. She examines a tiny scratch.",
+      "lines": [
+        "I'm FINE. It's barely a scratch. Totally FINE."
+      ],
+      "question": "Your partner gets a tiny paper cut. How do they react?",
+      "selfQuestion": "You get a tiny paper cut. How do you react?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Shrugs it off",
+          "reply": [
+            "Shrugs it off. A legend.",
+            "Tiny cut, zero drama."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Full drama, needs a bandage",
+          "reply": [
+            "Full drama. Respect the performance.",
+            "Paper cuts DO hurt. I said what I said."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Requests a kiss to make it better",
+          "reply": [
+            "Kiss it better? Stop. That's adorable.",
+            "Cuts heal faster with love. Fact. Probably."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You shrug it off, and {partner} knew.",
+          "Low drama, high tolerance.",
+          "Still, let them fuss. It's their love language."
+        ],
+        "A:B": [
+          "Full drama for you. {partner} thought you'd shrug.",
+          "They expected a shrug. You gave them a three-act tragedy.",
+          "Demand the cartoon bandage. You've earned it."
+        ],
+        "A:C": [
+          "Kiss it better for you. {partner} thought you'd shrug.",
+          "They didn't know you're a softie.",
+          "Hold up the finger and pout. They'll get it."
+        ],
+        "B:A": [
+          "You shrug it off. {partner} expected full drama.",
+          "You surprised them with how chill you are.",
+          "Fake one dramatic gasp. For fun."
+        ],
+        "B:B": [
+          "Full drama, and {partner} knew.",
+          "They already have the bandages ready. The cartoon ones.",
+          "Oscar-worthy performance. Over a paper cut. I'd clap."
+        ],
+        "B:C": [
+          "Kiss it better for you. {partner} expected drama.",
+          "Different kind of drama. Romantic drama.",
+          "Tell them. Watch them pucker up instantly."
+        ],
+        "C:A": [
+          "You shrug it off. {partner} expected a kiss request.",
+          "They were puckered up and everything. You just said 'it's fine.'",
+          "Accept the kiss anyway. Free kiss. Never refuse a free kiss."
+        ],
+        "C:B": [
+          "Full drama for you. {partner} expected a kiss request.",
+          "Close. You want the drama AND the kiss.",
+          "Collapse on the couch. Hold out the finger. Wait."
+        ],
+        "C:C": [
+          "Kiss it better, and {partner} knew.",
+          "They're already puckering up.",
+          "Gross. Cute. Okay, mostly cute. I'm blushing for you."
+        ]
+      }
+    },
+    {
+      "id": "PK-V18",
+      "friendId": "adventure_friend_pk",
+      "type": "Guess",
+      "scene": "Pickles pokes you with one quill, playfully, then pretends she didn't.",
+      "lines": [
+        "That wasn't me."
+      ],
+      "question": "How does your partner react when you tease them?",
+      "selfQuestion": "How do you react when your partner teases you?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Teases back harder",
+          "reply": [
+            "Teases back harder? Love is war.",
+            "Nobody wins. Everybody giggles. Basil still owes me a rematch."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Pretends to be mad, secretly loves it",
+          "reply": [
+            "Fake mad, secretly loving it? Classic.",
+            "Arms crossed. Smile absolutely visible. Fooling no one."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You tease back harder, and {partner} knew exactly what they were starting.",
+          "They poke you on purpose. They WANT the war.",
+          "Keep score on the fridge. Loser buys snacks."
+        ],
+        "A:B": [
+          "You pretend to be mad. {partner} braced for a counterattack.",
+          "They're ready for war, and you just... pout adorably?",
+          "Let one tiny grin slip. Watch them realize they won."
+        ],
+        "B:A": [
+          "You tease back harder. {partner} expected a cute fake pout.",
+          "Plot twist. They poked the wrong hedgehog.",
+          "Go easy on them. Or don't. I'm not your mom."
+        ],
+        "B:B": [
+          "You fake-pout, and {partner} saw right through it.",
+          "They can see the smile fighting its way out behind your crossed arms.",
+          "The mad act was never convincing. Not once. Sorry."
+        ]
+      }
+    },
+    {
+      "id": "PK-V19",
+      "friendId": "adventure_friend_pk",
+      "type": "Guess",
+      "scene": "Pickles rolls into a ball when you get close, then peeks out.",
+      "lines": [
+        "Sorry. Reflex. My walls are, um, physical."
+      ],
+      "question": "What gets through your partner's walls fastest?",
+      "selfQuestion": "What gets through your walls fastest?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "A silly joke",
+          "reply": [
+            "A silly joke. Laugh first, open up later.",
+            "Humor is the key. I know."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A long hug",
+          "reply": [
+            "A long hug. Even spiky ones need it.",
+            "Hold on. Ouch. Worth it."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Silly jokes work on you, and {partner} knew.",
+          "They know your walls are made of giggles and bad puns.",
+          "One knock-knock joke and the drawbridge just drops. Embarrassing. Cute."
+        ],
+        "A:B": [
+          "Hugs get through your walls. {partner} guessed jokes.",
+          "They're doing stand-up when you need arms.",
+          "Tell them: less comedy, more cuddles."
+        ],
+        "B:A": [
+          "Jokes get through your walls. {partner} guessed hugs.",
+          "They're hugging when they should be joking.",
+          "Hug AND joke. Double defense breach."
+        ],
+        "B:B": [
+          "Long hugs work on you, and {partner} knew.",
+          "They know you melt in hug number two.",
+          "Spiky outside, marshmallow inside."
+        ]
+      }
+    },
+    {
+      "id": "PK-V20",
+      "friendId": "adventure_friend_pk",
+      "type": "Guess",
+      "scene": "Pickles stomps in grumpy, then instantly softens when she sees your snacks.",
+      "lines": [
+        "Grumpy question. I'm not grumpy. I'm FINE."
+      ],
+      "question": "When your partner is grumpy, what fixes it?",
+      "selfQuestion": "When you're grumpy, what fixes it?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Food",
+          "reply": [
+            "Food. Hangry is a real condition. I've had it since birth.",
+            "Feed first, feelings later."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Ten minutes alone",
+          "reply": [
+            "Ten minutes alone. A reset button.",
+            "Do not disturb. Do not even breathe loudly."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Being annoyingly cute at them",
+          "reply": [
+            "Annoyingly cute? High risk, high reward.",
+            "Could fix everything. Could start a war."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Food fixes you, and {partner} knew.",
+          "There's probably an emergency granola bar in their bag right now. For you.",
+          "That's not a snack. That's a love letter."
+        ],
+        "A:B": [
+          "Alone time fixes you. {partner} guessed food.",
+          "They keep feeding you when you need quiet.",
+          "Take the snack. Then leave."
+        ],
+        "A:C": [
+          "Annoying cuteness fixes you. {partner} guessed food.",
+          "They're bringing snacks. You secretly want them to be obnoxiously adorable at you.",
+          "Next grumpy day, just say: 'Do the cute thing.' Watch them deliver."
+        ],
+        "B:A": [
+          "Food fixes you. {partner} guessed alone time.",
+          "They leave you alone when you need a sandwich.",
+          "Tell them: snacks first, space second."
+        ],
+        "B:B": [
+          "Ten minutes alone, and {partner} knew.",
+          "They know to back away slowly when your eyebrows do the thing.",
+          "Healthy. It's not rejection, it's maintenance."
+        ],
+        "B:C": [
+          "Annoying cuteness fixes you. {partner} guessed alone time.",
+          "They keep leaving when they should stay.",
+          "Grab them. Say 'be cute at me.'"
+        ],
+        "C:A": [
+          "Food fixes you. {partner} guessed cuteness.",
+          "They're being adorable at a hungry person. Dangerous.",
+          "Rule of the house: feed first, cute second. Write it on the fridge."
+        ],
+        "C:B": [
+          "Alone time fixes you. {partner} guessed cuteness.",
+          "They're being cute too close. Too soon.",
+          "Ten minutes, THEN the cuteness."
+        ],
+        "C:C": [
+          "Annoyingly cute works on you, and {partner} knew.",
+          "One silly face from them and your grump just collapses.",
+          "You're a total softie. I'm the same. Don't tell anyone."
+        ]
+      }
+    }
+  ]
+}

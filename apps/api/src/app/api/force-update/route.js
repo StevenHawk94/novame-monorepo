@@ -62,7 +62,7 @@ async function checkAdminAuth(request, supabase) {
   return null // success
 }
 
-// POST: Create a new force update notification (admin)
+// POST: Atomically save the minimum supported version; keep prior revisions for audit.
 export async function POST(request) {
   try {
     const supabase = getSupabase()
@@ -70,7 +70,7 @@ export async function POST(request) {
     if (authError) return authError
 
     const { minVersion, message, platform } = await request.json()
-    if (!minVersion || !message) return NextResponse.json({ error: 'Missing minVersion or message' }, { status: 400 })
+    if (typeof minVersion!=='string'||typeof message!=='string'||!message.trim()||message.trim().length>2000) return NextResponse.json({ error: 'Missing or invalid minimum version/message' }, { status: 400 })
     // Validate semver shape (major.minor.patch, digits only). The mobile
     // client fails OPEN on anything it can't parse, but reject obviously
     // bad input here so admins get immediate feedback instead of silently
@@ -79,12 +79,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'minVersion must be semver, e.g. 1.2.0' }, { status: 400 })
     }
     const normalizedPlatform = ['ios', 'android', 'all'].includes(platform) ? platform : 'all'
-    // Deactivate all existing
-    await supabase.from('force_updates').update({ is_active: false }).eq('is_active', true)
-    // Create new. `version` is a legacy NOT NULL column, now deprecated in
-    // favor of `min_version`; we store the same value to satisfy the
-    // constraint without a schema change.
-    const { data, error } = await supabase.from('force_updates').insert({ version: String(minVersion).trim(), min_version: String(minVersion).trim(), message, platform: normalizedPlatform, is_active: true }).select().single()
+    const {data,error}=await supabase.rpc('save_minimum_app_version_v1',{
+      p_min_version:minVersion.trim(),p_message:message.trim(),p_platform:normalizedPlatform,p_enabled:true,
+    })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, forceUpdate: data })
   } catch (e) {
@@ -99,7 +96,8 @@ export async function DELETE(request) {
     const authError = await checkAdminAuth(request, supabase)
     if (authError) return authError
 
-    await supabase.from('force_updates').update({ is_active: false }).eq('is_active', true)
+    const {error}=await supabase.rpc('save_minimum_app_version_v1',{p_min_version:null,p_message:null,p_platform:null,p_enabled:false})
+    if(error)return NextResponse.json({error:error.message},{status:500})
     return NextResponse.json({ success: true })
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 })

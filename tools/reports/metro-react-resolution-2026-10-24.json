@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-24",
+  "issue": "Expo Metro resolved react to the @types/react directory and could not find an executable package entry",
+  "cause": "The previous type-isolation change used directory aliases in the shared mobile tsconfig. Expo also consumes those aliases at runtime. Passing tsc did not validate Metro packaging.",
+  "fix": {
+    "config": "apps/mobile/tsconfig.json",
+    "react": "./node_modules/@types/react/index.d.ts",
+    "reactSubpaths": "./node_modules/@types/react/*.d.ts",
+    "contract": "The installed Expo 54 resolver explicitly skips .d.ts aliases. TypeScript still resolves mobile React 19 declarations; Metro uses executable React and JSX runtime modules.",
+    "dependencyVersionsChanged": false,
+    "metroCustomResolverAdded": false,
+    "secureStorageRecoveryComponentChanged": false,
+    "businessLogicChanged": false,
+    "productionDeployed": false,
+    "userDataReset": false
+  },
+  "validation": {
+    "regression": {
+      "test": "tools/test-metro-react-resolution.cjs",
+      "passed": 3,
+      "failed": 0,
+      "coverage": [
+        "Reproduce the original invalid @types/react directory entry",
+        "Installed Expo resolver skips explicit declaration aliases",
+        "React, jsx-runtime and jsx-dev-runtime resolve to executable React 19.1.0",
+        "TypeScript resolves the mobile React 19 declarations",
+        "Application @/ aliases continue resolving normally",
+        "Future @types aliases must explicitly end in .d.ts"
+      ],
+      "includedInDomainGate": true
+    },
+    "domainGate": {"passed": 595, "failed": 0},
+    "mobileTypeCheck": "passed",
+    "existingMetroIosDevelopmentBundle": {
+      "status": 200,
+      "bytes": 25500504,
+      "entry": "/apps/mobile/index.bundle",
+      "parameters": {"platform": "ios", "dev": true, "lazy": true, "engine": "hermes"},
+      "artifact": "/private/tmp/burrow-metro-react-ios-lazy-dev.bundle"
+    },
+    "productionExports": {
+      "ios": {"passed": true, "modules": 4630},
+      "android": {"passed": true, "modules": 4640},
+      "artifactRoot": "/private/tmp/burrow-metro-react.1trr9W"
+    }
+  },
+  "limitations": [
+    "JavaScript development bundling and production exports are not physical-device interaction or FPS verification.",
+    "The existing full non-lazy HTTP probe timed out while exports were running; the phone manifest's actual lazy/Hermes request subsequently returned 200.",
+    "An exploratory export:embed command with a relative entry path failed because the server root is the monorepo root. The correct phone entry and both normal platform exports passed.",
+    "No native App binary, API, Admin or database release was performed."
+  ],
+  "recovery": "Reload JS on the phone. If the old error is cached, stop the existing Metro with Ctrl+C and restart with: pnpm --filter @novame/mobile start --dev-client --clear. Do not reinstall the App or erase user data."
+}

@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-21",
+  "rootCause": "Record reward presentation started only when prepare/finalize reached the existing coin command. It was not wired to confetti completion, but network latency could place it after confetti.",
+  "change": "The durable local journal stages its existing 10-coin daily reward without sending a monetary request. AdventureReady releases that presentation when the logged heading reports visible, concurrently with confetti. Finalize reuses the same ticket/operation ID and authoritative receipt.",
+  "preserved": [
+    "Daily record-first key, reward cap, actual server reward amount and authorization",
+    "Journal draft payload, server draft idempotency, offline retry and duration/start/settlement rules",
+    "Confirmed wallet reconciliation and rollback on definitive rejection",
+    "Existing ambiguous queued operations keep their ticket until reconciled",
+    "Other reward scenes retain their existing release timing"
+  ],
+  "deduplication": "Persisted rewardPresented marker and the coin ledger prevent replays on rerender/reentry/restart; stale pairing-only reservations are cancelled, account changes remain fenced.",
+  "verification": {
+    "relatedTestsPassed": 159,
+    "mobileTypeCheck": "passed",
+    "iosProductionResourceExport": "/private/tmp/burrow-logged-coins-ios-final",
+    "missingAssetReferences": 0,
+    "regressionLog": "/private/tmp/burrow-logged-coins-regression.log",
+    "nativeDeviceTest": "not run"
+  },
+  "release": {
+    "apiChanged": false,
+    "migrationRequired": false,
+    "vercelDeployed": false,
+    "easBuildSubmitted": false,
+    "appStoreConnectSubmitted": false
+  }
+}

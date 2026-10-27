@@ -1,0 +1,1494 @@
+{
+  "code": "KK",
+  "id": "adventure_friend_kk",
+  "name": "Kiki",
+  "gender": "he",
+  "species": "Meerkat",
+  "partner": "Moss (he) - 睡鼠",
+  "emotionalState": "超外向 vs 内向伴侣，社交电量不同",
+  "speakingStyle": "热情话痨，爱说 Guess what!!",
+  "catchphrase": "Guess what!!",
+  "art": [
+    "Meerkat_02_Variant1.webp",
+    "Meerkat_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "KK-01",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "A meerkat pops up from a burrow, scans the horizon, spots you, and waves with both arms.",
+      "lines": [
+        "HI!! Guess what!! I'm Kiki!",
+        "I know everyone in this part of the burrow. Except you. Which is thrilling. Hi!"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hi Kiki! I'm new.",
+          "reaction": [
+            "New! Amazing! I love new! I'll introduce you to everybody. Maybe not all at once.",
+            "Maybe I'll start with the snack stand."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You seem energetic.",
+          "reaction": [
+            "I'm always like this! It's eighty-seven percent enthusiasm and thirteen percent snacks.",
+            "My favorite person says I run on pure sparkle."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "That's a lot of people.",
+          "reaction": [
+            "It is! I collect friends. Like stamps, but they talk back.",
+            "And sometimes they give me food, which is a huge plus."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-02",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Guess what!! I organized a party for twelve people.",
+        "Then I made a second party for the people who weren't invited to the first one. It's all fine."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Twelve people? Impressive.",
+          "reaction": [
+            "Thank you!! I love a crowd. I feel like a lighthouse with snacks.",
+            "Everyone drifts toward the glow. And the cheese."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A second party?!",
+          "reaction": [
+            "A rescue party! No one should feel left out. It's my one rule.",
+            "Well, my one rule plus 'bring dessert.'"
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Did you have fun?",
+          "reaction": [
+            "SO much fun! I talked for six hours straight. My voice is gone.",
+            "It's a badge of honor. A very squeaky badge."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-03",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Okay, guess what!! I have a partner!",
+        "His name is Moss. He's a dormouse. He's shy. Very shy. He once spent a whole party hiding inside a teapot."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A teapot?",
+          "reaction": [
+            "A teapot!",
+            "He said it was 'cozy and out of the way.' I loved it so much I brought him a snack through the spout."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Opposites attract!",
+          "reaction": [
+            "Totally! I'm all noise and he's all quiet.",
+            "It's like a song with a drum and a whisper. It works. It really works."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "How did you meet?",
+          "reaction": [
+            "At a party, obviously! I was the loud one by the cake.",
+            "He was the quiet one by the wall.",
+            "I asked if he wanted to share the cake. The rest is history."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-04",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "We have a signal! If Moss needs a break, he taps his ear twice.",
+        "Then I know it's time to leave. Or to hand him a cookie. It's a two-way system."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's thoughtful.",
+          "reaction": [
+            "It's his invention, actually. He wasn't sure about telling me.",
+            "I said, 'tell me anything, forever.' He tapped his ear. I've never loved a signal more."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Two taps, then what?",
+          "reaction": [
+            "We go outside. Or into a corner. Or he just holds my paw for a minute.",
+            "It's like hitting pause. Then we rejoin the party refreshed."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Does it always work?",
+          "reaction": [
+            "Almost always! Sometimes I get distracted and miss it. But Moss forgives me.",
+            "He taps again, louder. A tiny, gentle alarm."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-05",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Okay, real talk. Well, real-ish.",
+        "How do you and your partner balance how much time you spend with other people versus alone together?",
+        "I love a crowd. Moss loves a corner. We're both trying."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We plan both. Some social time, some quiet time.",
+          "reaction": [
+            "Plan both. Oh, that's so smart. Like a menu. Social appetizer, quiet main course.",
+            "I'm going to put it on a chalkboard."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We check in about our energy first.",
+          "reaction": [
+            "Energy check-ins! Love it. Like a battery meter. Moss would appreciate that.",
+            "I would too, because I never check my own."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, we're still figuring it out.",
+          "reaction": [
+            "Same! It's a work in progress, like a very loud art project. We'll get there.",
+            "Probably after a snack."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-06",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Guess what!! I threw Moss a surprise party.",
+        "Everyone yelled 'surprise.' Moss froze. He said 'thank you' in a very small voice and went to hide in the bathroom.",
+        "I realized I'd made a mistake. Then I went and sat outside the door. We just sat there. It was one of the best parties."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so sweet.",
+          "reaction": [
+            "It was. We had cake under the sink.",
+            "He told me, 'I love that you tried.' I told him, 'I love that you said so.' We were both crying a little."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Oh no, the surprise party.",
+          "reaction": [
+            "I know! Rookie error.",
+            "I thought, 'what's more loving than a party?' Turns out, a quiet night would've been.",
+            "But I think he appreciated the effort."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "At least you learned.",
+          "reaction": [
+            "I did! No more surprise parties. Now I do small surprises.",
+            "Like leaving a tiny snack on his desk. He likes those. He keeps the wrappers."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-07",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Kiki sits down. No bouncing. No waving. Just sitting.",
+      "lines": [
+        "Hey, can I tell you something? It's the quiet kind.",
+        "Sometimes I worry I'm too much for Moss. Like I'm a lot of light for someone who likes shade.",
+        "What if he's just being polite?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "He picked you for a reason.",
+          "reaction": [
+            "I know. I think. I keep telling myself that.",
+            "I just want to be sure I'm not wearing him down. Maybe I should ask.",
+            "Maybe I will."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Have you asked him?",
+          "reaction": [
+            "Not exactly.",
+            "I asked if he was 'okay.' He said 'yes.' That's not the same as the real thing.",
+            "I'll try again, with fewer words."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Kiki.",
+          "reaction": [
+            "...Thanks. It's weirdly peaceful. I didn't know I could sit still. It's kind of nice.",
+            "Don't tell anyone I said that."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-08",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I asked Moss. The real question.",
+        "He said, 'You're the only person who makes the world feel safe enough to peek out of.'",
+        "I screamed. Quietly. Into a pillow."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "It was. I've been carrying that sentence around all week.",
+            "I'm like a squirrel with a very good acorn.",
+            "I keep touching my pocket to make sure it's still there."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You screamed into a pillow?",
+          "reaction": [
+            "A tiny scream! A joyful one. Then I told Moss.",
+            "He laughed so hard he fell off the couch. A rare sound. I recorded it."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Moss is wonderful.",
+          "reaction": [
+            "He really is. He's quiet, but when he speaks, it lands.",
+            "I used to think I'd fill every silence. Now I treasure his."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-09",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "We spent the whole day at home. Just us.",
+        "I didn't talk for the first hour. That's a record. Moss noticed and asked, 'are you okay?' I said, 'I'm just listening to you breathe.'",
+        "He turned pink. It was great."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so tender.",
+          "reaction": [
+            "It was! There's something powerful about being quiet next to someone. I didn't need a crowd.",
+            "I just needed that hour."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "An hour of silence? That's huge.",
+          "reaction": [
+            "It was a miracle! I was like a kettle on low. Eventually I whistled.",
+            "But for a while, I was calm. And Moss smiled."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and listen.",
+          "reaction": [
+            "Thank you for just letting me say it.",
+            "It was a surprisingly big feeling for such a quiet day. I'm still glowing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-10",
+      "friendId": "adventure_friend_kk",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Guess what!! Ten visits!",
+        "Moss and I made a new rule. Every party, we get one 'pocket quiet' moment. We step out, share a snack, and recharge together.",
+        "It's the best rule we've ever made.",
+        "Okay, your turn. How are you and your partner doing? Tell me everything. Or just the good parts. Or just one thing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning together. That's the real romance, isn't it? Come to our next party.",
+            "We'll save you a seat. And a snack. And a pocket quiet moment."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A little worn out, honestly.",
+          "reaction": [
+            "Worn out is a real thing. Come sit with me. I won't talk.",
+            "I'll just stand guard with you. Meerkats are good at that."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You've reminded me to listen more.",
+          "reaction": [
+            "Oh! That means so much.",
+            "Okay, I'm going to be quiet for a whole minute to celebrate.",
+            "...Okay, that was ten seconds. Close enough."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P01",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Moss came to a party with me last night!",
+        "He stayed for two whole hours. He met three new people. He taught one of them how to fold paper hats. I almost cried into the dip."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a big deal.",
+          "reaction": [
+            "It was HUGE! I held his paw the whole time and didn't make a single speech.",
+            "Okay, one tiny speech. But it was for the dip."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did he enjoy it?",
+          "reaction": [
+            "He said 'it was nice' and went to bed early. I'm taking that as a victory.",
+            "I'm framing the word 'nice.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P02",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I tried a quiet picnic with Moss. Just us, a blanket, and two sandwiches.",
+        "I talked for the first ten minutes and then stopped. Moss said, 'I like hearing your voice.' I kept quiet anyway, to be nice."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "He likes your voice.",
+          "reaction": [
+            "He said it! Out loud! Do you know what that does to me?",
+            "I'm a puddle with a haircut. A very happy puddle."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How was the picnic?",
+          "reaction": [
+            "Peaceful. And a little weird. And perfect. Moss fed me a grape. I almost proposed. Again.",
+            "I think I just really like grapes. And him. Mostly him."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P03",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I accidentally invited forty people to dinner for two.",
+        "I realized when the doorbell kept ringing. Moss just sighed, smiled, and handed me an apron."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's love.",
+          "reaction": [
+            "It is. He didn't complain. We cooked for forty.",
+            "The soup was a disaster and a triumph. Everyone said it was 'a dish.' High praise."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Forty people?!",
+          "reaction": [
+            "I thought I said 'a few friends.' Apparently 'a few' means 'forty' in my voice.",
+            "Moss now writes the guest list. He's very good at it. Cruel but fair."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P04",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Moss and I made a pillow fort. A real one. With a flag.",
+        "We stayed inside for three hours. I didn't talk to anyone else. It was the best date."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A pillow fort date!",
+          "reaction": [
+            "It was! It's just us and the quiet.",
+            "I realized that being with Moss is a different kind of party.",
+            "A smaller one, with better snacks."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What was on the flag?",
+          "reaction": [
+            "A drawing of two small animals holding hands. Moss drew it. It's rough but perfect.",
+            "We named the fort 'Nation of Two.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P05",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "A friend asked Moss to give a speech at their wedding.",
+        "He said yes. Now he's panicking. I'm helping him practice. He told me, 'don't make it a duet.' So I'm just the audience."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's brave.",
+          "reaction": [
+            "It really is. He practices in front of a mirror, and I clap quietly.",
+            "He says my quiet clapping is 'weirdly supportive.' I'll take it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You're a good coach.",
+          "reaction": [
+            "I'm learning to coach quietly. It's harder than loud coaching. But it feels like a superpower.",
+            "I'm very proud of him. Also nervous. For him."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P06",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Moss left me a note on the fridge: 'You're my favorite noise.'",
+        "I put it on a magnet. Then I put the magnet in my pocket. Then I read the note ten times. I'm fine. I'm okay."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's sweet.",
+          "reaction": [
+            "I'm still not fine. It's the smallest note and the biggest thing.",
+            "I felt it in my toes. I talked about it for an hour.",
+            "Moss pretended to be annoyed."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A noise? Interesting.",
+          "reaction": [
+            "A noise! A loud, silly, happy noise. He says it's the best compliment he knows.",
+            "I think he's right. He's a poet in a very small coat."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P07",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Moss tapped his ear twice at the party, and I noticed immediately.",
+        "We stepped outside. We shared a cookie under the stars. I felt like the best partner ever. Maybe the second best."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You noticed fast.",
+          "reaction": [
+            "I've been practicing! Moss says I'm getting better at reading him.",
+            "I used to bulldoze past the signal. Now I stop on a dime.",
+            "A very small dime."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Who's the best?",
+          "reaction": [
+            "Moss is. Obviously. He's the one who taught me to notice.",
+            "I'm just the one who gets the cookie."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P08",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I spent a whole day without talking. Almost.",
+        "I whispered a few things. But mostly I drew pictures. Moss loved it. He says I'm 'quiet-adjacent.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Quiet-adjacent is adorable.",
+          "reaction": [
+            "Thank you! It's a growing field. I'm a member. Moss gave me an honorary badge.",
+            "It says 'Quiet Enough.' I wear it with pride."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How did it feel?",
+          "reaction": [
+            "Surprisingly good. Like wearing a soft sweater inside my head.",
+            "I'm not sure I'll do it again, but I'd try. For Moss. And for the sweater."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P09",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember Moss in the teapot? He found a bigger teapot.",
+        "He's moved in. It's a small apartment. Very cozy. I visit with snacks."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "He's committed.",
+          "reaction": [
+            "He really is! He's thrilled. He says it's the best house he's ever had.",
+            "I've been invited for tea. In a teapot. This is life."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A teapot house?!",
+          "reaction": [
+            "It's wonderfully weird. The spout is a window. The lid is a skylight. I'm very jealous.",
+            "I might ask for a tiny teacup house."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P10",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The ear-tap signal? Moss uses it for me now, too.",
+        "When I get too loud, he taps once. It means 'volume, please.' I appreciate the system."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good system.",
+          "reaction": [
+            "It's great! I never realized how much I needed a gentle reminder.",
+            "Moss does it with a smile. I don't take it personally.",
+            "I take it as a hug."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Role reversal!",
+          "reaction": [
+            "It's fair! He taught me the signal.",
+            "I'm teaching him how to ask for what he wants. It's a trade.",
+            "Like love, but with taps."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P11",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "'Quiet Enough' badge update: Moss made me a second one.",
+        "It says 'Loud Enough.' He says I should wear both. One for each mood."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's sweet.",
+          "reaction": [
+            "I wear them both. One on each side. Sometimes people ask.",
+            "I say 'it's a long story.' It's a good story. I tell it too loudly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Which badge do you wear more?",
+          "reaction": [
+            "Loud, mostly. But I'm saving Quiet for special occasions.",
+            "Like when Moss and I are deciding where to put the couch. A quiet decision."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P12",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still think about the pocket-quiet rule.",
+        "We used it twice this week. It's like a secret superpower for parties. Two minutes, one snack, a deep breath."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's smart.",
+          "reaction": [
+            "Thanks! It's honestly the best thing we've done.",
+            "We didn't have to give up parties or quiet. We just built a little bridge.",
+            "I'm proud of our bridge."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does it work every time?",
+          "reaction": [
+            "Almost! Sometimes the bridge has traffic. Or someone puts a sandwich on it.",
+            "But we get there. And we always come back kinder."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P13",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Being loud and being quiet are both love languages."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I like that.",
+          "reaction": [
+            "Me too! I'm learning to read Moss's quiet. It's like another language. I'm still a beginner.",
+            "But I'm fluent in snacks."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Which is yours?",
+          "reaction": [
+            "Loud, obviously.",
+            "But Moss is teaching me that some of my loudness is love in a costume.",
+            "And some of it is just loud. Both are fine."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P14",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: A good partner doesn't make you smaller or louder. They make you the right size."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "I made it up while chewing. It's one of my best.",
+            "Moss makes me a little calmer. I make him a little braver.",
+            "We're meeting in the middle."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What's the right size?",
+          "reaction": [
+            "I'm still figuring it out. I think it's 'a size that doesn't hurt.' Moss agrees.",
+            "He says, 'a size that fits in a teapot.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P15",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Introverts and extroverts are the same species, just different fonts."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's funny.",
+          "reaction": [
+            "I thought of it in the shower! It's true, though.",
+            "Same love, same fears, same need for snacks. Moss is in lowercase. I'm in all caps."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Different fonts?",
+          "reaction": [
+            "Yes! Like handwriting and a billboard. Both readable. One has more volume. I won't say which.",
+            "Moss will say I'm the billboard. He's right."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P16",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How does your partner like to recharge?",
+        "I'm making a list for Moss. For his birthday."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They like long baths.",
+          "reaction": [
+            "A bath! That's a good one. Quiet, warm, private.",
+            "I'll draw Moss a bath and put a tiny rubber duck in it. He'll love it.",
+            "He'll pretend not to."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They read in silence.",
+          "reaction": [
+            "Reading in silence. Moss does that too. I think I'll sit with him and just read.",
+            "It'll be the loudest thing I've ever done. I'll be quiet and nervous."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P17",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Do you and your partner ever argue about how much to do on weekends?",
+        "Moss wants to stay home. I want to go to six places."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Yeah, all the time.",
+          "reaction": [
+            "Same! It's a classic. We compromise by going to one place and then coming home early.",
+            "It's a bargain. A cozy one. With less walking."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We usually find a middle.",
+          "reaction": [
+            "A middle. That's what we're building. A small middle with a blanket and a snack.",
+            "I think we're getting better at it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P18",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's one thing your partner does that helps you feel calm?",
+        "Moss does this thing where he just hands me tea. No words. It fixes me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They hold my hand.",
+          "reaction": [
+            "Hand-holding is the best. Moss's paw is tiny and warm. It's like holding a little hug.",
+            "I think I could survive anything with that."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They breathe slowly next to me.",
+          "reaction": [
+            "Oh, that's gorgeous. A slow breath is contagious. Moss does it. I try to match.",
+            "I usually lose. But I'm gaining something."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P19",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Kiki sits perfectly still beside you, for once, and stares at the horizon.",
+      "lines": [
+        "I'm doing a quiet minute. It's a new thing.",
+        "Moss says it's like meditating, but with less guilt. Do you want to join me?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sit with Kiki.",
+          "reaction": [
+            "...Okay. This is nice. I can hear my own thoughts. They're surprisingly polite.",
+            "Thank you for sitting with me. Don't tell anyone I'm calm."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sure, I'll try.",
+          "reaction": [
+            "Great! One, two, three... okay I lost count. But the effort counts.",
+            "I'm very proud of us. We're being quiet together. On purpose."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "KK-P20",
+      "friendId": "adventure_friend_kk",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Moss pokes his head out of a tiny teapot, lifts the lid, and waves shyly.",
+      "lines": [
+        "Hi. I'm Moss.",
+        "Kiki talks about you a lot. In a good way. Thanks for being kind to them."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Kiki's great.",
+          "reaction": [
+            "They are. A lot, but great. I'm very lucky. I just don't always say it.",
+            "I say it with tea."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It's nice to meet you, Moss.",
+          "reaction": [
+            "It's nice to meet you too. I'm... trying not to hide. Okay, I'm a little hidden.",
+            "But I'm glad you're here. Kiki's very happy you came."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_1",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G01",
+      "name": "Cat Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 1,
+      "file": "Animal Statues/Cat Statue.webp",
+      "key": "burrow/adventure-gifts/v1/1-80b16debeb96c7b1.webp",
+      "sha256": "80b16debeb96c7b1374ff39d5b9ae1b8cd568d66ce0ca2096e34956424fc6e91",
+      "bytes": 27706
+    },
+    {
+      "id": "adventure_gift_2",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G02",
+      "name": "Elephant Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 2,
+      "file": "Animal Statues/Elephant Statue.webp",
+      "key": "burrow/adventure-gifts/v1/2-219b00773d0ef491.webp",
+      "sha256": "219b00773d0ef4917ce63c613afe65d9653a9a323649c74d77feba4857d4145c",
+      "bytes": 28668
+    },
+    {
+      "id": "adventure_gift_3",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G03",
+      "name": "Bear Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 3,
+      "file": "Animal Statues/Bear Statue.webp",
+      "key": "burrow/adventure-gifts/v1/3-303e17fab4761200.webp",
+      "sha256": "303e17fab4761200eae8465cb5e7905409d7b16ca8515578588dcb96d4eb88b1",
+      "bytes": 24170
+    },
+    {
+      "id": "adventure_gift_4",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G04",
+      "name": "Deer Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 4,
+      "file": "Animal Statues/Deer Statue.webp",
+      "key": "burrow/adventure-gifts/v1/4-5750fb17dd04909d.webp",
+      "sha256": "5750fb17dd04909ddacabba4895bf211da4e7dd71e18f1a8656167425bf81f9b",
+      "bytes": 31556
+    },
+    {
+      "id": "adventure_gift_5",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G05",
+      "name": "Owl Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 5,
+      "file": "Animal Statues/Owl Statue.webp",
+      "key": "burrow/adventure-gifts/v1/5-87b7e42f2967e22b.webp",
+      "sha256": "87b7e42f2967e22b6197ca9d03b901f4330bda11e32e5e065f7cd525e3429920",
+      "bytes": 24358
+    },
+    {
+      "id": "adventure_gift_6",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G06",
+      "name": "Penguin Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 6,
+      "file": "Animal Statues/Penguin Statue.webp",
+      "key": "burrow/adventure-gifts/v1/6-3bf1f8caa89bff6c.webp",
+      "sha256": "3bf1f8caa89bff6cc094e383c54bf7e1528b244e32e063f50f811540ba87cf30",
+      "bytes": 23268
+    },
+    {
+      "id": "adventure_gift_7",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G07",
+      "name": "Swan Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 7,
+      "file": "Animal Statues/Swan Statue.webp",
+      "key": "burrow/adventure-gifts/v1/7-a85461aabcc5c4a0.webp",
+      "sha256": "a85461aabcc5c4a0d55877e5081df98df2341a792def88384eeeb0aa247665da",
+      "bytes": 30880
+    },
+    {
+      "id": "adventure_gift_8",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G08",
+      "name": "Flamingo Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 8,
+      "file": "Animal Statues/Flamingo Statue.webp",
+      "key": "burrow/adventure-gifts/v1/8-d962ec4dc22fb93b.webp",
+      "sha256": "d962ec4dc22fb93b1280c62c533d8356310987d189c02c0827e7840bd40da765",
+      "bytes": 31988
+    },
+    {
+      "id": "adventure_gift_9",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G09",
+      "name": "Turtle Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 9,
+      "file": "Animal Statues/Turtle Statue.webp",
+      "key": "burrow/adventure-gifts/v1/9-efc23a4bdff5166e.webp",
+      "sha256": "efc23a4bdff5166ed3b9e7dde7231c77fa91abf7973a8cd1348c957adb88bd29",
+      "bytes": 26558
+    },
+    {
+      "id": "adventure_gift_10",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G10",
+      "name": "Seal Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 10,
+      "file": "Animal Statues/Seal Statue.webp",
+      "key": "burrow/adventure-gifts/v1/10-02cb875ab65d2a8b.webp",
+      "sha256": "02cb875ab65d2a8bdf658941ec91433dc75e61eb362c1166b72506ef5e9e4243",
+      "bytes": 27518
+    },
+    {
+      "id": "adventure_gift_11",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G11",
+      "name": "Squirrel Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 11,
+      "file": "Animal Statues/Squirrel Statue.webp",
+      "key": "burrow/adventure-gifts/v1/11-11fac0f16551739e.webp",
+      "sha256": "11fac0f16551739e61f3dd3b3f89458a47bcc584522a0f82800f5f4b9127cdf7",
+      "bytes": 35596
+    },
+    {
+      "id": "adventure_gift_12",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G12",
+      "name": "Hedgehog Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 12,
+      "file": "Animal Statues/Hedgehog Statue.webp",
+      "key": "burrow/adventure-gifts/v1/12-c11fc8f080c38b6f.webp",
+      "sha256": "c11fc8f080c38b6f8cf3599d4854687f2b36c8481d6227a9c28e1ca497db54ea",
+      "bytes": 28628
+    },
+    {
+      "id": "adventure_gift_13",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G13",
+      "name": "Horse Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 13,
+      "file": "Animal Statues/Horse Statue.webp",
+      "key": "burrow/adventure-gifts/v1/13-39b5f42cdd31f60f.webp",
+      "sha256": "39b5f42cdd31f60f1fc973f75cef409bfe9b0f23e96935abdfde488d6cf20ad8",
+      "bytes": 35944
+    },
+    {
+      "id": "adventure_gift_14",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G14",
+      "name": "Rhino Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 14,
+      "file": "Animal Statues/Rhino Statue.webp",
+      "key": "burrow/adventure-gifts/v1/14-ba7acc56c0eba4f0.webp",
+      "sha256": "ba7acc56c0eba4f07c7e7ca8fa1c83d6da92a64c6087d4e1449cc93329ad0e7c",
+      "bytes": 29618
+    },
+    {
+      "id": "adventure_gift_15",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G15",
+      "name": "Red Panda",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 15,
+      "file": "Animal Statues/Red Panda.webp",
+      "key": "burrow/adventure-gifts/v1/15-1d8a5c1be333e802.webp",
+      "sha256": "1d8a5c1be333e802e4e7548144a74ff9e4a8aa913dbf4a663bceae37f68dccb5",
+      "bytes": 33638
+    },
+    {
+      "id": "adventure_gift_16",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G16",
+      "name": "Toucan Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 16,
+      "file": "Animal Statues/Toucan Statue.webp",
+      "key": "burrow/adventure-gifts/v1/16-f0f1e15c971c29ce.webp",
+      "sha256": "f0f1e15c971c29ced3f82371fbcfe06a5f382645c5c181b069770a71e8969d9a",
+      "bytes": 29352
+    },
+    {
+      "id": "adventure_gift_17",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G17",
+      "name": "Rabbit Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 17,
+      "file": "Animal Statues/Rabbit Statue.webp",
+      "key": "burrow/adventure-gifts/v1/17-f6c3804d06d63116.webp",
+      "sha256": "f6c3804d06d63116150d0175fe272ff60450eb0a83138c7b927d5a06bba5e723",
+      "bytes": 20880
+    },
+    {
+      "id": "adventure_gift_18",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G18",
+      "name": "Fox Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 18,
+      "file": "Animal Statues/Fox Statue.webp",
+      "key": "burrow/adventure-gifts/v1/18-021fb868908c603e.webp",
+      "sha256": "021fb868908c603ebdca4b5b270a2cd5dfa71c0c7e9409b6d0c4c3812bdad789",
+      "bytes": 27026
+    },
+    {
+      "id": "adventure_gift_19",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G19",
+      "name": "Koala Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 19,
+      "file": "Animal Statues/Koala Statue.webp",
+      "key": "burrow/adventure-gifts/v1/19-7c0c3abee7aa4481.webp",
+      "sha256": "7c0c3abee7aa44810815731d63a0df7580d7b957a71f494f9d17b273393c8846",
+      "bytes": 25902
+    },
+    {
+      "id": "adventure_gift_20",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G20",
+      "name": "Hippo Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 20,
+      "file": "Animal Statues/Hippo Statue.webp",
+      "key": "burrow/adventure-gifts/v1/20-be617e18d3c8f934.webp",
+      "sha256": "be617e18d3c8f93454ff26c0b2651eb9f0ac42015e7d61656686f5953f09dcdf",
+      "bytes": 28384
+    },
+    {
+      "id": "adventure_gift_21",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G21",
+      "name": "Kangaroo Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 21,
+      "file": "Animal Statues/Kangaroo Statue.webp",
+      "key": "burrow/adventure-gifts/v1/21-3a9870e070234ee3.webp",
+      "sha256": "3a9870e070234ee3814c9c439d051d4f7790aedd6222b760e91a2450fdf970e5",
+      "bytes": 23316
+    },
+    {
+      "id": "adventure_gift_22",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G22",
+      "name": "Giraffe Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 22,
+      "file": "Animal Statues/Giraffe Statue.webp",
+      "key": "burrow/adventure-gifts/v1/22-20f14fa2b161af71.webp",
+      "sha256": "20f14fa2b161af719b6a1c6b80b938a095666bddbcf039ce4463c19d8469ebaa",
+      "bytes": 23680
+    },
+    {
+      "id": "adventure_gift_23",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G23",
+      "name": "Raccoon Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 23,
+      "file": "Animal Statues/Raccoon Statue.webp",
+      "key": "burrow/adventure-gifts/v1/23-43631370674d88cf.webp",
+      "sha256": "43631370674d88cf1b574eade0d3ec074e72d2b75c26b6d7c79d954a2fcf3b17",
+      "bytes": 29224
+    },
+    {
+      "id": "adventure_gift_24",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G24",
+      "name": "Otter Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 24,
+      "file": "Animal Statues/Otter Statue.webp",
+      "key": "burrow/adventure-gifts/v1/24-3517af378e11ef68.webp",
+      "sha256": "3517af378e11ef68cfb6b10a9da758bfbf8355834c06fb0c5e55d48288af01fb",
+      "bytes": 22316
+    },
+    {
+      "id": "adventure_gift_25",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G25",
+      "name": "Peacock Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 25,
+      "file": "Animal Statues/Peacock Statue.webp",
+      "key": "burrow/adventure-gifts/v1/25-964ddbbd32fd0bc5.webp",
+      "sha256": "964ddbbd32fd0bc5be8a3d5583a2303a3ebf8c4edcbc228702be66354aa0f9a6",
+      "bytes": 32340
+    },
+    {
+      "id": "adventure_gift_26",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G26",
+      "name": "Duck Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 26,
+      "file": "Animal Statues/Duck Statue.webp",
+      "key": "burrow/adventure-gifts/v1/26-ac065e40d89020b2.webp",
+      "sha256": "ac065e40d89020b262879dab2bbef9f6328c398502a8ec4c50234d2fae3a2a59",
+      "bytes": 29028
+    },
+    {
+      "id": "adventure_gift_27",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G27",
+      "name": "Pelican Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 27,
+      "file": "Animal Statues/Pelican Statue.webp",
+      "key": "burrow/adventure-gifts/v1/27-f38ca4c054be81a7.webp",
+      "sha256": "f38ca4c054be81a76dec0f4211c262078bc35694ebff758ed64c077812b76f9d",
+      "bytes": 29672
+    },
+    {
+      "id": "adventure_gift_28",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G28",
+      "name": "Rooster Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 28,
+      "file": "Animal Statues/Rooster Statue.webp",
+      "key": "burrow/adventure-gifts/v1/28-30fd273769adca3b.webp",
+      "sha256": "30fd273769adca3b2490d3994cda65f1e3667dc3a191278f6901e63f4942577e",
+      "bytes": 38442
+    },
+    {
+      "id": "adventure_gift_29",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G29",
+      "name": "Frog Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 29,
+      "file": "Animal Statues/Frog Statue.webp",
+      "key": "burrow/adventure-gifts/v1/29-42f7beed77a2c494.webp",
+      "sha256": "42f7beed77a2c4948039943d4d63236de474a5f82ec96e39abe3392fed29c7e9",
+      "bytes": 29234
+    },
+    {
+      "id": "adventure_gift_30",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G30",
+      "name": "Chameleon Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 30,
+      "file": "Animal Statues/Chameleon Statue.webp",
+      "key": "burrow/adventure-gifts/v1/30-ad46a9949292e061.webp",
+      "sha256": "ad46a9949292e061c9362859d972caeec6e3a81b9673612e3efa0e35761ed24e",
+      "bytes": 32596
+    },
+    {
+      "id": "adventure_gift_31",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G31",
+      "name": "Armadillo Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 31,
+      "file": "Animal Statues/Armadillo Statue.webp",
+      "key": "burrow/adventure-gifts/v1/31-1eb512a5cfde6716.webp",
+      "sha256": "1eb512a5cfde67162c6feafab129ca1466b116182f8f2d5fe51631e61fcbe121",
+      "bytes": 28748
+    },
+    {
+      "id": "adventure_gift_32",
+      "friendId": "adventure_friend_kk",
+      "giftId": "KK-G32",
+      "name": "Tapir Statue",
+      "category": "Animal Statues",
+      "categoryCode": "C01",
+      "sourceId": 32,
+      "file": "Animal Statues/Tapir Statue.webp",
+      "key": "burrow/adventure-gifts/v1/32-12b01ddab2b4ef83.webp",
+      "sha256": "12b01ddab2b4ef83feaa4bc5330aabe9c1bab3fc825532f60985b4b8bafa5266",
+      "bytes": 30584
+    }
+  ]
+}

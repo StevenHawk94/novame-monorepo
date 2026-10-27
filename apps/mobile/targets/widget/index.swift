@@ -242,7 +242,7 @@ struct LatestReflectView: View {
               .frame(width: 42, height: 42)
               .clipShape(Circle())
           } else {
-            Text("🐰").font(.system(size: 21))
+            Text(String(reflect.name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1)).uppercased()).font(.system(size: 21, weight: .bold))
           }
         }
         .frame(width: 42, height: 42)

@@ -8,26 +8,29 @@ function database(rows, calls) {
       calls.push({ rpc: name, args })
       return Promise.resolve({ data: name === 'assign_daily_quests_v1'
         ? { error: null, localDate: '2026-09-30', quests: [] }
+        : name==='burrow_has_plus_v1' ? rows.profiles?.[0]?.subscription_tier==='plus'
+        : name==='economic_calendar_v1' ? {timezone:'UTC',localDate:new Date().toISOString().slice(0,10)}
         : name === 'solo_burrow_initialize_v1' ? { error: null, initialized: true }
           : [], error: null })
     },
     from(table) {
-      const filters = []
+      const filters = []; let selected, start = 0, end = 999
       const query = {
-        select() { return query },
+        select(columns) { selected = columns; return query },
         eq(field, value) { filters.push([field, value]); return query },
         in(field, values) { filters.push([field, values]); return query },
         is(field, value) { filters.push([field, value]); return query },
         order() { return query },
         limit() { return query },
+        range(from, to) { start = from; end = to; return query },
         maybeSingle() { return Promise.resolve(result(true)) },
         then(resolve, reject) { return Promise.resolve(result(false)).then(resolve, reject) },
       }
       function result(single) {
-        calls.push({ table, filters: [...filters] })
+        calls.push({ table, selected, filters: [...filters] })
         const filtered = (rows[table] || []).filter(row => filters.every(([field, value]) =>
           Array.isArray(value) ? value.includes(row[field]) : row[field] === value))
-        return { data: single ? filtered[0] ?? null : filtered, error: null }
+        return { data: single ? filtered[0] ?? null : filtered.slice(start, end + 1), error: null }
       }
       return query
     },
@@ -47,10 +50,10 @@ test('unpaired bootstrap exposes only the current user and published content', a
       { stable_id: 'active', revision_id: 'published-revision', status: 'active', title: 'Lamp' },
       { stable_id: 'draft', revision_id: 'draft-revision', status: 'active', title: 'Hidden' },
     ],
-    user_inventory: [{ id: 'item', owner_id: id, item_id: 'active', source: 'starter' }, { id: 'former', owner_id: 'former-partner', item_id: 'active', source: 'gift' }],
+    user_inventory: [{ id: 'item', owner_id: id, item_id: 'active', source: 'starter', acquired_at: '2026-10-14T12:00:00Z' }, { id: 'former', owner_id: 'former-partner', item_id: 'active', source: 'gift' }],
     room_loadouts: [{ room_type: 'home', owner_id: id, slot: 'lamp', item_id: 'active' }],
     friend_definitions: [{ stable_id: 'friend', revision_id: 'published-revision', status: 'active', name: 'Pip', subtitle: 'Friend' }],
-    user_friend_discoveries: [{ user_id: id, friend_id: 'friend', interaction_completed_at: null }],
+    user_friend_discoveries: [{ user_id: id, friend_id: 'friend', source_adventure_id: 'first-journey', interaction_completed_at: null }],
     memory_prompts: [{ stable_id: 'prompt', revision_id: 'published-revision', status: 'active', prompt: 'Remember today' }],
     moment_events: [
       { id: 'mine', pair_low: id, pair_high: id, actor_id: id, event_type: 'toy_interacted', payload: {}, created_at: new Date().toISOString() },
@@ -67,7 +70,11 @@ test('unpaired bootstrap exposes only the current user and published content', a
   const result = await unpairedBurrowBootstrap(db, id)
   assert.equal(result.unpaired, true)
   assert.equal(result.partner, null)
+  assert.equal(result.discoveries[0].source_adventure_id, 'first-journey')
+  assert.ok(calls.find(call => call.table === 'user_friend_discoveries').selected.split(',').includes('source_adventure_id'))
   assert.deepEqual(result.inventory.map(item => item.id), ['item'])
+  assert.equal(result.inventory[0].acquired_at, '2026-10-14T12:00:00Z')
+  assert.ok(calls.find(call => call.table === 'user_inventory').selected.split(',').includes('acquired_at'))
   assert.deepEqual(result.catalog.map(item => item.stable_id), ['active'])
   assert.equal(result.wallet.balance, 12)
   assert.equal(result.roomNeeds.food, 80)
@@ -87,6 +94,38 @@ test('unpaired bootstrap exposes only the current user and published content', a
 test('missing profile cannot become an anonymous empty burrow', async () => {
   const db = database({ app_config: [{ key: 'app_major_update_content_revision', value: 'published-revision' }] }, [])
   await assert.rejects(unpairedBurrowBootstrap(db, 'missing'), /unpaired_bootstrap_unavailable/)
+})
+
+test('a missing initial care row falls back to hungry and thirsty, not falsely full', async () => {
+  const id = 'new-user'
+  const db = database({
+    profiles: [{ id, subscription_tier: 'free', timezone_name: 'UTC' }],
+    app_config: [{ key: 'app_major_update_content_revision', value: 'published' }],
+    content_revisions: [{ id: 'published', status: 'published' }],
+  }, [])
+  const result = await unpairedBurrowBootstrap(db, id)
+  assert.equal(result.roomNeeds.food, 0)
+  assert.equal(result.roomNeeds.foodValue, 0)
+  assert.equal(result.roomNeeds.water, 0)
+  assert.equal(result.roomNeeds.waterValue, 0)
+})
+
+test('inventory pagination retains acquired_at on every page, not only the initial read', async () => {
+  const id = 'self', calls = []
+  const inventory = Array.from({ length: 1001 }, (_, i) => ({ id: String(i), owner_id: id,
+    item_id: `gift-${i}`, source: 'adventure', acquired_at: '2026-10-14T12:00:00Z' }))
+  const db = database({
+    profiles: [{ id, subscription_tier: 'free', timezone_name: 'UTC' }],
+    app_config: [{ key: 'app_major_update_content_revision', value: 'published' }],
+    content_revisions: [{ id: 'published', status: 'published' }],
+    user_inventory: inventory,
+  }, calls)
+  const snapshot = await unpairedBurrowBootstrap(db, id)
+  assert.equal(snapshot.inventory.length, 1001)
+  assert.ok(snapshot.inventory.every(item => item.acquired_at === '2026-10-14T12:00:00Z'))
+  const reads = calls.filter(call => call.table === 'user_inventory')
+  assert.equal(reads.length, 2)
+  assert.ok(reads.every(call => call.selected.split(',').includes('acquired_at')))
 })
 
 test('draft content cannot be revealed to an unpaired account', async () => {

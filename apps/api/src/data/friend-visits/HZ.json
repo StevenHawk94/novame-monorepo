@@ -1,0 +1,1077 @@
+{
+  "code": "HZ",
+  "name": "Hazel",
+  "friendId": "adventure_friend_hz",
+  "waitingLines": [
+    "Okay, so, I’ve blocked out the next hour to wait for {partner}. It’s in my planner.",
+    "Okay, so, I reorganized your shelf while waiting for {partner}. You’re welcome."
+  ],
+  "questions": [
+    {
+      "id": "HZ-V01",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel bursts in with a clipboard, three pens behind her ear, and acorn crumbs on her cheek.",
+      "lines": [
+        "Okay, so, I have a question. Color-coded. Laminated. Let's go."
+      ],
+      "question": "What happens to many of the nuts squirrels bury and then forget?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They grow into new trees",
+          "reply": [
+            "YES. We're accidental gardeners!",
+            "Forgotten acorns and nuts sprout, so squirrels help forests spread.",
+            "My 'forgetfulness' is a public service. Please tell Walnut."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They rot and disappear",
+          "reply": [
+            "Some do! But that's not the plot twist.",
+            "Lots of forgotten nuts sprout and grow into brand-new trees.",
+            "Squirrels accidentally plant forests. Biggest flex in nature."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Other squirrels steal every single one",
+          "reply": [
+            "Theft does happen. Rude. I keep a list.",
+            "But plenty of forgotten nuts grow into new trees.",
+            "So every lost snack is a tiny tree in disguise."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Squirrels' uneaten cached nuts can germinate, aiding tree dispersal.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V02",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel holds up a single lotus seed like a priceless gem.",
+      "lines": [
+        "Okay, so, talk about long-term storage. This beats my pantry."
+      ],
+      "question": "About how old was the oldest lotus seed that still sprouted?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About 13 years old",
+          "reply": [
+            "Way older! Like, history-book older.",
+            "A sacred lotus seed around 1,300 years old was successfully sprouted.",
+            "Patience. Tough shell. Great storage."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About 13 days old",
+          "reply": [
+            "That's just a regular seed, babe.",
+            "An ancient lotus seed about 1,300 years old still sprouted.",
+            "Talk about waiting for the right moment."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 1,300 years old",
+          "reply": [
+            "YES. Okay, so, 1,300 years. In storage. Then sprouted.",
+            "Scientists germinated ancient sacred lotus seeds from a dried lakebed.",
+            "Best shelf life ever. I'm rethinking my expiration labels."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Sacred lotus seeds ~1,300 years old from China were germinated (Shen-Miller et al.).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V03",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel pins a photo of a tree full of tiny holes onto your fridge, very reverently.",
+      "lines": [
+        "This is my vision board. Storage goals."
+      ],
+      "question": "What does an acorn woodpecker do with its acorns?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Throws them at squirrels",
+          "reply": [
+            "Honestly? Possible. But no.",
+            "They drill holes in trees and store one acorn per hole.",
+            "Some trees hold tens of thousands. My dream pantry."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Eats them all immediately",
+          "reply": [
+            "No planning?! Chaos!",
+            "They drill holes and store acorns in special 'granary' trees.",
+            "Every acorn gets its own hole. Peak organization."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Drills holes and stores one acorn in each",
+          "reply": [
+            "YES. A whole granary tree!",
+            "They drill thousands of holes and wedge one acorn into each.",
+            "One acorn, one hole. Organized. Labeled. Beautiful. I'm emotional."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Acorn woodpeckers store acorns in individually drilled holes in granary trees.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V04",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel shows you a video of ants carrying leaf pieces in a long line.",
+      "lines": [
+        "Okay, so, they're not eating those leaves. They're farming. With them."
+      ],
+      "question": "What do leafcutter ants do with the leaves they carry?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Build tiny umbrellas",
+          "reply": [
+            "Okay, so, cute. Wrong.",
+            "They use the leaves to grow fungus gardens for food.",
+            "Agriculture before humans. Show-offs."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Use them to grow fungus gardens they eat",
+          "reply": [
+            "YES. Okay, so, ants are farmers!",
+            "They chew leaves into compost to grow a special fungus, then eat the fungus.",
+            "Underground farms with job roles. My dream spreadsheet."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Eat them right away",
+          "reply": [
+            "Okay, so, they can't digest them well.",
+            "They feed the leaves to fungus gardens, then eat the fungus.",
+            "Farmers. With very organized teams."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Leafcutter ants cultivate fungus on harvested leaf material.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V05",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel unrolls a map covered in thousands of tiny dots.",
+      "lines": [
+        "Memory question. I'm VERY competitive about this one."
+      ],
+      "question": "About how many seed stashes can a Clark's nutcracker bird remember?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Thousands",
+          "reply": [
+            "YES. Thousands!",
+            "They hide seeds in thousands of spots and find many again months later.",
+            "Living spreadsheet. A bird after my own heart."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About ten",
+          "reply": [
+            "Way, way more!",
+            "Clark's nutcrackers remember thousands of hiding spots.",
+            "Months later, under snow, they still find many of them."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "None, they just guess",
+          "reply": [
+            "That's my method. Not theirs.",
+            "They can remember thousands of seed stashes.",
+            "Elite memory. I'm a little jealous. Okay, a lot."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Clark's nutcrackers cache seeds in thousands of sites and recall many of them.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V06",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel turns off your lights and clicks on a tiny purple flashlight.",
+      "lines": [
+        "Spooky science time!"
+      ],
+      "question": "What surprising thing do flying squirrels do under UV light?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Turn invisible",
+          "reply": [
+            "Imagine! But no.",
+            "They actually glow pink under ultraviolet light.",
+            "Scientists found it by accident. Best accident ever."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Glow pink",
+          "reply": [
+            "YES. Pink!! I'm obsessed.",
+            "North American flying squirrels glow pink under UV light.",
+            "Nobody knows exactly why yet. Mysterious, sparkly queens."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Glow green like a glow stick",
+          "reply": [
+            "Close! Wrong color.",
+            "They glow pink under UV. Hot pink fluff.",
+            "Discovered by accident with a UV flashlight. Very rave."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "North American flying squirrels fluoresce pink under UV light.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V07",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel pats an imaginary pocket under her arm.",
+      "lines": [
+        "Okay, so, sea otters have a storage system. I'm jealous."
+      ],
+      "question": "Where do sea otters keep their favorite rock?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "In a pocket of loose skin under their arm",
+          "reply": [
+            "YES. A built-in pocket! Okay, so, iconic.",
+            "They store food and a favorite rock to crack shellfish open.",
+            "Some keep the same rock for a long time. A beloved tool."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They bury it on the beach",
+          "reply": [
+            "Okay, so, then they'd lose it. Like me with keys.",
+            "They keep it in a loose skin pocket under their forearm.",
+            "Pocket plus tool. Organized otter."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They hold it in their mouth all day",
+          "reply": [
+            "Okay, so, then how would they eat?",
+            "There's a loose skin pouch under each forearm for food and rocks.",
+            "A natural fanny pack. I need one."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Sea otters have loose skin pouches under forelegs for storing food and tools.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V08",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel dumps a huge pile of acorns on your table, then places one lonely acorn next to it.",
+      "lines": [
+        "See the difference? Big years and small years."
+      ],
+      "question": "What's a 'mast year' for oak trees?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A year they don't grow at all",
+          "reply": [
+            "The opposite, actually!",
+            "A mast year is when oaks drop way more acorns than usual.",
+            "Squirrel Christmas. I make a chart every time."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A year they grow sideways",
+          "reply": [
+            "Trees aren't THAT chaotic.",
+            "It's when oaks produce a huge acorn crop all at once.",
+            "Lots of trees do it together. Very coordinated. Very group project."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A year they drop way more acorns than usual",
+          "reply": [
+            "YES. Acorn jackpot!",
+            "Oaks across an area produce a huge crop at the same time.",
+            "Walnut and I stock up. I have a color code for this."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Mast years: synchronized heavy seed production in oaks.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V09",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel drops an apple into a bowl of water. It bobs up immediately.",
+      "lines": [
+        "Okay, so, it floats! I tested four apples. And a pear. The pear sank."
+      ],
+      "question": "Why do apples float in water?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They're coated in wax",
+          "reply": [
+            "Okay, so, wax doesn't make things float.",
+            "Apples are about 25% air, so they're less dense than water.",
+            "Built-in pool floatie."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They're about a quarter air",
+          "reply": [
+            "YES. About 25% air! Okay, so, natural floaties.",
+            "Air pockets between cells make them less dense than water.",
+            "Hence bobbing for apples. Very scientific party game."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They're secretly hollow",
+          "reply": [
+            "Okay, so, not hollow. Just airy.",
+            "Around a quarter of an apple's volume is air.",
+            "Less dense than water. Up it goes."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Apples are roughly 20–25% air by volume and float.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V10",
+      "friendId": "adventure_friend_hz",
+      "type": "Trivia",
+      "scene": "Hazel asks you to hold her clipboard. Then smiles like she won something.",
+      "lines": [
+        "Okay, so, you just did me a favor. Now you like me more. Science."
+      ],
+      "question": "What's the 'Ben Franklin effect'?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Flying a kite in a storm",
+          "reply": [
+            "Okay, so, that's a different Franklin story.",
+            "It's when doing someone a favor makes you like them more.",
+            "Ask your partner for small favors. It's a love hack."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Doing someone a favor can make you like them more",
+          "reply": [
+            "YES. Okay, so, asking for help builds connection!",
+            "Franklin wrote about borrowing a rival's book and becoming friends.",
+            "I ask Walnut to help assemble furniture. Strategic. Romantic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Saving money makes you happy",
+          "reply": [
+            "Okay, so, 'a penny saved' is also him, but no.",
+            "Doing a favor for someone can increase how much you like them.",
+            "Small asks, big closeness."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "The Ben Franklin effect: doing someone a favor can increase liking for them.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "HZ-V11",
+      "friendId": "adventure_friend_hz",
+      "type": "Preference",
+      "scene": "Hazel unrolls a chore chart that reaches the floor. And keeps going.",
+      "lines": [
+        "Okay, so, Walnut and I just moved in. I made a chart. He made a face."
+      ],
+      "question": "Splitting chores: a detailed chart, or just vibe it out?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Detailed chart",
+          "reply": [
+            "A chart?! You're my soulmate.",
+            "Color-coded. Laminated. Stickers when done."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Just vibe it",
+          "reply": [
+            "Just vibe it. That genuinely scares me.",
+            "But respect. Free spirits keep the world balanced."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Charts for both of you. Power couple energy.",
+          "I bet you and {partner} have a shared calendar with matching emojis.",
+          "Send me your template. Please. I'm begging. I'll trade acorns."
+        ],
+        "A:B": [
+          "Vibes for you. {partner} wants a chart.",
+          "Fair warning: they're probably color-coding you right now.",
+          "Let them. Then claim the fun chores before the chart goes live."
+        ],
+        "B:A": [
+          "Chart for you. {partner} would rather vibe it out.",
+          "Give them three tasks. Big font. Absolutely no color legend.",
+          "Let them check one box. Watch them get hooked. It's a gateway."
+        ],
+        "B:B": [
+          "You both just vibe it. Wow. How.",
+          "So you and {partner} just... wash dishes when they're dirty? Without a system?",
+          "Teach me slowly. I need to take notes on this."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V12",
+      "friendId": "adventure_friend_hz",
+      "type": "Preference",
+      "scene": "Hazel waves a grocery list that's double-sided and sorted by aisle.",
+      "lines": [
+        "It's alphabetized within each aisle. Don't laugh."
+      ],
+      "question": "Grocery shopping: strict list, or wander and grab?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Strict list",
+          "reply": [
+            "Strict list. In and out in 14 minutes. Love.",
+            "Budget intact. Dignity intact."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Wander and grab",
+          "reply": [
+            "Wander and grab. Adventure mode.",
+            "Suddenly you own three kinds of cheese and a candle."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Strict lists for both of you. Efficient love.",
+          "So you and {partner} probably split the list and race each other.",
+          "Grocery speedrun. Honestly, date idea."
+        ],
+        "A:B": [
+          "Wander for you. {partner} brings the list.",
+          "They hold the list. You hold the surprise cheese.",
+          "That's balance. Delicious, slightly-over-budget balance."
+        ],
+        "B:A": [
+          "List for you. {partner} wants to wander.",
+          "You'll finish in ten minutes. They'll still be in the snack aisle, inspired.",
+          "Give them one 'free pick' per trip. Treat budget. Everyone's happy."
+        ],
+        "B:B": [
+          "Wanderers, both of you. Snack chaos.",
+          "Honestly, you and {partner} came in for milk and left with a plant and four dips.",
+          "Honestly? That's the fun part. Keep wandering."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V13",
+      "friendId": "adventure_friend_hz",
+      "type": "Preference",
+      "scene": "Hazel holds up three paint swatches and looks deeply overwhelmed.",
+      "lines": [
+        "I have seven Pinterest boards. They're fighting."
+      ],
+      "question": "Moving in together: which room do you decorate first?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Bedroom",
+          "reply": [
+            "Bedroom. Sleep is a priority. Correct.",
+            "Good sheets, soft lights, done."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Kitchen",
+          "reply": [
+            "Kitchen. Snacks are a priority. Also correct.",
+            "Spice rack first. Personality second."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Living room",
+          "reply": [
+            "Living room. Hosting energy.",
+            "Couch first, guest list second."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Bedroom for both of you. A nap-first couple.",
+          "I can picture it: you and {partner} agree that comfort comes before everything.",
+          "Fluffy pillows forever. I approve this budget line."
+        ],
+        "A:B": [
+          "Kitchen for you. {partner} wants the bedroom.",
+          "Snacks versus sleep. The eternal debate.",
+          "Snacks in bed. Crumbs are a small price for peace."
+        ],
+        "A:C": [
+          "Living room for you. {partner} wants the bedroom.",
+          "You want people over. They want to never leave bed.",
+          "Host early, kick everyone out by nine. Everyone wins."
+        ],
+        "B:A": [
+          "Bedroom for you. {partner} wants the kitchen first.",
+          "Easy compromise: breakfast in bed.",
+          "Both rooms, one plan. I'm proud of this solution."
+        ],
+        "B:B": [
+          "Kitchen for both of you. Food is love.",
+          "Pretty sure you and {partner} would build your whole home around the snack shelf.",
+          "Honestly, the best homes smell like garlic."
+        ],
+        "B:C": [
+          "Living room for you. {partner} wants the kitchen.",
+          "So you'll host, and they'll feed everyone. A team.",
+          "Movie nights, sorted. I'll take popcorn duty."
+        ],
+        "C:A": [
+          "Bedroom for you. {partner} wants the living room.",
+          "You want rest. They want guests. Classic split.",
+          "Do the bedroom first, then host a housewarming. In that order."
+        ],
+        "C:B": [
+          "Kitchen for you. {partner} wants the living room.",
+          "That's basically a dinner party already.",
+          "Cook in one room, eat in the other. Invite me. Kidding. Unless?"
+        ],
+        "C:C": [
+          "Living room for both of you. Host mode.",
+          "Lowkey, you and {partner} want the couch ready before the bed is even built.",
+          "Game nights incoming. Invite me. I'll bring a scoreboard."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V14",
+      "friendId": "adventure_friend_hz",
+      "type": "Preference",
+      "scene": "Hazel opens a spreadsheet titled 'OUR MONEY (draft 6)'. Draft 6.",
+      "lines": [
+        "Money talk. Calm. Breathing."
+      ],
+      "question": "Paying for shared stuff: one shared account, or split every bill?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "One shared account",
+          "reply": [
+            "Shared account. Team mode. Big trust.",
+            "One pot. One plan. No receipts drama."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Split every bill",
+          "reply": [
+            "Split every bill. Clear and fair.",
+            "My spreadsheet just blushed."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Shared account for both of you. Fully merged.",
+          "That's a big step for you and {partner}. Proud of you two.",
+          "Remember to set a snack budget. Very important."
+        ],
+        "A:B": [
+          "You'd split bills. {partner} wants a shared account.",
+          "They're ready to merge. You need a minute. Valid.",
+          "Start with one shared fund. Like 'date nights.' Fun money first."
+        ],
+        "B:A": [
+          "You'd go joint. {partner} prefers splitting bills.",
+          "Try a shared account just for rent and groceries.",
+          "Small merge first. Big merge later. Very healthy."
+        ],
+        "B:B": [
+          "Split every bill, both of you. Clean and fair.",
+          "You and {partner} have zero 'who paid for what' drama.",
+          "My spreadsheet salutes you. It's wearing a tiny hat."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V15",
+      "friendId": "adventure_friend_hz",
+      "type": "Preference",
+      "scene": "Hazel holds a feather duster in one paw and a vacuum in the other.",
+      "lines": [
+        "Walnut and I disagree on this. I'm right."
+      ],
+      "question": "Cleaning: a little bit every day, or one big Sunday clean?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A little every day",
+          "reply": [
+            "A little every day. Never overwhelmed. Iconic.",
+            "Five minutes a day keeps the chaos away."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "One big Sunday clean",
+          "reply": [
+            "Big Sunday clean. Power hour.",
+            "Playlist on, mess gone, smug all evening."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Little-every-day for both of you. Spotless.",
+          "So you and {partner} have never seen a pile in your lives.",
+          "Please come explain this to Walnut. Slowly."
+        ],
+        "A:B": [
+          "Sunday clean for you. {partner} tidies every day.",
+          "They'll handle the little stuff. You bring the big Sunday energy.",
+          "Honestly a perfect system. I'm writing it down."
+        ],
+        "B:A": [
+          "You tidy daily. {partner} saves it all for Sunday.",
+          "You'll pick things up while they pile things up. Hmm.",
+          "Agree on one zone that stays clean always. The rest can wait."
+        ],
+        "B:B": [
+          "Sunday clean for both of you. Cleaning party.",
+          "Honestly, you and {partner} blast music and scrub like it's a concert.",
+          "Fun AND productive. Who knew."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V16",
+      "friendId": "adventure_friend_hz",
+      "type": "Guess",
+      "scene": "Hazel opens your junk drawer, gasps quietly, and closes it again.",
+      "lines": [
+        "No judgment. Some judgment."
+      ],
+      "question": "What does your partner's 'organized' drawer actually look like?",
+      "selfQuestion": "What does your 'organized' drawer actually look like?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Labeled perfection",
+          "reply": [
+            "Labeled perfection? Marry them again.",
+            "Label maker owners are rare and precious."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Total chaos with a lid",
+          "reply": [
+            "Chaos with a lid. Relatable.",
+            "Batteries, rubber bands, and three mystery keys."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Labeled perfection, and {partner} knew it.",
+          "They've watched you label the label maker.",
+          "I'm so jealous. Can I see it? Can I touch it?"
+        ],
+        "A:B": [
+          "Chaos with a lid. {partner} believed in your organization.",
+          "They're going to open it and lose faith.",
+          "Hide it. Or let me help. I'm already reaching for labels."
+        ],
+        "B:A": [
+          "Your drawer is perfect. {partner} expected chaos.",
+          "They underestimated your inner organizer.",
+          "Open it dramatically in front of them. Let them gasp."
+        ],
+        "B:B": [
+          "Chaos with a lid, and {partner} knew it.",
+          "They've opened it once. Quietly closed it. Never spoke of it.",
+          "At least it closes. That's something."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V17",
+      "friendId": "adventure_friend_hz",
+      "type": "Guess",
+      "scene": "Hazel holds up a cracked mug and looks at it lovingly.",
+      "lines": [
+        "Sentimental clutter question. I have a box of 'important' bottle caps."
+      ],
+      "question": "When moving, what would your partner refuse to throw away?",
+      "selfQuestion": "When moving, what would you refuse to throw away?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Old concert tickets",
+          "reply": [
+            "Concert tickets. A memory keeper.",
+            "Proof they were there, screaming lyrics."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A broken but beloved mug",
+          "reply": [
+            "The broken mug. Emotional support ceramic.",
+            "It doesn't hold coffee. It holds feelings."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A suspicious amount of cables",
+          "reply": [
+            "The cables. Classic.",
+            "For devices that haven't existed since 2014."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Concert tickets, and {partner} knew it.",
+          "They've seen the shoebox. They respect the shoebox.",
+          "Frame your favorites. Wall of memories."
+        ],
+        "A:B": [
+          "The mug for you. {partner} guessed tickets.",
+          "They think it's all about concerts. It's about that one mug.",
+          "Tell them the mug's origin story. It deserves to be heard."
+        ],
+        "A:C": [
+          "Cables for you. {partner} guessed tickets.",
+          "They think you're sentimental. You're just 'prepared.'",
+          "For what? Nobody knows. Not even you."
+        ],
+        "B:A": [
+          "Tickets for you. {partner} guessed the mug.",
+          "They think you're sentimental about dishes. You're sentimental about nights out.",
+          "Show them the ticket box. Tell one story per ticket."
+        ],
+        "B:B": [
+          "The broken mug, and {partner} knew it.",
+          "They've watched you rescue it from the trash twice.",
+          "Turn it into a plant pot. Second life, same love."
+        ],
+        "B:C": [
+          "Cables for you. {partner} guessed the mug.",
+          "They think you keep things for feelings. You keep them 'just in case.'",
+          "Label the cable box. At least make the chaos official."
+        ],
+        "C:A": [
+          "Tickets for you. {partner} guessed cables.",
+          "They think you hoard tech. You hoard memories.",
+          "Very different. Much cuter."
+        ],
+        "C:B": [
+          "The mug for you. {partner} guessed cables.",
+          "They have no idea about your emotional mug bond.",
+          "Introduce them properly. Mug, meet {partner}."
+        ],
+        "C:C": [
+          "The cable box, and {partner} knew it.",
+          "They fear the box. Everyone fears the box.",
+          "Just toss one cable. One. As a treat."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V18",
+      "friendId": "adventure_friend_hz",
+      "type": "Guess",
+      "scene": "Hazel reorganizes your dishwasher, then steps back like it's an art piece.",
+      "lines": [
+        "There IS a right way."
+      ],
+      "question": "How does your partner load the dishwasher?",
+      "selfQuestion": "How do you load the dishwasher?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Tetris-level precision",
+          "reply": [
+            "Tetris precision. A rare genius.",
+            "Every plate facing the same direction. Chills."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Throw it in and pray",
+          "reply": [
+            "Throw it in and pray. Brave.",
+            "Somehow it still comes out clean. Mostly."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Tetris precision, and {partner} knew.",
+          "They've caught you secretly reloading their dishes.",
+          "Gently stop. Or teach them. Kindly. With diagrams."
+        ],
+        "A:B": [
+          "Throw and pray for you. {partner} guessed precision.",
+          "They believed in you. They thought you were a Tetris person.",
+          "Next time, close the door fast. Hide the evidence."
+        ],
+        "B:A": [
+          "Precision for you. {partner} guessed throw and pray.",
+          "They have no idea about your plate-alignment skills.",
+          "Do a full demo. They'll never unsee the beauty."
+        ],
+        "B:B": [
+          "Throw and pray, and {partner} knew it.",
+          "They've made peace with the bowl on the top rack sideways.",
+          "Honestly, the dishwasher believes in you."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V19",
+      "friendId": "adventure_friend_hz",
+      "type": "Guess",
+      "scene": "Hazel holds a three-page packing list for a two-day trip.",
+      "lines": [
+        "It's thorough. It has a table of contents."
+      ],
+      "question": "How does your partner pack for a weekend trip?",
+      "selfQuestion": "How do you pack for a weekend trip?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Two days early, with a checklist",
+          "reply": [
+            "Early with a checklist. My hero.",
+            "Socks counted. Twice."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Ten minutes before, forgets socks",
+          "reply": [
+            "Ten minutes before. Chaos.",
+            "Socks? Who needs socks?"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Early checklist, and {partner} knew.",
+          "They've seen your list. Maybe they're on it.",
+          "Pack theirs too. It's an act of love."
+        ],
+        "A:B": [
+          "Last-minute for you. {partner} thought you'd have a checklist.",
+          "They believed in you. Sock-less, you've let them down.",
+          "Socks first next time. Always. Write it on your hand."
+        ],
+        "B:A": [
+          "Early checklist for you. {partner} expected last-minute chaos.",
+          "They're about to be shocked by your preparedness.",
+          "Hand them your list. Watch them get emotional."
+        ],
+        "B:B": [
+          "Last-minute chaos, and {partner} knew.",
+          "They secretly pack extra socks for you. Every trip.",
+          "That's love. Sock-shaped love."
+        ]
+      }
+    },
+    {
+      "id": "HZ-V20",
+      "friendId": "adventure_friend_hz",
+      "type": "Guess",
+      "scene": "Hazel finally sits still on your couch. For about four seconds.",
+      "lines": [
+        "Calm question for once. Saturday mornings."
+      ],
+      "question": "What's your partner's ideal Saturday morning at home?",
+      "selfQuestion": "What's your ideal Saturday morning at home?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Farmers market and errands",
+          "reply": [
+            "Farmers market and errands. Productive queen.",
+            "Berries, tote bag, to-do list."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Pancakes and pajamas till noon",
+          "reply": [
+            "Pancakes and pajamas. Sacred.",
+            "No plans. Just syrup."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Farmers market, and {partner} knew it.",
+          "They know you like a productive morning. With a tote bag.",
+          "Grab them a peach. Love language."
+        ],
+        "A:B": [
+          "Pancakes for you. {partner} thought you'd be at the market.",
+          "They imagined you productive. You chose pajamas.",
+          "Market next week. Syrup now. Priorities."
+        ],
+        "B:A": [
+          "Farmers market for you. {partner} thought you'd sleep in.",
+          "Surprise! You're up and buying zucchini.",
+          "Bring pancakes home after. Everyone wins."
+        ],
+        "B:B": [
+          "Pancakes and pajamas, and {partner} knew it.",
+          "They know slow mornings are your religion.",
+          "Extra syrup. Non-negotiable."
+        ]
+      }
+    }
+  ]
+}

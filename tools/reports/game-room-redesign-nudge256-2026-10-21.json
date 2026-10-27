@@ -1,0 +1,76 @@
+{
+  "task": "Game Room simplified UI and catalogue unlock gate",
+  "ui": {
+    "background": "#401608 on lobby, rules, both answer stages, transition, waiting, results and history",
+    "referenceLayout": "Code-derived six-screen browser preview inspected; preserves safe-area navigation and scrolling for long real questions and four-option canonical games",
+    "assets": {
+      "rules": "game room/rule-1.webp, rule-2.webp, rule-3.webp",
+      "stepOneComplete": "game room/rule-2.webp",
+      "waiting": "game room/waiting-page.webp",
+      "results": "game room/rule-3.webp"
+    },
+    "results": "Full six-question comparison, real paired avatars, scores and outcome; Done returns to original lobby/history",
+    "businessCopyAndQuestions": "Existing catalogue hooks, canonical question count/options and scoring preserved",
+    "previewDirectory": "/private/tmp/game-room-redesign-proof"
+  },
+  "purchase": {
+    "lockedCatalogueTile": "Immediate shared Shop purchase confirmation; no game-route push or local draft until authenticated unlock receipt",
+    "authority": "Revalidate current Admin offer, price, pairing and ownership before charge; backend remains authoritative",
+    "safety": "Single in-flight confirmation and navigation guard, Plus gate, cancelled confirmations, scope/epoch checks, shared ownership, insufficient-balance and stale-price recovery retained",
+    "unlocked": "Local Start Game; no answer-button HTTP request"
+  },
+  "nudge": {
+    "dailyLimit": "One manual reminder per session per recipient-local calendar day, enforced by unique outbox key and locked current-pair session",
+    "eligibility": "Sender must have submitted both rounds, recipient must still be unfinished, current reciprocal pair and pair-version required",
+    "delivery": "Existing game_invite copy and route; additive manual flag; recheck eligibility immediately before dispatch; 24-hour expiry",
+    "noFalseSuccess": "Unsubmitted local IDs and API failures show retry; already-sent and already-finished are explicit outcomes",
+    "notificationPermissions": "Does not ask the sender to enable their own notifications",
+    "inAppBadgesUnchanged": true,
+    "legacyNotifyAndAutomaticInviteResultInterfacesUnchanged": true
+  },
+  "verification": {
+    "regressionTestsPassed": 156,
+    "regressionTestsFailed": 0,
+    "isolatedPostgreSqlTestsPassed": 7,
+    "isolatedPostgreSqlTestsFailed": 0,
+    "mobileTypecheck": "passed",
+    "iosProductionExport": "passed",
+    "androidProductionExport": "passed",
+    "apiProductionCandidateBuild": "passed",
+    "candidatePermissionSmokeChecks": 14,
+    "productionPermissionSmokeChecks": 14,
+    "simulatorOrPhysicalDeviceTest": "not performed",
+    "crossAccountManualPushTest": "not performed; needs paired test-account login",
+    "nativePerformanceTrace": "not performed; no claim of native frame-time measurement"
+  },
+  "production": {
+    "migration": "20261021000256_game_room_nudge",
+    "deploymentId": "dpl_C1GtsQhvVj3ExXRahcwdTsaeHUhc",
+    "previousDeploymentId": "dpl_7BFw3tvH46P15u5by7GVdeP54V8M",
+    "candidateUrl": "https://novame-monorepo-rl3ukln7a-soulsayit.vercel.app",
+    "url": "https://api.soulsayit.com",
+    "changedApiFiles": ["apps/api/src/app/api/vnext/game-room/route.js", "apps/api/src/lib/push-notifications.js"],
+    "verifiedProductionSourceFiles": 272,
+    "protectedDatabaseFunctionsUnchanged": 401,
+    "allExistingDatabaseTriggersUnchanged": true,
+    "businessTableDigestComparisonWithinMigration": "unchanged: profiles, pairings, game sessions/progress/unlocks, wallets and ledger",
+    "newFunctionsServiceRoleOnly": true,
+    "adminUnchanged": true,
+    "avatarCleanupCronUnchanged": true,
+    "notificationCronUnchanged": true,
+    "accountsCreatedOrManualRewardsGranted": 0,
+    "verifiedAt": "2026-10-21T09:38:57.284Z"
+  },
+  "rollback": {
+    "script": "tools/rollback-game-room-nudge-256.sql",
+    "effect": "Disable manual enqueue and dispatch eligibility without removing dedup keys or affecting game data and automatic notifications",
+    "isolatedRollbackVerified": true,
+    "executedOnProduction": false
+  },
+  "delivery": {
+    "newClientSourceRequiredForNewUI": true,
+    "appStoreBuildOrOtaPublished": false,
+    "apiAndMigrationProductionLive": true
+  },
+  "releaseEvidenceDirectory": "/private/tmp/burrow-nudge256-release.iGhPG6"
+}

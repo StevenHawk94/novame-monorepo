@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-18",
+  "scope": "Retained primary pages, proactive Moments preparation and interaction-first scheduling; existing UI and business flow preserved",
+  "implementationStatus": "implemented",
+  "performanceAcceptance": "Physical-device Release latency, frame-time and memory acceptance remain unmeasured; no universal instant-open guarantee is asserted",
+  "rootCausesAddressed": [
+    "Optional decoded-art readiness was blocking otherwise authorized cached page entry",
+    "Ordinary Home press guards synchronously read Reanimated UI-thread shared values",
+    "Already laid-out retained pages waited an unnecessary animation frame before transition start",
+    "Hidden primary pages were not preparing changed domain models until focus",
+    "Moments history ownership lived in the mounted/focused screen rather than global activity synchronization",
+    "Preload, reconciliation and whole-snapshot serialization could compete with active touches and transitions",
+    "Decorate used a fixed two-frame return delay; Plushie Switch waited for network confirmation instead of the existing durable edit queue"
+  ],
+  "changes": {
+    "primaryPages": "Home, Burrow, Quests, Shop, Moments and Collection warm serially while idle and retain keyed views/layout. Relevant hidden models update during idle; unrelated updates do not invalidate them. Identity/access revocation remains immediate.",
+    "moments": "Global authorized in-memory cache prepares at bootstrap/activity-version change and foreground recovery. Focus only acknowledges the reminder. Reads are single-flight/coalesced; stale responses are fenced; offline data is retained with bounded retry backoff. Pagination and manual refresh remain supported; unchanged rows retain identity.",
+    "entry": "Ready authorized business models navigate directly; optional image decode is deferred. Missing bootstrap, pair authorization, game ownership/session/history and Release status still use bounded preparation and Retry/Cancel.",
+    "scheduling": "Touch/action/transition priority postpones speculative work and full snapshot serialization. Critical durable command and wallet writes remain synchronous. Interrupted touch/transition leases recover; background transition clears priority.",
+    "homeTapGuard": "JS press guard uses a generation-fenced mirror; native gesture cancellation and late-callback protection remain intact without synchronous UI-thread reads on ordinary presses.",
+    "returnHandoff": "Decorate waits for actual retained Home design commit when available, with bounded fallback. Existing local durable purchase/edit intents, server authority, idempotency, rollback and offline retry remain in place. Owned Plushie Switch uses the same durable local edit queue.",
+    "diagnostics": "Bounded 64-sample local phase timings, without user content, parameters or telemetry. JS touch-event receipt is explicitly not physical touch latency."
+  },
+  "verification": {
+    "automated": {
+      "command": "PGLITE_MODULE=/private/tmp/novame-ui-test-deps.Piadco/node_modules/@electric-sql/pglite node --test --test-concurrency=2 tools/test-*.cjs",
+      "passed": 1987,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 202.692,
+      "log": "/private/tmp/navigation-fast-complete-full-suite.log",
+      "coverage": [
+        "Cache-first entry, optional-art failure and cold-entry cancellation/retry",
+        "Authorized proactive Moments loading, single-flight/version bursts, pagination, offline recovery and unchanged card identity",
+        "Account/pair replacement, revoked access and stale-response fencing",
+        "Actual hidden useBurrow subscription preparation and synchronous revocation",
+        "Touch/transition priority, idle cancellation/serialization and interrupted-state recovery",
+        "Retained navigation/history, edge gesture policy and Home pull delayed-press guards",
+        "Durable room edits, Home commit handoff, duplicate Switch protection and failed-storage retry",
+        "Existing wallet, pricing, permissions, receipts, pairing, purchases, offline queues and database regression suites"
+      ]
+    },
+    "types": {
+      "command": "pnpm type-check",
+      "successfulWorkspaces": 5,
+      "totalWorkspaces": 5,
+      "log": "/private/tmp/navigation-fast-final-types.log"
+    },
+    "productionJsBundles": {
+      "command": "pnpm verify:mobile-bundles",
+      "android": { "passed": true, "bytes": 9588704, "assets": 1328 },
+      "ios": { "passed": true, "bytes": 9531806, "assets": 1324 },
+      "log": "/private/tmp/navigation-fast-complete-bundles.log",
+      "artifacts": "/var/folders/_v/j_qgbwt96t9b2j57xdhvw13m0000gn/T/novame-mobile-bundles-IN0TrX"
+    },
+    "iosNative": {
+      "environment": "iOS 26.2 Pro Max simulator, isolated com.novame.localsecureqa application, real retained navigator/page components and local art; fixture API/store/storage boundaries",
+      "passedObservations": [
+        "Home, Burrow, Quests, Shop and Moments visibly render using real page components",
+        "Home completion event: history-read count is 2 before Moments entry and stays 2 after entry; new row is already visible",
+        "Shop completion event: history-read count is 2 before Moments entry and stays 2 after entry; new row is already visible",
+        "Moments Back and Shop Go back return successfully without a second entrance",
+        "Shop Windows category and visible item position survive exit and re-entry",
+        "Backgrounding through the simulator Home button and reopening retains the Shop Windows state and usable content"
+      ],
+      "illustrativeTimingsOnly": {
+        "basis": "Local JS handler-to-commit phase samples from the isolated simulator, not physical release-to-paint or Release P95",
+        "warmShopMs": 29,
+        "preparedMomentsMs": 33
+      },
+      "log": "/private/tmp/navigation-fast-native-qa-events.log",
+      "limitations": [
+        "Coordinate drag attempts did not produce an effective native edge gesture; edge/Home-pull policies and races pass automated regression tests but this run is not a successful native drag acceptance",
+        "QA router detail pushes and business writes are stubbed; native payment/product-detail/server end-to-end acceptance is not claimed",
+        "No physical-device Release P50/P95/P99, frame-time, repeated-cycle memory or thermal profiling was performed"
+      ]
+    },
+    "androidEmulator": "skipped as requested"
+  },
+  "safety": {
+    "uiLayoutChanged": false,
+    "businessAuthorizationBypassed": false,
+    "productionDeploymentPerformed": false,
+    "productionDatabaseOrPurchaseWritesPerformed": false,
+    "unrelatedWorkingTreeChangesPreserved": true
+  }
+}

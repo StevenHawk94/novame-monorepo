@@ -27,7 +27,8 @@ export async function analyzeFinalizedReflect({ userId, draft, result }) {
     if (draft.ai_enhancement_eligible !== true) return
     const { data: profile } = await supabase.from('profiles')
       .select('subscription_tier, ai_consent_at').eq('id', userId).single()
-    if ((profile?.subscription_tier || 'free') === 'free' || !profile?.ai_consent_at) return
+    const entitlement=await supabase.rpc('burrow_has_plus_v1',{p_user:userId})
+    if(entitlement.error||entitlement.data!==true||!profile?.ai_consent_at)return
     if (!draft.body?.trim()) return
 
     context = await loadReflectAnalyzerContext(supabase, {

@@ -43,36 +43,19 @@ test('restores 1,3,5,8,11,14… for Free, excluding Plus and preserving the exis
   assert.equal(broken.shown(), 0);
 });
 
-test('current settlement completion counts once, only after success; an in-settlement Plus upgrade skips the count', () => {
-  const source = ts.createSourceFile('settlement.tsx', read('apps/mobile/src/components/main/reflect-settlement.tsx'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  let effect;
-  function visit(node) {
-    if (ts.isCallExpression(node) && node.expression.getText(source) === 'useEffect'
-      && node.arguments[0].getText(source).includes('recordReflectionPaywallClaim')) effect = node.arguments[0];
-    ts.forEachChild(node, visit);
-  }
-  visit(source); assert.ok(effect, 'new settlement must invoke the restored cadence');
-  const h = counter(), calls = [];
-  const context = { completed: null, delivered: { current: false }, isPaid: false, shared: false,
-    draft: { draftId: 'one', userId: 'user-one', journalKind: 'write_freely' },
-    Platform: { OS: 'ios' }, route: { key: 'reflect-screen' }, markNavigationTransitionPending() {},
-    releaseReflectSettlement() {}, recordReflectionPaywallClaim: h.api.recordReflectionPaywallClaim,
-    logJournalCompleted() {},
-    onFinalized: () => calls.push('finished'), recordReflectClaimForRating: () => false, emitOfficialRatingRequest() {},
-  };
-  const run = vm.runInNewContext('(' + effect.getText(source) + ')', context);
-  run(); assert.equal(h.count(), 0);
-  context.completed = { reflectId: 'one' }; run(); run();
-  assert.equal(h.count(), 1); assert.equal(h.shown(), 1); assert.deepEqual(calls, ['finished']);
-  context.delivered.current = false; context.isPaid = true; run();
-  assert.equal(h.count(), 1); assert.equal(calls.length, 2);
+test('retired settlement UI no longer creates a second paywall trigger',()=>{
+  assert.equal(fs.existsSync(path.join(root,'apps/mobile/src/components/main/reflect-settlement.tsx')),false);
+  const tap=read('apps/mobile/app/(main)/reflect-guided.tsx');
+  assert.doesNotMatch(tap,/recordReflectionPaywallClaim|ReflectSettlementView/);
 });
 
-function gateHarness({ slowStore = false, navigation } = {}) {
+function gateHarness({ slowStore = false, navigation, initialAdventure = null } = {}) {
   const time = clock();
   const slots = [], effects = [], timers = new Map(), pushes = [], resolvers = [];
   const env = { route: ['(main)', 'reflect-typing'], busy: false, dialog: false, modal: undefined, tier: 'free' };
-  let cursor = 0, dirty = false, nextTimer = 0, ratingListener, paywallListener, appListener, reviews = 0, checks = 0;
+  let cursor = 0, dirty = false, nextTimer = 0, ratingListener, paywallListener, adventureListener, adventurePending=initialAdventure, appListener, reviews = 0, checks = 0;
+  const adventureConsumed=[];
+  let milestoneRequest=null,milestoneListener;const ratingsConsumed=[];
   const appState = { currentState: 'active', addEventListener(_event, fn) { appListener = fn; return { remove() {} }; } };
   const react = {
     useMemo: fn => { cursor++; return fn(); },
@@ -88,10 +71,22 @@ function gateHarness({ slowStore = false, navigation } = {}) {
     },
   };
   const { OfficialRatingGate } = load('apps/mobile/src/components/rating/official-rating-gate.tsx', {
+    '@/lib/official-rating-milestones':{
+      canPresentRatingInline:()=>env.inlineReady!==false,
+      peekRatingMilestone:()=>milestoneRequest,
+      subscribeRatingMilestones:fn=>{milestoneListener=fn;return()=>{milestoneListener=null;};},
+      consumeRatingMilestone:value=>{ratingsConsumed.push(value);if(milestoneRequest?.id===value.id){milestoneRequest=null;milestoneListener?.();}},
+    },
+    '@/lib/coin-reward-store':{useCoinRewardBusy:()=>!!env.rewarding},
+    '@/lib/adventure-paywall':{
+      peekAdventurePaywall:()=>adventurePending,
+      subscribeAdventurePaywall:fn=>{adventureListener=fn;return()=>{adventureListener=null;};},
+      consumeAdventurePaywall:id=>{adventureConsumed.push(id);adventurePending=null;adventureListener?.();},
+    },
     '@/lib/partner-reflect-paywall': { peekPartnerReflectPaywall: () => null, subscribePartnerReflectPaywallRequest: () => () => {}, syncPartnerReflectPaywallRequests: async () => {} },
     react,
     'react-native': { AppState: appState },
-    'expo-router': { useSegments: () => env.route, router: { push(route) { pushes.push(typeof route === 'string' ? route : route.pathname); env.route = ['(main)', '(modals)', 'reflection-plus-paywall']; } } },
+    'expo-router': { useSegments: () => env.route, router: { push(route) { const path=typeof route === 'string' ? route : route.pathname;pushes.push(path);env.route = ['(main)', '(modals)', path.split('/').at(-1)]; } } },
     'expo-store-review': {
       hasAction() { checks++; return slowStore ? new Promise(resolve => resolvers.push(resolve)) : Promise.resolve(true); },
       requestReview: async () => { reviews++; },
@@ -107,7 +102,7 @@ function gateHarness({ slowStore = false, navigation } = {}) {
     },
     '@/components/ui/app-dialog': { useAppDialogVisible: () => env.dialog },
     '@/lib/use-subscription-tier': { useSubscriptionTierState: () => env.tier },
-    '@/lib/use-home-entry': { useHomeEntry: () => ({ pending: false, resumeRequired: false }) },
+    '@/lib/use-home-entry': { useHomeEntry: () => ({ pending: !!env.homePending, resumeRequired: !!env.homeResume }) },
     '@/lib/modal-coordinator': { useActiveModalSlot: () => env.modal },
     '@/lib/overlay-presence': { useOverlayPresent: () => env.overlay, isOverlayPresent: () => env.overlay },
     '@/lib/async-lifecycle': load('apps/mobile/src/lib/async-lifecycle.ts', {}, time.globals),
@@ -121,9 +116,11 @@ function gateHarness({ slowStore = false, navigation } = {}) {
     } while (dirty);
   }
   render();
-  return { timers, pushes, reviews: () => reviews, checks: () => checks,
+  return { timers, pushes, adventureConsumed,ratingsConsumed,reviews: () => reviews, checks: () => checks,
     set(next) { Object.assign(env, next); render(); },
     queue({ paywall = false, rating = false } = {}) { if (paywall) paywallListener(); if (rating) ratingListener(); render(); },
+    adventure(id='journey') { adventurePending=id;adventureListener();render(); },
+    milestone(kind='purchase',id='new',userId='me') { milestoneRequest=kind?{kind,id,userId}:null;milestoneListener();render(); },
     foreground(active) { appState.currentState = active ? 'active' : 'background'; appListener(appState.currentState); render(); },
     frame() { const timer = [...timers][0]; assert.ok(timer, 'missing next-frame dispatch');
       timers.delete(timer[0]); timer[1].fn(); render(); },
@@ -162,6 +159,75 @@ test('unknown entitlement waits; becoming Plus cancels an already queued paywall
   h.set({ tier: 'plus' }); assert.equal(h.timers.size, 0);
   h.set({ tier: 'free' }); assert.equal(h.timers.size, 0); assert.equal(h.pushes.length, 0); h.unmount();
 });
+
+test('Adventure offer waits for final exit to Home and its native transition, then mounts the unified paywall once',()=>{
+ const h=gateHarness();h.set({route:['(main)','burrow-detail']});h.adventure();assert.equal(h.timers.size,0);
+ h.set({route:['(main)','(tabs)','index'],busy:true});assert.equal(h.timers.size,0);
+ h.set({busy:false});assert.equal(h.timers.size,1);h.frame();
+ assert.deepEqual(h.pushes,['/(main)/(modals)/subscription-paywall']);assert.deepEqual(h.adventureConsumed,['journey']);
+ h.set({route:['(main)','(tabs)','index']});assert.equal(h.timers.size,0);h.unmount();
+});
+test('Adventure promotion waits through non-Home tabs, backgrounding, overlays and unknown entitlement',()=>{
+ const h=gateHarness();h.set({route:['(main)','(tabs)','shop']});h.adventure();assert.equal(h.timers.size,0);
+ h.set({route:['(main)','reflect']});assert.equal(h.timers.size,0);
+ h.set({route:['(main)','(tabs)','index'],homePending:true});assert.equal(h.timers.size,0);
+ h.set({homePending:false,homeResume:true});assert.equal(h.timers.size,0);
+ h.set({homeResume:false,tier:null});assert.equal(h.timers.size,0);
+ h.set({tier:'free',overlay:true});assert.equal(h.timers.size,0);
+ h.set({overlay:false,dialog:true});assert.equal(h.timers.size,0);
+ h.set({dialog:false,modal:'walkthrough'});assert.equal(h.timers.size,0);
+ h.set({modal:undefined});assert.equal(h.timers.size,1);
+ h.foreground(false);assert.equal(h.timers.size,0);h.foreground(true);h.frame();assert.equal(h.pushes.length,1);h.unmount();
+});
+test('a pending Adventure promotion is cancelled for Plus or account change, not leaked into the next account',()=>{
+ const h=gateHarness();h.set({route:['(main)','(tabs)','index']});h.adventure();
+ h.set({tier:'plus'});assert.equal(h.timers.size,0);assert.deepEqual(h.adventureConsumed,['journey']);
+ h.set({tier:'free'});assert.equal(h.timers.size,0);h.adventure('other-journey');h.adventure(null);
+ assert.equal(h.timers.size,0);assert.equal(h.pushes.length,0);h.unmount();
+});
+test('another already-visible unified offer satisfies the Adventure trigger without stacking a second paywall',()=>{
+ const h=gateHarness();h.adventure();h.set({route:['(main)','(modals)','subscription-paywall']});
+ assert.deepEqual(h.adventureConsumed,['journey']);h.set({route:['(main)','(tabs)','index']});
+ assert.equal(h.timers.size,0);assert.equal(h.pushes.length,0);h.unmount();
+});
+test('restart restores an unpresented Adventure offer, with rating deferred until that offer closes',async()=>{
+ const h=gateHarness({initialAdventure:'restored-journey'});h.queue({rating:true});
+ assert.equal(h.timers.size,0);h.set({route:['(main)','(tabs)','index']});h.frame();
+ assert.deepEqual(h.pushes,['/(main)/(modals)/subscription-paywall']);assert.equal(h.checks(),0);
+ assert.deepEqual(h.adventureConsumed,['restored-journey']);
+ h.set({route:['(main)','(tabs)','index']});h.frame();await h.settleStore();
+ assert.equal(h.reviews(),1);assert.equal(h.pushes.length,1);h.unmount();
+});
+
+for(const tier of ['free','plus'])test(`${tier}: a completed Affection can request official review after its animation/coins, without waiting for Home`,async()=>{
+ const h=gateHarness();h.set({route:['(main)','affection-detail'],tier,rewarding:true});h.milestone('affection');
+ assert.equal(h.timers.size,0);h.set({rewarding:false});h.frame();await h.settleStore();
+ assert.equal(h.reviews(),1);assert.equal(h.ratingsConsumed.length,1);assert.equal(h.timers.size,0);h.unmount();
+});
+test('photo-backed Toy interaction waits until exiting the Toy route, not after upload or a menu push',async()=>{
+ const h=gateHarness();h.set({route:['(main)','room-interaction']});h.milestone('toy');assert.equal(h.timers.size,0);
+ h.set({route:['(main)','toy-collection']});assert.equal(h.timers.size,0);
+ h.set({route:['(main)','(tabs)','index'],busy:true});assert.equal(h.timers.size,0);
+ h.set({busy:false});h.frame();await h.settleStore();assert.equal(h.reviews(),1);h.unmount();
+});
+test('item purchase review waits for acknowledgement, navigation and other overlays, then works in shop detail',async()=>{
+ const h=gateHarness();h.set({route:['(main)','shop-detail'],overlay:true});h.milestone('purchase');assert.equal(h.timers.size,0);
+ h.set({overlay:false,busy:true});assert.equal(h.timers.size,0);
+ h.set({busy:false,tier:null});assert.equal(h.timers.size,0);
+ h.set({tier:'plus'});h.frame();await h.settleStore();assert.equal(h.reviews(),1);h.unmount();
+});
+test('account replacement during a slow official lookup cannot show or consume the previous account’s request',async()=>{
+ const h=gateHarness({slowStore:true});h.set({route:['(main)','(tabs)','index']});h.milestone('purchase','A','A');h.frame();
+ h.milestone(null);await h.settleStore();assert.equal(h.reviews(),0);assert.equal(h.ratingsConsumed.length,0);h.unmount();
+});
+test('paid users still receive queued legacy official ratings rather than returning from the Paywall filter',async()=>{
+ const h=gateHarness();h.set({route:['(main)','(tabs)','index'],tier:'plus'});h.queue({rating:true});
+ h.frame();await h.settleStore();assert.equal(h.reviews(),1);assert.equal(h.pushes.length,0);h.unmount();
+});
+test('restored or previous Affection requests cannot interrupt a new gesture screen',async()=>{
+ const h=gateHarness();h.set({route:['(main)','affection-detail'],inlineReady:false});h.milestone('affection');
+ assert.equal(h.timers.size,0);h.set({route:['(main)','(tabs)','index']});h.frame();await h.settleStore();assert.equal(h.reviews(),1);h.unmount();
+});
 test('a slow native rating lookup cannot overlap a newly queued paywall', async () => {
   const h = gateHarness({ slowStore: true }); h.set({ route: ['(main)', '(tabs)', 'index'] });
   h.queue({ rating: true }); h.frame(); assert.equal(h.checks(), 1); assert.equal(h.reviews(), 0);
@@ -189,7 +255,11 @@ test('rating dispatches on the first idle frame after settlement dismissal, not 
 
 function navigationHarness() {
   const time = clock();
-  const api = load('apps/mobile/src/lib/rating-navigation.ts', { react: { useSyncExternalStore() {} } }, time.globals);
+  const common=require('./lifecycle-test-utils.cjs');
+  const api = load('apps/mobile/src/lib/rating-navigation.ts', { react: { useSyncExternalStore() {} },
+    './ui-work-priority':common.load('apps/mobile/src/lib/ui-work-priority.ts',{},time.globals),
+    './interaction-timing':common.load('apps/mobile/src/lib/interaction-timing.ts',{},time.globals),
+  }, time.globals);
   let focused = 'reflect-typing-id';
   const context = { navigation: { getState: () => ({ index: 0, routes: [{ key: focused }] }) } };
   const events = typeof api.ratingNavigationListeners === 'function'
@@ -242,16 +312,9 @@ test('cancelling a native swipe clears transition state on the still-focused rou
   assert.equal(n.api.isNavigationTransitionBusy(), false);
 });
 
-test('Paywall uses requested copy and responsive larger icons with a fixed text gap', () => {
+test('Reflect promotions reuse the sole Paywall instead of rendering alternate visual variants', () => {
   const file = read('apps/mobile/app/(main)/(modals)/reflection-plus-paywall.tsx');
-  for (const copy of ['Memories Need Your Input', 'Auto Summarize Journal Entries into Memories',
-    'And more features to help you live your life while staying close to your person.', '[Input your memory]', 'Try for Free']) {
-    assert.ok(file.includes(copy), copy);
-  }
-  assert.match(file, /itemImage: \{ width: '100%', maxWidth: 124, aspectRatio: 1 \}/);
-  assert.ok(!file.includes("justifyContent: 'space-between'"));
-  assert.match(file, /alignItems: 'center', gap: 6/);
-  assert.ok(file.includes("router.replace('/(main)/(modals)/subscription-paywall?phase=plans'"));
-  assert.match(file, /source=\{ICONS\.Plus\}[\s\S]*style=\{styles\.v1PlusIcon\}/);
-  assert.match(file, /v1PlusIcon: \{ width: 56, height: 56, alignSelf: 'center', marginBottom: 8 \}/);
+  assert.match(file, /return <SubscriptionPaywallModal \/>/);
+  assert.match(file, /recordReflectionPaywallVariantShown/,'promotional cadence still consumes its old bookkeeping slot');
+  assert.doesNotMatch(file, /StyleSheet|Try for Free|V1_BENEFITS|GridBackground|router\.replace/);
 });

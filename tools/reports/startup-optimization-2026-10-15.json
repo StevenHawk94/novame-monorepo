@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-15",
+  "baseline": "tools/reports/repository-audit-2026-10-15.json",
+  "scope": [
+    "Home bootstrap 补充数据失败隔离",
+    "新版移除旧后台恢复请求",
+    "移动端大词典按需读取"
+  ],
+  "implementation": {
+    "home": {
+      "core": "认证、配对、商品、订阅、核心钱包和 Adventure 结算仍必须成功；未改变写入 RPC。",
+      "supplements": "bonus/collection/credit-metadata/photo-usage/care/attention 各自错误隔离，最大等待 1200ms，并传递取消信号；无效或超时字段不伪造默认值。",
+      "cache": "仅在同账号、同配对 generation、同日期、同 hasPlus 时保留已确认补充显示数据；核心钱包/价格/权限不从旧快照兜底。"
+    },
+    "realtime": {
+      "retained": [
+        "配对/Unpair/重新配对",
+        "邀请",
+        "Menu 配对日期缓存",
+        "共享权限更新和原有 Burrow 同步"
+      ],
+      "removedFromModern": [
+        "Connection history/Insights 恢复",
+        "旧 feed/Bags 预取",
+        "旧 reflect 事件的额外恢复与旧付费提示"
+      ],
+      "compatibility": "明确启用旧模式且有实际订阅消费者时保留旧数据读取；旧账号广播和迟到响应经过 generation 校验。"
+    },
+    "dictionary": {
+      "nativeEntry": "packages/engine/src/mobile.ts",
+      "serverEntry": "packages/engine/src/index.ts（完整原词典保留）",
+      "displayEntries": 5444,
+      "matchingSynonyms": 34849,
+      "dataAsset": "apps/mobile/assets/data/legacy-item-matching.dict",
+      "generator": "node tools/build-mobile-item-data.cjs",
+      "integrity": "生成结果与服务端原词典完整相等，双端打包资源逐字节核对；旧历史名称/分类/稀有度/emoji 以及远程覆盖保留。",
+      "loading": "普通显示不读取匹配词典；旧 Shared Memories 匹配入口才异步读取，单次并发共享、失败可重试，页面销毁后不回写状态。"
+    }
+  },
+  "verification": {
+    "cjs": {
+      "passed": 1545,
+      "failed": 0,
+      "skipped": 0,
+      "log": "/private/tmp/novame-three-fixes-final-tests.log"
+    },
+    "domain": {
+      "passed": 23,
+      "failed": 0
+    },
+    "engine": {
+      "passed": 197,
+      "failed": 0
+    },
+    "bootstrapHelpers": {
+      "passed": 7,
+      "failed": 0
+    },
+    "types": "5 workspace type-check tasks passed",
+    "apiBuild": "passed",
+    "adminBuild": "passed",
+    "postgres": {
+      "burrowAssertions": 356,
+      "gameRoomSoloAssertions": 100,
+      "adventureAssertions": 9097,
+      "adventureJourneys": 483,
+      "friendVisitRepair": "passed",
+      "dailyPlusBonus": "passed",
+      "careCooldown": "passed",
+      "isolated": true
+    },
+    "productionJsBundles": {
+      "ios": {
+        "before": 12073492,
+        "after": 9284927,
+        "reductionPercent": 23.1,
+        "assets": 1223
+      },
+      "android": {
+        "before": 12130194,
+        "after": 9341629,
+        "reductionPercent": 23,
+        "assets": 1226
+      },
+      "note": "未压缩 JS 字节比较，不是安装包、下载体积或启动耗时的同比结论。完整词典作为本地资源保留。",
+      "log": "/private/tmp/novame-three-fixes-final-bundles.log"
+    },
+    "iosNativeTargeted": {
+      "passed": true,
+      "environment": "新建隔离 iPhone SE iOS 26.2 模拟器 + 本地 QA 容器，只访问 localhost；不是全 App 业务端到端或生产网络测试。",
+      "displayEntries": 5444,
+      "matchingEntries": 5444,
+      "synonyms": 34849,
+      "matches": [
+        "memory.0002_coffee",
+        "memory.0004_running",
+        "memory.1486_park"
+      ],
+      "verified": [
+        "Expo Asset 原生资源定位",
+        "FileSystem 实际读取",
+        "完整历史匹配",
+        "并发/缓存复用"
+      ],
+      "log": "/private/tmp/novame-three-fixes-native-ios-server.log",
+      "cleanup": "本次新建 QA 模拟器已关闭并删除，localhost:8094 服务已关闭；用户 8081 Metro 未重启。"
+    },
+    "androidEmulator": "按用户要求跳过",
+    "lint": "此前缺少 ESLint 配置的问题未纳入本次三项修复；不宣称 lint 已通过。"
+  },
+  "rollout": {
+    "migrationRequired": false,
+    "deployed": false,
+    "developerAction": "重启已有 Metro 以加载新的 .dict 资源扩展和包入口配置；不要仅 Reload。移动端发布需包含新的 JS 与资源。"
+  },
+  "safety": "保留全部既有未提交修改；未删除历史数据、旧存储清理键、历史 migration 或 API 兼容逻辑。"
+}

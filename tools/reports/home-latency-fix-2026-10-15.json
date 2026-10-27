@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-15",
+  "status": "Production API deployed; pairing/financial and client deadline contracts passed; strict 5-second latency target was NOT met for every sample",
+  "production": {
+    "origin": "https://api.soulsayit.com",
+    "deploymentId": "dpl_EVhZkJh5ao3uRCUGLWuumn5wbY7R",
+    "url": "https://novame-monorepo-1904uy3rd-soulsayit.vercel.app",
+    "state": "READY",
+    "homeRuntime": "nodejs24.x",
+    "homeDeployedTo": ["pdx1"],
+    "supabaseRegion": "us-west-2",
+    "changedApiFilesComparedToPreviousRelease": [
+      "apps/api/src/app/api/vnext/bootstrap/route.js",
+      "apps/api/vercel.json"
+    ],
+    "allOtherApiSourceHashesUnchanged": true,
+    "otherFunctionsAndCronConfigurationUnchanged": true
+  },
+  "diagnosis": {
+    "confirmed": [
+      "The original global Edge route executed in sin1 while Supabase is in us-west-2.",
+      "The unpaired branch makes multiple serial rounds of HTTP queries, magnifying distance and upstream variability.",
+      "Database EXPLAIN ANALYZE measured the core function at 6.584ms unpaired and 202.269ms paired in the baseline fixtures; repeated HTTP round trips were much slower.",
+      "After regional execution, stable unpaired assembly dropped from approximately 1.6-2.5s to 0.3-0.4s.",
+      "The old mobile API, store and cover had independent five-second boundaries, discarding otherwise successful responses.",
+      "Next.js parsed preferredRegion=pdx1, but the first Node deployment actually deployed to iad1. An explicit single-function Vercel regions override was necessary and its final deployedTo was checked."
+    ],
+    "coldStartLimit": "A baseline first-invocation request spent 2471ms inside the handler and 7271ms end-to-end. Its approximately 4800ms remainder includes platform startup/routing, serialization and network; it cannot all be attributed to cold-start using Server-Timing alone.",
+    "remainingTail": "One final warm request took 5366ms: 3888ms in the handler, including a 3143ms core RPC round trip. Cold-start cannot explain this sample. RPC timings include transport, queue/lock wait and SQL; EXPLAIN samples do not prove the precise cause of that individual upstream delay.",
+    "notPerformed": [
+      "No claim that all regions or real-user histories are guaranteed below five seconds",
+      "No CN-specific networking workaround",
+      "No database lock removal or transaction authorization bypass"
+    ]
+  },
+  "implementation": {
+    "api": "Regional Node/Fluid Home execution, explicit pdx1 single-function deployment configuration and request-local numeric Server-Timing diagnostics. Existing authoritative bootstrap and settlement RPCs remain unchanged.",
+    "mobile": "Home API, shared store and modern launch cover use one 12000ms finite hard deadline. A healthy eight-second read is accepted; real errors still fail and timed-out/old-session/old-pair responses remain fenced. Legacy visual hand-off retains its prior five-second limit.",
+    "payments": "No changes to purchase/claim writers, prices, Plus flags, receipts or financial deadlines.",
+    "migrationRequired": false,
+    "mobileReleaseRequired": "The mobile deadline adjustment is in the workspace and validated in both JS bundles; Vercel deployment does not distribute mobile JS. Reload the updated development app or ship an updated mobile build/update."
+  },
+  "measurement": {
+    "baseline": {
+      "deploymentId": "dpl_AqcztTTAZ6C7FB2xRUsR7u2SE9bv",
+      "count": 10,
+      "clientMedianMs": 2958,
+      "clientMinMs": 2028,
+      "clientMaxMs": 7271,
+      "handlerMedianMs": 2452.5
+    },
+    "final": {
+      "count": 24,
+      "clientMedianMs": 1598,
+      "clientMinMs": 1233,
+      "clientMaxMs": 5366,
+      "handlerMedianMs": 671,
+      "firstAuthenticatedReadMs": 3338,
+      "allReadsSucceeded": true,
+      "allActualRegionsPdx1": true,
+      "atOrAboveFiveSeconds": 1,
+      "atOrAboveNewTwelveSecondLimit": 0,
+      "strictFiveSecondCheck": "FAILED; retained, not hidden or waived",
+      "fixtureDatabaseExecutionMs": { "unpaired": 4.411, "paired": 236.991 }
+    },
+    "comparisonLimit": "Baseline has 10 reads; final has 24 including extra repetitions and overlap. These are observed synthetic-fixture timings on this client path, not a global p95/SLO or a controlled percentage claim."
+  },
+  "verification": {
+    "allCjs": { "passed": 1553, "failed": 0, "skipped": 0 },
+    "domain": { "passed": 23, "failed": 0 },
+    "engine": { "passed": 197, "failed": 0 },
+    "bootstrapHelpers": { "passed": 7, "failed": 0 },
+    "isolatedPostgresCoreAssertions": 356,
+    "workspaceTypecheckTasks": 5,
+    "productionApiBuild": "passed on Vercel",
+    "mobileProductionJsBundles": {
+      "android": { "passed": true, "bytes": 9341935, "assets": 1226 },
+      "ios": { "passed": true, "bytes": 9285233, "assets": 1223 }
+    },
+    "clientBoundaryCases": [
+      "Actual bootstrap API wrapper accepts an eight-second response and shares its flight",
+      "Store does not abort/show Retry at five seconds for a healthy read",
+      "Actual bootstrap wrapper and store remain bounded at twelve seconds",
+      "Both iOS and Android launch covers wait past five seconds and release on readiness",
+      "Late results cannot restore a discarded account or pairing",
+      "Home timeout cannot cancel a pending payment or durable command"
+    ],
+    "productionBusinessChecksPassed": 17,
+    "productionBusinessChecks": [
+      "Stable invite codes, both private realtime subscriptions and foreign-identity rejection",
+      "Pair, Unpair, re-pair with both Home/Menu snapshots and notifications",
+      "Re-pair starts a fresh relationship generation",
+      "Repeated/overlapping reads remain pair-scoped",
+      "Shop/game altered quotes rejected with 409",
+      "Plus-only access rejected for Free account with 403",
+      "Invalid amount/coin receipt rejected before payment-store calls",
+      "Direct authenticated financial RPC denied with 42501",
+      "Rejected requests leave wallet versions, ledgers, inventory and unlocks unchanged"
+    ],
+    "catalogueHashBeforeAndAfter": "7fdef5bca57876467335c57c510810f2",
+    "existingFinancialRpcGrantsAndSettlementConstraintsVerified": true,
+    "nativeDeviceE2E": "Not run; Android emulator skipped per prior instruction. JS/asset exports and deterministic UI/state tests are not native device E2E.",
+    "lint": "No new standalone lint claim; existing repository ESLint configuration gap is outside this fix."
+  },
+  "safety": {
+    "temporaryIdentitiesCreatedAcrossThreeRuns": 6,
+    "temporaryIdentitiesRemoved": 6,
+    "cleanupComplete": true,
+    "realUserWrites": 0,
+    "successfulPurchases": 0,
+    "paymentStoreCalls": 0,
+    "migrationsExecuted": 0,
+    "mobileDeployed": false,
+    "adminDeployed": false,
+    "existingWorkingTreePreserved": true
+  },
+  "logs": {
+    "baseline": "/private/tmp/novame-home-baseline-profile.json",
+    "intermediateRegionCheckFailure": "/private/tmp/novame-home-fix-production-verification.json",
+    "finalStrictLatencyCheck": "/private/tmp/novame-home-regional-production-verification.json",
+    "deployment": "/private/tmp/novame-home-regional-deploy.log",
+    "actualDeployedRegion": "/private/tmp/novame-home-regional-domain.json",
+    "allTests": "/private/tmp/novame-home-complete-final-tests.log",
+    "types": "/private/tmp/novame-home-fix-types.log",
+    "bundles": "/private/tmp/novame-home-fix-bundles.log"
+  },
+  "references": [
+    "https://vercel.com/docs/functions/configuring-functions/region",
+    "https://vercel.com/docs/functions/runtimes/edge",
+    "https://nextjs.org/docs/15/app/api-reference/file-conventions/route-segment-config"
+  ]
+}

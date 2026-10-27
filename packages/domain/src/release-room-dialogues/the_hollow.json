@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "You’re not ready. You’ll only prove you can’t do it.",
+    "replies": [
+      "I can learn while I do it.",
+      "Being new doesn’t mean I’m incapable.",
+      "I don’t need to be perfect to start.",
+      "I’m giving myself a real chance."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "You know you’re going to mess this up.",
+    "replies": [
+      "I’m allowed to try anyway.",
+      "A mistake won’t define me.",
+      "I’m more capable than this fear says.",
+      "Watch me learn."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "You don’t have proof that you can do this.",
+    "replies": [
+      "I don’t need proof before I begin.",
+      "I have done hard things before.",
+      "I can ask for help if I need it.",
+      "Not knowing yet is okay."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I’m trying to stop you from getting hurt.",
+    "replies": [
+      "I hear you, but I’m still willing to try.",
+      "I can be brave and unsure at once.",
+      "I’ll be kind to myself if it’s hard.",
+      "I don’t need to shrink to stay safe."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "imposter",
+    "monster": "Everyone will find out you’re a fraud.",
+    "replies": [
+      "I’ve earned my place here.",
+      "I’m allowed to be learning.",
+      "No one is perfect, and that’s okay.",
+      "I belong here, even when I feel unsure."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "not smart enough",
+    "monster": "You’re just not smart enough.",
+    "replies": [
+      "Smart is something I grow.",
+      "I can learn what I don’t know.",
+      "Intelligence isn’t a fixed score.",
+      "I’ll keep asking questions."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "someone better",
+    "monster": "Someone else would do this better.",
+    "replies": [
+      "Maybe, but I’m the one here.",
+      "I bring my own way of doing it.",
+      "I don’t need to be the best to be worthy.",
+      "My version still counts."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "luck",
+    "monster": "You only succeeded because of luck.",
+    "replies": [
+      "I showed up and did the work.",
+      "Luck helps, but I’m part of it.",
+      "I can own what I’ve done.",
+      "My effort was real."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "past mistakes",
+    "monster": "Remember when you failed last time?",
+    "replies": [
+      "I learned from that time.",
+      "One failure isn’t my whole story.",
+      "I’m not who I was then.",
+      "I’m trying again, and that’s brave."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "overthinking worth",
+    "monster": "What if people see you’re not good enough?",
+    "replies": [
+      "Their view isn’t my truth.",
+      "I can be enough as I am.",
+      "I’m allowed to be seen as I am.",
+      "My worth isn’t up for a vote."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "waiting for confidence",
+    "monster": "Wait until you feel confident.",
+    "replies": [
+      "Confidence comes after trying.",
+      "I can act while feeling unsure.",
+      "Feeling brave isn’t required.",
+      "I’ll build confidence by doing."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "small voice",
+    "monster": "Who are you to try this?",
+    "replies": [
+      "I’m someone who’s allowed to try.",
+      "I’m a person with something to offer.",
+      "I don’t need permission to begin.",
+      "Why not me?"
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "beginner shame",
+    "monster": "Being a beginner is embarrassing.",
+    "replies": [
+      "Everyone starts as a beginner.",
+      "Being new is how learning begins.",
+      "I’ll be proud of starting.",
+      "Beginners are brave."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "perfectionist",
+    "monster": "If it’s not perfect, it’s worthless.",
+    "replies": [
+      "Imperfect work still has value.",
+      "I can make it better step by step.",
+      "My effort is worth something.",
+      "Good enough counts."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "praise doubt",
+    "monster": "They’re just being nice. They don’t mean it.",
+    "replies": [
+      "I can believe a kind word.",
+      "I’ll let the compliment land.",
+      "Praise can be true.",
+      "I’m allowed to accept it."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "hiding",
+    "monster": "Stay quiet. Don’t draw attention.",
+    "replies": [
+      "My voice matters in the room.",
+      "I can speak, even if it shakes.",
+      "I’d rather be known than hidden.",
+      "I’m allowed to be seen."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "giving up early",
+    "monster": "Why even try? It won’t work.",
+    "replies": [
+      "I don’t know that yet.",
+      "Trying gives me information.",
+      "I can try and adjust.",
+      "I’d rather try than wonder."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "comparison",
+    "monster": "They’re so much better than you.",
+    "replies": [
+      "Their strengths aren’t my weaknesses.",
+      "I can learn from them without shrinking.",
+      "We’re on different paths.",
+      "I’ll grow at my own pace."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "fear of judgment",
+    "monster": "They’ll judge you harshly.",
+    "replies": [
+      "Some may. Many will be kind.",
+      "I can handle a little judgment.",
+      "Their judgment isn’t my identity.",
+      "I’ll keep my own opinion of me."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "fear of failure",
+    "monster": "You’ll fail, and everyone will see.",
+    "replies": [
+      "Failing is part of learning.",
+      "People often forget quickly.",
+      "I can fail and rise again.",
+      "A stumble isn’t the end."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "not qualified",
+    "monster": "You’re not qualified for this.",
+    "replies": [
+      "Qualified people started somewhere.",
+      "I can learn the rest on the way.",
+      "I have more skills than I credit.",
+      "I’m qualified to try."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "mind reading",
+    "monster": "They’re thinking you don’t belong.",
+    "replies": [
+      "I can’t read their minds.",
+      "I’ll assume I belong.",
+      "I’m here because I’m invited, or I invited myself.",
+      "I’m allowed to take my seat."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "self-criticism",
+    "monster": "You always do this wrong.",
+    "replies": [
+      "Always is a big word.",
+      "I’ve done plenty right.",
+      "I can be kind in my self-talk.",
+      "I’ll notice what I did well."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "fear of success",
+    "monster": "What if you succeed and can’t keep it up?",
+    "replies": [
+      "I can grow into it.",
+      "Success can be handled in steps.",
+      "I’m allowed to rise.",
+      "I’ll support myself along the way."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "minimizing",
+    "monster": "It’s nothing special. Anyone could do it.",
+    "replies": [
+      "Even if so, I did it.",
+      "My effort deserves credit.",
+      "I’ll honor what I’ve done.",
+      "Small things still count."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "shrinking dreams",
+    "monster": "Aim lower. It’s safer.",
+    "replies": [
+      "I can aim true and adjust.",
+      "Safe isn’t always satisfying.",
+      "I’m allowed to want more.",
+      "I’ll reach and see."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "ask for help",
+    "monster": "Don’t ask for help. They’ll know you’re clueless.",
+    "replies": [
+      "Asking is how I learn.",
+      "Smart people ask questions.",
+      "Help doesn’t make me less.",
+      "I’ll ask without shame."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "proof",
+    "monster": "Where’s your evidence you’re good at this?",
+    "replies": [
+      "I can collect it by trying.",
+      "I have evidence from before.",
+      "I don’t need to prove it before starting.",
+      "My track record is longer than I think."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "old story",
+    "monster": "You’ve always been like this.",
+    "replies": [
+      "I can write a new chapter.",
+      "I’m not stuck with old stories.",
+      "I’m changing, one step at a time.",
+      "The past isn’t the whole me."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "scarcity",
+    "monster": "There’s no room for you here.",
+    "replies": [
+      "There’s room for different voices.",
+      "I can make my own space.",
+      "I’m allowed to be here.",
+      "The table is big enough."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "overpreparation",
+    "monster": "You need way more experience first.",
+    "replies": [
+      "I’ll gain experience by starting.",
+      "I know enough for a first step.",
+      "Experience comes from trying.",
+      "I’ll learn by doing."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "mistake spotlight",
+    "monster": "Everyone will notice your mistake.",
+    "replies": [
+      "Most people won’t notice.",
+      "I can own a mistake and move on.",
+      "Mistakes are human.",
+      "I’ll fix it and keep going."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "negative forecast",
+    "monster": "This is going to go badly.",
+    "replies": [
+      "I can’t predict that yet.",
+      "It might go better than I fear.",
+      "I’ll find out by trying.",
+      "I can handle what happens."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "others’ expectations",
+    "monster": "Don’t let them down.",
+    "replies": [
+      "I can do my best and that’s enough.",
+      "I can’t control their expectations.",
+      "I’ll care for my own.",
+      "Disappointing someone isn’t the end."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "silencing",
+    "monster": "Your idea is probably stupid.",
+    "replies": [
+      "Let me say it and see.",
+      "Ideas can be improved.",
+      "No idea starts perfect.",
+      "I’m allowed to share."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "fear of exposure",
+    "monster": "If you try, they’ll see your weaknesses.",
+    "replies": [
+      "Weakness is part of being human.",
+      "I can show my edges.",
+      "Being seen can bring support.",
+      "I’m okay with being real."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "measuring up",
+    "monster": "You don’t measure up.",
+    "replies": [
+      "I’m not a measurement.",
+      "I’m measuring my own growth.",
+      "My worth isn’t a score.",
+      "I’m enough while I grow."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "unlucky",
+    "monster": "Good things don’t happen to people like you.",
+    "replies": [
+      "Good things can happen to me.",
+      "I’m allowed to hope.",
+      "I can take a chance.",
+      "I deserve good things."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "quiet fear",
+    "monster": "Better to stay small than get hurt.",
+    "replies": [
+      "I can be careful and still brave.",
+      "Small isn’t safe forever.",
+      "I’d rather grow than hide.",
+      "I can protect my heart and still try."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "lists of flaws",
+    "monster": "Think about everything wrong with you.",
+    "replies": [
+      "I can also think about what’s right.",
+      "My flaws don’t cancel my strengths.",
+      "I’m more than a list.",
+      "I’ll count what I’m proud of."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "expert",
+    "monster": "Real experts don’t feel this way.",
+    "replies": [
+      "Experts feel doubt, too.",
+      "Doubt is common at every level.",
+      "I’m not alone in this.",
+      "Feeling unsure is human."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "time",
+    "monster": "You’re too old, too young, too late, too early.",
+    "replies": [
+      "The right time is a story.",
+      "I can begin where I am.",
+      "I’m allowed to start now.",
+      "There’s no perfect age for trying."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "self-proof",
+    "monster": "Prove it. Prove you’re worth it.",
+    "replies": [
+      "I don’t have to earn my worth.",
+      "I’m worthy before I achieve.",
+      "My value is built in.",
+      "I don’t need to prove it today."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "fixed",
+    "monster": "You are who you are. You’ll never change.",
+    "replies": [
+      "I can grow.",
+      "People change all the time.",
+      "Skills are built, not born.",
+      "Today I’m a little different."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "holding back",
+    "monster": "Don’t give your full effort. Then failure won’t hurt.",
+    "replies": [
+      "Giving my best is worth the risk.",
+      "Half effort teaches me nothing.",
+      "I’d rather try fully.",
+      "I can handle the outcome."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "discount",
+    "monster": "Your success doesn’t count.",
+    "replies": [
+      "It counts. I did it.",
+      "I’ll celebrate what I achieved.",
+      "Small wins deserve a nod.",
+      "I can claim my progress."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "worth",
+    "monster": "You have nothing to offer.",
+    "replies": [
+      "I have gifts that are mine.",
+      "My presence has value.",
+      "I can contribute in my own way.",
+      "I’m more than I give myself credit for."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "final",
+    "monster": "Why would this time be different?",
+    "replies": [
+      "Because I’m trying a kinder way.",
+      "This time I’m starting anyway.",
+      "I can make it different.",
+      "I’m willing to find out."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "tiny proof",
+    "monster": "Your last win was just a fluke.",
+    "replies": [
+      "A fluke doesn’t last this long.",
+      "I can own that win.",
+      "It happened because of me.",
+      "I’ll credit myself."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "quiet courage",
+    "monster": "A brave person wouldn’t feel this scared.",
+    "replies": [
+      "Brave means acting while scared.",
+      "Fear and courage can sit together.",
+      "I’m brave because I’m trying.",
+      "Scared doesn’t cancel capable."
+    ]
+  }
+]

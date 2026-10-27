@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/auth/require-admin'
+import { announcementFields } from '@/lib/announcement-fields'
 
 export const runtime = 'edge'
 
@@ -38,29 +39,18 @@ export async function POST(request) {
 
   try {
     const body = await request.json()
-    const { title, content, image_url, type, target_users, end_at } = body
-
-    if (!title?.trim() || !content?.trim() || !image_url?.trim()) {
-      return Response.json({ error: '缺少标题、图片或内容' }, { status: 400 })
-    }
-    if (!/^https:\/\//i.test(image_url.trim())) {
-      return Response.json({ error: '公告图片地址无效' }, { status: 400 })
-    }
+    let fields;
+    try { fields=announcementFields(body); } catch { return Response.json({error:'标题、图片、描述、按钮文字或链接无效（链接仅支持 HTTPS）'},{status:400}); }
 
     const supabase = getSupabase()
 
     const { data, error } = await supabase
       .from('app_announcements')
       .insert({
-        title,
-        content,
-        image_url: image_url.trim(),
-        type: type || 'info',
-        target_users: target_users || 'all',
+        ...fields,
         is_active: true,
         priority: 0,
         start_at: new Date().toISOString(),
-        end_at: end_at ? new Date(end_at).toISOString() : null,
       })
       .select()
       .single()
@@ -79,7 +69,9 @@ export async function PATCH(request) {
 
   try {
     const body = await request.json()
-    const { id, ...updates } = body
+    const { id } = body
+    let updates;
+    try { updates=announcementFields(body,true); } catch { return Response.json({error:'公告字段无效'},{status:400}); }
 
     if (!id) return Response.json({ error: '缺少公告ID' }, { status: 400 })
 

@@ -1,0 +1,1526 @@
+{
+  "code": "BR",
+  "id": "adventure_friend_br",
+  "name": "Bruno",
+  "gender": "he",
+  "species": "Bear",
+  "partner": "Clover (she)",
+  "emotionalState": "准备当父母，幸福又慌张，怕自己不够好，眼泪多",
+  "speakingStyle": "憨厚，爱哭爱抱抱，爱囤小东西",
+  "catchphrase": "Big feelings. Big hugs.",
+  "art": [
+    "Bear_02_Variant1.webp",
+    "Bear_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "BR-01",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "Bruno is carrying a tiny blanket and trying not to cry.",
+      "lines": [
+        "Hi! Hello! Sorry. I'm fine. I'm just holding a blanket.",
+        "Clover and I are having cubs. In spring.",
+        "We're so happy. We're also terrified. Both. At the same time."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Congrats! That's huge.",
+          "reaction": [
+            "It IS huge! Say it again.",
+            "Okay, that helped. Big feelings."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Are you ready?",
+          "reaction": [
+            "Not even a little.",
+            "But Clover says nobody is. So... maybe that's the point?"
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Offer a hug.",
+          "reaction": [
+            "Oh no. I'm crying.",
+            "Big hugs. Always."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-02",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "You're back! I'm better today. Slightly less blanket.",
+        "Clover and I started a name list. It has forty names.",
+        "Thirty-nine are about honey. I think I have a theme."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What's the fortieth name?",
+          "reaction": [
+            "Clover. As a middle name. For the cub.",
+            "I teared up writing it. Then I added another honey."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Honey names are cute.",
+          "reaction": [
+            "Right?! Honeybee. Honeycomb. Honey Bunches.",
+            "Clover says no to the last one. Fair."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Nod and smile.",
+          "reaction": [
+            "Thank you for the calm energy. I needed a calm one.",
+            "I'm vibrating at a very high frequency."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-03",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": "Bruno is surrounded by a pile of tiny socks, hats, and one enormous paw-print.",
+      "lines": [
+        "I bought way too many baby things. I got excited at the market.",
+        "I now own eleven tiny hats. For three cubs. Possibly.",
+        "Clover said, 'We have a lot of hats.' Gently. With love."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Eleven hats is a lot.",
+          "reaction": [
+            "It's a LOT. I know. I'm a hat guy now.",
+            "We're donating five. Maybe four. I'm attached."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Do cubs need that many?",
+          "reaction": [
+            "No. But I need them. For emotional support.",
+            "Don't tell Clover. She knows."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Try on a tiny hat.",
+          "reaction": [
+            "It fits your ear! Perfect!",
+            "I'm calling it. Best photo of the year."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-04",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Clover gets tired a lot lately. She naps in the afternoon.",
+        "I cook now. Badly. But with feeling.",
+        "Last night I made soup. She said, 'Is that... a mushroom?' It was a sock."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A sock?!",
+          "reaction": [
+            "A tiny one. I dropped it in. Accident.",
+            "We ate it anyway. The broth was great."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You're doing great.",
+          "reaction": [
+            "Thank you. I cling to that.",
+            "Clover says my soup is love in a bowl. Slightly crunchy."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Offer to help stir.",
+          "reaction": [
+            "Yes! Please! A second spoon is a miracle.",
+            "You're hired. Payment in soup."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-05",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Quick question. How do you and your partner share the big decisions?",
+        "Like names, rooms, schedules, snacks. Everything feels huge right now."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We talk it out.",
+          "reaction": [
+            "Talk it out. Yes. Always.",
+            "I make lists. Clover makes tea. Together it works."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "One of us decides.",
+          "reaction": [
+            "Hm. Interesting. Clover and I take turns.",
+            "She picked the nursery color. I picked the lamp."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "We flip a coin.",
+          "reaction": [
+            "A coin! Bold. Honestly, I'm tempted.",
+            "Heads for honey. Tails for blueberry."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-06",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": "Bruno is holding a small wooden crib piece and a very confusing diagram.",
+      "lines": [
+        "I'm building the cradle. The instructions have forty pictures and zero words.",
+        "I've been at it for three hours. It's now a very strange chair.",
+        "Clover is laughing. In the nicest way."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A strange chair is still a chair.",
+          "reaction": [
+            "Exactly! Cradles are just chairs that dream.",
+            "Clover sat in it. It didn't collapse. Win."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Need a second pair of paws?",
+          "reaction": [
+            "Yes. Please. Hold this. No, THAT. Okay, good.",
+            "See? Teamwork. I'm already a better dad."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Cheer him on.",
+          "reaction": [
+            "Thank you. I'm drawing strength from your cheer.",
+            "It's a lot. But I'm proud of the chair."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-07",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Bruno sits down heavily, the blanket drooping in his paws.",
+      "lines": [
+        "Can I tell you something? It's a big one.",
+        "I'm scared I won't be a good dad. My dad wasn't around much.",
+        "What if I'm like that? What if I forget how to hug?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You already hug a lot.",
+          "reaction": [
+            "...I do, don't I?",
+            "Maybe the fear is proof I care. That's what Clover says."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Have you told Clover?",
+          "reaction": [
+            "I did. She said, 'We'll learn together.'",
+            "Then she put my paw on her belly. I felt a kick."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Bruno.",
+          "reaction": [
+            "Thank you. It's easier with someone next to me.",
+            "Big feelings are heavy. They're lighter with company."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-08",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I felt the cub kick. Actually felt it. A tiny thump.",
+        "I said, 'Hello!' very loudly. Clover said, 'They can hear you from inside.'",
+        "I whispered after that. Mostly."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's magical.",
+          "reaction": [
+            "It IS. I'm still floating.",
+            "I wrote 'thump' on the wall. In honey."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Say hi again.",
+          "reaction": [
+            "Hi, little one. It's Dad. I have hats.",
+            "Clover laughed. The cub kicked back. Hat approval."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile at him.",
+          "reaction": [
+            "Thanks. I'm all tears and honey.",
+            "I might need to sit. Again."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-09",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": "Bruno pats the ground next to him. A blanket is spread out, with two tiny paw-print slippers.",
+      "lines": [
+        "Clover's napping. I'm practicing lullabies. Want to hear?",
+        "I only know one song. It's about honey.",
+        "It's very, very bad."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sing it.",
+          "reaction": [
+            "Okay. 'Honey, honey, in the tree...' It gets worse.",
+            "Thank you for listening. It's my first audience."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Hum along.",
+          "reaction": [
+            "Oh! You found a tune! It's better than mine.",
+            "Together we're sort of a choir. A slightly sleepy one."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Just sit with him.",
+          "reaction": [
+            "Okay. Just sitting. It's my favorite song.",
+            "Big hugs. Quiet ones."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-10",
+      "friendId": "adventure_friend_br",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten visits. I put a honey dot on the wall for each one.",
+        "Clover said, 'Bruno's made a friend.' I cried into a hat.",
+        "Big feelings. Big hugs. Thank you.",
+        "Your turn. How are you and your partner doing? Honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Still learning. Yes. Forever.",
+            "Come see the nursery. It's a strange chair, but ours."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We had a rough week, honestly.",
+          "reaction": [
+            "Rough weeks are real. Clover and I have them.",
+            "Big hug. Bring your partner to tea."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Better since I started saying things sooner.",
+          "reaction": [
+            "Sooner. Gentler. Yes!",
+            "Okay, I need a hat. For the tears."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P01",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Clover wants pickles and honey on the same cracker.",
+        "I tried one. It was... confusing. Then delicious."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Cravings are wild.",
+          "reaction": [
+            "She says the cub picked it. I believe her.",
+            "We now own four jars. Maybe five.",
+            "Clover tried one too. She made a face, then took another."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Brave of you to try.",
+          "reaction": [
+            "Love is eating the weird cracker.",
+            "She smiled so big I'd eat ten.",
+            "She says I'm the bravest bear. I disagree, lovingly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P02",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We practiced bath time with a stuffed hedgehog. I dropped it. In the water.",
+        "Clover laughed until she snorted. I laughed too."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hedgehog rescue!",
+          "reaction": [
+            "He's fine. He's drying by the fire.",
+            "Practice makes perfect. Eventually.",
+            "We named him Sir Splash. He's retired now."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Cute.",
+          "reaction": [
+            "We're both a mess. A cute mess.",
+            "I think we'll be okay.",
+            "We hugged in the puddle. The towels were not enough."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P03",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Clover told me she's scared too. She just never says it.",
+        "I held her paw all night. Neither of us slept."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so tender.",
+          "reaction": [
+            "It really was. I felt closer than ever.",
+            "We cried a bit. Then ate cake.",
+            "I cried happy tears into her fur. She patted me."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Fear is shared.",
+          "reaction": [
+            "Yes. Shared fear is smaller fear.",
+            "Plus, cake.",
+            "Cake didn't fix everything, but it made the night softer."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P04",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We argued about the nursery color. She wanted green. I wanted yellow.",
+        "Compromise: a green wall with a yellow moon."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Green and yellow sounds lovely.",
+          "reaction": [
+            "It does! We painted it together. Messy.",
+            "Clover has paint on her nose. I have paint everywhere.",
+            "She has green on her nose. I have yellow on my ear."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Good compromise.",
+          "reaction": [
+            "Yes! She calls it 'teamwork.' I call it 'surrender.'",
+            "We're both right.",
+            "Both colors work. Together they look like spring."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P05",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I read a book about baby sleep. It said 'everything is a phase.'",
+        "Clover said, 'So is this book.' I laughed very loud."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Phases pass.",
+          "reaction": [
+            "I like that. Phases pass. Hugs stay.",
+            "I'm going to put that on a hat.",
+            "She hung a note on the wall: 'This is a phase.'"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Clover's funny.",
+          "reaction": [
+            "She's the funniest. She doesn't even try.",
+            "It's my favorite thing about her.",
+            "I wrote that down. I'm making a quote wall."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P06",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Clover felt me tearing up during a lullaby. She said, 'It's okay to cry.'",
+        "I cried. A lot. We went through four hats."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Crying is okay.",
+          "reaction": [
+            "I know that now. Big feelings, big tears.",
+            "Hats are very absorbent.",
+            "Clover tucked a handkerchief in my paw. She's prepared."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Tears are good.",
+          "reaction": [
+            "Honest ones, yes. Messy ones, always.",
+            "Clover says I'm a softie. I say I'm a bear.",
+            "We keep a spare hat for crying emergencies."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P07",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I made a small chair for the cub. It's the size of a loaf.",
+        "Clover said, 'It's perfect.' I think it's crooked."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Crooked is charming.",
+          "reaction": [
+            "Crooked is the cub's first lesson in love.",
+            "Imperfect, sturdy, ours.",
+            "Clover tucked a tiny pillow in it. It looks perfect."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It sounds perfect.",
+          "reaction": [
+            "Thank you. I'll sand it. A little. Then stop.",
+            "If I keep sanding, it'll be sawdust.",
+            "I stopped sanding when she hugged me. Priorities."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P08",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Clover and I had our first quiet date in weeks.",
+        "We talked about everything except the cub. For one hour."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sounds lovely.",
+          "reaction": [
+            "It was. We remembered we're also us.",
+            "Not just parents. Us. Two bears.",
+            "We ate crackers and talked about our first date."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Date nights matter.",
+          "reaction": [
+            "They do. We're keeping them. Even small ones.",
+            "Even if it's soup on the floor.",
+            "I wrote 'Clover Tuesdays' on the calendar. In honey."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P09",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The sock soup? Clover asked for it again.",
+        "I said, 'On purpose?' She said, 'Yes.' I almost fainted."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sock soup lives on.",
+          "reaction": [
+            "It's now a family recipe. Extra crunchy.",
+            "I'm really proud and a little confused.",
+            "She makes me stir. I add the sock. It's a ritual."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's so sweet.",
+          "reaction": [
+            "She said it reminds her of the day we found out.",
+            "I sobbed. Into the soup. Salty.",
+            "She squeezed my paw. We sat in the salty steam."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P10",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Eleven hats! I gave five away. Clover cried at the pile.",
+        "We kept the little yellow one. It's the cub's first."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "The yellow one is perfect.",
+          "reaction": [
+            "It really is. It's soft and slightly crooked.",
+            "Just like us.",
+            "Clover embroidered a tiny honey drop on it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Giving was kind.",
+          "reaction": [
+            "It felt good. Other cubs, other paws.",
+            "Big hugs to all of them.",
+            "Clover wrote a card for every hat. I read them all."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P11",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "My awful honey lullaby? Clover hums it in her sleep.",
+        "I didn't know. I woke up and heard it. It's so bad. It's perfect."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Aww.",
+          "reaction": [
+            "I know. I'm a puddle again.",
+            "Keep this between us. And the honey.",
+            "I'll sing it every night, even if the cub groans."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It's a classic now.",
+          "reaction": [
+            "The Honey Song. Top of the charts, tunnels.",
+            "I'll teach it to the cub. In a whisper.",
+            "Clover hums the second verse. It has no second verse."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P12",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The strange chair is now a plant stand. Clover's ferns love it.",
+        "It's the best thing I've ever built by accident."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Ferns are happy.",
+          "reaction": [
+            "They really are. Look at those leaves.",
+            "It's become a tiny garden throne.",
+            "Clover calls it the Throne of Leaves. I'm king, apparently."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Accidents are great.",
+          "reaction": [
+            "They are. Don't tell the cradle.",
+            "The cradle is jealous.",
+            "The cradle sulks, but the chair is proud."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P13",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: you can be thrilled and terrified. They don't cancel out.",
+        "They hold paws. Like a weird couple."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so true.",
+          "reaction": [
+            "I know! I could write a book. A damp one.",
+            "Chapter one: Hat.",
+            "I wrote it on a hat. Clover wore it all day."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I feel that too.",
+          "reaction": [
+            "Then we're in the same club. Big feelings, big hugs.",
+            "Membership is free.",
+            "We can hold paws about it. Big feelings, big hugs."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P14",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: the best gift for a partner is a nap.",
+        "Not a gift card. A guarded nap."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Naps are love.",
+          "reaction": [
+            "Yes! And a blanket. And a pillow fort.",
+            "Clover napped four hours. I guarded. Nobody dared.",
+            "Clover woke up smiling and said I'm her hero."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A snack too?",
+          "reaction": [
+            "Yes. A snack beside the nap. Chef's kiss.",
+            "I'm a professional now.",
+            "Honey toast, obviously. Cut into little hearts."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P15",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: saying 'I'm overwhelmed' is a power move.",
+        "It lets everyone breathe. Including me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Agreed.",
+          "reaction": [
+            "I say it daily. Clover says, 'Me too.' We hug.",
+            "It works every time.",
+            "Clover pats my belly. We both laugh. It helps."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It's hard to say.",
+          "reaction": [
+            "It is. I practice in the mirror.",
+            "'I'm overwhelmed.' See? Bear voice.",
+            "In the mirror it sounds like a confession. It's freeing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P16",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you and your partner make time for each other when life is busy?",
+        "I need ideas. Seriously. I'm drowning in hats."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We do tiny rituals.",
+          "reaction": [
+            "Tiny rituals! I love that.",
+            "Clover and I share a honey spoon every night.",
+            "Tonight we'll swap a spoonful and a story."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We schedule it.",
+          "reaction": [
+            "Scheduling. Practical. Okay.",
+            "I'll put 'Clover time' on the wall. In honey.",
+            "Maybe I'll add 'hug' to the calendar. In bold."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P17",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's the best surprise your partner has given you?",
+        "I'm gathering joy for the cub's story."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A handwritten note.",
+          "reaction": [
+            "A note! In their handwriting! Oh, my heart.",
+            "I keep every note Clover leaves. In a jar.",
+            "Clover tucks them in my boots. I smile all day."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A weekend away.",
+          "reaction": [
+            "A weekend away! Dreamy. I'd cry at the train.",
+            "We might do that, someday.",
+            "I'd bring the blanket. And forty hats, just in case."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P18",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "When do you feel closest to your partner?",
+        "I think for me it's in the quiet moments."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "When we're cooking together.",
+          "reaction": [
+            "Cooking together! That's real. Elbows and spoons.",
+            "I'm happy when Clover tastes my soup. Even the sock one."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "When we're falling asleep.",
+          "reaction": [
+            "Falling asleep. The best. Warm paws and slow breathing.",
+            "I could say that every night.",
+            "Her breathing slows, and my worries do too."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P19",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Bruno is sitting very still, a paw resting on his chest, eyes shining.",
+      "lines": [
+        "Clover said something tonight. I can't stop thinking about it.",
+        "'We're going to be okay.' Just that.",
+        "I believed her. All the way down."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "She's right.",
+          "reaction": [
+            "I think so too. Big, quiet certainty.",
+            "I'm putting that in my heart. Next to the honey.",
+            "I'll tuck that in my heart, next to the honey."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's beautiful.",
+          "reaction": [
+            "It is. Some sentences are bigger than hats.",
+            "Thanks for hearing it.",
+            "I'll tell her tomorrow, probably with a hat on my head."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "BR-P20",
+      "friendId": "adventure_friend_br",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Bruno is whispering to a tiny blanket bundle that is mostly a pillow.",
+      "lines": [
+        "Shh. I'm practicing a bedtime story.",
+        "'Once upon a time, there was a bear, and a bunny, and a very large amount of honey...'",
+        "Is it too weird to rehearse with a pillow?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's perfect.",
+          "reaction": [
+            "Thank you. The pillow is a tough audience.",
+            "It yawned. Which is a compliment.",
+            "I may add a dragon. Clover wants a dragon too."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Keep going.",
+          "reaction": [
+            "Okay. 'And they all lived happily. The end.' ...Too short?",
+            "I'll add a dragon. A honey dragon.",
+            "Next I'll try a lullaby. Maybe a rock lullaby."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_401",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G01",
+      "name": "Moon Bites",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 401,
+      "file": "Snacks/Moon Bites.webp",
+      "key": "burrow/adventure-gifts/v1/401-c89be334bbdf3679.webp",
+      "sha256": "c89be334bbdf367945b576c793090e6b010bf9bdba35eb29ebb596d5588e43f0",
+      "bytes": 21982
+    },
+    {
+      "id": "adventure_gift_402",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G02",
+      "name": "Picnic Cookies",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 402,
+      "file": "Snacks/Picnic Cookies.webp",
+      "key": "burrow/adventure-gifts/v1/402-9d54e521afd0f8a0.webp",
+      "sha256": "9d54e521afd0f8a0377a67306bd03a9d306dfa2cd1e612a703c126d492f5d897",
+      "bytes": 28412
+    },
+    {
+      "id": "adventure_gift_403",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G03",
+      "name": "Carrot Puffs",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 403,
+      "file": "Snacks/Carrot Puffs.webp",
+      "key": "burrow/adventure-gifts/v1/403-d600fcc47ff0a371.webp",
+      "sha256": "d600fcc47ff0a371a20ae72cb85043ba27c4ef579e843711930c6a87d0cd567c",
+      "bytes": 26250
+    },
+    {
+      "id": "adventure_gift_404",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G04",
+      "name": "Salt Pretzels",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 404,
+      "file": "Snacks/Salt Pretzels.webp",
+      "key": "burrow/adventure-gifts/v1/404-16d5c885cb08906f.webp",
+      "sha256": "16d5c885cb08906f78002091cfc35f08dfa4463e3b2e0a2b5366b269335c164f",
+      "bytes": 21790
+    },
+    {
+      "id": "adventure_gift_405",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G05",
+      "name": "Honey Almonds",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 405,
+      "file": "Snacks/Honey Almonds.webp",
+      "key": "burrow/adventure-gifts/v1/405-cbc3a36d0eaeea0f.webp",
+      "sha256": "cbc3a36d0eaeea0fb4e6dd9ab041a679121b726b0d90310479ef78c238f25413",
+      "bytes": 21980
+    },
+    {
+      "id": "adventure_gift_406",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G06",
+      "name": "Matcha Wafers",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 406,
+      "file": "Snacks/Matcha Wafers.webp",
+      "key": "burrow/adventure-gifts/v1/406-443fd84de0114c15.webp",
+      "sha256": "443fd84de0114c155c500518472440c55512e484ede2443cd4cbc0dd59a98048",
+      "bytes": 14430
+    },
+    {
+      "id": "adventure_gift_407",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G07",
+      "name": "Cherry Pop",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 407,
+      "file": "Snacks/Cherry Pop.webp",
+      "key": "burrow/adventure-gifts/v1/407-06d2708368de1fdf.webp",
+      "sha256": "06d2708368de1fdf047e914b172718f06b0961097d48ab5d9a3bf43df3701844",
+      "bytes": 25380
+    },
+    {
+      "id": "adventure_gift_408",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G08",
+      "name": "Corn Twists",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 408,
+      "file": "Snacks/Corn Twists.webp",
+      "key": "burrow/adventure-gifts/v1/408-3d323d5d583697a9.webp",
+      "sha256": "3d323d5d583697a9bf5597e9b24a73f85cc62a92650bdb6f597f9c9177406fd2",
+      "bytes": 21716
+    },
+    {
+      "id": "adventure_gift_409",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G09",
+      "name": "Midnight Cocoa",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 409,
+      "file": "Snacks/Midnight Cocoa.webp",
+      "key": "burrow/adventure-gifts/v1/409-30b2c613b74592f6.webp",
+      "sha256": "30b2c613b74592f6a91e3acd459e67d1cf7d31b6a7436b5f5f34d5ab53220212",
+      "bytes": 17234
+    },
+    {
+      "id": "adventure_gift_410",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G10",
+      "name": "Lemon Drops",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 410,
+      "file": "Snacks/Lemon Drops.webp",
+      "key": "burrow/adventure-gifts/v1/410-13751a3b66d9a910.webp",
+      "sha256": "13751a3b66d9a910dc8ad874e3dddb48b3685ead0af0249b89daf30301ba2060",
+      "bytes": 25350
+    },
+    {
+      "id": "adventure_gift_411",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G11",
+      "name": "Fox Mix",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 411,
+      "file": "Snacks/Fox Mix.webp",
+      "key": "burrow/adventure-gifts/v1/411-b0d6e0b135cc54c1.webp",
+      "sha256": "b0d6e0b135cc54c106338c6c37ca945753b22a6e2062c4b6314b87d6df296d33",
+      "bytes": 21478
+    },
+    {
+      "id": "adventure_gift_412",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G12",
+      "name": "Coconut Snowballs",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 412,
+      "file": "Snacks/Coconut Snowballs.webp",
+      "key": "burrow/adventure-gifts/v1/412-e723223c5d0930b1.webp",
+      "sha256": "e723223c5d0930b184c38244480a774e788e74c497d7ea56a80ec46e2b5ed4d2",
+      "bytes": 26336
+    },
+    {
+      "id": "adventure_gift_413",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G13",
+      "name": "Peach Hearts",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 413,
+      "file": "Snacks/Peach Hearts.webp",
+      "key": "burrow/adventure-gifts/v1/413-67f0a3f3ad7d565f.webp",
+      "sha256": "67f0a3f3ad7d565f6e00e9586edef1e7aaf29cfd98f89a8f46f2756b92ec502c",
+      "bytes": 25384
+    },
+    {
+      "id": "adventure_gift_414",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G14",
+      "name": "Mushroom Crisps",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 414,
+      "file": "Snacks/Mushroom Crisps.webp",
+      "key": "burrow/adventure-gifts/v1/414-fedc32c7538b49b7.webp",
+      "sha256": "fedc32c7538b49b7d93a1369e82a8c7f33506840a6bf938bf24bea4590d79d4b",
+      "bytes": 24082
+    },
+    {
+      "id": "adventure_gift_415",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G15",
+      "name": "Ribbon Candy",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 415,
+      "file": "Snacks/Ribbon Candy.webp",
+      "key": "burrow/adventure-gifts/v1/415-c541e82ec0dbd338.webp",
+      "sha256": "c541e82ec0dbd338151951de96cd8f4a919e7a2c6d5bcc73d63decc547aad4c4",
+      "bytes": 24606
+    },
+    {
+      "id": "adventure_gift_416",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G16",
+      "name": "Maple Biscuits",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 416,
+      "file": "Snacks/Maple Biscuits.webp",
+      "key": "burrow/adventure-gifts/v1/416-43c1995a264bbde0.webp",
+      "sha256": "43c1995a264bbde0dcc6f1935ff1e8372faba3e20b04e78f6db9d99f807dc30f",
+      "bytes": 21106
+    },
+    {
+      "id": "adventure_gift_417",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G17",
+      "name": "Apple Chips",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 417,
+      "file": "Snacks/Apple Chips.webp",
+      "key": "burrow/adventure-gifts/v1/417-9a530c07ba61dc53.webp",
+      "sha256": "9a530c07ba61dc539771c2bc5069e7626cca5b554e7213e4b99e1a66ef0c554a",
+      "bytes": 25026
+    },
+    {
+      "id": "adventure_gift_418",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G18",
+      "name": "Cocoa Biscuits",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 418,
+      "file": "Snacks/Cocoa Biscuits.webp",
+      "key": "burrow/adventure-gifts/v1/418-00231fbd49cd8d50.webp",
+      "sha256": "00231fbd49cd8d50ec0761c7d30dd12d7034cd219e2250d60bf1a19d562ff763",
+      "bytes": 17208
+    },
+    {
+      "id": "adventure_gift_419",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G19",
+      "name": "Mango Tango",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 419,
+      "file": "Snacks/Mango Tango.webp",
+      "key": "burrow/adventure-gifts/v1/419-ec4911ef85be9d51.webp",
+      "sha256": "ec4911ef85be9d51738cf0ac1bf37280ab7cd6b4533a7f709d107bb2d661ccb0",
+      "bytes": 27782
+    },
+    {
+      "id": "adventure_gift_420",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G20",
+      "name": "Rosemary Sticks",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 420,
+      "file": "Snacks/Rosemary Sticks.webp",
+      "key": "burrow/adventure-gifts/v1/420-fef033f05212de18.webp",
+      "sha256": "fef033f05212de18de7a634ae017060a1c06f561d2a2a50a1801a2a618c41f47",
+      "bytes": 19170
+    },
+    {
+      "id": "adventure_gift_421",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G21",
+      "name": "Peanut Brittle",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 421,
+      "file": "Snacks/Peanut Brittle.webp",
+      "key": "burrow/adventure-gifts/v1/421-4f90e2dbc1be31c7.webp",
+      "sha256": "4f90e2dbc1be31c7745477e84ddaa71a487ecb033ab92ea4114e5c11914c671c",
+      "bytes": 21344
+    },
+    {
+      "id": "adventure_gift_422",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G22",
+      "name": "Potato Crisps",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 422,
+      "file": "Snacks/Potato Crisps.webp",
+      "key": "burrow/adventure-gifts/v1/422-b6b2a37448d34b9d.webp",
+      "sha256": "b6b2a37448d34b9d50530bc25eb94c6c5179a668c138c301a473267728de7834",
+      "bytes": 24320
+    },
+    {
+      "id": "adventure_gift_423",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G23",
+      "name": "Berry Bonbons",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 423,
+      "file": "Snacks/Berry Bonbons.webp",
+      "key": "burrow/adventure-gifts/v1/423-930392b59fda181b.webp",
+      "sha256": "930392b59fda181b55c9d26cdff2c056dab63533ba7a82b8ccd0a0731bc9e973",
+      "bytes": 26908
+    },
+    {
+      "id": "adventure_gift_424",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G24",
+      "name": "Seaweed Crackers",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 424,
+      "file": "Snacks/Seaweed Crackers.webp",
+      "key": "burrow/adventure-gifts/v1/424-c66c12ea5dcc06f9.webp",
+      "sha256": "c66c12ea5dcc06f9c22d925b3c66b8e6cbcdd1e5bf61cff3be4d9d1e22816b4b",
+      "bytes": 27866
+    },
+    {
+      "id": "adventure_gift_425",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G25",
+      "name": "Cinnamon Rolls",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 425,
+      "file": "Snacks/Cinnamon Rolls.webp",
+      "key": "burrow/adventure-gifts/v1/425-3a396e0628ec78db.webp",
+      "sha256": "3a396e0628ec78db9b01aa2da5142f95d7773d5a48082c506728eb6759c17750",
+      "bytes": 22196
+    },
+    {
+      "id": "adventure_gift_426",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G26",
+      "name": "Pistachio Crunch",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 426,
+      "file": "Snacks/Pistachio Crunch.webp",
+      "key": "burrow/adventure-gifts/v1/426-bd9e77feb5ae924a.webp",
+      "sha256": "bd9e77feb5ae924a2d36f5c639b85569a223b98f40808c6cc183a2761b2ffe21",
+      "bytes": 22850
+    },
+    {
+      "id": "adventure_gift_427",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G27",
+      "name": "Banana Bites",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 427,
+      "file": "Snacks/Banana Bites.webp",
+      "key": "burrow/adventure-gifts/v1/427-76182753ff35dc2f.webp",
+      "sha256": "76182753ff35dc2fb56ae7950cd5a056f359ea28931f9a17773fe3a135360fcb",
+      "bytes": 22606
+    },
+    {
+      "id": "adventure_gift_428",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G28",
+      "name": "Tomato Basil",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 428,
+      "file": "Snacks/Tomato Basil.webp",
+      "key": "burrow/adventure-gifts/v1/428-f9e2149a4e9104f4.webp",
+      "sha256": "f9e2149a4e9104f4e4d1e09514d4494b87984bd761e2dd897a9a7e3f55779fdf",
+      "bytes": 20000
+    },
+    {
+      "id": "adventure_gift_429",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G29",
+      "name": "Pillow Puffs",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 429,
+      "file": "Snacks/Pillow Puffs.webp",
+      "key": "burrow/adventure-gifts/v1/429-6b65b855fc0ba16c.webp",
+      "sha256": "6b65b855fc0ba16cc0e7ee40bfcdad41af8146c1be1b7098959daff53f281e20",
+      "bytes": 24726
+    },
+    {
+      "id": "adventure_gift_430",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G30",
+      "name": "Caramel Comets",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 430,
+      "file": "Snacks/Caramel Comets.webp",
+      "key": "burrow/adventure-gifts/v1/430-95490171a1faa134.webp",
+      "sha256": "95490171a1faa1342a03433da2fb0d5238847b78bae00863d60a25aab58b6154",
+      "bytes": 26664
+    },
+    {
+      "id": "adventure_gift_431",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G31",
+      "name": "Sesame Snaps",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 431,
+      "file": "Snacks/Sesame Snaps.webp",
+      "key": "burrow/adventure-gifts/v1/431-ed1b4670597e2ee4.webp",
+      "sha256": "ed1b4670597e2ee456fb0f75fa6b0f701af516e71c4af0b5c13e65eacc492bd3",
+      "bytes": 19998
+    },
+    {
+      "id": "adventure_gift_432",
+      "friendId": "adventure_friend_br",
+      "giftId": "BR-G32",
+      "name": "Mint Domino",
+      "category": "Snacks",
+      "categoryCode": "C13",
+      "sourceId": 432,
+      "file": "Snacks/Mint Domino.webp",
+      "key": "burrow/adventure-gifts/v1/432-345687f55fde1bf7.webp",
+      "sha256": "345687f55fde1bf7e471e2166b1faed93d6dd00dd94164467f5995822385fd24",
+      "bytes": 16410
+    }
+  ]
+}

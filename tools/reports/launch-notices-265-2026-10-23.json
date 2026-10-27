@@ -1,0 +1,50 @@
+{
+  "migration": 265,
+  "migrationHash": "3b562a04670a4756e7c9dbf592a79a9e",
+  "production": {
+    "api": "dpl_3NtmRXKRzYQchHDJzU5PtvXUqQBL",
+    "admin": "dpl_Ga7XLqb7cig8DXP7KsScpZuJSCZt",
+    "verifiedAt": "2026-10-23T14:44:34.668Z",
+    "sourceManifestsVerified": true,
+    "productionAliasesVerified": true,
+    "announcementReadAndForceUpdateContentUnchangedDuringMigration": true,
+    "forceUpdateCheck": { "status": 200, "active": false },
+    "unauthenticatedAnnouncementCheck": 401,
+    "unauthenticatedAdminPage": 307
+  },
+  "client": {
+    "priority": ["version check behind native Splash", "update wall instead of navigation when required", "one prepared unread announcement over ready Home", "Home business popups after dismissal"],
+    "requiredUpdateDoesNotFetchOrConsumeAnnouncement": true,
+    "closedAnnouncementAcknowledgements": "user-scoped local persistence; silent cloud retry on next launch",
+    "slowOrUnavailableAnnouncement": "skip this launch; never inject a late popup",
+    "deepLinkEntry": "preserve destination without consuming announcement",
+    "newAnonymousOnboarding": "no targeted announcement before onboarding completion",
+    "nativeDeviceVisualQA": "not performed",
+    "iosExport": "/private/tmp/burrow-launch265-final-ios",
+    "iosBundle": "index-576dc6c3df4646b92dec70b264de5465.hbc",
+    "androidExport": "/private/tmp/burrow-launch265-final-android",
+    "androidBundle": "index-87003120c914c29e75da8ac582af277e.hbc",
+    "easBuildOrSubmission": false,
+    "requiresNextAppRelease": true
+  },
+  "validation": {
+    "testsPassed": 98,
+    "testsFailed": 0,
+    "testLog": "/private/tmp/launch265-verified-tests.log",
+    "adminProductionBuild": "passed",
+    "apiProductionBuild": "passed",
+    "adminTypeCheck": "passed",
+    "mobileTypeCheck": "passed",
+    "nativeExports": ["ios", "android"]
+  },
+  "release": {
+    "auditDirectory": "/private/tmp/burrow-launch265-release.cKaBdz",
+    "apiSnapshotFiles": 275,
+    "adminSnapshotFiles": 929,
+    "rootIgnoreRulesApplied": true,
+    "mobileAssetsOrCredentialsUploaded": false,
+    "failedAdminCandidate": "initial trimmed snapshot omitted required packages/api-client; corrected snapshot built successfully before promotion",
+    "publishedAnyAnnouncement": false,
+    "activatedForceUpdate": false
+  }
+}

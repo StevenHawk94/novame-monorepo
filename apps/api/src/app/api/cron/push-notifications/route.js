@@ -10,7 +10,10 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    return NextResponse.json({ ok: true, ...(await drainPushNotificationOutbox(serviceClient())) })
+    const db=serviceClient()
+    const prepared=await db.rpc('prepare_system_notifications_v1')
+    if(prepared.error)throw prepared.error
+    return NextResponse.json({ ok: true, ...(await drainPushNotificationOutbox(db)) })
   } catch (error) {
     console.error('[cron/push-notifications] unexpected:', error?.message || error)
     return NextResponse.json({ error: 'delivery_failed' }, { status: 500 })

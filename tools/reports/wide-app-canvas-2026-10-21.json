@@ -1,0 +1,66 @@
+{
+  "task": "Centered portrait canvas for unfolded and wide app windows",
+  "decision": {
+    "materialViewportBaseline": "9:20",
+    "wideWindowAspectRange": "9:16 through 9:20",
+    "fixedNineNineteenPointFive": false,
+    "compactPortraitPhones": "Existing full-window size and layouts unchanged",
+    "wideDetection": "Logical window width >= 600, or width/height >= 1.1",
+    "width": "Prefer height * 9/20 with a 390pt readability preference; cap at 520pt, available width and height * 9/16",
+    "height": "min(available height, selected width * 20/9)",
+    "alignment": "Centered horizontally and vertically; short displays scale down uniformly",
+    "outsideColor": "#3f150b",
+    "furniture": "Original room placement coordinates, anchors, source image ratios and scaling preserved; no new wide room composition",
+    "keyboard": "Keep pre-keyboard canvas width for the same native window width; reduce available input height without selecting a landscape composition"
+  },
+  "examplesInLogicalPoints": [
+    {"window": [390,844], "canvas": [390,844], "ratio": "9:19.48", "unchangedPhone": true},
+    {"window": [800,900], "canvas": [405,900], "ratio": "9:20"},
+    {"window": [900,800], "canvas": [390,800], "ratio": "9:18.46"},
+    {"window": [900,600], "canvas": [337.5,600], "ratio": "9:16"},
+    {"window": [1200,1600], "canvas": [520,1155.5555555555554], "ratio": "9:20", "verticalMargins": true}
+  ],
+  "integration": {
+    "appLayoutConsumerFilesMigrated": 65,
+    "sharedHook": "apps/mobile/src/lib/app-viewport.ts",
+    "nativeWindowBoundaries": "Root frame, native Modal, FullWindowOverlay and monetary particle/anchor adapters explicitly retain native coordinate access",
+    "modals": "AppModal preserves native visibility, animationType, presentationStyle, onShow, onDismiss and onRequestClose; only adds the shared canvas boundary",
+    "overlaySafety": "Ordinary phone overlays retain native fill sizing, including Android bar exclusions; constrained overlays measure actual host bounds and provide their effective size to children",
+    "coinEffects": "Keep measureInWindow/native reward origins; translate the full canvas-local reward outlet, not just the balance HUD; remeasure wallet anchors when canvas margins move",
+    "prewarm": "Game artwork planning uses the same effective canvas instead of raw window width",
+    "performance": "Unchanged logical canvas dimensions retain the provider value identity, avoiding invalidating retained pages when only outer margins change",
+    "statusBar": "Root default uses light icons on dark letterbox margins; existing phone default remains dark",
+    "businessAndNotifications": "No data, authorization, idempotency, claims, timing, notification or recovery rules changed"
+  },
+  "verification": {
+    "finalScopedTests": {"passed": 416, "failed": 0},
+    "viewportSpecificTests": 11,
+    "geometryMatrix": "Wide windows across widths 600–1800 and heights 240–1800, plus compact phones, landscape windows, keyboard and retained-child checks",
+    "broaderEarlierRun": {"passed": 419, "failed": 1},
+    "existingUnrelatedFailure": "32 local Mushroom Domes images differ from the pre-existing gift manifest SHA-256 values, first Mushroom Domes/Toadstool Dome.webp. Neither images nor manifest modified in this task.",
+    "mobileTypecheck": "passed",
+    "iosProductionExport": "passed",
+    "androidProductionExport": "passed",
+    "diffWhitespaceCheck": "passed for scoped changed files",
+    "iPhoneDuoPhysicalDeviceTest": "not performed",
+    "simulatorOrNativeWindowInteractiveTest": "not performed",
+    "nativePerformanceTrace": "not performed"
+  },
+  "scope": {
+    "apiChanges": false,
+    "databaseMigration": false,
+    "apiDeploymentRequired": false,
+    "nativeDeviceFamilyOrWindowPolicyChanged": false,
+    "cameraAndPhotoLibrarySystemUi": "OS-owned UI unchanged",
+    "legacyInactiveVisitMasterScreenDimensions": "Preserved; the live major-update route redirects to retained tabs",
+    "clientBuildOrOtaPublished": false,
+    "delivery": "Reload updated client source, or include in next client distribution; does not force the OS to choose a full-screen rather than multitasking window"
+  },
+  "evidence": {
+    "regressionLog": "/private/tmp/app-viewport-regressions-complete.log",
+    "broaderLog": "/private/tmp/app-viewport-regressions-verified.log",
+    "typecheckLog": "/private/tmp/app-viewport-types-complete.log",
+    "iosExport": "/private/tmp/burrow-wide-canvas-ios",
+    "androidExport": "/private/tmp/burrow-wide-canvas-android"
+  }
+}

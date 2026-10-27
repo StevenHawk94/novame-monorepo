@@ -1,125 +1,43 @@
-import { ReactNode, useEffect, useRef, useState } from 'react';
-import { AppState, InteractionManager, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
-import type { ImageSourcePropType } from 'react-native';
-import { router, useSegments } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
-import { ICONS } from '@/lib/icons';
 import { HomeEntryImage } from './home-entry-gate';
 import { useHomeEntry } from '@/lib/use-home-entry';
-import { isHomeEntryRoute, markHomeEntryAsset, type HomeEntryAsset } from '@/lib/home-entry-readiness';
+import { markHomeEntryAsset } from '@/lib/home-entry-readiness';
 import { yieldDownloadQueueForInteraction } from '@/lib/download-queue';
-import { useMajorUpdateEnabled } from '@/lib/use-major-update';
+import { useBurrowTabAttention } from '@/lib/burrow-tab-attention';
+import { UpdateBadge } from '../burrow/update-badge';
 import { homeTabBarHeight, HOME_TAB_BAR_TOP_SPACE } from '@/lib/burrow-home-layout';
+import { retainedTabRoot } from '@/lib/retained-tab-layers';
+import { cancelBurrowPageEntry, enterBurrowPage } from '@/lib/burrow-page-entry';
+import { stageForegroundJobs } from '@/lib/ui-idle';
+import { uiWorkPriority } from '@/lib/ui-work-priority';
 
-/**
- * Bottom tab bar for (main)/(tabs). Five tabs with the illustrated icon set
- * (assets/Icons), on a warm cream bar to match the Home art. The focused tab
- * reads at full opacity; unfocused tabs dim slightly.
- */
-const TABS: ReadonlyArray<{ name: 'index' | 'court' | 'friends' | 'status' | 'bags'; icon: ImageSourcePropType; label: string }> = [
-  { name: 'index', icon: ICONS.Home, label: 'Home' },
-  { name: 'court', icon: ICONS.obCourtJudge, label: 'Court' },
-  { name: 'friends', icon: ICONS.Friends, label: 'Moments' },
-  { name: 'status', icon: ICONS.friendList, label: 'Insights' },
-  { name: 'bags', icon: ICONS.Memories, label: 'Collection' },
-];
-
-// Lightest first, heaviest last. React Navigation's preload mounts the real
-// inactive route without focusing it, so useFocusEffect network refreshes do
-// not run until the user actually visits the tab.
-const TAB_PRELOAD_ORDER = ['quests', 'court', 'friends', 'bags', 'status'] as const;
+/** Burrow tabs use only the current neutral/selected artwork below. */
 const BURROW_TABS = [
-  { name: 'index', icon: ICONS.Home, label: 'Home' },
-  { name: 'burrow', icon: ICONS.Friends, label: 'Burrow' },
-  { name: 'quests', icon: ICONS.Quests, label: 'Quests' },
-  { name: 'shop', icon: ICONS.Memories, label: 'Shop' },
-  { name: 'friends', icon: ICONS.Friends, label: 'Moments' },
+  { name: 'index', label: 'Home' },
+  { name: 'burrow', label: 'Burrow' },
+  { name: 'quests', label: 'Quests' },
+  { name: 'shop', label: 'Shop' },
+  { name: 'friends', label: 'Moments' },
 ] as const;
-const TAB_PRELOAD_START_DELAY_MS = 650;
-const TAB_PRELOAD_SETTLE_MS = 700;
+const TAB_PRELOAD_START_DELAY_MS = 100;
+const TAB_PRELOAD_SETTLE_MS = 120;
 
-type TabBarTheme = {
-  background: string;
-  label: string;
-  activeBackground: string;
-  topBorder: string;
-};
-
-/** Each bar is a slightly lighter continuation of its screen's main color. */
-const TAB_THEMES: Record<string, TabBarTheme> = {
-  index: {
-    background: '#F0DFC0',
-    label: '#5A4A32',
-    activeBackground: '#FFF3D9',
-    topBorder: 'rgba(90,74,50,0.12)',
-  },
-  bags: {
-    background: '#FBE7A7',
-    label: '#533A23',
-    activeBackground: '#FFF4CF',
-    topBorder: 'rgba(83,58,35,0.12)',
-  },
-  quests: {
-    background: '#62472F',
-    label: '#FFFFFF',
-    activeBackground: 'rgba(255,255,255,0.16)',
-    topBorder: 'rgba(255,255,255,0.10)',
-  },
-  court: {
-    background: '#B0BD58',
-    label: '#4A2518',
-    activeBackground: 'rgba(255,248,233,0.72)',
-    topBorder: 'rgba(74,37,24,0.14)',
-  },
-  friends: {
-    background: '#80583B',
-    label: '#FFFFFF',
-    activeBackground: 'rgba(255,255,255,0.16)',
-    topBorder: 'rgba(255,255,255,0.10)',
-  },
-  status: {
-    background: '#936453',
-    label: '#FFFFFF',
-    activeBackground: 'rgba(255,255,255,0.16)',
-    topBorder: 'rgba(255,255,255,0.10)',
-  },
-};
-
-const BAG_COLLECTION_THEMES: Record<'their' | 'ours', TabBarTheme> = {
-  their: {
-    background: '#EAF6FA',
-    label: '#45616D',
-    activeBackground: '#F7FCFE',
-    topBorder: 'rgba(69,97,109,0.12)',
-  },
-  ours: {
-    background: '#FBEAF0',
-    label: '#674A54',
-    activeBackground: '#FFF6F9',
-    topBorder: 'rgba(103,74,84,0.12)',
-  },
-};
-
-const FALLBACK_THEME = TAB_THEMES.index;
-
-export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
-  const majorUpdate = useMajorUpdateEnabled();
-  const tabs = majorUpdate ? BURROW_TABS : TABS;
+export function BottomTabBar({ state, navigation, retainedHome = false }: BottomTabBarProps & { retainedHome?: boolean }) {
+  const attention = useBurrowTabAttention();
+  const tabs = BURROW_TABS;
   const { attempt, pending: homeEntryPending } = useHomeEntry();
-  const segments = useSegments();
-  const homeIsForeground = isHomeEntryRoute(segments);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const activeRoute = state.routes[state.index];
   const activeRouteName = activeRoute?.name ?? 'index';
-  const collectionTab = (activeRoute?.params as { tab?: string } | undefined)?.tab;
-  const theme = majorUpdate ? FALLBACK_THEME : activeRouteName === 'bags' && (collectionTab === 'their' || collectionTab === 'ours')
-    ? BAG_COLLECTION_THEMES[collectionTab]
-    : TAB_THEMES[activeRouteName] ?? FALLBACK_THEME;
+  const underlayRootName = retainedTabRoot(state)?.name ?? 'index';
   const routesByName = new Map<string, (typeof state.routes)[number]>();
   state.routes.forEach((r) => routesByName.set(r.name, r));
   const preloadedTabs = useRef(new Set<string>());
@@ -135,72 +53,34 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
 
   useEffect(() => {
     if (
-      majorUpdate
-      ||
       homeEntryPending
-      || !homeIsForeground
-      || activeRouteName !== 'index'
       || !appIsActive
     ) return;
+    const preloadOrder = ['quests','burrow','shop','friends','collection'];
 
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let interaction: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
-
-    const cancel = () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-      timer = null;
-      interaction?.cancel();
-      interaction = null;
-    };
+    const cancel = stageForegroundJobs(preloadOrder.filter(name => !preloadedTabs.current.has(name))
+      .map((routeName, index) => ({ delayMs: TAB_PRELOAD_START_DELAY_MS + index * TAB_PRELOAD_SETTLE_MS, run: () => {
+        try { navigation.preload(routeName); preloadedTabs.current.add(routeName); }
+        catch (error) { console.warn('[tabs] background preload skipped:', routeName, error); }
+      } })));
     stopPreloading.current = cancel;
 
-    const schedule = (startAt: number) => {
-      if (cancelled) return;
-      let index = startAt;
-      while (index < TAB_PRELOAD_ORDER.length && preloadedTabs.current.has(TAB_PRELOAD_ORDER[index])) {
-        index += 1;
-      }
-      if (index >= TAB_PRELOAD_ORDER.length) return;
-
-      interaction = InteractionManager.runAfterInteractions(() => {
-        interaction = null;
-        if (cancelled || AppState.currentState !== 'active') return;
-        const routeName = TAB_PRELOAD_ORDER[index];
-        try {
-          navigation.preload(routeName);
-          preloadedTabs.current.add(routeName);
-        } catch (error) {
-          // Preloading is an optional performance optimization. A navigator
-          // teardown must never affect normal tab navigation.
-          console.warn('[tabs] background preload skipped:', routeName, error);
-        }
-        timer = setTimeout(() => schedule(index + 1), TAB_PRELOAD_SETTLE_MS);
-      });
-    };
-
     const memorySub = AppState.addEventListener('memoryWarning', cancel);
-    timer = setTimeout(() => schedule(0), TAB_PRELOAD_START_DELAY_MS);
 
     return () => {
       cancel();
       memorySub.remove();
       if (stopPreloading.current === cancel) stopPreloading.current = null;
     };
-  }, [activeRouteName, appIsActive, homeEntryPending, homeIsForeground, navigation, majorUpdate]);
+  }, [activeRouteName, appIsActive, homeEntryPending, navigation]);
 
-  const handleTabPress = (routeName: string, isFocused: boolean) => {
+  const commitTabPress = (routeName: string, isFocused: boolean) => {
     // A real user action always outranks speculative background mounting.
     if (!isFocused) {
       stopPreloading.current?.();
       yieldDownloadQueueForInteraction();
     }
     void haptics.pageOpen();
-    if (majorUpdate && (routeName === 'burrow' || routeName === 'shop' || routeName === 'friends')) {
-      router.push({ pathname: '/(main)/burrow-detail', params: { section: routeName === 'friends' ? 'moments' : routeName } });
-      return;
-    }
     const route = routesByName.get(routeName);
     if (!route) return;
     const event = navigation.emit({
@@ -216,9 +96,16 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
     }
   };
 
-  // Burrow, Shop and Moments are full-screen destinations, not tab pages.
-  // Also hide the bar during a direct-link redirect from their old tab routes.
-  if (majorUpdate && (activeRouteName === 'burrow' || activeRouteName === 'shop' || activeRouteName === 'friends')) return null;
+  const handleTabPress = (routeName: string, isFocused: boolean) => {
+    uiWorkPriority.action();
+    // Yield at intent time, not after an entry preparation has already waited.
+    if (!isFocused) yieldDownloadQueueForInteraction();
+    if (!isFocused && routeName !== 'index') enterBurrowPage({kind:routeName==='shop'?'shop':routeName==='friends'?'private':'page',intent:`tab:${routeName}`}, () => commitTabPress(routeName, isFocused));
+    else {if(!isFocused)cancelBurrowPageEntry();commitTabPress(routeName, isFocused);}
+  };
+
+  // Retained tabs keep the established full-screen room presentation.
+  if (!retainedHome && ['burrow','shop','friends','collection'].includes(activeRouteName)) return null;
 
   return (
     <View
@@ -226,42 +113,31 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         styles.container,
         {
           paddingBottom: insets.bottom,
-          backgroundColor: majorUpdate ? '#FFF2DF' : theme.background,
-          borderTopColor: theme.topBorder,
-          ...(majorUpdate ? { height: homeTabBarHeight(width, insets.bottom) } : {}),
+          backgroundColor: '#FFF2DF',
+          borderTopColor: 'rgba(90,74,50,0.12)',
+          height: homeTabBarHeight(width, insets.bottom),
         },
       ]}
     >
-      <View key={attempt} style={[styles.row,majorUpdate && styles.burrowRow]} onLayout={() => markHomeEntryAsset('tabs-layout', attempt)}>
+      <View key={attempt} style={[styles.row, styles.burrowRow]} onLayout={() => markHomeEntryAsset('tabs-layout', attempt)}>
         {tabs.map((tab) => {
           const route = routesByName.get(tab.name);
           if (!route) return null;
-          // Quests is a Home shortcut rather than a persistent tab. Keep Home
-          // selected while that child destination is open so the five-item
-          // navigation remains stable and always has a clear way back.
+          // Retained child cards keep their underlying root tab selected.
           const routeIsFocused = state.index === state.routes.findIndex((r) => r.name === tab.name);
-          const isFocused = !majorUpdate && activeRouteName === 'quests'
-            ? tab.name === 'index'
+          const isFocused = retainedHome && ['burrow','shop','friends','collection'].includes(activeRouteName)
+            ? tab.name === underlayRootName
             : routeIsFocused;
-          return majorUpdate ? <BurrowTabButton key={route.key} name={tab.name as keyof typeof burrowIcons} label={tab.label} isFocused={isFocused} attempt={attempt} onPress={() => handleTabPress(tab.name, routeIsFocused)} /> : (
-            <TabButton
-              key={route.key}
-              icon={tab.icon}
-              asset={`tab:${tab.name}`}
-              label={tab.label}
-              isFocused={isFocused}
-              labelColor={theme.label}
-              activeBackground={theme.activeBackground}
-              onPress={() => handleTabPress(tab.name, routeIsFocused)}
-            />
-          );
+          return <BurrowTabButton key={route.key} name={tab.name} count={attention.tabs[tab.name] ?? 0} label={tab.label} isFocused={isFocused} attempt={attempt} onPress={() => handleTabPress(tab.name, routeIsFocused)} />;
         })}
       </View>
     </View>
   );
 }
 
-// The supplied set contains five neutral/selected pairs, not purchasable decor.
+// Always use the supplied local neutral/selected pairs, not legacy ICONS art.
+// Updated Burrow artwork is 500×500; contain in the same slot as the 313×313
+// pairs so source resolution never changes the bar's layout or touch targets.
 const burrowIcons = {
   index: { inactive: require('../../../assets/burrow-webp/home tab icons/home.webp'), active: require('../../../assets/burrow-webp/home tab icons/home-selected.webp') },
   burrow: { inactive: require('../../../assets/burrow-webp/home tab icons/burrow.webp'), active: require('../../../assets/burrow-webp/home tab icons/burrow-selected.webp') },
@@ -269,41 +145,15 @@ const burrowIcons = {
   shop: { inactive: require('../../../assets/burrow-webp/home tab icons/shop.webp'), active: require('../../../assets/burrow-webp/home tab icons/shop-selected.webp') },
   friends: { inactive: require('../../../assets/burrow-webp/home tab icons/moments.webp'), active: require('../../../assets/burrow-webp/home tab icons/moments-selected.webp') },
 } as const;
-function BurrowTabButton({ name, label, isFocused, attempt, onPress }: { name: keyof typeof burrowIcons; label: string; isFocused: boolean; attempt: number; onPress: () => void }) {
+function BurrowTabButton({ name, label, isFocused, attempt, onPress, count }: { name: keyof typeof burrowIcons; label: string; isFocused: boolean; attempt: number; onPress: () => void; count: number }) {
   const { width } = useWindowDimensions();
   const scale = width / 900;
   return <Pressable accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: isFocused }} onPress={onPress} onLayout={() => markHomeEntryAsset(`tab:${name}`, attempt)} style={styles.burrowTab}>
     {({ pressed }) => <>
-      <HomeEntryImage asset={`tab:${name}`} source={isFocused || pressed ? burrowIcons[name].active : burrowIcons[name].inactive} style={[styles.burrowIcon, { width: 64 * scale, height: 64 * scale }]} contentFit="contain" />
+      <View><HomeEntryImage asset={`tab:${name}`} source={isFocused || pressed ? burrowIcons[name].active : burrowIcons[name].inactive} style={[styles.burrowIcon, { width: 64 * scale, height: 64 * scale }]} contentFit="contain" /><UpdateBadge count={count} exact={name==='shop'} size={Math.max(18, 35 * scale)} /></View>
       <Text style={[styles.burrowLabel, { fontSize: 23 * scale, lineHeight: 28 * scale }, (isFocused || pressed) && styles.burrowLabelActive]}>{label}</Text>
     </>}
   </Pressable>;
-}
-
-type TabButtonProps = {
-  icon: ImageSourcePropType;
-  asset: HomeEntryAsset;
-  label: string;
-  isFocused: boolean;
-  labelColor: string;
-  activeBackground: string;
-  onPress: () => void;
-};
-
-function TabButton({ icon, asset, label, isFocused, labelColor, activeBackground, onPress }: TabButtonProps): ReactNode {
-  // Focused pill wraps icon + label together with even padding (mock).
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="tab"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: isFocused }}
-      style={[styles.tabBtn, isFocused && { backgroundColor: activeBackground }]}
-    >
-      <HomeEntryImage asset={asset} source={icon} style={styles.tabIcon} contentFit="contain" />
-      <Text style={[styles.tabLabel, { color: labelColor }]}>{label}</Text>
-    </Pressable>
-  );
 }
 
 const styles = StyleSheet.create({
@@ -322,12 +172,6 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 4,
   },
-  tabBtn: {
-    minWidth: 66, alignItems: 'center', justifyContent: 'center', gap: 2,
-    paddingVertical: 7, paddingHorizontal: 10, borderRadius: 20,
-  },
-  tabIcon: { width: 40, height: 40 },
-  tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold' },
   burrowRow: { flex: 1, alignItems: 'center', paddingTop: 1 + HOME_TAB_BAR_TOP_SPACE, paddingBottom: 0 },
   burrowTab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 0 },
   burrowIcon: { width: 34, height: 34 },

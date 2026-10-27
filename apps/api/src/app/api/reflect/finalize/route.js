@@ -1,4 +1,5 @@
 import { after, NextResponse } from 'next/server'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 import { verifyToken } from '@/lib/auth-guard'
 import { MAX_REFLECT_ITEMS, XP_RULES } from '@novame/engine'
 
@@ -6,7 +7,6 @@ import { isoWeek, serviceClient } from '@/lib/reflect-draft'
 import { analyzeFinalizedReflect } from '@/lib/reflect-completion'
 import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
 import { sanitizeSettlementMemories } from '@/lib/reflect-settlement'
-import { drainPushNotificationOutbox, enqueuePartnerReflectNotification } from '@/lib/push-notifications'
 import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { withRewardWallet } from '@/lib/burrow-reward-wallet.mjs'
 
@@ -31,9 +31,7 @@ export async function POST(request) {
     // here because a draft may stay open while an entitlement expires or a
     // modified client may try to finalize it later.
     if (draft.friend_user_id && !draft.saved_reflect_id) {
-      const { data: profile } = await supabase.from('profiles')
-        .select('subscription_tier').eq('id', userId).maybeSingle()
-      if ((profile?.subscription_tier || 'free') === 'free') {
+      if (!await effectiveHasPlus(supabase,userId)) {
         return NextResponse.json({ error: 'plus_required' }, { status: 403 })
       }
     }
@@ -110,17 +108,6 @@ export async function POST(request) {
         console.warn('[reflect/finalize] analysis enqueue failed:', queueError?.message || queueError)
         after(() => analyzeFinalizedReflect({ userId, draft, result }))
       }
-    }
-
-    if (!result?.already_finalized && result?.reflect_id) {
-      after(async () => {
-        try {
-          const queued = await enqueuePartnerReflectNotification(supabase, userId, result.reflect_id)
-          if (queued) await drainPushNotificationOutbox(supabase, 10)
-        } catch (error) {
-          console.error('[reflect/finalize] partner notification:', error?.message || error)
-        }
-      })
     }
 
     await supabase.rpc('broadcast_reflect_feed_change', {

@@ -1,0 +1,1410 @@
+{
+  "code": "MM",
+  "id": "adventure_friend_mm",
+  "name": "Mr Mole",
+  "gender": "he",
+  "species": "Mole",
+  "partner": "Mabel (she)",
+  "emotionalState": "老夫老妻20年，爱用行动不用嘴，每个纪念日给伴侣挖一扇新窗户却几乎不说爱",
+  "speakingStyle": "短句，爱说 Hm.",
+  "catchphrase": "Hm.",
+  "art": [
+    "Mole_02_Variant1.webp",
+    "Mole_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "MM-01",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "A pair of round glasses peeks out of a fresh dirt mound.",
+      "lines": [
+        "Hm. You're standing on my roof.",
+        "...Not complaining. Just saying. Roof. Mine."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Oh! Sorry!",
+          "reaction": [
+            "Hm. Accepted. Mr Mole. Tunnels, mostly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Nice roof.",
+          "reaction": [
+            "...Nobody's said that before. Hm. Best work I've done."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Tiptoe off quietly",
+          "reaction": [
+            "Hm. Polite. I like quiet."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-02",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Been digging this tunnel three weeks. No reason.",
+        "Digging helps me think. About nothing. Mostly."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What do you think about?",
+          "reaction": [
+            "Hm. Dinner. Mostly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's kind of cool.",
+          "reaction": [
+            "Hm. Thanks. Cool's good."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Can I help?",
+          "reaction": [
+            "...No. But thanks. Maybe next time."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-03",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Mabel made worm pie today. Best in the burrow.",
+        "Don't tell her I said that. She'll get ideas."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Why not?",
+          "reaction": [
+            "She'll make it every day. Then I'll have to say 'delicious' every day."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You're smiling.",
+          "reaction": [
+            "...Am not. Hm. Maybe a little."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Worm pie? ...okay!",
+          "reaction": [
+            "Don't knock it till you've tried it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-04",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Every anniversary I dig Mabel a new window. Nineteen now.",
+        "Burrow looks like cheese."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's the sweetest thing.",
+          "reaction": [
+            "Hm. She says thanks every time. I say 'hm.' That's our whole conversation."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does she know why?",
+          "reaction": [
+            "...She knows."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Twenty's coming up, right?",
+          "reaction": [
+            "Hm. Yes. Thinking about it. Not talking about it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-05",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Mabel said last night: 'You never tell me anything.'",
+        "I said, 'I dug you a window.' She said, 'I know. I want words.'",
+        "Hm. What do you and your partner say to each other? Normal stuff?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A lot of 'good morning' and 'I'm hungry.'",
+          "reaction": [
+            "Hungry. I can do hungry."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sometimes I just say 'I'm glad it's you.'",
+          "reaction": [
+            "...Four words. I can carry four words."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Maybe start tiny? One sentence a day?",
+          "reaction": [
+            "One sentence. Hm. Like a pebble. I give pebbles."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-06",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I said 'nice dress' to Mabel yesterday.",
+        "She said, 'This is my gardening apron.'",
+        "She laughed so hard she cried. Best thing I've done in years. Accidentally."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That totally counts!",
+          "reaction": [
+            "Hm. Counts. Okay."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "At least she laughed.",
+          "reaction": [
+            "She did. I wrote it down."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Try 'nice apron' next time.",
+          "reaction": [
+            "...Hm. Nice apron. Practicing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-07",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Evening. Mr Mole sits at the tunnel mouth, not digging.",
+      "lines": [
+        "Can I say something? Don't laugh.",
+        "I think Mabel might be bored of me. She's bright. Everyone loves her at burrow parties.",
+        "I'm the guy near the snacks."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I don't think she's bored.",
+          "reaction": [
+            "Hm. You might be right. I hope."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What makes you think that?",
+          "reaction": [
+            "She laughs more with other people. That's all. It's fine. Hm."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit quietly next to him",
+          "reaction": [
+            "...Thanks. Not many people know how to do that."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-08",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Mabel's birthday is Friday. I wrote something.",
+        "Three sentences. Been practicing on a worm."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Read it to me!",
+          "reaction": [
+            "Hm. Okay.",
+            "'Mabel. You're my favorite noise. The house is loud because of you, and I like it.' ...Too much?"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Practice on me, not the worm.",
+          "reaction": [
+            "Worm's offended. Fine. Listen.",
+            "'Mabel. You're my favorite noise. The house is loud because of you, and I like it.' ...Too much?"
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Three sentences is plenty.",
+          "reaction": [
+            "Hm. Three is a lot. For me."
+          ]
+        }
+      ],
+      "outro": "Friday. Wish me luck."
+    },
+    {
+      "id": "MM-09",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "Mabel's at her sister's for a week.",
+        "House is too quiet. Never noticed how much noise she makes. Humming. Pots. Talking to the plants.",
+        "I keep setting two cups."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Aw. Send her a note?",
+          "reaction": [
+            "Already wrote it. Four lines. Scared to send."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Tell her you miss her.",
+          "reaction": [
+            "That's the thing. I do. I never said it. Twenty years."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Want some company tonight?",
+          "reaction": [
+            "...Yeah. I'd like that."
+          ]
+        }
+      ],
+      "outro": "I'm sending it. 'Quiet here without you.' That's all."
+    },
+    {
+      "id": "MM-10",
+      "friendId": "adventure_friend_mm",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Hm. You came again. Ten times. I counted. Don't tell anyone I counted.",
+        "Mabel read my three sentences. She cried. Then asked who wrote them. I said me. She said, 'Liar.'",
+        "...I got that on my own. Mostly.",
+        "My turn to ask. How are you and your partner? Honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Hm. Twenty years in and I'm still learning. Come to dinner. Mabel's been asking."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We had a rough week, honestly.",
+          "reaction": [
+            "Hm. Rough weeks happen. Come by. Mabel will feed you both."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Better since I started saying the small things.",
+          "reaction": [
+            "...You were listening to yourself too. Good. Dinner. Bring your partner."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P01",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Mabel redid the garden. Asked what I thought. I said 'nice.' She said 'one more word.'",
+        "I said 'nice... flowers.' Progress."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Look at you go!",
+          "reaction": [
+            "Hm. Two words. On a streak."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "She's training you, huh?",
+          "reaction": [
+            "Slowly. Gently. Like a mole to a garden."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P02",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Mabel hums when she cooks. Today I hummed back. Badly.",
+        "She stopped, looked at me, and kept humming. Hm."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so cute.",
+          "reaction": [
+            "It was a disaster. Best disaster."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you hit the note?",
+          "reaction": [
+            "No. The note hit me."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P03",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Tried to say 'I love you' today. Got as far as 'I lo—'.",
+        "Then I sneezed. Mabel said 'bless you.' Hm. Close one."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Haha!",
+          "reaction": [
+            "Not funny. Okay, a little."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You'll get there.",
+          "reaction": [
+            "Hm. Eventually. Possibly by spring."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P04",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Burrow party last night. Stood near the snacks. Mabel dragged me to dance.",
+        "Eight seconds. I counted. Longest eight seconds of my life."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Eight seconds is huge!",
+          "reaction": [
+            "Hm. Don't push it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you enjoy it?",
+          "reaction": [
+            "...Hm. Maybe seven of the eight."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P05",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Neighbor asked my secret to twenty years. I said 'windows.'",
+        "He looked confused. I don't blame him."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's actually a good answer.",
+          "reaction": [
+            "Hm. It's the only answer I've got."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You should've said 'worm pie.'",
+          "reaction": [
+            "Also true. Also a secret."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P06",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Mabel caught a cold. I dug a hot water channel to her bed.",
+        "She said 'this is what I love you looks like.' ...Hm. I felt that one."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Aww, Mr Mole.",
+          "reaction": [
+            "Don't. I'll cry into my glasses."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "She gets you.",
+          "reaction": [
+            "Twenty years. She'd better."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P07",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Forgot to say 'good morning' today. Just once.",
+        "Mabel noticed. She said 'you okay?' ...I'm really going to say it tomorrow."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "She notices everything, huh.",
+          "reaction": [
+            "Hm. That's the trouble. And the point."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Tomorrow's a new chance.",
+          "reaction": [
+            "Hm. Two good mornings. Make up for it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P08",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Twentieth window coming up. Thinking east side. For the sunrise.",
+        "She likes mornings. I like her liking mornings."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so thoughtful.",
+          "reaction": [
+            "Hm. It's a window. But yes."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Can I help dig?",
+          "reaction": [
+            "...Hm. You may hold the lantern."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P09",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Still have that pebble from when we first met. On the windowsill.",
+        "Hm. Don't ask why."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Because you like it?",
+          "reaction": [
+            "...Hm. Maybe."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I'm touched, Mr Mole.",
+          "reaction": [
+            "Don't be. It's a rock. A very good rock."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P10",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Mabel keeps my three sentences in her apron pocket.",
+        "She reads them while she cooks. Thinks I don't know."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so sweet.",
+          "reaction": [
+            "Hm. I'm not supposed to know. Act surprised."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You should write more.",
+          "reaction": [
+            "...Hm. I have six. In a drawer."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P11",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Nice apron. Said it again today. Mabel said 'thank you.'",
+        "No laughing. No crying. Just 'thank you.' Hm. Growth."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Look at you!",
+          "reaction": [
+            "Hm. A man of few words and some compliments."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Was she smiling?",
+          "reaction": [
+            "...Yes. Hm. I'll take it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P12",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Still setting two cups. Even when she's home. Old habit.",
+        "Hm. Good habit."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Good habit.",
+          "reaction": [
+            "Hm. Agreed."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does she notice?",
+          "reaction": [
+            "Every time. Never says anything. Hm."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P13",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. The best love language is a well-ventilated tunnel."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Okay, that's a vibe.",
+          "reaction": [
+            "Thank you. Finally."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Haha, what?",
+          "reaction": [
+            "Hm. I'm serious."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P14",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. Twenty years isn't about big love. It's about not leaving dishes."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so real.",
+          "reaction": [
+            "Hm. Dishes are love."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Okay but also big love.",
+          "reaction": [
+            "Hm. Fine. Both."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P15",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take. Nobody's good at being loved. We just get better."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Wow. Okay.",
+          "reaction": [
+            "Hm. Shouldn't have said it out loud."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Pretty deep, Mr Mole.",
+          "reaction": [
+            "Don't tell Mabel. She'll expect it daily."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P16",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "You look lighter today.",
+        "Good day with your partner?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Really good, actually.",
+          "reaction": [
+            "Hm. Hold on to that."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It's been a long week.",
+          "reaction": [
+            "Hm. Sit. I'll dig a bench."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P17",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Hm. When did you last say something nice to your partner? Out loud?",
+        "No pressure. Asking for a mole."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "This morning, actually.",
+          "reaction": [
+            "Hm. Good. You're better at it than me."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "...Probably too long.",
+          "reaction": [
+            "Hm. Today, then. Short is fine."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P18",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Hm. What's the dumbest thing that makes your partner laugh?",
+        "I'm collecting data."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "My terrible puns.",
+          "reaction": [
+            "Terrible puns. Noted. Hm."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "When I trip over nothing.",
+          "reaction": [
+            "I can't trip on purpose. I've tried."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P19",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Dinner at Mr Mole and Mabel's. Candlelight. Mabel hums.",
+      "lines": [
+        "Hm. She's been humming for three hours. It's your fault.",
+        "Don't stop coming."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I won't.",
+          "reaction": [
+            "Hm. Good."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Smile quietly",
+          "reaction": [
+            "...That works too."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "MM-P20",
+      "friendId": "adventure_friend_mm",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Mr Mole leads you to the top of his tunnel at dusk.",
+      "lines": [
+        "Roof. Mine. You can stand on it now.",
+        "View's not bad."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's beautiful.",
+          "reaction": [
+            "Hm. Thought so. Twenty years, still looking at it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sit down next to him",
+          "reaction": [
+            "...Hm. Nice."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_273",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G01",
+      "name": "Rose Quartz",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 273,
+      "file": "Minerals/Rose Quartz.webp",
+      "key": "burrow/adventure-gifts/v1/273-34364f49572df238.webp",
+      "sha256": "34364f49572df23899d1cf776d3133d7d054f889a41c0bec80aeacfe4352d491",
+      "bytes": 23408
+    },
+    {
+      "id": "adventure_gift_274",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G02",
+      "name": "Citrine Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 274,
+      "file": "Minerals/Citrine Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/274-e3b9ff6bc9d1341a.webp",
+      "sha256": "e3b9ff6bc9d1341ab631d09b4db9f8d870a86eebb5a89a70da2a9c693868b3b6",
+      "bytes": 23500
+    },
+    {
+      "id": "adventure_gift_275",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G03",
+      "name": "Fluorite Cubes",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 275,
+      "file": "Minerals/Fluorite Cubes.webp",
+      "key": "burrow/adventure-gifts/v1/275-3a117c461bae7559.webp",
+      "sha256": "3a117c461bae7559d66d0ef9fe9bfcaa3e593f8b18d6310b8a15a596668b5cde",
+      "bytes": 21918
+    },
+    {
+      "id": "adventure_gift_276",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G04",
+      "name": "Pyrite Cubes",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 276,
+      "file": "Minerals/Pyrite Cubes.webp",
+      "key": "burrow/adventure-gifts/v1/276-c96204d0c3b283d2.webp",
+      "sha256": "c96204d0c3b283d2588ce32dbbdfee93a07706f8a09d990d63040e2945790bad",
+      "bytes": 22992
+    },
+    {
+      "id": "adventure_gift_277",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G05",
+      "name": "Malachite Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 277,
+      "file": "Minerals/Malachite Stone.webp",
+      "key": "burrow/adventure-gifts/v1/277-fd619aa358c7f560.webp",
+      "sha256": "fd619aa358c7f560d22cedd8b0bcdbe0910b38fd4a3a2df14de0f1e79180424e",
+      "bytes": 22400
+    },
+    {
+      "id": "adventure_gift_278",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G06",
+      "name": "Lapis Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 278,
+      "file": "Minerals/Lapis Stone.webp",
+      "key": "burrow/adventure-gifts/v1/278-5a9f5d720ded2528.webp",
+      "sha256": "5a9f5d720ded25286505dc925982aaed159c197ab23dddd84ea5c352132d86e4",
+      "bytes": 22596
+    },
+    {
+      "id": "adventure_gift_279",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G07",
+      "name": "Turquoise Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 279,
+      "file": "Minerals/Turquoise Stone.webp",
+      "key": "burrow/adventure-gifts/v1/279-ab8239b316136be6.webp",
+      "sha256": "ab8239b316136be67eb98db15b8505fdad2d66d60cdb93efd25da55a4526ecc6",
+      "bytes": 22552
+    },
+    {
+      "id": "adventure_gift_280",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G08",
+      "name": "Rhodochrosite Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 280,
+      "file": "Minerals/Rhodochrosite Stone.webp",
+      "key": "burrow/adventure-gifts/v1/280-4a224546a00d1290.webp",
+      "sha256": "4a224546a00d12904e47248a4cd39b3df0c848da247457b46ac6c320730566bc",
+      "bytes": 23212
+    },
+    {
+      "id": "adventure_gift_281",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G09",
+      "name": "Smoky Quartz",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 281,
+      "file": "Minerals/Smoky Quartz.webp",
+      "key": "burrow/adventure-gifts/v1/281-7054b75c6c385f94.webp",
+      "sha256": "7054b75c6c385f94715bee34896948b669c839c56aaea5ec4b1ec6a6890ad20d",
+      "bytes": 23748
+    },
+    {
+      "id": "adventure_gift_282",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G10",
+      "name": "Clear Quartz",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 282,
+      "file": "Minerals/Clear Quartz.webp",
+      "key": "burrow/adventure-gifts/v1/282-0c8d39b023542e20.webp",
+      "sha256": "0c8d39b023542e204663135656b115969b1c1cd9c5e4525df3fd4ab922573723",
+      "bytes": 23182
+    },
+    {
+      "id": "adventure_gift_283",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G11",
+      "name": "Blue Geode",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 283,
+      "file": "Minerals/Blue Geode.webp",
+      "key": "burrow/adventure-gifts/v1/283-b3dbe6d0fe66081d.webp",
+      "sha256": "b3dbe6d0fe66081db258e86fab0b2bb1b6c052917a0a0a3f5df682524712327c",
+      "bytes": 23178
+    },
+    {
+      "id": "adventure_gift_284",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G12",
+      "name": "Amber Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 284,
+      "file": "Minerals/Amber Stone.webp",
+      "key": "burrow/adventure-gifts/v1/284-579acd0b7364e31a.webp",
+      "sha256": "579acd0b7364e31a88979ebfedaa60b252fc1a5e4b8acafb70e668aa319b4293",
+      "bytes": 22766
+    },
+    {
+      "id": "adventure_gift_285",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G13",
+      "name": "Garnet Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 285,
+      "file": "Minerals/Garnet Stone.webp",
+      "key": "burrow/adventure-gifts/v1/285-476399eafb695fe9.webp",
+      "sha256": "476399eafb695fe912b813d24ffd1e859e629b0650e0816d470cd6d137e0d16e",
+      "bytes": 26146
+    },
+    {
+      "id": "adventure_gift_286",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G14",
+      "name": "Amazonite Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 286,
+      "file": "Minerals/Amazonite Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/286-2c532e623eeace2d.webp",
+      "sha256": "2c532e623eeace2d672232ddfd992f9d34884eae7c64f802b81d2b3ceb21df9b",
+      "bytes": 24038
+    },
+    {
+      "id": "adventure_gift_287",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G15",
+      "name": "Labradorite Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 287,
+      "file": "Minerals/Labradorite Stone.webp",
+      "key": "burrow/adventure-gifts/v1/287-bf68f533310c92ef.webp",
+      "sha256": "bf68f533310c92ef7369b3225118558a70ae74c2077b14d8abc8aa630ad6a2a3",
+      "bytes": 23298
+    },
+    {
+      "id": "adventure_gift_288",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G16",
+      "name": "Sulfur Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 288,
+      "file": "Minerals/Sulfur Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/288-0ec08f8ab6b7f486.webp",
+      "sha256": "0ec08f8ab6b7f48681505c187df4f8def15f15a832c848e07086bf182282d1e9",
+      "bytes": 23516
+    },
+    {
+      "id": "adventure_gift_289",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G17",
+      "name": "Amethyst Geode",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 289,
+      "file": "Minerals/Amethyst Geode.webp",
+      "key": "burrow/adventure-gifts/v1/289-e9c8af3a9e333986.webp",
+      "sha256": "e9c8af3a9e3339867f8cefc73988367c01d0cd93ef20a293795832ee96fd0c03",
+      "bytes": 22390
+    },
+    {
+      "id": "adventure_gift_290",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G18",
+      "name": "Aquamarine Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 290,
+      "file": "Minerals/Aquamarine Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/290-997d8886a2b70f13.webp",
+      "sha256": "997d8886a2b70f13c844da2c68d9a60a0bd3dbb610e2c56f51790aa59a4d1c17",
+      "bytes": 22608
+    },
+    {
+      "id": "adventure_gift_291",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G19",
+      "name": "Emerald Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 291,
+      "file": "Minerals/Emerald Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/291-6ceca21fa17acbb8.webp",
+      "sha256": "6ceca21fa17acbb87b28aabbe19201af16ce0670fa7223bc2932f1f43cded87a",
+      "bytes": 23234
+    },
+    {
+      "id": "adventure_gift_292",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G20",
+      "name": "Ruby Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 292,
+      "file": "Minerals/Ruby Stone.webp",
+      "key": "burrow/adventure-gifts/v1/292-804c19a935b8f9cf.webp",
+      "sha256": "804c19a935b8f9cf34f116b310eb79933dd9bd3a50404e4a4e298b77770894e0",
+      "bytes": 21616
+    },
+    {
+      "id": "adventure_gift_293",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G21",
+      "name": "Sapphire Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 293,
+      "file": "Minerals/Sapphire Stone.webp",
+      "key": "burrow/adventure-gifts/v1/293-f69602da147fd7aa.webp",
+      "sha256": "f69602da147fd7aab45030d830f89fc2461aad5433960930508e425d6c8f95bf",
+      "bytes": 22790
+    },
+    {
+      "id": "adventure_gift_294",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G22",
+      "name": "Peridot Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 294,
+      "file": "Minerals/Peridot Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/294-e42e47ffe3c89b95.webp",
+      "sha256": "e42e47ffe3c89b95ec0c1692eef19ce8ca8f08fc409ea972bd40f4b1f0c84a26",
+      "bytes": 23998
+    },
+    {
+      "id": "adventure_gift_295",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G23",
+      "name": "Pink Tourmaline",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 295,
+      "file": "Minerals/Pink Tourmaline.webp",
+      "key": "burrow/adventure-gifts/v1/295-e2182481b7f11aca.webp",
+      "sha256": "e2182481b7f11aca61164058a98ebabc63be995df61614daff5667e52e55682d",
+      "bytes": 23174
+    },
+    {
+      "id": "adventure_gift_296",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G24",
+      "name": "Black Tourmaline",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 296,
+      "file": "Minerals/Black Tourmaline.webp",
+      "key": "burrow/adventure-gifts/v1/296-ce041051c23104bb.webp",
+      "sha256": "ce041051c23104bbf51360073dc211b1351e1a5b08cdc1f5b6b9e80aaa7a08bb",
+      "bytes": 22758
+    },
+    {
+      "id": "adventure_gift_297",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G25",
+      "name": "Azurite Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 297,
+      "file": "Minerals/Azurite Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/297-57650f9f64b2c12f.webp",
+      "sha256": "57650f9f64b2c12f64834096541b530cd5abf464bad0bf511c320db1addcf5a2",
+      "bytes": 23532
+    },
+    {
+      "id": "adventure_gift_298",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G26",
+      "name": "Hematite Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 298,
+      "file": "Minerals/Hematite Stone.webp",
+      "key": "burrow/adventure-gifts/v1/298-e175aafe63447916.webp",
+      "sha256": "e175aafe634479165bde86fda86a09d8048ad5a54cbb632e5d6649def4bfb0bd",
+      "bytes": 24058
+    },
+    {
+      "id": "adventure_gift_299",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G27",
+      "name": "Calcite Cubes",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 299,
+      "file": "Minerals/Calcite Cubes.webp",
+      "key": "burrow/adventure-gifts/v1/299-9d14ae8e55bc161d.webp",
+      "sha256": "9d14ae8e55bc161d829baef9096df94c53a3fd0e5bad2721c9cf0a0d72d0e13c",
+      "bytes": 23518
+    },
+    {
+      "id": "adventure_gift_300",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G28",
+      "name": "Selenite Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 300,
+      "file": "Minerals/Selenite Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/300-a94968a432da6710.webp",
+      "sha256": "a94968a432da671048b457a568294854453eb91ceb6e9ab77e316892b6090885",
+      "bytes": 23898
+    },
+    {
+      "id": "adventure_gift_301",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G29",
+      "name": "Desert Rose",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 301,
+      "file": "Minerals/Desert Rose.webp",
+      "key": "burrow/adventure-gifts/v1/301-c44d8f6ea469b8fe.webp",
+      "sha256": "c44d8f6ea469b8fe273c73e509e7861b5fa064f3aa4e6f65bad896dcbd89e508",
+      "bytes": 24738
+    },
+    {
+      "id": "adventure_gift_302",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G30",
+      "name": "Lepidolite Stone",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 302,
+      "file": "Minerals/Lepidolite Stone.webp",
+      "key": "burrow/adventure-gifts/v1/302-27fda16279773009.webp",
+      "sha256": "27fda1627977300901d88c1ac35fddaee30604c52da61b210654d0e3128303aa",
+      "bytes": 22310
+    },
+    {
+      "id": "adventure_gift_303",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G31",
+      "name": "Aragonite Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 303,
+      "file": "Minerals/Aragonite Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/303-e72e8c6c7c411585.webp",
+      "sha256": "e72e8c6c7c41158504ea6ab07d94a1ffc68c0d9b3b6cb7d83c57404bb610acb2",
+      "bytes": 23128
+    },
+    {
+      "id": "adventure_gift_304",
+      "friendId": "adventure_friend_mm",
+      "giftId": "MM-G32",
+      "name": "Apatite Cluster",
+      "category": "Minerals",
+      "categoryCode": "C09",
+      "sourceId": 304,
+      "file": "Minerals/Apatite Cluster.webp",
+      "key": "burrow/adventure-gifts/v1/304-9658e38a699a0bd0.webp",
+      "sha256": "9658e38a699a0bd0130dcffae7c2e502223e307796630461cc116ee18583ce1c",
+      "bytes": 23454
+    }
+  ]
+}

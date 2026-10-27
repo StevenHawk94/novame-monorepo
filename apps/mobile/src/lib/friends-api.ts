@@ -15,6 +15,8 @@ import { shouldResumeAfterAbsence } from './analysis-refresh-policy';
 import { fetchSubscriptionTier } from './subscription';
 import { cacheTheirItemsFromFeed } from './bags-api';
 import { mergedItemDictionary } from './remote-items';
+import { sessionEpoch, sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
+import { cachedPartnerInvite, rememberPartnerInvite } from './partner-invite-cache';
 
 export interface FriendCard {
   userId: string;
@@ -131,7 +133,7 @@ function readFriendsFeedCache(): FriendsFeedCache | null {
 /** Last good status — the tab paints this instantly, then revalidates. */
 export function getCachedFriends(): FriendsStatus {
   const status = readFriendsStatusCache()?.status ?? EMPTY_STATUS;
-  return withoutExpiredInvitations(status);
+  return withoutExpiredInvitations({ ...status, inviteCode: cachedPartnerInvite() ?? status.inviteCode });
 }
 
 /** Last good Messages feed. */
@@ -171,7 +173,9 @@ function emojiFor(itemId: string): string {
 export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStatus> {
   const today = localDateStr();
   const cached = readFriendsStatusCache();
-  if (!options?.force && cached && cached.localDate === today
+  // A successful-but-incomplete snapshot must not cache an empty invite for
+  // five minutes and defeat onboarding's early code preparation/retry.
+  if (!options?.force && cached?.status.inviteCode && cached.localDate === today
     && Date.now() - cached.fetchedAtMs < FRIENDS_CACHE_MAX_AGE_MS) {
     return Promise.resolve(cached.status);
   }
@@ -187,8 +191,10 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
     }
     return friendsStatusForcedFollowup;
   }
+  const revision = pairingRevision, epoch = sessionEpoch();
   const request = (async () => {
     const { data: sess } = await supabase.auth.getSession();
+    if (revision !== pairingRevision || epoch !== sessionEpoch()) return EMPTY_STATUS;
     const userId = sess.session?.user?.id;
     if (!userId) return EMPTY_STATUS;
 
@@ -200,6 +206,7 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
         pending?: PendingRequest[];
         sent?: SentRequest[];
       }>(`/api/friends/status?userId=${encodeURIComponent(userId)}&localDate=${today}`);
+      if (revision !== pairingRevision || epoch !== sessionEpoch()) return EMPTY_STATUS;
       if (!data.success) return getCachedFriends();
       const status = withoutExpiredInvitations({
         inviteCode: data.inviteCode ?? null,
@@ -210,6 +217,7 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
         pending: data.pending || [],
         sent: data.sent || [],
       });
+      if (status.inviteCode) rememberPartnerInvite(userId, status.inviteCode);
       storage.set(kFriendsStatus.name, JSON.stringify({
         status,
         fetchedAtMs: Date.now(),
@@ -219,16 +227,18 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
     } catch {
       return getCachedFriends();
     }
-  })().finally(() => { friendsStatusRequest = null; });
+  })().finally(() => { if (friendsStatusRequest === request) friendsStatusRequest = null; });
   friendsStatusRequest = request;
   return request;
 }
 
 export async function addFriend(
   code: string,
-  opts?: { relationship?: string; relationshipSince?: string },
+  opts?: { relationship?: string; relationshipSince?: string; deferRefresh?: boolean },
 ): Promise<{ ok: boolean; error?: string; pairedName?: string; partner?: PairingStatus['partner'] }> {
+  const epoch = sessionEpoch();
   const { data: sess } = await supabase.auth.getSession();
+  if (epoch !== sessionEpoch()) return { ok: false, error: 'no_session' };
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'no_session' };
   try {
@@ -241,12 +251,18 @@ export async function addFriend(
       '/api/friends/add',
       { userId, code, relationship: opts?.relationship, relationshipSince: opts?.relationshipSince },
     );
+    if (epoch !== sessionEpoch() || userId !== sessionUserId()) return { ok: false, error: 'no_session' };
     if (data.error) return { ok: false, error: data.error };
-    await Promise.all([
+    if (!data.success) return { ok: false, error: 'network' };
+    const refresh = Promise.all([
       fetchFriends({ force: true }).catch(() => null),
       fetchPairing({ force: true }).catch(() => null),
       fetchSubscriptionTier(userId, { force: true }).catch(() => null),
     ]);
+    // The mutation response already confirms the pair and both profiles.
+    // Cache/entitlement reads must not delay its success presentation.
+    if (!opts?.deferRefresh) await refresh;
+    if (epoch !== sessionEpoch() || userId !== sessionUserId()) return { ok: false, error: 'no_session' };
     return { ok: true, pairedName: data.pairedName, partner: data.partner ?? null };
   } catch (err) {
     const e = (err as { body?: { error?: string } })?.body?.error;
@@ -370,8 +386,10 @@ export function fetchFriendFeedPage(
     }
     return friendsFeedForcedFollowup.then(() => getCachedFriendFeedPage());
   }
+  const revision = pairingRevision, epoch = sessionEpoch();
   const request = (async () => {
     const { data: sess } = await supabase.auth.getSession();
+    if (revision !== pairingRevision || epoch !== sessionEpoch()) return { feed: [], hasMore: false };
     const userId = sess.session?.user?.id;
     if (!userId) return { feed: [], hasMore: false } satisfies FriendFeedPage;
     try {
@@ -384,6 +402,7 @@ export function fetchFriendFeedPage(
       }>(
         `/api/friends/feed?userId=${encodeURIComponent(userId)}${range ? `&start=${range.start}&end=${range.end}` : ''}`,
       );
+      if (revision !== pairingRevision || epoch !== sessionEpoch()) return { feed: [], hasMore: false };
       if (!data.success || !data.feed) return range
         ? { feed: [], hasMore: false }
         : getCachedFriendFeedPage();
@@ -417,7 +436,7 @@ export function fetchFriendFeedPage(
       return getCachedFriendFeedPage();
     }
   })().finally(() => {
-    if (!range) friendsFeedRequest = null;
+    if (!range && revision === pairingRevision && epoch === sessionEpoch()) friendsFeedRequest = null;
   });
   if (!range) friendsFeedRequest = request.then((page) => page.feed);
   return request;
@@ -900,6 +919,7 @@ export async function markSharedBoxRead(friendUserId: string, readThrough: strin
 // ---- 1:1 pairing (2026-07-23 需求: 那个愿意共享生活点滴的人) ----------------
 
 export interface PairingStatus {
+  initiatorId?:string|null;
   paired: boolean;
   partner: { userId: string; displayName: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null;
   relationship?: string | null;
@@ -911,6 +931,39 @@ export interface PairingStatus {
 
 const PAIRING_CACHE_MAX_AGE_MS = 5 * 60_000;
 let pairingRequest: Promise<PairingStatus> | null = null;
+let pairingRevision = 0;
+const pairingStatusListeners = new Set<(status: PairingStatus | null) => void>();
+export function subscribePairingStatus(listener: (status: PairingStatus | null) => void) {
+  pairingStatusListeners.add(listener);
+  return () => { pairingStatusListeners.delete(listener); };
+}
+function publishPairingStatus(status: PairingStatus | null) {
+  for (const listener of pairingStatusListeners) {
+    try { listener(status); } catch { /* One unmounted observer cannot block revocation. */ }
+  }
+}
+/** A realtime pair change revokes the old cache immediately, before any read.
+ * A failed read must never restore the former partner or retain a five-minute TTL. */
+export function invalidatePairingCache() {
+  pairingRevision++;
+  pairingRequest = null;
+  friendsStatusRequest = friendsStatusForcedFollowup = null;
+  friendsFeedRequest = friendsFeedForcedFollowup = null;
+  const status: PairingStatus = { paired: false, partner: null, fetchedAt: 0 };
+  try { storage.set(kPairingStatus.name, JSON.stringify(status)); } catch {}
+  for (const key of [kCommonItems, kFriendsStatus, kFriendsFeed, kSharedBoxState, kConnInsights]) {
+    try { storage.remove(key.name); } catch {}
+  }
+  publishPairingStatus(status);
+  void syncWidgetLatestFriend([], status);
+}
+subscribeSessionIdentity(() => {
+  pairingRevision++;
+  pairingRequest = null;
+  friendsStatusRequest = friendsStatusForcedFollowup = null;
+  friendsFeedRequest = friendsFeedForcedFollowup = null;
+  publishPairingStatus(null);
+});
 
 export function isPairingCacheStale(maxAgeMs = 5 * 60_000): boolean {
   const cached = getCachedPairing();
@@ -934,8 +987,11 @@ export function fetchPairing(options?: { force?: boolean }): Promise<PairingStat
     return Promise.resolve(cached);
   }
   if (pairingRequest) return pairingRequest;
+  const revision = pairingRevision, epoch = sessionEpoch();
+  const current = () => revision === pairingRevision && epoch === sessionEpoch();
   const request = (async () => {
     const { data: sess } = await supabase.auth.getSession();
+    if (!current()) return getCachedPairing() ?? { paired: false, partner: null };
     const userId = sess.session?.user?.id;
     if (!userId) {
       const status = { paired: false, partner: null } satisfies PairingStatus;
@@ -946,12 +1002,14 @@ export function fetchPairing(options?: { force?: boolean }): Promise<PairingStat
       const data = await apiClient.get<{ success?: boolean } & PairingStatus>(
         `/api/friends/pair?userId=${encodeURIComponent(userId)}`,
       );
+      if (!current() || userId !== sessionUserId()) return getCachedPairing() ?? { paired: false, partner: null };
       if (!data.success) {
         const status = getCachedPairing() ?? { paired: false, partner: null };
         void syncWidgetLatestFriend(getCachedFriendFeed(), status);
         return status;
       }
       const status: PairingStatus = {
+        initiatorId:data.initiatorId??null,
         paired: !!data.paired,
         partner: data.partner ?? null,
         relationship: data.relationship ?? null,
@@ -961,6 +1019,7 @@ export function fetchPairing(options?: { force?: boolean }): Promise<PairingStat
         fetchedAt: Date.now(),
       };
       storage.set(kPairingStatus.name, JSON.stringify(status));
+      publishPairingStatus(status);
       void syncWidgetLatestFriend(getCachedFriendFeed(), status);
       return status;
     } catch {
@@ -968,7 +1027,7 @@ export function fetchPairing(options?: { force?: boolean }): Promise<PairingStat
       void syncWidgetLatestFriend(getCachedFriendFeed(), status);
       return status;
     }
-  })().finally(() => { pairingRequest = null; });
+  })().finally(() => { if (pairingRequest === request) pairingRequest = null; });
   pairingRequest = request;
   return request;
 }
@@ -1007,23 +1066,15 @@ export async function setPairing(
 }
 
 export async function unsetPairing(): Promise<boolean> {
+  const epoch = sessionEpoch();
   const { data: sess } = await supabase.auth.getSession();
+  if (epoch !== sessionEpoch()) return false;
   const userId = sess.session?.user?.id;
   if (!userId) return false;
   try {
     const data = await apiClient.delete<{ success?: boolean }>('/api/friends/pair', { userId });
-    if (!data.success) return false;
-    storage.set(kPairingStatus.name, JSON.stringify({
-      paired: false,
-      partner: null,
-      fetchedAt: Date.now(),
-    } satisfies PairingStatus));
-    storage.remove(kCommonItems.name);
-    storage.remove(kFriendsStatus.name);
-    storage.remove(kFriendsFeed.name);
-    storage.remove(kSharedBoxState.name);
-    storage.remove(kConnInsights.name);
-    void syncWidgetLatestFriend([], { paired: false, partner: null });
+    if (!data.success || epoch !== sessionEpoch() || userId !== sessionUserId()) return false;
+    invalidatePairingCache();
     return true;
   } catch {
     return false;

@@ -1,282 +1,172 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PanResponder, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { Image as ExpoImage, resolveBurrowImageSource } from './burrow-image';
-import { Canvas, Fill, ImageShader, Shader, Skia, useCanvasRef, useImage, type SkImage } from '@shopify/react-native-skia';
-import Animated, { cancelAnimation, useAnimatedStyle, useDerivedValue, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Canvas, ClipOp, Fill, Group, ImageShader, Path, Shader, Skia, useImage, type SkImage } from '@shopify/react-native-skia';
+import { GestureDetector } from 'react-native-gesture-handler';
+import { useDerivedValue, type SharedValue,type FrameInfo } from 'react-native-reanimated';
+import type {TouchQuality,TouchEvent} from '@novame/domain';
+import { resolveBurrowImageSource } from './burrow-image';
 import type { BurrowArtAsset } from '@/lib/burrow-art-assets';
 import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
-import { dollFaceBounds, dollFaceRect } from '@/lib/burrow-doll-face';
-import { haptics } from '@/lib/haptics';
+import { dollFaceBounds } from '@/lib/burrow-doll-face';
 import { subscribeSessionIdentity } from '@/lib/session-lifecycle';
-import { clampToyPull, TOY_TAP_SLOP, TOY_TEXTURE_PADDING, TOY_WARP_SKSL } from '@/lib/burrow-toy-warp';
-import { RoomPhoto, useRoomPhotoUri } from './room-photo';
-import { FloatingHeart, InteractiveDoll, type DollAction, type HeartParticle } from './interactive-doll';
+import { TOY_TEXTURE_PADDING, TOY_WARP_SKSL } from '@/lib/burrow-toy-warp';
+import { toyShaderUniforms, type ToyMotion } from '@/lib/squishy-toy-motion';
+import { useSquishyToy, type ToyMotionHandle } from '@/lib/use-squishy-toy';
+import { useRoomPhotoUri } from '@/lib/use-room-photo-uri';
+import { NativeDollSurface, type DollAction } from './interactive-doll';
+import { SquishyToyControls } from './squishy-toy-controls';
+import {plushieFaceMask} from '@/lib/plushie-face-mask';
 
-type DollPhoto = MajorUpdateBootstrap['roomPhotos'][number] | undefined;
-type Texture = { key: string; image: SkImage };
-type CircleSpec = { x: number; y: number; radius: number };
+type DollPhoto=MajorUpdateBootstrap['roomPhotos'][number]|undefined;
+type Texture={key:string;image:SkImage};
+const textureCache=new Map<string,SkImage>();
+subscribeSessionIdentity(()=>{textureCache.clear();});
+const warpEffect=Skia.RuntimeEffect.Make(TOY_WARP_SKSL);
+const heartPath=Skia.Path.MakeFromSVGString('M12 21 C10 19 0 12 0 6 C0 -1 9 -2 12 4 C15 -2 24 -1 24 6 C24 12 14 19 12 21 Z');
 
-// Extra transparent pixels must exist in the
-// *source texture*, not just the View, or pulled silhouettes get flat cut edges.
-const TEXTURE_PADDING = TOY_TEXTURE_PADDING;
-const textureCache = new Map<string, SkImage>();
-const verifiedCanvasKeys = new Set<string>();
-subscribeSessionIdentity(() => { textureCache.clear(); verifiedCanvasKeys.clear(); });
-
-const warpEffect = Skia.RuntimeEffect.Make(TOY_WARP_SKSL);
-
-function composeTexture(costume: SkImage, face: SkImage | null, asset: BurrowArtAsset): SkImage | null {
+function composeTexture(costume:SkImage,face:SkImage|null,asset:BurrowArtAsset,padding:number):SkImage|null {
   try {
-    const width = asset.width + TEXTURE_PADDING * 2;
-    const height = asset.height + TEXTURE_PADDING * 2;
-    const surface = Skia.Surface.MakeOffscreen(width, height);
-    if (!surface) return null;
-    const canvas = surface.getCanvas();
-    canvas.clear(Skia.Color('transparent'));
-    if (face) {
-      const [left, top, right, bottom] = dollFaceBounds(asset);
-      const boxWidth = right - left;
-      const boxHeight = bottom - top;
-      const aspect = boxWidth / boxHeight;
-      const sourceWidth = Math.min(face.width(), face.height() * aspect);
-      const sourceHeight = sourceWidth / aspect;
-      const crop = { x: (face.width() - sourceWidth) / 2, y: (face.height() - sourceHeight) / 2,
-        width: sourceWidth, height: sourceHeight };
-      const destination = { x: TEXTURE_PADDING + left, y: TEXTURE_PADDING + top, width: boxWidth, height: boxHeight };
-      canvas.drawImageRect(face, crop, destination, Skia.Paint());
+    const width=asset.width+padding*2,height=asset.height+padding*2;
+    const resolution=Math.min(1,1024/Math.max(width,height));
+    // Compose once on a bounded CPU surface. No live-view/Metal readback is
+    // needed, including while a native-stack transition destroys the drawable.
+    const surface=Skia.Surface.Make(Math.ceil(width*resolution),Math.ceil(height*resolution));
+    if(!surface)return null;
+    const canvas=surface.getCanvas();canvas.clear(Skia.Color('transparent'));canvas.scale(resolution,resolution);
+    if(face) {
+      const [left,top,right,bottom]=dollFaceBounds(asset),aspect=(right-left)/(bottom-top);
+      const mask=plushieFaceMask(asset),clip=mask?Skia.Path.MakeFromSVGString(mask.path):null;
+      canvas.save();
+      if(clip){clip.offset(padding+left,padding+top);canvas.clipPath(clip,ClipOp.Intersect,true);}
+      const sourceWidth=Math.min(face.width(),face.height()*aspect),sourceHeight=sourceWidth/aspect;
+      canvas.drawImageRect(face,{x:(face.width()-sourceWidth)/2,y:(face.height()-sourceHeight)/2,width:sourceWidth,height:sourceHeight},
+        {x:padding+left,y:padding+top,width:right-left,height:bottom-top},Skia.Paint());
+      canvas.restore();
     }
-    // Photo and costume are baked onto ONE offscreen surface. The shader never
-    // receives separate face/art layers, so dragging the head cannot misalign it.
-    canvas.drawImage(costume, TEXTURE_PADDING, TEXTURE_PADDING);
-    surface.flush();
-    // MakeOffscreen may yield a GPU texture owned by the JS-thread context.
-    // The Canvas renders on another thread, so hand it a non-texture image.
+    canvas.drawImage(costume,padding,padding);surface.flush();
+    // One composition per photo revision, not per touch / React render.
     return surface.makeImageSnapshot().makeNonTextureImage();
-  } catch {
-    // Keep the static Toy usable if this native device cannot allocate a GPU
-    // surface; diagnose animation quality on a physical device, not simulator.
-    return null;
-  }
+  }catch{return null;}
 }
 
-export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluence, onInteract }: {
-  asset: BurrowArtAsset;
-  photo?: DollPhoto;
-  size: number;
-  artStyle: StyleProp<ViewStyle>;
-  action?: DollAction;
-  showInfluence: boolean;
-  onInteract: () => void;
-}) {
-  const photoUri = useRoomPhotoUri(photo);
-  const costumeSource = resolveBurrowImageSource(asset.source);
-  const costume = useImage(typeof costumeSource === 'number' ? costumeSource :
-    costumeSource && typeof costumeSource === 'object' && 'uri' in costumeSource ? costumeSource.uri : null);
-  const face = useImage(photoUri);
-  const key = `${String(asset.source)}:${photo?.id ?? 'empty'}:${photo?.updatedAt ?? ''}`;
-  const [texture, setTexture] = useState<Texture | null>(() => {
-    const cached = textureCache.get(key);
-    return cached ? { key, image: cached } : null;
+function ToyHeart({state,index,scale}:{state:SharedValue<ToyMotion>;index:number;scale:number}) {
+  const opacity=useDerivedValue(()=>{
+    const p=state.value.particles[index],t=p.age/p.life;
+    return t<0||t>=1?0:Math.min(1,t*8,(1-t)*4);
   });
-  const readyTexture = texture?.key === key ? texture.image : textureCache.get(key) ?? null;
-  const canvasRef = useCanvasRef();
-  const [canvasState, setCanvasState] = useState<{key:string; status:'pending'|'verified'|'unavailable'}>(() => ({
-    key, status: verifiedCanvasKeys.has(key) ? 'verified' : 'pending',
-  }));
-  const warpVerified = canvasState.key === key && canvasState.status === 'verified';
-  const warpUnavailable = canvasState.key === key && canvasState.status === 'unavailable';
-  const flattened = StyleSheet.flatten(artStyle);
-  const artLeft = typeof flattened?.left === 'number' ? flattened.left : 0;
-  const artTop = typeof flattened?.top === 'number' ? flattened.top : 0;
-  const artWidth = typeof flattened?.width === 'number' ? flattened.width : size;
-  const scale = artWidth / asset.width;
-  const canvasLeft = artLeft - TEXTURE_PADDING * scale;
-  const canvasTop = artTop - TEXTURE_PADDING * scale;
-  const canvasWidth = (asset.width + TEXTURE_PADDING * 2) * scale;
-  const canvasHeight = (asset.height + TEXTURE_PADDING * 2) * scale;
-  const faceBounds = dollFaceBounds(asset);
-  const headWidth = (faceBounds[2] - faceBounds[0]) * scale;
-  const defaultCircle = {
-    x: (TEXTURE_PADDING + (faceBounds[0] + faceBounds[2]) / 2) * scale,
-    y: (TEXTURE_PADDING + (faceBounds[1] + faceBounds[3]) / 2) * scale,
-    radius: headWidth * .55,
-  };
-  const [circle, setCircle] = useState<CircleSpec>(defaultCircle);
-  const [hearts, setHearts] = useState<HeartParticle[]>([]);
-  const heartId = useRef(0);
-  const touched = useRef(false);
-  const moved = useRef(false);
-  const centerX = useSharedValue(defaultCircle.x);
-  const centerY = useSharedValue(defaultCircle.y);
-  const radius = useSharedValue(defaultCircle.radius);
-  const pullX = useSharedValue(0);
-  const pullY = useSharedValue(0);
-  const actionKind = useSharedValue(0);
-  const impact = useSharedValue(0);
-  const wobble = useSharedValue(0);
-  const shakeX = useSharedValue(0);
-  const shakeY = useSharedValue(0);
-  const motionStyle = useAnimatedStyle(() => ({ transform: [
-    { translateX: shakeX.value }, { translateY: shakeY.value }, { rotate: `${wobble.value * 9}deg` },
-  ] }));
-  const uniforms = useDerivedValue(() => ({
-    center: [centerX.value, centerY.value],
-    pull: [pullX.value, pullY.value],
-    radius: radius.value,
-    action: actionKind.value,
-    impact: impact.value,
-    bodyCenter: [(TEXTURE_PADDING + asset.width / 2) * scale, (TEXTURE_PADDING + asset.height * .67) * scale],
-    headBottom: (TEXTURE_PADDING + faceBounds[3] + asset.height * .035) * scale,
-    headBlend: asset.height * .05 * scale,
-  }));
+  const transform=useDerivedValue(()=>{
+    const p=state.value.particles[index],t=Math.max(0,Math.min(1,p.age/p.life));
+    return [{translateX:(p.x+p.dx*t)*scale},{translateY:(p.y+p.dy*t)*scale},{scale:scale*(1.2+.4*Math.sin(t*Math.PI))}];
+  });
+  return heartPath?<Group opacity={opacity} transform={transform}><Path path={heartPath} color="#F16A82"/></Group>:null;
+}
 
-  useEffect(() => {
-    const cached = textureCache.get(key);
-    if (cached) { setTexture({ key, image: cached }); return; }
-    if (!costume || (photo && !face)) return;
-    const composite = composeTexture(costume, face, asset);
-    if (!composite) {
-      setCanvasState({ key, status: 'unavailable' });
-      return;
-    }
-    textureCache.set(key, composite);
-    if (textureCache.size > 8) textureCache.delete(textureCache.keys().next().value!);
-    setTexture({ key, image: composite });
-  }, [key, costume, face, asset, photo]);
-
-  useEffect(() => {
-    if (!warpEffect) { setCanvasState({key,status:'unavailable'}); return; }
-    if (!readyTexture) return;
-    if (verifiedCanvasKeys.has(key)) { setCanvasState({key,status:'verified'}); return; }
-    let live = true;
-    let timer: ReturnType<typeof setTimeout>;
-    const verify = async (attempt: number) => {
-      try {
-        // A compiled shader is not proof that this device actually drew it.
-        // Keep the normal costume visible until a rendered body pixel exists.
-        const x = Math.round((TEXTURE_PADDING + asset.width * .5) * scale);
-        const y = Math.round((TEXTURE_PADDING + asset.height * .7) * scale);
-        const snapshot = await canvasRef.current?.makeImageSnapshotAsync({x:x-6,y:y-6,width:12,height:12});
-        const pixels = snapshot?.readPixels();
-        if (!live) return;
-        if (pixels && Array.from({length:Math.floor(pixels.length/4)},(_,index)=>pixels[index*4+3]).some(alpha=>alpha>0)) {
-          verifiedCanvasKeys.add(key);
-          setCanvasState({key,status:'verified'});
-          return;
-        }
-      } catch { /* The static costume remains visible on unsupported GPUs. */ }
-      if (!live) return;
-      if (attempt < 3) timer = setTimeout(() => void verify(attempt + 1), 180);
-      else setCanvasState({key,status:'unavailable'});
-    };
-    timer = setTimeout(() => void verify(1), 120);
-    return () => { live = false; clearTimeout(timer); };
-  }, [key, readyTexture, warpEffect, asset, scale, canvasRef]);
-
-  const emitHearts = useCallback((count: number) => {
-    setHearts(previous => [...previous.slice(-16), ...Array.from({ length: count }, (_, index) => ({
-      id: heartId.current++, drift: (index - count / 2) * size * .045,
-      rise: size * (.25 + index * .04), delay: index * 45,
-      size: Math.max(17, size * .052), originX: size * .5, originY: size * .27,
-    }))]);
-  }, [size]);
-  const removeHeart = useCallback((id: number) => setHearts(previous => previous.filter(heart => heart.id !== id)), []);
-  useEffect(() => {
-    if (!action?.token || warpUnavailable) return; // Fallback owns its own feedback.
-    pullX.value = 0; pullY.value = 0;
-    wobble.value = 0; shakeX.value = 0; shakeY.value = 0;
-    actionKind.value = action.kind === 'squeeze' ? 1 : 2;
-    impact.value = 0;
-    impact.value = action.kind === 'squeeze'
-      ? withSequence(withTiming(1, { duration: 240 }), withTiming(1, { duration: 110 }), withSpring(0, { damping: 12, stiffness: 140 }))
-      : withSequence(withTiming(1, { duration: 55 }), withTiming(1, { duration: 35 }), withSpring(0, { damping: 13, stiffness: 220 }));
-    if (action.kind === 'punch') {
-      const jolt = size * .018;
-      shakeX.value = withSequence(withTiming(-jolt, { duration: 35 }), withTiming(jolt, { duration: 45 }),
-        withTiming(-jolt * .65, { duration: 45 }), withTiming(jolt * .35, { duration: 50 }), withTiming(0, { duration: 70 }));
-      shakeY.value = withSequence(withTiming(jolt * .6, { duration: 45 }), withTiming(-jolt * .25, { duration: 55 }), withTiming(0, { duration: 130 }));
-    }
-    emitHearts(action.kind === 'squeeze' ? 5 : 7);
-    void (action.kind === 'squeeze' ? haptics.light() : haptics.medium());
-  }, [action?.token, warpUnavailable]);
-
-  useEffect(() => () => {
-    [pullX, pullY, impact, wobble, shakeX, shakeY].forEach(cancelAnimation);
-  }, [pullX, pullY, impact, wobble, shakeX, shakeY]);
-
-  const responder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: event => {
-      touched.current = true;
-      moved.current = false;
-      impact.value = 0; wobble.value = 0; shakeX.value = 0; shakeY.value = 0;
-      const x = event.nativeEvent.locationX - canvasLeft;
-      const y = event.nativeEvent.locationY - canvasTop;
-      const assetY = y / scale - TEXTURE_PADDING;
-      // A face touch gets a head-sized influence, a foot touch gets a smaller
-      // circle. The body and opposite foot remain outside that circle.
-      const nextRadius = assetY > 470 ? 75 * scale : assetY < 360 ? headWidth * .55 : 95 * scale;
-      centerX.value = x; centerY.value = y; radius.value = nextRadius;
-      pullX.value = 0; pullY.value = 0; actionKind.value = 0;
-      setCircle({ x, y, radius: nextRadius });
-    },
-    onPanResponderMove: (_event, gesture) => {
-      if (Math.hypot(gesture.dx, gesture.dy) > TOY_TAP_SLOP) moved.current = true;
-      // Safety valve: no more than 15% of head width. This is a partner's
-      // photo; deliberately extreme face distortion stops feeling affectionate.
-      const clamped = clampToyPull(gesture.dx, gesture.dy, headWidth);
-      pullX.value = clamped.x;
-      pullY.value = clamped.y;
-    },
-    onPanResponderRelease: () => {
-      pullX.value = withSpring(0, { damping: 15, stiffness: 180 });
-      pullY.value = withSpring(0, { damping: 15, stiffness: 180 });
-      if (touched.current) {
-        if (!moved.current) wobble.value = withSequence(
-          withTiming(.9, { duration: 75 }), withTiming(-.7, { duration: 110 }),
-          withTiming(.45, { duration: 100 }), withTiming(-.2, { duration: 90 }), withTiming(0, { duration: 100 }));
-        emitHearts(5); void haptics.light(); onInteract();
-      }
-      touched.current = false;
-    },
-    onPanResponderTerminate: () => {
-      touched.current = false;
-      pullX.value = withSpring(0); pullY.value = withSpring(0);
-    },
-  }), [asset, canvasLeft, canvasTop, headWidth, onInteract, scale, emitHearts]);
-
-  if (warpUnavailable) return <InteractiveDoll asset={asset} photo={photo} style={{width:size,height:size,alignSelf:'center'}}
-    artStyle={artStyle} action={action} onInteract={onInteract}/>;
-
-  return <View style={{ width: size, height: size, alignSelf: 'center', overflow: 'visible' }} {...responder.panHandlers}>
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, motionStyle]}>
-    {readyTexture && warpEffect ? <View pointerEvents="none" style={{ position: 'absolute', left: canvasLeft, top: canvasTop,
-      width: canvasWidth, height: canvasHeight }}>
-      <Canvas ref={canvasRef} style={{ width: canvasWidth, height: canvasHeight }}>
-        <Fill><Shader source={warpEffect} uniforms={uniforms}>
-          <ImageShader image={readyTexture} fit="fill" rect={{ x: 0, y: 0, width: canvasWidth, height: canvasHeight }} />
-        </Shader></Fill>
+function ToyCanvas({state,texture,left,top,width,height,scale,onLayout}:{
+  state:SharedValue<ToyMotion>;texture:SkImage;
+  left:number;top:number;width:number;height:number;scale:number;
+  onLayout:()=>void;
+}) {
+  const uniforms=useDerivedValue(()=>toyShaderUniforms(state.value,scale));
+  // The layout is already known. Skia 2.2's onSize mapper dereferences a null
+  // native view after dismissal; neither onSize nor snapshot polling is needed
+  // to render an already decoded, composed texture at these fixed dimensions.
+  return <View pointerEvents="none" onLayout={onLayout} style={{position:'absolute',left,top,width,height}}>
+      <Canvas style={{width,height}}>
+        <Fill><Shader source={warpEffect!} uniforms={uniforms}><ImageShader image={texture} fit="fill" rect={{x:0,y:0,width,height}}/></Shader></Fill>
       </Canvas>
-      {showInfluence && <Svg pointerEvents="none" width={canvasWidth} height={canvasHeight} style={StyleSheet.absoluteFillObject}>
-        <Circle cx={circle.x} cy={circle.y} r={circle.radius} fill="rgba(255,255,255,0.08)"
-          stroke="#F16A82" strokeWidth={1.5} strokeDasharray="6 5" />
-      </Svg>}
-    </View> : null}
-    {!warpVerified && <View pointerEvents="none" style={artStyle}>
-      <View style={[styles.photo, dollFaceRect(asset)]}>{photo ? <RoomPhoto photo={photo} /> : <View style={styles.emptyFace} />}</View>
-      <ExpoImage source={asset.source} contentFit="fill" style={styles.fill} />
-    </View>}
-    </Animated.View>
-    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-      {hearts.map(heart => <FloatingHeart key={heart.id} particle={heart} onDone={removeHeart} />)}
-    </View>
+    </View>;
+}
+
+/** Particles must not share the costume's bounded shader viewport. Extending
+ * this cheap transparent layer preserves the body texture/warp dimensions and
+ * lets the complete two-second flight pass above the instruction text. */
+function ToyHeartLayer({state,left,top,width,height,scale}:{
+  state:SharedValue<ToyMotion>;left:number;top:number;width:number;height:number;scale:number;
+}){
+  const rise=Math.ceil(240*scale);
+  return <View testID="plushie-heart-overlay" pointerEvents="none" style={{position:'absolute',left,top:top-rise,width,height:height+rise,zIndex:2}}>
+    <Canvas style={{width,height:height+rise}}>
+      <Group transform={[{translateY:rise}]}>
+        {Array.from({length:12},(_,index)=><ToyHeart key={index} state={state} index={index} scale={scale}/>)}
+      </Group>
+    </Canvas>
   </View>;
 }
 
-const styles = StyleSheet.create({
-  fill: { width: '100%', height: '100%' },
-  photo: { position: 'absolute', overflow: 'hidden' },
-  emptyFace: { flex: 1, backgroundColor: '#FFF9F0' },
-});
+export function LocalizedToy({asset,photo,size,artStyle,action,onInteract,onControllerReady,showActions=false,interactionScope,fillStage=false,onStageLayout,
+ quality='full',onInput,inputStart,inputOffset,onFrame,frameEnabled,readOnly=false,hideHearts=false,retainTexture=true,actionsStyle,containerStyle}:{
+  asset:BurrowArtAsset;photo?:DollPhoto;size:number;artStyle:StyleProp<ViewStyle>;action?:DollAction;
+  onInteract:()=>void;onControllerReady?:(handle:ToyMotionHandle|null)=>void;
+  showActions?:boolean;
+  fillStage?:boolean;
+  onStageLayout?:(height:number)=>void;
+  interactionScope?:string;
+  quality?:TouchQuality;onInput?:(batch:TouchEvent[])=>void;inputStart?:SharedValue<number>;
+  inputOffset?:SharedValue<number>;actionsStyle?:StyleProp<ViewStyle>;containerStyle?:StyleProp<ViewStyle>;
+  onFrame?:(motion:ToyMotion,frame:FrameInfo)=>void|boolean;readOnly?:boolean;hideHearts?:boolean;retainTexture?:boolean;
+  frameEnabled?:SharedValue<boolean>;
+}) {
+  const photoUri=useRoomPhotoUri(photo),costumeSource=resolveBurrowImageSource(asset.source);
+  const costume=useImage(quality!=='full'?null:typeof costumeSource==='number'?costumeSource:
+    costumeSource&&typeof costumeSource==='object'&&'uri' in costumeSource?costumeSource.uri:null);
+  const face=useImage(quality==='full'?photoUri:null),faceBounds=dollFaceBounds(asset);
+  const padding=Math.max(TOY_TEXTURE_PADDING,Math.ceil(asset.height*.18+(faceBounds[2]-faceBounds[0])*.18));
+  const key=`squishy-v4-face-mask:${JSON.stringify(asset.source)}:${asset.width}:${asset.height}:${padding}:${photo?.id??'empty'}:${photo?.updatedAt??''}`;
+  const [texture,setTexture]=useState<Texture|null>(()=>{
+    const image=retainTexture?textureCache.get(key):null;return image?{key,image}:null;
+  });
+  const readyTexture=texture?.key===key?texture.image:retainTexture?textureCache.get(key)??null:null;
+  const [paintedKey,setPaintedKey]=useState<string|null>(null);
+  const paint=useRef<{key:string;live:boolean;frame:number|null}>({key,live:true,frame:null});
+  // A composed/cached texture is not a painted native Canvas. Keep the
+  // predecoded image underneath through native layout and two paint frames;
+  // replacing the native view as soon as useImage resolves exposed a blank.
+  paint.current.key=key;
+  useLayoutEffect(()=>{
+    paint.current.live=true;
+    return()=>{paint.current.live=false;if(paint.current.frame!==null)cancelAnimationFrame(paint.current.frame);};
+  },[key]);
+  const onCanvasLayout=useCallback(()=>{
+    if(!paint.current.live||paint.current.key!==key)return;
+    if(paint.current.frame!==null)cancelAnimationFrame(paint.current.frame);
+    paint.current.frame=requestAnimationFrame(()=>{
+      paint.current.frame=requestAnimationFrame(()=>{
+        paint.current.frame=null;
+        if(paint.current.live&&paint.current.key===key)setPaintedKey(key);
+      });
+    });
+  },[key]);
+  const [unavailableKey,setUnavailableKey]=useState<string|null>(null);
+  const warpUnavailable=quality!=='full'||!warpEffect||unavailableKey===key;
+  const flattened=StyleSheet.flatten(artStyle);
+  const artLeft=typeof flattened?.left==='number'?flattened.left:0,artTop=typeof flattened?.top==='number'?flattened.top:0;
+  const artWidth=typeof flattened?.width==='number'?flattened.width:size,scale=artWidth/asset.width;
+  const canvasLeft=artLeft-padding*scale,canvasTop=artTop-padding*scale;
+  const canvasWidth=(asset.width+padding*2)*scale,canvasHeight=(asset.height+padding*2)*scale;
+  const geometry=useMemo(()=>({baseX:padding+(asset.bounds[0]+asset.bounds[2])/2,baseY:padding+asset.bounds[3],
+    headX:padding+(faceBounds[0]+faceBounds[2])/2,headTop:padding+asset.bounds[1],
+    headWidth:faceBounds[2]-faceBounds[0],scale,bounds:asset.bounds.map(n=>n+padding)}),
+    [asset.bounds[0],asset.bounds[1],asset.bounds[2],asset.bounds[3],padding,scale,faceBounds[0],faceBounds[2]]);
+  const {state,gesture,handle,performHit,record,identity}=useSquishyToy({geometry,left:canvasLeft,top:canvasTop,onInteract,onControllerReady,action,interactionScope,onInput,inputStart,inputOffset,onFrame,frameEnabled,readOnly});
+
+  useEffect(()=>{
+    if(quality!=='full'){setTexture(null);return;}
+    const cached=retainTexture?textureCache.get(key):null;if(cached){setTexture({key,image:cached});return;}
+    if(!costume||(photo&&!face))return;
+    const composite=composeTexture(costume,photo?face:null,asset,padding);
+    if(!composite){setUnavailableKey(key);return;}
+    if(retainTexture)textureCache.set(key,composite);
+    if(textureCache.size>4){const old=textureCache.keys().next().value!;textureCache.delete(old);}
+    setTexture({key,image:composite});
+  },[key,costume,face,asset,padding,!!photo,quality,retainTexture]);
+
+  const stage=<GestureDetector gesture={gesture}><View collapsable={false} style={{width:size,height:size,alignSelf:'center',overflow:'visible'}}>
+    {(warpUnavailable||!readyTexture||paintedKey!==key)&&<NativeDollSurface asset={asset} photo={photo} artStyle={artStyle} state={state} padding={padding}/>}
+    {!warpUnavailable&&readyTexture&&<ToyCanvas key={key} state={state} texture={readyTexture}
+      left={canvasLeft} top={canvasTop} width={canvasWidth} height={canvasHeight} scale={scale} onLayout={onCanvasLayout}/>}
+    {!hideHearts&&<ToyHeartLayer state={state} left={canvasLeft} top={canvasTop} width={canvasWidth} height={canvasHeight} scale={scale}/>}
+  </View></GestureDetector>;
+  return <View style={containerStyle?[fillStage?{flex:1,overflow:'visible' as const}:undefined,containerStyle]:fillStage?{flex:1,overflow:'visible'}:undefined}>{fillStage?<View testID="plushie-centered-stage" onLayout={event=>onStageLayout?.(event.nativeEvent.layout.height)} style={{flex:1,justifyContent:'center',overflow:'visible'}}>{stage}</View>:stage}
+    {showActions&&(actionsStyle?<View style={actionsStyle}><SquishyToyControls onHit={performHit} onRecord={record} handle={handle} identity={identity} bodyGesture={gesture}/></View>:
+     <SquishyToyControls onHit={performHit} onRecord={record} handle={handle} identity={identity} bodyGesture={gesture}/>)}</View>;
+}

@@ -26,7 +26,7 @@ const ALLOWED_ORIGINS = [
 ]
 
 const ALLOWED_METHODS = 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
-const ALLOWED_HEADERS = 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+const ALLOWED_HEADERS = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Burrow-Catalog, X-Burrow-Actor, X-Burrow-Rooms, X-Burrow-Journal, X-Burrow-Economy, X-Burrow-Bunny, X-Burrow-Adventure'
 const MAX_AGE = '86400' // 24 hours — browsers cache the preflight response
 
 function corsHeaders(origin: string | null): Record<string, string> {

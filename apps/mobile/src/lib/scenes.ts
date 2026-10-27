@@ -4,8 +4,8 @@
  * Mirrors outfits.ts: the catalog lives in R2's video-manifest.json under
  * `scenes` (name/price/plusOnly + the Maps/<Name>.webp home background and
  * Maps/<Name>-Small.webp grid thumb), so new scenes ship without an app
- * release. The free default (Mushroom Wood) is bundled and NOT in the
- * manifest — any legacy/unknown selection value falls back to it.
+ * release. Retired bundled default artwork is no longer shipped. A default
+ * or unknown selection uses the legacy screen's own background color.
  *
  * Selection reuses cosmetics-store's sceneId slot (values are scene keys
  * now; old 'scene1'..'scene6' values read as the default). Ownership is
@@ -20,10 +20,6 @@ import { androidR2ImageSource } from './android-r2-file-cache';
 const R2_BASE = 'https://media.novameapp.com';
 
 export const DEFAULT_SCENE_KEY = 'mushroom-wood';
-
-// Bundled default scene art (free): home background + Maps grid thumb.
-export const DEFAULT_SCENE_BG = require('../../assets/Background/Mushroom-Wood.webp');
-export const DEFAULT_SCENE_THUMB = require('../../assets/Background/Mushroom-Wood-Small.webp');
 
 export interface SceneDef {
   key: string;
@@ -71,14 +67,14 @@ export async function fetchSceneCatalog(options?: { force?: boolean }): Promise<
 /**
  * The Home background source for the currently selected scene. iOS keeps its
  * established remote source. Android exposes a verified local file only and
- * uses the bundled default while its one-lane worker fills that file.
+ * leaves the screen's background color visible while its worker fills that file.
  */
-export function getHomeSceneSource(): number | { uri: string } {
+export function getHomeSceneSource(): { uri: string } | undefined {
   const remoteUrl = getHomeSceneRemoteUrl();
-  return remoteUrl ? androidR2ImageSource(remoteUrl) ?? DEFAULT_SCENE_BG : DEFAULT_SCENE_BG;
+  return remoteUrl ? androidR2ImageSource(remoteUrl) ?? undefined : undefined;
 }
 
-/** Canonical R2 URL for queueing/invalidation; null means bundled default. */
+/** Canonical R2 URL for queueing/invalidation; null means no scene image. */
 export function getHomeSceneRemoteUrl(): string | null {
   const selected = getSelectedScene();
   if (!selected || selected === DEFAULT_SCENE_KEY || /^scene\d+$/.test(selected)) {

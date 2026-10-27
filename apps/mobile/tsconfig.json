@@ -4,6 +4,8 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
+      "react": ["./node_modules/@types/react/index.d.ts"],
+      "react/*": ["./node_modules/@types/react/*.d.ts"],
       "@/*": [
         "./src/*"
       ]

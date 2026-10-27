@@ -6,12 +6,12 @@ import {
   fetchSubscriptionTier,
 } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
-import { syncOnboardingCompanion } from '@/lib/onboarding';
+import { syncOnboardingCompanion, syncOnboardingProfile } from '@/lib/onboarding';
 import { BurrowLaunchScreen } from '@/components/main/burrow-launch-screen';
-import { beginHomeEntry, deferHomeEntryNotification } from '@/lib/home-entry-readiness';
+import { beginHomeEntry, deferHomeEntryNotification, homeEntryRemainingMs } from '@/lib/home-entry-readiness';
 
 /** Bounded auth bootstrap. Remote assets always warm in the background. */
-const MIN_DISPLAY_MS = 600;
+const MIN_DISPLAY_MS = 0;
 const SESSION_RESTORE_TIMEOUT_MS = 2000;
 const ANONYMOUS_SESSION_TIMEOUT_MS = 5000;
 const COMPANION_SYNC_TIMEOUT_MS = 5000;
@@ -52,6 +52,7 @@ export default function SigningInScreen() {
   const params = useLocalSearchParams<{ after?: string }>();
 
   useEffect(() => {
+    beginHomeEntry({ target: 'home', forceHomeData: true });
     const start = Date.now();
     let cancelled = false;
     let navigated = false;
@@ -71,9 +72,10 @@ export default function SigningInScreen() {
       }, Math.max(0, MIN_DISPLAY_MS - elapsed));
     };
 
+    const deadline = setTimeout(goHome, homeEntryRemainingMs());
     void (async () => {
       const restored = await withTimeout(getCurrentSession(), SESSION_RESTORE_TIMEOUT_MS);
-      if (cancelled) return;
+      if (cancelled || navigated) return;
       let userId = restored.status === 'resolved' ? restored.value?.user?.id : null;
 
       // A returning guest can lose the persisted anonymous session after an
@@ -82,10 +84,10 @@ export default function SigningInScreen() {
       // splash indefinitely.
       if (!userId && restored.status === 'resolved') {
         const ensured = await withTimeout(ensureSession(), ANONYMOUS_SESSION_TIMEOUT_MS);
-        if (cancelled) return;
+        if (cancelled || navigated) return;
         if (ensured.status === 'resolved' && ensured.value) {
           const retry = await withTimeout(getCurrentSession(), SESSION_RESTORE_TIMEOUT_MS);
-          if (cancelled) return;
+          if (cancelled || navigated) return;
           userId = retry.status === 'resolved' ? retry.value?.user?.id : null;
         }
       }
@@ -111,6 +113,7 @@ export default function SigningInScreen() {
         syncOnboardingCompanion(userId, { force: true }),
         COMPANION_SYNC_TIMEOUT_MS,
       );
+      void syncOnboardingProfile(userId).catch(()=>{});
 
       void fetchSubscriptionTier(userId).catch((e) => {
         console.warn('[signing-in] subscription fetch failed:', (e as Error)?.message || e);
@@ -128,10 +131,11 @@ export default function SigningInScreen() {
       // HomeEntryGate provides a short paint hand-off. Missing images or slow
       // refreshes never hold Home closed; its local/cached views repaint.
       goHome();
-    })();
+    })().catch(() => { goHome(); });
 
     return () => {
       cancelled = true;
+      clearTimeout(deadline);
     };
   }, [params.after]);
 

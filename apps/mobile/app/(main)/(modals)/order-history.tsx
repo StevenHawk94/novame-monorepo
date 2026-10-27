@@ -1,3 +1,4 @@
+import { BackIcon } from '@/components/burrow/burrow-back-button';
 /**
  * Order History modal — Stage 3.9.B.6
  */
@@ -155,7 +156,7 @@ export default function OrderHistoryModal() {
           hitSlop={12}
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
         >
-          <MaterialIcons name="arrow-back" size={20} color="#FFFFFF" />
+          <BackIcon color="#FFFFFF"/>
         </Pressable>
         <Text style={styles.headerTitle}>Order History</Text>
       </View>

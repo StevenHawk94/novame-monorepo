@@ -1,0 +1,60 @@
+{
+  "task": "Permanent-ID, bundled-asset Shop catalog publication",
+  "date": "2026-10-22",
+  "implementation": "Historical pre-publication report; superseded by bundled-shop-art-259-260-production-2026-10-22.json",
+  "catalog": {
+    "source": "catalog/burrow-shop-products.json",
+    "manifestSha256": "c0b532d0fbb3a1edb1381fa15b4f5251c3b8d41cfce6295ee9e77b7a6c060a65",
+    "release": "5e56af3342b2327d8fa033c0845c34e2a92624b03bef686245de8b6a121730f1",
+    "legacyRelease": "d7a0c135ed640eb565b0aad9433e75e76b5f7cb4463c68b06c5ca2d26add4fff",
+    "products": 512,
+    "active": 481,
+    "historicalRetired": 31,
+    "bundledSupported": 481,
+    "runtimeProductDownloadsAdded": false
+  },
+  "verification": {
+    "catalogPrepareAndDeterministicCheck": "passed",
+    "targetedUnitRegressions": {"passed": 280, "failed": 0},
+    "isolatedPostgreSQL": {"assertions": 29, "productionAccess": false},
+    "mobileTypecheck": "passed",
+    "apiProductionBuild": "passed",
+    "adminProductionBuild": "passed",
+    "iosExport": "passed",
+    "iosExportPath": "/private/tmp/burrow-shop-catalog-ios-export",
+    "scopedWhitespaceCheck": "passed",
+    "covered": [
+      "permanent-ID image mapping independent of title/ordinal",
+      "deleted/reused IDs and missing art rejected",
+      "preserved Admin pricing/Plus flags and ownership",
+      "old/unknown bundle prize eligibility and 100-coin fallback",
+      "retired owned placement and Plushie photo permission",
+      "unowned retired item rejection",
+      "atomic publication, idempotent replay and explicit rollback",
+      "bound treasure snapshots retained",
+      "Shop gifts, collection, decorator, game and Surprise regressions",
+      "authorization and publication permissions",
+      "deleted mobile asset-reference audit"
+    ]
+  },
+  "preExistingFindingsNotChanged": [
+    {
+      "test": "tools/test-adventure-encounters-ui.cjs: v8 reward byte matching",
+      "finding": "32 Mushroom Domes friend-collectible image bytes differ from the older remote collectible manifest SHA-256 values",
+      "scope": "Not a Shop product catalog entry; no artwork restored, overwritten or uploaded"
+    },
+    {
+      "test": "tools/test-api-hardening.cjs: Good Vibes entry status",
+      "finding": "Legacy static test expects Good Vibes UI inside the retired Friends tab; that file now redirects to Burrow Moments",
+      "scope": "Unrelated pre-existing legacy-test expectation; no UI/business change made"
+    }
+  ],
+  "productionChangesPerformed": false,
+  "easBuildOrSubmitPerformed": false,
+  "pendingForActivation": [
+    "Approve and apply migration 259",
+    "Deploy matching API/Admin generated artifacts",
+    "Release supporting mobile build before exposing newly added product IDs",
+    "Execute the generated transactional catalog publication SQL"
+  ]
+}

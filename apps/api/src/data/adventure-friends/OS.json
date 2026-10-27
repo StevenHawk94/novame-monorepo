@@ -1,0 +1,1525 @@
+{
+  "code": "OS",
+  "id": "adventure_friend_os",
+  "name": "Oswin",
+  "gender": "he",
+  "species": "Owl",
+  "partner": "Juno (she)",
+  "emotionalState": "夜猫子过度思考者，凌晨复盘每句话，在被爱和自我怀疑间拉扯",
+  "speakingStyle": "慢条斯理，爱自嘲，爱说 Okay, hear me out.",
+  "catchphrase": "Okay, hear me out.",
+  "art": [
+    "Owl_02_Variant1.webp",
+    "Owl_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "OS-01",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "Oswin blinks slowly at you from a low branch of roots.",
+      "lines": [
+        "You're awake. Good. Nobody's awake at this hour.",
+        "Okay, hear me out. Juno said 'fine' at dinner. Just 'fine'.",
+        "I've replayed it thirty-one times."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Did they say it nicely?",
+          "reaction": [
+            "...Honestly? Yes. Very nicely.",
+            "I think my brain is the problem."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe ask them?",
+          "reaction": [
+            "Ask? Out loud? Like a creature?",
+            "Hm. Okay. Tomorrow. Maybe."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit down next to Oswin.",
+          "reaction": [
+            "Oh. You're staying.",
+            "That helps more than you'd think."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-02",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "You came back! It's still dark. Perfect.",
+        "I asked Juno about the 'fine.' She said, 'I was tired. And the soup was fine.'",
+        "The SOUP. I analyzed the soup for six hours."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "The soup was fine.",
+          "reaction": [
+            "Yes. It was. It was a fine soup.",
+            "I should apologize to the soup."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sounds like a relief.",
+          "reaction": [
+            "It is. A huge one. Also kind of embarrassing.",
+            "Juno laughed so hard she hiccuped."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Laugh softly.",
+          "reaction": [
+            "Go ahead. I'd laugh too, if I weren't so tired.",
+            "Soup is a mystery. Lesson learned."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-03",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": "Oswin is surrounded by small scribbled notes, looking guilty.",
+      "lines": [
+        "Okay, hear me out. I made a chart of Juno's text replies.",
+        "Short reply on Monday. Long reply on Tuesday. Emoji on Wednesday.",
+        "I know it's too much. It's just... it's data."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What does the chart say?",
+          "reaction": [
+            "That Juno is a person with moods. Shocking.",
+            "Also that Wednesdays are the best. Emojis everywhere."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe retire the chart?",
+          "reaction": [
+            "Hm. Retire. Dignity. Maybe a gentle ending.",
+            "I'll keep one page. For sentimental reasons."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Pat his wing.",
+          "reaction": [
+            "Thank you. That helps more than the chart ever did.",
+            "I'm going to hug this feeling for a while."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-04",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Juno told me, 'You think too loud.' Not mean. Just fond.",
+        "I've been thinking about it for three days.",
+        "Is thinking too loud a bad thing? Or is that just me?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It sounds fond to me.",
+          "reaction": [
+            "Fond. Yes. That's what I'm choosing.",
+            "Fond and loud. Like a happy fire alarm."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe a little of both.",
+          "reaction": [
+            "Yeah. Both. I contain multitudes. Mostly worries.",
+            "I'll try to think a little softer. For Juno."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and shrug.",
+          "reaction": [
+            "Smile and shrug. A wise approach.",
+            "I'm going to try that. Right now. ...It's hard."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-05",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Honest question. When your partner goes quiet, do you ask what's wrong, or give them space?",
+        "I always do the wrong one."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I ask, softly.",
+          "reaction": [
+            "Softly. Okay. Mine is more like an interrogation.",
+            "I'll practice. 'Hey. You okay?' See? Soft."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I give space first.",
+          "reaction": [
+            "Space. Hm. That feels so hard when my brain is loud.",
+            "But maybe space is a way of saying 'I trust you.'"
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, I'm still figuring it out.",
+          "reaction": [
+            "Oh thank goodness. So is everyone.",
+            "I feel a hundred percent less alone."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-06",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": "Oswin is humming a tune that doesn't quite finish.",
+      "lines": [
+        "Juno and I stayed up all night talking. Not about anything. Just talking.",
+        "At four a.m., she said, 'I like how your brain works.'",
+        "I didn't overthink it. For a full minute."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A full minute!",
+          "reaction": [
+            "A WHOLE minute. A record. I'm going to cry.",
+            "Then I overthought the minute. But still."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's so sweet.",
+          "reaction": [
+            "It is. She said it like it was obvious. Like water is wet.",
+            "I keep it in my feathers."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Yawn in solidarity.",
+          "reaction": [
+            "Ha! Sleepy club. We're the best club.",
+            "The owls and the owl-adjacent."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-07",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Oswin lowers his voice, though no one is around.",
+      "lines": [
+        "Can I confess something? It's a quiet one.",
+        "Sometimes I think Juno deserves someone calmer. Someone who doesn't spiral at night.",
+        "And then I spiral about that. It's a whole spiral."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Juno chose you.",
+          "reaction": [
+            "...She did. On purpose. With full knowledge of the spirals.",
+            "That's actually kind of beautiful."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Have you told Juno?",
+          "reaction": [
+            "A little. She said, 'I like your spirals. They're cozy.'",
+            "Cozy spirals. I can live with that."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Stay quiet and listen.",
+          "reaction": [
+            "Thank you. I think I needed to say it out loud.",
+            "Out loud, it sounds smaller. Funny how that works."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-08",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "We made a rule. If I start spiraling, Juno says 'moth.'",
+        "It's our safe word. Because I like moths. And because it's funny.",
+        "She said it last night. I laughed so hard I stopped spiraling."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Moth is perfect.",
+          "reaction": [
+            "It is! Moths are underrated. Soft, quiet, love the light.",
+            "Kind of like us."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does it always work?",
+          "reaction": [
+            "Not always. But it helps me remember to breathe.",
+            "Sometimes I say it to myself. Moth. Okay. Moth."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Whisper 'moth.'",
+          "reaction": [
+            "Oh no. I'm calm. How dare you.",
+            "Do it again. ...Never mind. I'm good."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-09",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": "Oswin spreads his wings slightly, making room for you to sit under them.",
+      "lines": [
+        "No topic tonight. I just want company.",
+        "Juno's asleep. The tunnel is quiet. My brain is only at fifty percent.",
+        "Stay for a bit?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Of course.",
+          "reaction": [
+            "Thanks. Not everyone likes the dark.",
+            "I like that you do. Or at least pretend to."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Look at the dark with Oswin.",
+          "reaction": [
+            "See? It's not scary. It's just... soft.",
+            "Juno says the dark is a blanket. I steal that."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Hum quietly.",
+          "reaction": [
+            "Is that a lullaby? It's nice.",
+            "Keep going. I won't overthink it. ...Okay, a little."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-10",
+      "friendId": "adventure_friend_os",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten times. I counted. Then I recounted. Still ten.",
+        "Juno said, 'You're making a friend. I'm proud of you.' I didn't overthink it. Much.",
+        "Okay, hear me out. I like you. Plainly.",
+        "Your turn. How are you and your partner doing? Honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Still learning. Same. Always.",
+            "Come by sometime. Juno makes night tea. I make worries."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We had a rough week, honestly.",
+          "reaction": [
+            "Rough weeks are loud for me. I'm sorry.",
+            "If it helps, say 'moth.' It's yours now."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Better since I talked it out.",
+          "reaction": [
+            "Talking it out. Out loud. With a mouth.",
+            "Look at us. Growing like moss at midnight."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P01",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Juno left me on 'read' for ten minutes. I made a plan for the worst.",
+        "She was just cooking. Her phone was upside down."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Ten minutes is nothing.",
+          "reaction": [
+            "I know. I KNOW. But my brain doesn't.",
+            "Juno sent a heart and a soup photo. I calmed down."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Phones are weird.",
+          "reaction": [
+            "They really are. Tiny anxiety boxes.",
+            "I put mine in a drawer. For eight whole minutes.",
+            "Juno gave me a gold star for surviving."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P02",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We went on a midnight walk. Juno held my wing the whole time.",
+        "I forgot to count my worries. For half an hour."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds lovely.",
+          "reaction": [
+            "It was. The stars were doing a lot.",
+            "I'm keeping that walk forever.",
+            "Juno held my wing like it was no big deal. It was."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Half an hour is good.",
+          "reaction": [
+            "It's my personal best. Unofficially.",
+            "Juno gave me a medal. Made of acorn caps.",
+            "Juno pinned the medal to my feather. I cried a bit."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P03",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I tried to plan a surprise for Juno. Three backup plans. Four backups for the backups.",
+        "It rained. Plan seventeen. We ate crackers under a leaf."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Crackers under a leaf!",
+          "reaction": [
+            "Peak romance. Rain on the leaf. Juno laughing.",
+            "I forgot every plan. It was perfect.",
+            "Juno said it was the best date she'd ever had."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Plans can be too much.",
+          "reaction": [
+            "Yes. Plans are fine. Leaves are better.",
+            "I'm trying to pack one plan, not twenty.",
+            "Juno now suggests one plan, one backup, one snack."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P04",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Juno asked if I'm happy. I said 'yes' but my face did something weird.",
+        "I explained. She laughed. Then she said, 'Me too.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Happy faces are weird.",
+          "reaction": [
+            "Mine looks like a surprised pillow.",
+            "Juno says it's the best face I have.",
+            "Juno takes a photo of it every time."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's sweet.",
+          "reaction": [
+            "It is. Quiet, easy sweet.",
+            "I'll replay it. But in a good way.",
+            "I whispered 'me too' back. She fell asleep smiling."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P05",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I accidentally said 'love you' to a delivery moth.",
+        "I was tired. The moth was polite about it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Did Juno find out?",
+          "reaction": [
+            "Yes. She put it on a banner. 'Moth Lover.'",
+            "It's hanging in our burrow now.",
+            "The moth wasn't mad. Just very confused."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Moths are loveable.",
+          "reaction": [
+            "They are! The moth wrote back. A small thank-you.",
+            "I think we're friends now.",
+            "I leave a tiny lamp for it now, out of respect."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P06",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We tried a 'no overthinking' day. Rules: no analysis, no replays.",
+        "I lasted until lunch. Juno lasted until bedtime. She's better at this."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Lunch is a good start.",
+          "reaction": [
+            "Lunch is a strong start. Next time, lunch plus snacks.",
+            "I'll be a professional non-thinker by winter.",
+            "Dinner next time. Then maybe the whole weekend."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Juno's amazing.",
+          "reaction": [
+            "She really is. She didn't even gloat.",
+            "She gave me a cookie for effort.",
+            "She said I'm allowed to try again tomorrow."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P07",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I bought Juno a book. Then spent three days wondering if it was the right book.",
+        "She loved it. She's on chapter nine already."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Right book, right time.",
+          "reaction": [
+            "I think so. Thank goodness.",
+            "She read me a paragraph. I forgot to worry.",
+            "She underlined a line for me. I'm saving it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You did great.",
+          "reaction": [
+            "Thank you. I'll tell my brain you said that.",
+            "It might not believe you. But it'll try.",
+            "Juno rolled her eyes. Fondly. I counted it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P08",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Juno asked me to stop saying sorry for everything.",
+        "I said, 'Sorry.' Then we both burst out laughing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Classic.",
+          "reaction": [
+            "I'm a sorry machine. A very polite owl.",
+            "We made a jar. Every sorry costs a cookie.",
+            "Juno now says 'sorry' back to mock me. Lovingly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sorry for what?",
+          "reaction": [
+            "Everything. The weather. The moon.",
+            "I'm working on it.",
+            "We settled on one sorry a day. The rest is hugs."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P09",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the soup? Juno made it again.",
+        "I tasted it very calmly. And said, 'Fine.' She gasped."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Revenge of the soup.",
+          "reaction": [
+            "A joke! A joke at last! My first, I think.",
+            "She laughed so hard she hiccuped again.",
+            "She's asked me to make it on Sundays. I accepted."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Fine soup forever.",
+          "reaction": [
+            "The best 'fine' of my life.",
+            "We named the recipe 'Fine Soup.' It's on the wall.",
+            "It's our private joke now. Soup, but ironic."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P10",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The chart? Juno found it. She framed it.",
+        "It's in the hallway. 'Oswin's Data Era.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's adorable.",
+          "reaction": [
+            "She said it shows I care. Which is true.",
+            "I'm trying to be less scientific about love.",
+            "Under it she wrote: 'Oswin, still our favorite scientist.'"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Hang it proudly.",
+          "reaction": [
+            "I will. Next to the soup photo.",
+            "A museum of my silliness.",
+            "Visitors stop to read it. I blush every time."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P11",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I said 'moth' to myself during a spiral. It worked.",
+        "I laughed alone in the dark like a lunatic."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Moth magic.",
+          "reaction": [
+            "It's the best word in the world.",
+            "Juno is thrilled. She taught me well.",
+            "I whispered it so many times. It's my lucky word."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Laughing alone is okay.",
+          "reaction": [
+            "It is. At night, especially.",
+            "The dark doesn't judge.",
+            "Juno heard me. She laughed, then whispered it back."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P12",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember my four a.m. talks with Juno? We did another.",
+        "This time I was the one who said, 'I like how your brain works.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Full circle.",
+          "reaction": [
+            "Yes. A circle with a moth in the middle.",
+            "Juno went silent. Then said 'Thank you.' Perfect.",
+            "We stared at the ceiling after. It felt right."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's lovely.",
+          "reaction": [
+            "I think so too. Small, quiet, honest.",
+            "I held that sentence the whole next day.",
+            "It didn't need decorating. Just quiet and honesty."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P13",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: you can't think your way out of a feeling.",
+        "You can only sit with it. Like a stubborn cat."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's wise.",
+          "reaction": [
+            "It took me years. And a very patient Juno.",
+            "Cats help. Cats are good.",
+            "Juno says feelings are weather. I carry an umbrella now."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I overthink too.",
+          "reaction": [
+            "Welcome. Pull up a root.",
+            "We'll overthink together. In harmony.",
+            "We sat for an hour. The feeling eventually wandered off."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P14",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: 'we need to talk' is the scariest phrase.",
+        "Say 'I want to share something' instead. Much softer."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Totally agree.",
+          "reaction": [
+            "Right? It's like a drum roll for doom.",
+            "Try 'got a minute for a feeling?' Cute and clear."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What if it's serious?",
+          "reaction": [
+            "Then it's still better soft.",
+            "Serious doesn't mean harsh.",
+            "Gentle doesn't mean unimportant. It means safe to hear."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P15",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: love at 3 a.m. is the realest love.",
+        "No one's performing. No filters. Just two tired creatures."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "3 a.m. is magic.",
+          "reaction": [
+            "It really is. Honest hour.",
+            "Something about the dark makes people brave.",
+            "Even the moths are quiet then. It's lovely."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I prefer mornings.",
+          "reaction": [
+            "Mornings are fine. Mornings are cheerful.",
+            "But I'll take your honesty at any hour.",
+            "Morning me is a different bird. Equally anxious, with coffee."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P16",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What do you and your partner do when you can't sleep?",
+        "I'm collecting ideas. Juno snores."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We talk in the dark.",
+          "reaction": [
+            "Dark talks are the best. I'm so jealous.",
+            "Do you whisper? I whisper.",
+            "Whispers feel like secrets. I'd trade a month of sleep for them."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We cuddle.",
+          "reaction": [
+            "Cuddling. Yes. Excellent plan.",
+            "My wings are good for that. Warm, slightly dusty.",
+            "Wings are warm, if dusty. Juno never complains."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P17",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you tell your partner you need a minute? Without making it a thing?",
+        "I always make it a thing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I just say it plainly.",
+          "reaction": [
+            "Plainly. Wow. Radical.",
+            "I'll try: 'Hey, I need a minute.' Hm. Doable.",
+            "I'll try it at dinner, probably with a nervous cough."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We have a signal.",
+          "reaction": [
+            "A signal! Like a lamp? A hum?",
+            "Oh, I love that. Moth. Always moth.",
+            "A little lamp on the shelf means 'not now, but I love you.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P18",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's the smallest thing your partner did that made you feel safe?",
+        "The tiny stuff matters most to me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They left a light on.",
+          "reaction": [
+            "Leaving a light on. Oh. That's the best.",
+            "Juno does that. I almost cry every time.",
+            "Juno leaves a moth-shaped lamp on. I tear up every time."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They said 'I'm here.'",
+          "reaction": [
+            "'I'm here.' Simple. Strong.",
+            "It's the best sentence in the world.",
+            "It's the sentence I replay when my brain gets loud."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P19",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Oswin is perched very high, wings spread wide. For once, the room is bright.",
+      "lines": [
+        "Okay. I want you to see something.",
+        "I've stopped making charts. Completely. I threw the last one away.",
+        "I feel lighter. I think Juno would be proud."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I'm proud too.",
+          "reaction": [
+            "Thank you. That means more than a chart.",
+            "I'm going to carry that around. Quietly.",
+            "I'll tell Juno tonight. She'll cry, then make cocoa."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Take a deep breath with Oswin.",
+          "reaction": [
+            "In. Out. Moth.",
+            "Okay. We did it. It's quiet in here.",
+            "I even slept. Eleven minutes. A real nap."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "OS-P20",
+      "friendId": "adventure_friend_os",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Oswin is holding a tiny letter and looks both scared and happy.",
+      "lines": [
+        "Juno wrote me a letter. I haven't opened it. For three days.",
+        "I'm scared that if I read it, it'll be over. The feeling.",
+        "Or it'll be better than I imagined. And that's scary too."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Open it together.",
+          "reaction": [
+            "Okay. Together. Slowly. ...'Dear Oswin, you overthink, and I adore it.'",
+            "...That's all it says. That's everything.",
+            "It's folded in four, like a tiny map home."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Wait until you're ready.",
+          "reaction": [
+            "Ready. I'm never ready. But maybe tonight.",
+            "Thank you for waiting with me.",
+            "I'll read it when the moon is out. For luck."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_241",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G01",
+      "name": "Candy Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 241,
+      "file": "Lamps/Candy Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/241-2625704ade166069.webp",
+      "sha256": "2625704ade166069f1e8165d5dd9cdefd941189fb7e6a9522e44d94dd9251e4d",
+      "bytes": 29034
+    },
+    {
+      "id": "adventure_gift_242",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G02",
+      "name": "Daisy Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 242,
+      "file": "Lamps/Daisy Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/242-9a669961595cde49.webp",
+      "sha256": "9a669961595cde496a9c1ec7d56c1db61e9a641a0c44d9c036b16120756301da",
+      "bytes": 29402
+    },
+    {
+      "id": "adventure_gift_243",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G03",
+      "name": "Ripple Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 243,
+      "file": "Lamps/Ripple Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/243-d2a8a1c2b0149083.webp",
+      "sha256": "d2a8a1c2b01490834023ab9ddd26c35dc4b75129080d6d912cc884a35bcdfe59",
+      "bytes": 24364
+    },
+    {
+      "id": "adventure_gift_244",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G04",
+      "name": "Heart Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 244,
+      "file": "Lamps/Heart Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/244-99b48ba811473fbd.webp",
+      "sha256": "99b48ba811473fbd26f5afcd39e25099af9ffc8282074c8421fcce1136183758",
+      "bytes": 28482
+    },
+    {
+      "id": "adventure_gift_245",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G05",
+      "name": "Checker Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 245,
+      "file": "Lamps/Checker Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/245-94b27b6f1d3636f7.webp",
+      "sha256": "94b27b6f1d3636f7df05ae00b9393d4e8ff0f5b2284938533ba90f53cdfb4987",
+      "bytes": 27760
+    },
+    {
+      "id": "adventure_gift_246",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G06",
+      "name": "Diamond Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 246,
+      "file": "Lamps/Diamond Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/246-4dda8063a794b119.webp",
+      "sha256": "4dda8063a794b119188fece8236e32c894c87a473d9056ee0e44b2453052d099",
+      "bytes": 21610
+    },
+    {
+      "id": "adventure_gift_247",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G07",
+      "name": "Wave Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 247,
+      "file": "Lamps/Wave Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/247-30ac4b687bc87c1a.webp",
+      "sha256": "30ac4b687bc87c1a284037653812c37d178cae69c91fcf3295c36c1f18da0bb9",
+      "bytes": 29502
+    },
+    {
+      "id": "adventure_gift_248",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G08",
+      "name": "Bubble Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 248,
+      "file": "Lamps/Bubble Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/248-49d910e6dbb2761f.webp",
+      "sha256": "49d910e6dbb2761f5643b9914324b74bb2f9e0ec3337163941be361570359c3c",
+      "bytes": 24564
+    },
+    {
+      "id": "adventure_gift_249",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G09",
+      "name": "Strawberry Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 249,
+      "file": "Lamps/Strawberry Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/249-0108777ed6b98e2e.webp",
+      "sha256": "0108777ed6b98e2ef8c635c5fa986d57cee5cff0e4b719c48bae5bb18cac3da8",
+      "bytes": 28256
+    },
+    {
+      "id": "adventure_gift_250",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G10",
+      "name": "Moon Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 250,
+      "file": "Lamps/Moon Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/250-ec8692258a0b6d8f.webp",
+      "sha256": "ec8692258a0b6d8f68cb38bca46d30bd4fd0dc5869b45437bc7b9f772fcf0776",
+      "bytes": 26662
+    },
+    {
+      "id": "adventure_gift_251",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G11",
+      "name": "Zigzag Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 251,
+      "file": "Lamps/Zigzag Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/251-5e9f85ede941c130.webp",
+      "sha256": "5e9f85ede941c1305d07933f7fec6b4c2d92abe0234ead7e079d4052633cde9b",
+      "bytes": 28460
+    },
+    {
+      "id": "adventure_gift_252",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G12",
+      "name": "Cloud Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 252,
+      "file": "Lamps/Cloud Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/252-2ce82f1abf6e4398.webp",
+      "sha256": "2ce82f1abf6e43980385877494a9b071b0f37fae432cb22e6ceb9ee370616949",
+      "bytes": 24428
+    },
+    {
+      "id": "adventure_gift_253",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G13",
+      "name": "Confetti Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 253,
+      "file": "Lamps/Confetti Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/253-9bcc11cc6a953a89.webp",
+      "sha256": "9bcc11cc6a953a895f402e4a416c84e8e4d04b557ed72dce266c33276ecd6a6a",
+      "bytes": 28320
+    },
+    {
+      "id": "adventure_gift_254",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G14",
+      "name": "Petal Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 254,
+      "file": "Lamps/Petal Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/254-e6947883c80c8f6b.webp",
+      "sha256": "e6947883c80c8f6b84336cb07685fb0d3f0bd26ff5bfe72e1fe5c95369376ec9",
+      "bytes": 30076
+    },
+    {
+      "id": "adventure_gift_255",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G15",
+      "name": "Sunflower Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 255,
+      "file": "Lamps/Sunflower Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/255-51da331231fabcc5.webp",
+      "sha256": "51da331231fabcc545db7ba8d890052095bdf924d1a4f80fec4083d0459cff95",
+      "bytes": 28764
+    },
+    {
+      "id": "adventure_gift_256",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G16",
+      "name": "Love Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 256,
+      "file": "Lamps/Love Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/256-52a4c69f424223cd.webp",
+      "sha256": "52a4c69f424223cd8c48012f7deef28fe360184fb115cc7f32cf625499d40088",
+      "bytes": 27268
+    },
+    {
+      "id": "adventure_gift_257",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G17",
+      "name": "Striped Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 257,
+      "file": "Lamps/Striped Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/257-49d80d64abea57f7.webp",
+      "sha256": "49d80d64abea57f7470521fc716a393f01ca8982a65d2eee7e375c804df2b539",
+      "bytes": 25208
+    },
+    {
+      "id": "adventure_gift_258",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G18",
+      "name": "Gingham Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 258,
+      "file": "Lamps/Gingham Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/258-3c1e2016c8891633.webp",
+      "sha256": "3c1e2016c88916338da651dcc93e94e0cee502dca0b37d71f85af9f3ef3c9ba5",
+      "bytes": 25640
+    },
+    {
+      "id": "adventure_gift_259",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G19",
+      "name": "Polka Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 259,
+      "file": "Lamps/Polka Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/259-f4d3b8d085b9a39c.webp",
+      "sha256": "f4d3b8d085b9a39cdbbb5fe78f2f8fb1fec1d88f016852fc856a7193e28ec311",
+      "bytes": 20690
+    },
+    {
+      "id": "adventure_gift_260",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G20",
+      "name": "Arch Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 260,
+      "file": "Lamps/Arch Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/260-5170a0d55e4025d7.webp",
+      "sha256": "5170a0d55e4025d72b143ad0787eef09c223d59a9d397a13ed9816af6f75e3cf",
+      "bytes": 24370
+    },
+    {
+      "id": "adventure_gift_261",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G21",
+      "name": "Botanical Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 261,
+      "file": "Lamps/Botanical Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/261-473b920cd288a76e.webp",
+      "sha256": "473b920cd288a76e4a6935cb9a260ffc60bfb71d479aaba0b6a9de7d91d08fa9",
+      "bytes": 27422
+    },
+    {
+      "id": "adventure_gift_262",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G22",
+      "name": "Chevron Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 262,
+      "file": "Lamps/Chevron Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/262-9c5684dc27a26133.webp",
+      "sha256": "9c5684dc27a2613303fc3e21f9ef2fe6c8f9847cdb997475fc07cbcd0188665f",
+      "bytes": 24968
+    },
+    {
+      "id": "adventure_gift_263",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G23",
+      "name": "Scallop Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 263,
+      "file": "Lamps/Scallop Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/263-b958e8a91cbc5b72.webp",
+      "sha256": "b958e8a91cbc5b728eceb0fb8c875298f87e98e46e21d2e07778c1876e2e28df",
+      "bytes": 30418
+    },
+    {
+      "id": "adventure_gift_264",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G24",
+      "name": "Circle Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 264,
+      "file": "Lamps/Circle Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/264-fe0f7010b393a2cb.webp",
+      "sha256": "fe0f7010b393a2cb9e8e1820ba99d7a83e0f308457989e5a77e3df026a004dc4",
+      "bytes": 24620
+    },
+    {
+      "id": "adventure_gift_265",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G25",
+      "name": "Harlequin Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 265,
+      "file": "Lamps/Harlequin Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/265-3f02b39718f2f2e8.webp",
+      "sha256": "3f02b39718f2f2e897bd2925c5c4c50510216206d4645e7467a7192ec4051660",
+      "bytes": 25288
+    },
+    {
+      "id": "adventure_gift_266",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G26",
+      "name": "Monochrome Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 266,
+      "file": "Lamps/Monochrome Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/266-46a6ca2fedee3e83.webp",
+      "sha256": "46a6ca2fedee3e831519dde9f6eca39acf58ee42ef6d23a5c1950ecfdfcc68a7",
+      "bytes": 18772
+    },
+    {
+      "id": "adventure_gift_267",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G27",
+      "name": "Floral Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 267,
+      "file": "Lamps/Floral Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/267-591293861a75fe8e.webp",
+      "sha256": "591293861a75fe8ed499bbd47c9acba12764637a45981f712064fe4c73530051",
+      "bytes": 28010
+    },
+    {
+      "id": "adventure_gift_268",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G28",
+      "name": "Crown Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 268,
+      "file": "Lamps/Crown Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/268-c706f113fd849e0f.webp",
+      "sha256": "c706f113fd849e0fbc8b64e50e8116bca0318c97c41ae9ec9dbe1c51bb9710a4",
+      "bytes": 26386
+    },
+    {
+      "id": "adventure_gift_269",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G29",
+      "name": "Forest Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 269,
+      "file": "Lamps/Forest Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/269-a4fdb48a3b8a3059.webp",
+      "sha256": "a4fdb48a3b8a3059885110b0ef90591338000aeef27475cec0c5f15484848615",
+      "bytes": 24672
+    },
+    {
+      "id": "adventure_gift_270",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G30",
+      "name": "Star Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 270,
+      "file": "Lamps/Star Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/270-a83a2d27426ca0e4.webp",
+      "sha256": "a83a2d27426ca0e4222359b61cd17395c40a7acc8c59959a77df67f422dafae4",
+      "bytes": 27854
+    },
+    {
+      "id": "adventure_gift_271",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G31",
+      "name": "Crescent Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 271,
+      "file": "Lamps/Crescent Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/271-16feaa7f7bacc35a.webp",
+      "sha256": "16feaa7f7bacc35a8acf145088e4482d51f91fb35d44044d8c401fd1786975dc",
+      "bytes": 22404
+    },
+    {
+      "id": "adventure_gift_272",
+      "friendId": "adventure_friend_os",
+      "giftId": "OS-G32",
+      "name": "Leaf Lamp",
+      "category": "Lamps",
+      "categoryCode": "C08",
+      "sourceId": 272,
+      "file": "Lamps/Leaf Lamp.webp",
+      "key": "burrow/adventure-gifts/v1/272-80dbe07ac085a497.webp",
+      "sha256": "80dbe07ac085a497eb29a2d62f76bebe508f419bcc5f38c7a710837beea01eda",
+      "bytes": 24284
+    }
+  ]
+}

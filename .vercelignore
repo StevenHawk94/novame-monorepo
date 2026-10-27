@@ -6,8 +6,12 @@
 /apps/mobile/
 /docs/
 /supabase/
+/catalog/
 /tools/*
 !/tools/build-admin-shop-assets.cjs
+!/tools/verify-shop-release.cjs
+!/tools/check-apple-store-config.mjs
+!/tools/check-avatar-runtime.mjs
 /CODEBASE.md
 /README.md
 /gen-manifest.log

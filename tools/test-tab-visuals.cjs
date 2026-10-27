@@ -16,119 +16,39 @@ function native(platform, width = 390) {
     useWindowDimensions: () => ({ width, height: 844 }),
   };
 }
-function setup(platform, { width = 390, tier = 'free', paired = true, gate = 'ok', content = true } = {}) {
-  const rn = native(platform, width);
-  const typography = load('apps/mobile/src/components/ui/tab-header-typography.ts', { 'react-native': rn });
-  const pushes = [], feedback = [];
-  const insights = { schemaVersion: 3, modules: { worth_knowing: content ? [{
-    label: 'Worth Noticing', title: null, observation: 'Private paid insight', meaning: null, takeaway: null,
-  }] : [] } };
+function setup(platform, { tier = 'free', paired = true, width = 390 } = {}) {
+  let reads = 0;
   const { default: Screen } = load('apps/mobile/app/(main)/(tabs)/status.tsx', {
-    '@/lib/use-major-update': { useMajorUpdateEnabled: () => false },
-    react: { useCallback: fn => fn, useEffect() {}, useRef: value => ({ current: value }),
-      useState: initial => [typeof initial === 'function' ? initial() : initial, () => {}] },
-    'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': rn,
-    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) },
-    'expo-router': { useFocusEffect() {}, useRouter: () => ({ push: value => pushes.push(value) }) },
-    '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
-    '@/components/main/feature-guide-modal': { FeatureGuideModal: 'FeatureGuideModal' },
-    '@/components/ui/grid-background': { GridBackground: 'GridBackground' },
-    '@/components/ui/offset-card': { OffsetCard: 'OffsetCard' },
-    '@/components/ui/user-avatar': { UserAvatar: 'UserAvatar' },
-    '@/components/ui/tab-header-typography': typography,
-    '@/lib/friends-api': {
-      getCachedInsights: () => gate === 'ok' ? { ok: true, insights } : { ok: false, error: gate },
-      getCachedPairing: () => paired ? { paired: true, relationship: 'Family', pairedDays: 12, partner: { userId: 'partner', displayName: 'Person' } } : { paired: false },
-    },
-    '@/lib/haptics': { haptics: { pageOpen: () => feedback.push('light') } },
-    '@/lib/icons': { ICONS: { connect1: 1, connect2: 2, connect3: 3, connect4: 4, history: 5 } },
-    '@/lib/relative-time': { relativeInsightTime: () => '3h ago' },
-    '@/lib/me-stats': { getCachedMeStats: () => null }, '@/lib/onboarding': { getBunnyName: () => '' }, '@/lib/pairing-realtime': {},
-    '@/lib/subscription': { getCachedSubscriptionTier: () => tier }, '@/lib/supabase': {},
-    '@/lib/use-subscription-tier': { useSubscriptionTier: () => tier },
-    '@/lib/ui-idle': { afterUiSettles: () => () => {} },
+    'react/jsx-runtime': { jsx, jsxs: jsx },
+    'expo-router': { Redirect: 'Redirect' },
+    '@/lib/friends-api': { getCachedInsights: () => { reads++; throw Error('retired insights must not load'); } },
+    '@/lib/use-subscription-tier': { useSubscriptionTier: () => { reads++; return tier; } },
+    '@/lib/use-major-update': { useMajorUpdateEnabled: () => paired },
   });
-  const tree = Screen();
-  return { tree, pushes, feedback, typography };
+  return { tree: Screen(), reads: () => reads,
+    typography: load('apps/mobile/src/components/ui/tab-header-typography.ts', { 'react-native': native(platform, width) }) };
 }
 for (const platform of ['ios', 'android']) {
-  test(`${platform}: Free restores four readable presets without blur or unlock overlays`, () => {
-    const h = setup(platform);
-    const all = nodes(h.tree);
-    const locks = all.filter(n => n.props.accessibilityLabel === 'Join Plus to Unlock');
-    assert.equal(locks.length, 0);
-    assert.equal(texts(h.tree).includes('Join Plus to Unlock'), false);
-    assert.equal(texts(h.tree).includes('Private paid insight'), false);
-    assert.equal(all.some(n => n.props.blurRadius > 0 || n.type === 'Filter' || n.type === 'SvgText'), false);
-    const presets = [
-      'Important moments, changes, and quiet wins worth following up on will appear here.',
-      'Get a clearer feel for their recent vibe and what’s been capturing their attention.',
-      'Find thoughtful ways to check in, start a conversation, or spend time together.',
-      'See the funny, cozy, or chaotic little patterns unfolding between your lives.',
-    ];
-    presets.forEach(preset => {
-      const text = all.find(n => n.type === 'Text' && n.props.children === preset);
-      assert.ok(text, 'preserve the full original default text');
-      assert.equal(flatten(text.props.style).color, '#2A2118');
-      assert.equal(flatten(text.props.style).textShadowRadius, undefined);
-      const card = all.find(n => n.type === 'View' && n.props.children?.includes?.(text));
-      assert.ok(card);
-      assert.equal(card.props.accessibilityElementsHidden, undefined);
-      assert.equal(card.props.onPress, undefined, 'no invisible unlock target remains');
-      assert.equal(nodes(card).filter(n => n.type === 'Image').length, 1);
+  for (const [name, options] of [['Free', { tier: 'free' }], ['Plus', { tier: 'pro' }], ['unpaired', { paired: false }]]) {
+    test(platform + ': retired Connection link returns ' + name + ' users Home without reading paid/private data', () => {
+      const h = setup(platform, options);
+      assert.equal(h.tree.type, 'Redirect');
+      assert.equal(h.tree.props.href, '/(main)/(tabs)');
+      assert.equal(h.reads(), 0);
     });
-    const originalBanner = all.find(n => n.type === 'Pressable' && texts(n).includes('Unlock your Connection details'));
-    assert.ok(originalBanner, 'keep the original Plus entry and entitlement gate');
-    originalBanner.props.onPress();
-    assert.deepEqual(h.pushes, ['/(main)/(modals)/subscription-paywall']);
-    assert.equal(h.feedback.length, 1);
-  });
-  test(`${platform}: Plus stays readable and ignores an old cached Free gate`, () => {
-    const paid = setup(platform, { tier: 'pro' });
-    assert.ok(texts(paid.tree).includes('Private paid insight'));
-    assert.equal(nodes(paid.tree).some(n => n.props.accessibilityLabel === 'Join Plus to Unlock'), false);
-    const empty = setup(platform, { tier: 'pro', content: false });
-    assert.equal(nodes(empty.tree).filter(n => n.type === 'Image' && [1, 2, 3, 4].includes(n.props.source) && !n.props.blurRadius).length, 4);
-    assert.equal(nodes(empty.tree).some(n => flatten(n.props.style).textShadowRadius), false);
-    assert.equal(nodes(empty.tree).some(n => n.type === 'Filter'), false);
-    const upgraded = setup(platform, { tier: 'pro', gate: 'plus_required' });
-    assert.equal(nodes(upgraded.tree).filter(n => n.props.accessibilityLabel === 'Join Plus to Unlock').length, 0);
-    const denied = setup(platform, { tier: 'free', gate: 'plus_required' });
-    assert.equal(nodes(denied.tree).filter(n => n.props.accessibilityLabel === 'Join Plus to Unlock').length, 0);
-    assert.equal(texts(denied.tree).includes('Private paid insight'), false);
-  });
-  test(`${platform}: unpaired users keep original pairing explanation`, () => {
-    const h = setup(platform, { paired: false });
-    assert.equal(nodes(h.tree).some(n => n.props.accessibilityLabel === 'Join Plus to Unlock'), false);
-    assert.ok(texts(h.tree).includes('Catch what you missed'));
-  });
+  }
 }
-test('Android header remains 20/26 and subtitle 12/18 even on narrow screens', () => {
+test('Android shared tab typography remains 20/26 and 12/18 on narrow screens', () => {
   for (const width of [320, 360, 390, 430]) {
-    const h = setup('android', { width });
-    const all = nodes(h.tree);
-    const title = all.find(n => n.type === 'Text' && n.props.children === 'Connection Board');
-    const subtitle = all.find(n => n.type === 'Text' && n.props.children === 'Real-time insight to keep you close');
-    assert.equal(flatten(title.props.style).fontSize, 20);
-    assert.equal(flatten(title.props.style).lineHeight, 26);
-    assert.equal(title.props.adjustsFontSizeToFit, false);
-    assert.equal(title.props.numberOfLines, undefined);
-    assert.equal(flatten(subtitle.props.style).fontSize, 12);
-    assert.equal(flatten(subtitle.props.style).lineHeight, 18);
-    assert.equal(subtitle.props.numberOfLines, undefined);
+    const { title, subtitle } = setup('android', { width }).typography.tabHeaderTypography;
+    assert.equal(title.fontSize, 20); assert.equal(title.lineHeight, 26);
+    assert.equal(subtitle.fontSize, 12); assert.equal(subtitle.lineHeight, 18);
   }
 });
-test('iOS Connection title and subtitle use the shared tab header dimensions', () => {
-  for (const width of [360, 390]) {
-    const all = nodes(setup('ios', { width }).tree);
-    const title = all.find(n => n.type === 'Text' && n.props.children === 'Connection Board');
-    const subtitle = all.find(n => n.type === 'Text' && n.props.children === 'Real-time insight to keep you close');
-    assert.equal(flatten(title.props.style).fontSize, 27);
-    assert.equal(flatten(title.props.style).lineHeight, 33);
-    assert.equal(title.props.adjustsFontSizeToFit, true);
-    assert.equal(flatten(subtitle.props.style).fontSize, 13.5);
-    assert.equal(flatten(subtitle.props.style).lineHeight, 19);
-  }
+test('iOS shared tab typography retains 27/33 and 13.5/19 without reviving the retired screen', () => {
+  const { title, subtitle } = setup('ios').typography.tabHeaderTypography;
+  assert.equal(title.fontSize, 27); assert.equal(title.lineHeight, 33);
+  assert.equal(subtitle.fontSize, 13.5); assert.equal(subtitle.lineHeight, 19);
 });
 test('Memories typography and the product-action Quests board stay on-brand', () => {
   const read = name => fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/(tabs)', name), 'utf8');
@@ -146,18 +66,12 @@ test('Memories typography and the product-action Quests board stay on-brand', ()
   assert.doesNotMatch(quests, /Weekly Goal|Weekly To-Do List|Select your main goal of the week/);
 });
 
-test('Paired background keeps the complete source width on Android without changing iOS cover', () => {
+test('retired Paired background is not rendered or awaited on either platform', () => {
   const friends = fs.readFileSync(
     path.join(root, 'apps/mobile/app/(main)/(tabs)/friends.tsx'),
     'utf8',
   );
-  assert.match(friends, /const FRIENDS_BACKGROUND_WIDTH = 841;/);
-  assert.match(friends, /const FRIENDS_BACKGROUND_HEIGHT = 1870;/);
-  assert.match(
-    friends,
-    /androidBackgroundHeight = width\s*\* \(FRIENDS_BACKGROUND_HEIGHT \/ FRIENDS_BACKGROUND_WIDTH\)/,
-  );
-  assert.match(friends, /\{ width, height: androidBackgroundHeight \}/);
-  assert.match(friends, /contentFit=\{Platform\.OS === 'android' \? 'fill' : 'cover'\}/);
-  assert.match(friends, /contentPosition="top"/);
+  assert.doesNotMatch(friends, /BACKGROUNDS\.friends|FRIENDS_BACKGROUND_WIDTH|androidBackgroundHeight|HomeEntryImage/);
+  assert.match(friends,/markHomeEntryAsset\('friends-background',homeEntry\.attempt\)/);
+  assert.match(friends,/root: \{ flex: 1, backgroundColor: '#6B4226' \}/);
 });

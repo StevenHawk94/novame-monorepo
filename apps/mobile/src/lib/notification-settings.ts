@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { AppState,Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 import { storage } from './storage';
@@ -7,32 +7,10 @@ import { apiClient } from './api';
 import { supabase } from './supabase';
 
 /**
- * Notification settings -- Stage 3.10.2 C2.
- *
- * Local-only daily reminder. The user picks an hour:minute, we schedule
- * a single repeating daily notification via expo-notifications, and
- * persist {enabled, hour, min, identifier} to MMKV so we can cancel /
- * re-schedule on subsequent visits.
- *
- * Why MMKV and not the server:
- *   - Old web (visdom-capacitor) stored this in localStorage too --
- *     it is purely a per-device preference, not user data.
- *   - The notification body uses the user's character name (e.g.
- *     "How was your day? Nova wants to hear..."), but charName lives
- *     in character_data on the server -- we read it from the
- *     character-state cache (already warmed by Home tab).
- *
- * SDK 17 facts (verified from .d.ts):
- *   - scheduleNotificationAsync({content, trigger}) returns a string
- *     identifier we must store to cancel later.
- *   - DailyTriggerInput = {type:'daily', hour, minute} -- no repeats
- *     flag needed (daily implies it).
- *   - cancelScheduledNotificationAsync(identifier) is the only cancel
- *     path; cancelling a non-existent id is a no-op (safe).
- *   - SDK 17 removed setNotificationHandler from the public types,
- *     so we do not configure foreground display behavior here.
- *
- * MMKV key: novame_notification_settings
+ * Per-device reminder preference and durable registration reconciliation.
+ * Version 3 cancels the old unconditional OS timer. The server now decides
+ * at local 20:00 whether Adventure has started; no JS background wake is
+ * required. Native alert permissions/channels remain unchanged.
  */
 
 const STORAGE_KEY = 'novame_notification_settings';
@@ -44,7 +22,15 @@ const ANDROID_CHANNEL_ID = 'daily-reminders-v2';
 const ANDROID_PARTNER_CHANNEL_ID = 'partner-updates';
 let lastRemoteRegistrationAt = 0;
 let dailyScheduleReconcile: Promise<boolean> | null = null;
-const DAILY_SCHEDULE_VERSION = 2;
+const DAILY_SCHEDULE_VERSION = 3;
+let remoteRegistration:Promise<boolean>|null=null;
+let registrationRetry:ReturnType<typeof setTimeout>|null=null,retryAttempts=0;
+function scheduleRegistrationRetry(){
+  if(registrationRetry||AppState?.currentState!=='active'||!getNotificationSettings().remotePending)return;
+  const delay=Math.min(5000*2**Math.min(retryAttempts++,6),300000);
+  registrationRetry=setTimeout(()=>{registrationRetry=null;void syncRemoteNotificationRegistration({force:true});},delay);
+}
+AppState?.addEventListener('change',state=>{if(state!=='active'&&registrationRetry){clearTimeout(registrationRetry);registrationRetry=null;}});
 
 export type NotificationSettings = {
   enabled: boolean;
@@ -57,6 +43,7 @@ export type NotificationSettings = {
    */
   identifier: string | null;
   scheduleVersion?: number;
+  remotePending?:boolean;
 };
 
 const DEFAULT_SETTINGS: NotificationSettings = {
@@ -76,10 +63,11 @@ export function getNotificationSettings(): NotificationSettings {
     const parsed = JSON.parse(raw) as NotificationSettings;
     return {
       enabled: !!parsed.enabled,
-      hour: typeof parsed.hour === 'number' ? parsed.hour : DEFAULT_SETTINGS.hour,
-      min: typeof parsed.min === 'number' ? parsed.min : DEFAULT_SETTINGS.min,
+      hour: 20,
+      min: 0,
       identifier: parsed.identifier ?? null,
       scheduleVersion: typeof parsed.scheduleVersion === 'number' ? parsed.scheduleVersion : 0,
+      remotePending:!!parsed.remotePending,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -88,31 +76,6 @@ export function getNotificationSettings(): NotificationSettings {
 
 function setNotificationSettings(s: NotificationSettings): void {
   storage.set(STORAGE_KEY, JSON.stringify(s));
-}
-
-// ---- post-purchase one-time opt-in prompt ----
-
-const PROMPTED_AFTER_PURCHASE_KEY = 'novame_notif_prompted_after_purchase';
-
-/** True once we've auto-shown the post-purchase notification opt-in. */
-export function hasPromptedNotifAfterPurchase(): boolean {
-  return storage.getString(PROMPTED_AFTER_PURCHASE_KEY) === '1';
-}
-
-/** Mark the one-time post-purchase notification opt-in as shown. */
-export function markNotifPromptedAfterPurchase(): void {
-  storage.set(PROMPTED_AFTER_PURCHASE_KEY, '1');
-}
-
-/**
- * Whether to auto-present the notification opt-in after a subscription
- * purchase: only once ever, and only if the user hasn't already enabled
- * the daily reminder.
- */
-export function shouldPromptNotifAfterPurchase(): boolean {
-  if (hasPromptedNotifAfterPurchase()) return false;
-  if (getNotificationSettings().enabled) return false;
-  return true;
 }
 
 // ---- permission ----
@@ -168,10 +131,12 @@ export async function requestNotificationPermission(): Promise<PermissionResult>
 
 /** Register silently only after the OS permission exists. The daily local
  * reminder and partner-update remote push therefore share one explicit opt-in. */
-export async function syncRemoteNotificationRegistration(
+async function registerRemoteNotification(
   options?: { force?: boolean },
 ): Promise<boolean> {
-  if (!options?.force && Date.now() - lastRemoteRegistrationAt < 6 * 60 * 60_000) return true;
+  await migrateLegacyReminder();
+  const preference=getNotificationSettings();
+  if (!options?.force&&!preference.remotePending && Date.now() - lastRemoteRegistrationAt < 6 * 60 * 60_000) return true;
   if (await checkNotificationPermission() !== 'granted') return false;
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user?.id;
@@ -182,11 +147,18 @@ export async function syncRemoteNotificationRegistration(
   try {
     await ensureAndroidNotificationChannel();
     const token = await Notifications.getExpoPushTokenAsync({ projectId });
-    await apiClient.post('/api/notifications/register', {
+    const registration=await apiClient.post<{success?:boolean;notificationVersion?:number}>('/api/notifications/register', {
       userId,
       token: token.data,
       platform: Platform.OS,
+      notificationVersion:2,
+      adventureVersion:5,
+      plushieTouchVersion:2,
+      dailyReminderEnabled:preference.enabled,
     });
+    if(registration.notificationVersion!==2)return false;
+    const latest=getNotificationSettings();
+    if(latest.enabled===preference.enabled)setNotificationSettings({...latest,remotePending:false});
     lastRemoteRegistrationAt = Date.now();
     return true;
   } catch (error) {
@@ -195,17 +167,40 @@ export async function syncRemoteNotificationRegistration(
   }
 }
 
+/** Serialize registration so a late opt-in cannot overwrite a newer opt-out. */
+export function syncRemoteNotificationRegistration(options?:{force?:boolean}):Promise<boolean>{
+  if(remoteRegistration)return remoteRegistration.then(()=>syncRemoteNotificationRegistration(options));
+  const request=registerRemoteNotification(options).catch(()=>false);
+  remoteRegistration=request;
+  void request.then(ok=>{
+    if(remoteRegistration===request)remoteRegistration=null;
+    if(ok){retryAttempts=0;if(registrationRetry)clearTimeout(registrationRetry);registrationRetry=null;}
+    else scheduleRegistrationRetry();
+  });
+  return request;
+}
+
 // ---- schedule / cancel ----
 
-function buildBody(): string {
-  const charName = 'your companion';
-  return `How was your day? ${charName} wants to hear about your life moments.`;
+let legacyMigration:Promise<void>|null=null;
+async function migrateLegacyReminder():Promise<void>{
+  if(legacyMigration)return legacyMigration;
+  const current=getNotificationSettings();
+  if(current.scheduleVersion===DAILY_SCHEDULE_VERSION&&!current.identifier)return;
+  const work=(async()=>{
+    const scheduled=await Notifications.getAllScheduledNotificationsAsync();
+    const ids=new Set(scheduled.filter(n=>n.identifier===current.identifier||n.content.body==='How was your day? your companion wants to hear about your life moments.').map(n=>n.identifier));
+    if(current.identifier)ids.add(current.identifier);
+    for(const id of ids)await Notifications.cancelScheduledNotificationAsync(id);
+    const latest=getNotificationSettings();
+    setNotificationSettings({...latest,hour:20,min:0,identifier:null,scheduleVersion:DAILY_SCHEDULE_VERSION,remotePending:true});
+  })();legacyMigration=work;
+  try{await work;}finally{if(legacyMigration===work)legacyMigration=null;}
 }
 
 /**
- * Schedules (or re-schedules) a daily reminder at the given local hour/min.
- * Cancels any previously scheduled identifier first to avoid duplicates.
- * Persists the new identifier + hour/min to MMKV with enabled=true.
+ * Compatibility signature for existing UI. Time is fixed at local 20:00;
+ * only the opt-in is registered, never an unconditional local notification.
  */
 export async function scheduleDailyReminder(
   hour: number,
@@ -214,70 +209,18 @@ export async function scheduleDailyReminder(
   if (await checkNotificationPermission() !== 'granted') {
     throw new Error('notification_permission_not_granted');
   }
-  if (!Number.isInteger(hour) || hour < 0 || hour > 23
-    || !Number.isInteger(min) || min < 0 || min > 59) {
-    throw new Error('invalid_notification_time');
-  }
-  await ensureAndroidNotificationChannel();
+  await migrateLegacyReminder();
   const current = getNotificationSettings();
-  const identifier = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Burrow',
-      body: buildBody(),
-      sound: 'default',
-      ...(Platform.OS === 'android'
-        ? { priority: Notifications.AndroidNotificationPriority.HIGH }
-        : {}),
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute: min,
-      ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
-    },
-  });
-
-  // Do not discard a known-good reminder until the replacement has been
-  // accepted by the native scheduler. This also turns silent native failures
-  // into a visible error instead of persisting a reminder that cannot fire.
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-  if (!scheduled.some((notification) => notification.identifier === identifier)) {
-    throw new Error('notification_schedule_not_registered');
-  }
-  if (current.identifier && current.identifier !== identifier) {
-    try {
-      await Notifications.cancelScheduledNotificationAsync(current.identifier);
-    } catch {
-      // Cancelling a missing identifier is a no-op; ignore.
-    }
-  }
-
-  setNotificationSettings({
-    enabled: true,
-    hour,
-    min,
-    identifier,
-    scheduleVersion: DAILY_SCHEDULE_VERSION,
-  });
+  setNotificationSettings({...current,enabled:true,hour:20,min:0,identifier:null,remotePending:true,scheduleVersion:DAILY_SCHEDULE_VERSION});
+  await syncRemoteNotificationRegistration({force:true});
 }
 
-/** Repair legacy or OS-pruned reminders when the app returns to foreground.
- * This migrates existing users onto the current Android notification channel
- * without asking them to toggle their reminder off and on manually. */
+/** Migrate legacy schedules and resume a pending server preference sync. */
 export function reconcileDailyReminderSchedule(): Promise<boolean> {
   if (dailyScheduleReconcile) return dailyScheduleReconcile;
   dailyScheduleReconcile = (async () => {
-    const current = getNotificationSettings();
-    if (!current.enabled) return true;
-    if (await checkNotificationPermission() !== 'granted') return false;
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    const registered = Boolean(
-      current.identifier
-      && scheduled.some((notification) => notification.identifier === current.identifier),
-    );
-    if (registered && current.scheduleVersion === DAILY_SCHEDULE_VERSION) return true;
-    await scheduleDailyReminder(current.hour, current.min);
-    return true;
+    await migrateLegacyReminder();
+    return syncRemoteNotificationRegistration();
   })().catch((error) => {
     console.warn('[notifications] daily reminder reconciliation failed:', error);
     return false;
@@ -293,6 +236,7 @@ export function reconcileDailyReminderSchedule(): Promise<boolean> {
  * starts at their last preferred time.
  */
 export async function cancelDailyReminder(): Promise<void> {
+  await migrateLegacyReminder();
   const current = getNotificationSettings();
   if (current.identifier) {
     try {
@@ -303,9 +247,11 @@ export async function cancelDailyReminder(): Promise<void> {
   }
   setNotificationSettings({
     enabled: false,
-    hour: current.hour,
-    min: current.min,
+    hour: 20,
+    min: 0,
     identifier: null,
     scheduleVersion: DAILY_SCHEDULE_VERSION,
+    remotePending:true,
   });
+  await syncRemoteNotificationRegistration({force:true});
 }

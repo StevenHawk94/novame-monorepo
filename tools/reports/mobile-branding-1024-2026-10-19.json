@@ -1,0 +1,55 @@
+{
+  "scope": "Refresh mobile branding from the newly supplied 1024x1024 PNG; no creative redraw, cloud deployment or app-store submission",
+  "source": {
+    "path": "apps/mobile/assets/icon.png",
+    "width": 1024,
+    "height": 1024,
+    "originalBytes": 923595,
+    "optimizedBytes": 613085,
+    "savedBytes": 310510,
+    "optimization": "Lossless PNG deflate/filter optimization; no palette reduction or color quantization",
+    "pixelSha256": "156ae68b9198d09f71b64ca4e88ec0b98409bd6935ff3b6e27697da969ee07fa",
+    "decodedPixelsUnchanged": true,
+    "opaque": true
+  },
+  "background": "#3f150b",
+  "exports": {
+    "appStore": "apps/mobile/assets/icon.png (1024x1024 opaque PNG)",
+    "googlePlay": "apps/mobile/assets/branding/google-play-512.png (512x512 RGBA PNG, 228661 bytes)",
+    "splashSource": "apps/mobile/assets/branding/splash-logo.png (560x560 PNG; displayed at existing 140pt/dp)",
+    "adaptiveForeground": "apps/mobile/assets/branding/android-adaptive-foreground.png (432x432 RGBA; 108dp canvas, 72dp artwork)",
+    "webFavicon": "apps/mobile/assets/branding/favicon-32.png",
+    "manifest": "apps/mobile/assets/branding/manifest.json"
+  },
+  "native": {
+    "assetFilesRegeneratedAndOptimized": 39,
+    "unoptimizedBytes": 2796617,
+    "optimizedBytes": 2392274,
+    "ios": "Universal 1024 PNG app icon and 140/280/420px Splash densities",
+    "android": "Five DPI sets: 48/72/96/144/192px legacy and round launchers; 108/162/216/324/432px adaptive layers; actual lossless WebP files, PNG splash",
+    "widget": "Every declared app-icon size regenerated and losslessly optimized"
+  },
+  "retired": {
+    "files": ["assets/adaptive-icon.png", "assets/splash-icon.png", "assets/splash.png", "assets/favicon.png"],
+    "runtimeReferencesVerifiedAbsent": true,
+    "recoverableBackup": "/var/folders/_v/j_qgbwt96t9b2j57xdhvw13m0000gn/T/novame-retired-branding-i8a13A",
+    "notificationIconRetained": true
+  },
+  "buildIntegration": {
+    "plugin": "apps/mobile/plugins/with-mobile-branding.js",
+    "order": "Finalized mods run after Expo native icon generation",
+    "realExpoPrebuildConfigurationVerified": ["ios", "android"],
+    "sharpBuildDependencyPinned": "0.35.0",
+    "frozenOfflineWorkspaceLockVerified": true,
+    "activeLocalNodeModulesPurgedOrRelinked": false
+  },
+  "verification": {
+    "regressionTestsPassed": 78,
+    "mobileTypeCheckPassed": true,
+    "frozenWorkspaceLockPassed": true,
+    "checks": ["decoded pixels", "PNG/WebP signatures", "all platform dimensions", "App Store opacity", "Google Play size limit", "adaptive safe zone", "splash hand-off", "startup and resume regression", "mobile type-check", "Expo prebuild config", "frozen workspace lock"],
+    "simulatorOpened": false,
+    "newAppBinaryBuiltOrSubmitted": false,
+    "installationRequirement": "Launcher and native splash updates require a rebuilt app; no OTA-only replacement"
+  }
+}

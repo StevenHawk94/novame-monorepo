@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-25",
+  "status": "implemented-and-verified-with-listed-limitations",
+  "authorization": "User explicitly requested original reference UI, no in-App exit during recording, and interrupted recording recovery. No quota/payment/relationship/notification eligibility changes authorized or made.",
+  "causes": [
+    "Old recording treated any blur/non-active AppState as a terminal interruption, destroyed the recorder, and returned the parent to idle without a partial checkpoint.",
+    "Null completion and local draft-write failures also returned to idle; recording completion, valid content, durable save, and server acknowledgement were conflated in the UI.",
+    "Recording and preview used a growing centered ScrollView and different toy sizes instead of the supplied fixed-stage layout.",
+    "Input could use a stale/uninitialized frame clock, ignored movement could start the input clock, and gesture finalization could cancel rendered fingers without closing recorder pointers. These paths now have counterexample tests. They are not claimed to be the sole cause of every historical interruption."
+  ],
+  "clientChanges": [
+    "Intro is a cream overlay; acknowledging it goes directly to first-touch-armed recording, without an extra Record 60 seconds page.",
+    "Brown instruction header, upper heart counter/outline timer, fixed toy size and baseline, bottom Squeeze/Bonk. At completion only the bottom main action changes to cream Send The Love Bomb. Record again is a header action.",
+    "Recording uses one logical foreground-time axis, pauses on background/blur, and rebases on resume. Partial and completed checkpoints survive process restart in existing encrypted, managed account-scoped storage.",
+    "Navigation guards are scoped to a started, live recording and released on completion, revocation or unavailable required content; allowance changes cannot unmount a still-locked recorder.",
+    "Every partial write captures actor/partner/pair scope. Restored UI pins the original toy/photo IDs; stale callbacks cannot save or enqueue old content under a new scope. Input batches also carry a foreground generation so queued pre-pause input cannot reopen held pointers after resume, even if React batches inactive/active without rendering.",
+    "Approximate 500ms coalesced checkpoints, lifecycle flush, closed-pointer restoration without invented counts; excess event sampling is bounded without discarding the whole minute.",
+    "A completed clip is retained on local write failure. Zero completed actions produce an explicit non-sendable completed state with a re-record exit. Only acknowledged sends display the success overlay.",
+    "Absolute controls are inside a full-height interaction container rather than relying on out-of-bounds native hit testing. Ordinary toy layout is unchanged unless these optional presentation props are supplied."
+  ],
+  "unchanged": [
+    "TouchClip v1 wire validation and server API",
+    "Free/Plus quotas, economic calendar and retention",
+    "Store payment and subscription verification",
+    "Personal inventory, wallets, room ownership and photo access",
+    "Unread/read/ready semantics, send idempotency and immutable retries",
+    "Task/reward exclusion and replay quality policies",
+    "Startup/strong-update/announcement priority; no new startup navigation"
+  ],
+  "automated": {
+    "domainIsolation": {"passed": 668, "failed": 0, "log": "/private/tmp/burrow-touch-recovery-final-gate.log"},
+    "mobileTypeScript": "passed: pnpm --filter @novame/mobile exec tsc --noEmit",
+    "domainBoundaries": "passed: existing shared encrypted storage, native decoder and safe drawing boundaries retained",
+    "counterexamples": [
+      "Logical 60000ms completion, fractional checkpoint cannot round an unfinished minute into completion",
+      "Foreground/background/focus pause and active-time rebasing",
+      "Checkpoint/process restoration, held-pointer cancellation and completed-before-draft-write recovery",
+      "Disk-full preserves last successful checkpoint and completed in-memory clip",
+      "Zero-count minute is not a fake sendable clip",
+      "Captured-scope rejection for partial writes, completed drafts and send queue",
+      "Navigation lock release on completion/storage failure/revocation",
+      "Allowance refresh cannot remove running recorder while lock remains",
+      "Clock readiness, ignored movement, gesture finalization and shared native teardown",
+      "Dense cancelled-gesture flood remains bounded; 999-count cap and strict wire budget preserved",
+      "Existing immutable uncertain retries, committed receipt safety, readiness and shared realtime ownership"
+    ]
+  },
+  "native": {
+    "environment": "iPhone 17 Pro / iOS 26.2 Simulator / existing Release native host / minified Hermes JS / real renderers and native stack",
+    "bundleId": "com.novame.plushtouchqa",
+    "finalBundleSha256": "c53c1d7c054b5979d177d8ff6f55148884b365716997a50807c89a0f435a728e",
+    "productionBusinessAPI": "prohibited by isolated fixtures",
+    "privatePhotos": "none: bundled public bunny icon used as fake face",
+    "storage": "separate encrypted QA MMKV ID; not the real App storage or Keychain",
+    "verified": [
+      "Cream introduction, first-touch armed stage, fixed recording/complete layout and true acknowledged success overlay visually inspected",
+      "Final candidate: 20 physical coordinate button presses plus one physical drag counted 21; left-edge swipe did not exit",
+      "Final candidate complete minute: first checkpoint to completed draft 60014ms wall time, 21 touches, 22 events, correct Send The Love Bomb page",
+      "A process-kill/relaunch exercise retained 21 touches and resumed at approximately 30 seconds remaining; then reached completed-send state",
+      "Background exercise: 369043ms background interval retained a 919ms checkpoint; first resumed checkpoint 1476ms, then completed after another 59272ms foreground, not immediately on return",
+      "Queued sending stayed distinct from Sent, server-fixture acknowledgement opened success overlay, Done returned normally",
+      "Final shared ordinary LocalizedToy: physical Squeeze, Bonk and drag still invoked three ordinary interaction callbacks; returned to visible, interactive menu, then opened and operated inbox/history",
+      "Final foreground-generation build: background for 68969ms retained exactly 615ms and two touches; first resumed checkpoint 1164ms; completed only after another 59459ms foreground, then exited normally. Ordinary toy three-action regression passed again after this final build."
+    ],
+    "recordingPerformance": {
+      "frames": 3650,
+      "p50Ms": 16.6667,
+      "p95Ms": 16.6667,
+      "p99Ms": 17.7646,
+      "maxMs": 56.2878,
+      "over50ms": 1,
+      "scope": "UI-frame callback during the 21-touch full-minute layout candidate before the final queued-input-generation-only guard; excludes cold open before first touch and first frame after foreground. Not an independent compositor/GPU trace. No concurrent build or large test suite during sampling.",
+      "assessment": "Typical recording sustained the frame budget; one slow interval remains. Not zero drops or an all-device guarantee. Prior cold-open limits from the original feature report are not waived."
+    },
+    "finalForegroundRecoveryPerformance": {
+      "frames": 3599,
+      "p50Ms": 16.6667,
+      "p95Ms": 16.6667,
+      "p99Ms": 16.6667,
+      "maxMs": 36.0667,
+      "over50ms": 0,
+      "meanFps": 59.9833,
+      "scope": "Final hashed bundle, real recording after two physical button actions and a foreground/background cycle. Same UI-frame-callback limitations. No concurrent compilation or large test suite; this single sample does not erase the earlier 56ms slow interval or prove all devices/cold opens."
+    }
+  },
+  "recoveryLimits": [
+    "The App cannot forbid OS backgrounding, force termination, power loss or uninstall. It pauses and restores the latest successfully written checkpoint.",
+    "A force kill can lose approximately one coalesced save interval under normal load; suspension, blocked JS or storage failure can increase this. Do not promise zero loss.",
+    "Recovery occurs when re-entering the recording destination, without adding startup navigation that overrides existing launch priorities.",
+    "Old recordings already discarded by the previous implementation cannot be reconstructed.",
+    "Identity/relationship revocation still clears or rejects old content; recording locks cannot override security."
+  ],
+  "release": {
+    "client": "workspace changes ready for client reload/build; no App Store/TestFlight publication",
+    "api": "unchanged, not redeployed",
+    "database": "unchanged, no migration",
+    "assetsAndNativeDependencies": "no added artwork or native dependency",
+    "announcementsAndForcedUpdate": "unchanged"
+  },
+  "documentation": "docs/burrow-development-standards.md version 1.9, section 10.3 and change record",
+  "sources": ["https://reactnavigation.org/docs/use-prevent-remove/", "https://reactnavigation.org/docs/preventing-going-back/"],
+  "notVerified": [
+    "Physical iOS or Android device, Android native navigation/haptic behavior",
+    "Production two-account end-to-end send/delivery, since this is client-only and native business API is isolated",
+    "All historical tests or complete live Home/Adventure/Game/Surprise/Shop end-to-end flows",
+    "Pixel-identical screenshots across all screen sizes/accessibility font scales, cold-open zero drops, or all hardware zero drops"
+  ]
+}

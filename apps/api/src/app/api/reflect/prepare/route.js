@@ -1,10 +1,11 @@
-import { after, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
-import { XP_RULES, ITEM_CATALOG_VERSION } from '@novame/engine'
+import { XP_RULES } from '@novame/engine'
 import { isoWeek, journalKindForInput, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
 import { generateSavedReflectCopy } from '@/lib/reflect-settlement'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 import { majorUpdateEnabled } from '@/lib/app-major-update'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 
 export const runtime = 'edge'
 
@@ -25,9 +26,7 @@ export async function POST(request) {
     const supabase = serviceClient()
     const majorUpdate = await majorUpdateEnabled(supabase)
     const recordOnly = majorUpdate && !input.friendUserId
-    // Matching rules, timezone resolution and entitlement lookup are
-    // independent. Running them together removes two network round trips from
-    // the Save Reflection spinner, which was most visible for Free accounts.
+    // Manual validation, local date and entitlement reads are independent.
     const [resolved, localDate, profileResult] = await Promise.all([
       resolveDraftInput(supabase, input, { recordOnly }),
       resolveUserLocalDate(supabase, input.userId),
@@ -37,13 +36,14 @@ export async function POST(request) {
     if (resolved.error) return NextResponse.json({ error: resolved.error }, { status: 400 })
     const { data: profile } = profileResult
     if (!profile) return NextResponse.json({ error: 'profile_not_found' }, { status: 404 })
-    let isPaid = (profile.subscription_tier || 'free') !== 'free'
+    let isPaid = false
     if (majorUpdate) {
       const { data: policy, error } = await supabase.rpc('burrow_record_policy_v1', { p_user_id: input.userId })
       if (error || policy?.error || !policy) throw error || new Error('policy_unavailable')
       isPaid = policy.hasPlus === true
       // Do not gate retries here: begin_saved_reflect must first return saved receipts.
     }
+    if(!majorUpdate)isPaid=await effectiveHasPlus(supabase,input.userId)
     if (input.friendUserId && !isPaid) return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     const journalKind = journalKindForInput(input, resolved.mode)
     const payload = {
@@ -106,21 +106,6 @@ export async function POST(request) {
     }
     const aiEligible = allowance?.eligible === true
     draft = { ...draft, ai_enhancement_eligible: aiEligible }
-    // Admin evidence only. Confirmed removal never changes matching rules.
-    // Do not accept client-provided keywords or store the journal in this queue.
-    if (reflectId && resolved.removedMatches?.length && draft.body === resolved.body) {
-      const rows = resolved.removedMatches.flatMap(item => (item.matchedKeywords || []).slice(0, 10).map(keyword => ({
-        reflect_id: reflectId, item_id: item.itemId, icon_name: item.displayName,
-        keyword, catalog_version: ITEM_CATALOG_VERSION, rule_revision: input.matchingVersion?.revision || 0,
-      })))
-      after(async () => {
-        if (!rows.length) return
-        const { error: feedbackError } = await supabase.from('item_match_removals').upsert(rows, {
-          onConflict: 'reflect_id,item_id,keyword', ignoreDuplicates: true,
-        })
-        if (feedbackError) console.warn('[item-learning] removal feedback failed:', feedbackError.message)
-      })
-    }
     if (aiEligible) {
       draft = await generateSavedReflectCopy(supabase, draft, input.userId)
     }

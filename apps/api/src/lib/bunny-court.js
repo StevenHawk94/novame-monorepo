@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { callAI, getAIModelConfig, parseAIJson } from './ai'
 import { recordAIUsage } from './ai-usage'
-import { drainPushNotificationOutbox } from './push-notifications'
 import { fixedLaunchOutcomeV2 } from './bunny-court-rules-v2.mjs'
 import { fixedLaunchOutcomeV3 } from './bunny-court-rules-v3.mjs'
 import { resolveCourtOutcomeV4 } from './bunny-court-rules-v4.mjs'
@@ -346,16 +345,6 @@ export async function loadCourtSessionContent(supabase, session) {
   return contentForCourtSession(session, null) || await loadCourtCase(supabase, session.case_id)
 }
 
-export async function enqueueCourtNotification(supabase, recipientUserId, sessionId, eventType, copy) {
-  const { error } = await supabase.from('notification_outbox').upsert({
-    recipient_user_id: recipientUserId,
-    event_key: `court:${eventType}:${sessionId}`,
-    event_type: `court_${eventType}`,
-    payload: { sessionId, ...copy },
-  }, { onConflict: 'recipient_user_id,event_key', ignoreDuplicates: true })
-  if (error) throw error
-  void drainPushNotificationOutbox(supabase, 10).catch(() => {})
-}
 
 function replaceRoleNames(value, nameA, nameB) {
   return String(value || '')
@@ -406,13 +395,6 @@ async function saveVerdict(supabase, session, definition, template, analysisMeth
   // Realtime status changes are broadcast to both devices. The visible ready
   // push is only for the person who submitted first; the second responder is
   // already watching the in-court analysis state.
-  const { data: firstSubmission } = await supabase.from('court_submissions').select('user_id')
-    .eq('session_id', session.id).order('submitted_at', { ascending: true }).limit(1).maybeSingle()
-  if (firstSubmission?.user_id) {
-    await enqueueCourtNotification(supabase, firstSubmission.user_id, session.id, 'ready', {
-      title: definition.notification_copy?.readyTitle, body: definition.notification_copy?.readyBody,
-    })
-  }
   return row
 }
 

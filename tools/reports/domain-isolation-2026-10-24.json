@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-24",
+  "status": "implemented_verified_scoped_production_live",
+  "scope": "Plushie native rendering isolation, personal rooms, shared purchase controller, identity and financial receipt boundaries; preserve optimistic UI and notification readiness.",
+  "rootCauses": [
+    "SVG ForeignObject snapshots mutate native child.hidden; Fabric recycling can carry that state into unrelated cards. Reproduced with native diagnostic and eliminated using SVG-only face composition.",
+    "Shared room projections/writers made ownership follow pairing rather than the authenticated owner. New personal-v2 protocol restricts layout mutations to the actor and restores only personally entitled choices.",
+    "Independent warmers can race the native Expo Image shared manager's unsynchronized lazy initialization. Crash stack implicates this path; one shared initialization gate now precedes parallel decodes. This is a mitigation supported by source/stack evidence, not proof of the SDK's sole crash cause."
+  ],
+  "validation": {
+    "domainReleaseTests": {"passed":419,"failed":0,"log":"/private/tmp/personal267-release-final-419.log"},
+    "privateFileRecoveryTests":{"passed":10,"failed":0,"log":"/private/tmp/personal267-photo-final-edge.log","coverage":"Healthy URI single-flight verification; corrupt persisted file recovery; corrupt download never published; account replacement during native metadata verification rejects stale data."},
+    "nativePrivateFileRecovery":{"passed":true,"raw":"/private/tmp/personal267-native-private-file-manual-events.json","runtimeErrors":0,"method":"Real native filesystem preview containing invalid image bytes, actual RN image metadata rejection, shared cache invalidation; network restricted to local QA service."},
+    "nativeManualAcceptance":{"passed":true,"raw":"/private/tmp/personal267-native-acceptance-final-events.json","runtimeErrors":0,"checks":["Plushie camera placeholder and complete return to Home","Plushie Collection grid, selected item and both bottom buttons; empty decorative slots are expected with the one-owned-item fixture","Plushie Shop seven fixture products all visible","Affection six cards visible after Plushie/Collection/Shop round-trip","Music Lofi, Lullaby, Jazz and No music all visible after Plushie","Game Room After Dark, Daily Quirks, Taste Buds and Love Language cards visible, no blank initial categories","Surprise Pumpkin, Santa and Birthday first row plus subsequent frame rows all visible","Actual corrupt native image file rejected and removed from shared cache"]},
+    "realDatabaseAssertions": {"passed":39,"log":"/private/tmp/personal267-db-bootstrap-final.log","isolated":true},
+    "databaseRegressionTests": {"passed":27,"log":"/private/tmp/personal267-db-regression.log"},
+    "photoAndPreparationTests": {"passed":24,"failed":0,"log":"/private/tmp/personal267-photo-decode-regression.log"},
+    "boundaries": {"sourceFiles":454,"unsafeNativeImports":0,"rawPersistentKeys":0},
+    "mobileTypecheck":"passed",
+    "apiClientTypecheck":"passed with explicit --rootDir src --lib es2022,dom; the inherited package-only tsconfig does not configure these correctly",
+    "adminTypecheck":"passed",
+    "iosExport": {"directory":"/private/tmp/burrow-personal267-ios-final-photo","sha256":"93d5dd3a51b9f8a9a01a2cedf46bef50765e0f4f8a14d4583e33e0e0fe148c4d"},
+    "androidExport": {"directory":"/private/tmp/burrow-personal267-android-final-photo","sha256":"27fcfa16dda6d5be7c693ca3919f9e44de3db29a064550155015065e35f45244"},
+    "nativeIsolation": {"device":"iPhone 17 Pro / iOS 26.2","masks":33,"mountUnmountCycles":5,"ordinaryCardsVisible":6,"cardInteractionVerified":true,"screenshot":"/private/tmp/burrow-personal267-native-five-cycles.png"},
+    "nativeNavigation": {
+      "mode":"Isolated native Release host, production minified JS, Hermes -O, actual store/screens/navigation; local fixtures, no real account or business writes.",
+      "acceptanceRevision":"User confirmed 2026-10-24: no strict historical timing parity required; reference 30–50fps and no perceptible blocking. Supplied video is 25fps encoded, not an App FPS measurement.",
+      "raw":"/private/tmp/personal267-final-native-events.json",
+      "controlRaw":"/private/tmp/personal267-no-mask-valid-events.json",
+      "restoredFinalRaw":"/private/tmp/personal267-restored-native-events.json",
+      "restoredFinalRuntimeErrors":0,
+      "restoredFinalP95Ms":{"affection":79.86,"adventure":137.00,"memories_room":75.05,"game-room":89.45,"surprise-room":155.78},
+      "restoredFinalFrames":{"callbacks":3386,"over34ms":224,"maximumIntervalMs":476.46},
+      "coldStarts":"Two full formal-renderer runs plus one no-mask control completed after shared decoder protection, with no new native crash report observed. Small sample, not a crash-free guarantee.",
+      "windowSeconds":73.651,
+      "runtimeOrPreparationErrors":0,
+      "navigationDispatchToFocusP95Ms":{"affection":95.59,"adventure":111.26,"memories_room":88.61,"game-room":106.39,"surprise-room":157.07},
+      "sameEnvironmentNoMaskP95Ms":{"affection":96.01,"adventure":104.88,"memories_room":79.14},
+      "frames":{"callbacks":3426,"over34ms":207,"maximumIntervalMs":374.86},
+      "noMaskControlFrames":{"callbacks":3458,"over34ms":177,"maximumIntervalMs":734.96},
+      "interpretation":"Removing the new mask did not restore the historical low entry timings. The matched control does not support attributing the entry slowdown to SVG masking. It does not prove absence of all regressions. Historical parity was not established and was subsequently waived by the user. Measured average is roughly 46fps, within the user's reference range; manual navigation did not reproduce the reported frozen/missing-content behavior. Slow frames remain; no zero-dropped-frame or universal-device claim."
+    }
+  },
+  "production":{"migration":267,"protectedUserRowsUnchanged":true,"serviceOnlyRPCs":8,"apiPromotion":"verified_live","deploymentId":"dpl_4ygYwUXz6CTdZSfAsMv2sJ9PsLqG","domain":"https://api.soulsayit.com","sourceFilesVerified":276,"verifiedAt":"2026-10-24T08:47:34.826Z","bootstrapUnauthenticatedStatus":401,"forceUpdateReadStatus":200,"admin":"unchanged; no Admin implementation changes required","announcementsAndForceUpdates":"not modified"},
+  "compatibility":"Only capable clients request personal-v2. Installed legacy clients keep their previous protocol; their independent-room behavior is not repaired until the client is updated. New clients never downgrade financial intents into the legacy shared-room writer. Expo/Fast Refresh cannot reliably undo native recycling state already poisoned in an old process: fully terminate and relaunch the development App once after taking this change.",
+  "limitations":[
+    "Client changes are local source and verified bundles, not an App Store/EAS release.",
+    "The full historical CJS scan was not green. Some failures were fixed and reverified; others target retired modules, old UI contracts or require separate database fixtures. The curated current release gate is not a claim that every historical test passes.",
+    "Android bundle verified; no Android emulator or target Android device acceptance performed.",
+    "Real paired-account push delivery, media uploads and store purchases were not executed against production users.",
+    "Strict historical timing parity was waived by the user; it was not demonstrated. Target-device Release acceptance remains open."
+  ]
+}

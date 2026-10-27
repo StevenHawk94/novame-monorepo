@@ -1,0 +1,44 @@
+{
+  "request": "Start ongoing animation and countdown optimistically; silently reconcile after server confirmation without changing Adventure business rules",
+  "rootCause": "The screen forced pending progress to zero and remaining time to the full duration; the UI-thread route explicitly declined to advance before the Start response.",
+  "implementation": {
+    "displayClock": "Independent monotonic presentation clock seeded by persisted Start intent dates. Pending progress and countdown advance immediately without awaiting prepare, finalize, Start, display or Bootstrap.",
+    "serverReconciliation": "One continuous correction phase catches up or slows down before continuing at normal speed, converging on the authoritative deadline without adding seconds back to the visible counter or moving the route backwards.",
+    "clockAndPath": "The same two-segment clock drives both countdown rendering and UI-thread path/character movement. Ordinary countdown ticks do not restart native progress timing or the decorative dirt loop.",
+    "pendingAliases": "Pending record IDs, a real adventure ID and the temporarily absent journal selector between receipt persistence and projection preserve the same character lifetime.",
+    "hiddenPages": "An existing hidden Adventure render samples the current monotonic clock; its timer remains paused while hidden. Focus/reentry seeks current progress rather than starting from zero.",
+    "offlineBoundary": "An unconfirmed prediction stops short of zero/100%; pending IDs and localStartPending cannot be treated as arrived or invoke settlement.",
+    "scopeIsolation": "A different owner/pair or actual new confirmed journey resets the presentation lifetime. No predicted dates or progress are written into authoritative state."
+  },
+  "preserved": [
+    "Existing UI, layout, artwork proportions and path geometry",
+    "Existing Adventure duration and entitlement rules",
+    "Durable journal/start queue, original idempotency keys and offline retries",
+    "Server-authoritative completion deadline, reward eligibility and claim APIs",
+    "Notification content readiness, scope authorization and no premature completion badges"
+  ],
+  "verification": {
+    "testsPassed": 180,
+    "evidence": "/private/tmp/burrow-adventure-optimistic-all-final.txt",
+    "coverage": [
+      "17-second delayed prepare/finalize/start without freezing the prediction",
+      "Eight-hour journey with a delayed server start and silent deadline convergence",
+      "Clock skew immediately before entry and while running",
+      "Minimal receipt followed by full display; ordinary ticks do not retrigger correction",
+      "Return, focus, background/resume, pending restoration and identity changes",
+      "Prolonged offline prediction cannot settle; confirmation schedules the actual server deadline",
+      "Existing journal idempotency, notification preparation, completion, reward and delivery regressions"
+    ],
+    "mobileTypeScript": "passed",
+    "productionBabel": "passed for display clock, ongoing screen and route; UI worklets compiled",
+    "simulatorOrPhysicalDeviceRun": false,
+    "releasePerformanceClaim": "No new device frame-rate measurement; this validates clock behavior and regression boundaries, not a physical-device FPS guarantee."
+  },
+  "release": {
+    "clientOnly": true,
+    "apiChanged": false,
+    "migrationRequired": false,
+    "vercelDeploymentRequired": false,
+    "appStoreOrOtaPublished": false
+  }
+}

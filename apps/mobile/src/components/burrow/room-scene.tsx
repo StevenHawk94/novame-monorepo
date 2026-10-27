@@ -2,11 +2,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path, Rect, Circle, Ellipse, Line, G } from 'react-native-svg';
 import type { MajorUpdateCatalogItem, MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { RoomPhoto } from './room-photo';
+import { toyPhotoFor } from '@/lib/burrow-toy-photos';
 import { BunnyActor } from './bunny-actor';
 
 /** Code-native placeholder art: each fixed slot can be replaced by a catalog
  * image later without baking controls or text into a full-screen screenshot. */
-export function RoomScene({ slots, away, shared = false, sleeping, photos = [], onSlot, partnerOutfit, busy = false, canFeed = true }: {
+export function RoomScene({ slots, away, shared = false, sleeping, photos = [], onSlot, partnerOutfit, busy = false, canFeed = true,ownerId,partnerOwnerId }: {
   slots: Record<string, MajorUpdateCatalogItem>;
   away?: boolean;
   shared?: boolean;
@@ -16,6 +17,7 @@ export function RoomScene({ slots, away, shared = false, sleeping, photos = [], 
   partnerOutfit?: MajorUpdateCatalogItem;
   busy?: boolean;
   canFeed?: boolean;
+  ownerId?:string;partnerOwnerId?:string;
 }) {
   const windowItem = shared ? slots.our_window : slots.window;
   const night = windowItem?.stable_id.includes('02');
@@ -50,8 +52,8 @@ export function RoomScene({ slots, away, shared = false, sleeping, photos = [], 
       {shared && <Ellipse cx="150" cy="382" rx="111" ry="37" fill={slots.bed?.price?'#677CB3':'#EFCA93'} stroke="#A96D42" strokeWidth="7" />}
       {shared && sleeping?.mine && sleeping.partner && <Rect width="360" height="470" fill="#182345" opacity="0.35"/>}
     </Svg>
-    <BunnyActor outfit={slots.outfit} pose={shared ? sleeping?.mine ? 'sleeping' : 'idle' : away ? 'away' : 'idle'}/>
-    {shared && <BunnyActor outfit={partnerOutfit} partner pose={sleeping?.partner ? 'sleeping' : 'idle'}/>}
+    <BunnyActor outfit={slots.outfit} ownerId={ownerId} pose={shared ? sleeping?.mine ? 'sleeping' : 'idle' : away ? 'away' : 'idle'}/>
+    {shared && <BunnyActor outfit={partnerOutfit} ownerId={partnerOwnerId} partner pose={sleeping?.partner ? 'sleeping' : 'idle'}/>}
     {shared && (sleeping?.mine || sleeping?.partner) && <Text pointerEvents="none" style={styles.sleepLabel}>
       {sleeping.mine ? 'z Z' : ''}        {sleeping.partner ? 'z Z' : ''}
     </Text>}
@@ -63,7 +65,7 @@ export function RoomScene({ slots, away, shared = false, sleeping, photos = [], 
       <Pressable key={slot} disabled={!onSlot} onPress={()=>onSlot?.(slot)}
         accessibilityLabel={slots[slot].title} style={[styles.object, positions[slot]]}>
         {(slot==='frame'||slot==='couple_doll')&&photos.some(photo=>photo.kind===(slot==='frame'?'frame':'doll'))
-          ? <View pointerEvents="none" style={[styles.photo,slot==='couple_doll'&&{borderRadius:40}]}><RoomPhoto photo={photos.find(photo=>photo.kind===(slot==='frame'?'frame':'doll'))} circle={slot==='couple_doll'}/></View>
+          ? <View pointerEvents="none" style={[styles.photo,slot==='couple_doll'&&{borderRadius:40}]}><RoomPhoto photo={slot==='couple_doll'?toyPhotoFor(photos,photos.find(photo=>photo.kind==='doll')?.ownerId??'',slots.couple_doll?.stable_id):photos.find(photo=>photo.kind==='frame')} circle={slot==='couple_doll'}/></View>
           : <Text style={styles.symbol}>{symbols[slot]}</Text>}
       </Pressable>)}
     <View style={styles.label}><Text style={styles.labelText}>{away ? 'Out collecting today’s stories' : shared ? 'A little closer, together' : 'A little place to call home'}</Text></View>

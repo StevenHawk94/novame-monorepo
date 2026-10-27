@@ -1,0 +1,1493 @@
+{
+  "code": "JN",
+  "id": "adventure_friend_jn",
+  "name": "Juniper",
+  "gender": "she",
+  "species": "Fox",
+  "partner": "Rowan (he) - 前任",
+  "emotionalState": "刚分手，装酷说无所谓，慢慢走出来",
+  "speakingStyle": "嘴硬，偶尔破防，爱用食物自我安慰",
+  "catchphrase": "I'm fine.",
+  "art": [
+    "Fox_02_Variant1.webp",
+    "Fox_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "JN-01",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "A fox leans against a tree, scrolling nothing.",
+      "lines": [
+        "Oh, hey. Don't mind me. I'm doing great.",
+        "Totally great. Super great. Never been better."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You look great!",
+          "reaction": [
+            "Right?? Thanks. It's the confidence. And the tail. The tail does a lot of heavy lifting.",
+            "I'm Juniper, by the way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Okay...",
+          "reaction": [
+            "Don't 'okay' me. I'm fine. I'm just... very fine. In a way that's slightly loud.",
+            "But it's fine."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Want to walk together?",
+          "reaction": [
+            "...Sure. Walking. Sure. Walking is a thing I do. Casually. Not because I'm lonely. Obviously.",
+            "Let's go."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-02",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I deleted all my photos from last month. It was easy.",
+        "I only checked the trash folder twice. That's normal. That's like, a safety check."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's totally normal.",
+          "reaction": [
+            "Right?? Thank you. Everyone says 'don't look,' but I think they just don't understand.",
+            "The trash folder is a harmless place. It's like a museum for bad ideas."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What's in the trash folder?",
+          "reaction": [
+            "A lot of pictures. Mostly sunsets. And a few of a sandwich.",
+            "It was a really good sandwich. That's all. Just sandwiches. And sunsets."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Were you tempted to restore them?",
+          "reaction": [
+            "Tempted? No. Maybe. A little. Like, zero point three percent. Okay. Fifteen. But I didn't. See?",
+            "Strong. Independent. Slightly shaky."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-03",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I'm single now. It's a vibe. I'm embracing it.",
+        "My ex, Rowan, and I ended things last week. It was mutual. Mostly. I mean, he said it. But I was about to."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sorry to hear that.",
+          "reaction": [
+            "Don't be! It's fine. Honestly. I'm thriving. I made pasta last night. For one.",
+            "It was a big pot. Okay, I ate it all. Over four hours. That's thriving."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That takes strength.",
+          "reaction": [
+            "Thanks. I'm trying to believe that. I mean, I know it. I'm very strong.",
+            "I'm so strong that I've listened to the same song fourteen times today. For strength."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "What was Rowan like?",
+          "reaction": [
+            "Funny. Warm. Terrible at doing dishes. He hummed when he cooked.",
+            "I'm not going to talk about him much. But he hummed. That's all."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-04",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I still have his hoodie. It's just a hoodie. I'm not keeping it.",
+        "It's in my closet. In the front. Where I can see it. For logistical reasons."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Logistical reasons, sure.",
+          "reaction": [
+            "Exactly. It's in the front because the back is a mess. That's all.",
+            "Not because it smells like him. That would be silly. It smells like laundry. Mostly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What do you want to do with it?",
+          "reaction": [
+            "I don't know. Hold it? Burn it? Both?",
+            "Donate it to a charity that doesn't exist yet? Honestly, I'm open to suggestions.",
+            "Not that I'm sad."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "I'd keep it too.",
+          "reaction": [
+            "Right?? Okay. We're keeping it. For now. For science. And warmth.",
+            "And maybe, a little, for him. Don't tell anyone."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-05",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Okay. Hypothetically.",
+        "How do you stop yourself from texting someone you shouldn't text?",
+        "Asking for a friend. The friend is a fox."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I put my phone in another room.",
+          "reaction": [
+            "In another room. Okay. That's a solid plan. Distance. I could put it in the freezer.",
+            "That's very dramatic. I like drama."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I text a friend instead.",
+          "reaction": [
+            "A friend. Instead of him. Hm. That might work. You're a friend. Can I text you?",
+            "Just kidding. Mostly. I'll find another friend."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, I'm not sure it's always possible.",
+          "reaction": [
+            "Thank you for being honest.",
+            "I thought I was the only one who typed 'hey' and deleted it.",
+            "Then typed 'hi' and deleted that too. We're all a mess."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-06",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I almost texted Rowan today. I got as far as 'hey.'",
+        "Then I deleted it and ate a cracker. I'm calling it a victory. A cracker victory."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a win.",
+          "reaction": [
+            "A tiny win. A salty, crunchy win. I'm proud. And also still thinking about it.",
+            "But the cracker was good. So the day wasn't a total loss."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What did you want to say?",
+          "reaction": [
+            "Honestly? 'How are you?' That's all. Just that.",
+            "But he'd read it as 'I miss you.' Because he's not wrong. Ugh.",
+            "That cracker was a lifesaver."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Crackers help.",
+          "reaction": [
+            "Crackers always help. They don't ask questions. They don't remind me of anyone. They just crunch.",
+            "I think that's what I need in a friend. A cracker."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-07",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Juniper stops leaning, stops scrolling, and just sits.",
+      "lines": [
+        "Okay. I'm not fine. I mean, I'm fine. But I'm not.",
+        "I miss him. Not just him. The us. The little things. The way he'd say 'goodnight' like it was a promise.",
+        "I thought I'd be over it by now. It's been two weeks."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Two weeks is nothing.",
+          "reaction": [
+            "Thank you.",
+            "Everyone told me 'you'll be okay.' But nobody said 'it takes time.' I think hearing it from someone who isn't trying to fix me helps."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You don't have to be over it.",
+          "reaction": [
+            "...Thanks. I needed to hear that. I keep acting like there's a deadline.",
+            "Like I'm failing a test. Maybe I'm just a person who's sad. And that's allowed."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Juniper.",
+          "reaction": [
+            "...Thanks. I didn't realize I needed someone to just sit here. No speeches.",
+            "No 'you deserve better.' Just company. It's... nice."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-08",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I cried today. Properly. In the middle of the berry stand.",
+        "I held a berry and just... lost it. A squirrel patted my back. It was kind of beautiful.",
+        "I feel lighter. Weird. I'm not okay. But I feel lighter."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds healing.",
+          "reaction": [
+            "It was. Like a pressure valve. I was holding it in so tight.",
+            "And a berry cracked me open. I'm ridiculous. And also a bit lighter. Thanks for listening."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Crying counts as progress.",
+          "reaction": [
+            "I'm starting to think so. I used to think progress meant not feeling anything.",
+            "Now I think it means feeling it and still going to the berry stand. That's progress."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "A squirrel patted your back?",
+          "reaction": [
+            "A very kind squirrel. I don't know their name. They didn't say anything.",
+            "They just patted twice and handed me a napkin. I'm going to remember that. Forever."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-09",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "I gave the hoodie back today.",
+        "He said 'thanks.' That's it. I thought I'd cry. I didn't. I got ice cream. Two scoops.",
+        "It felt strange. And okay. Mostly okay."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's big.",
+          "reaction": [
+            "It felt big. And small. Like closing a book you've read a hundred times.",
+            "I didn't need the ending to be dramatic. It just ended. That's okay."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Ice cream is the right choice.",
+          "reaction": [
+            "Obviously. Salted caramel. It helped.",
+            "It's amazing how a scoop of ice cream can make the world feel just a little softer."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and listen.",
+          "reaction": [
+            "Thanks for not saying anything. Sometimes silence is the nicest thing.",
+            "I think I'm learning how to just be. With the ice cream. And the quiet."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-10",
+      "friendId": "adventure_friend_jn",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Okay, so. I'm not 'totally fine.' I'm 'mostly fine.'",
+        "Some days I'm hoodie-in-the-closet fine. Some days I'm ice-cream fine. Today's a good day.",
+        "You've been around for all of them. I noticed.",
+        "Okay. Your turn. How are you and your partner doing? And don't say 'fine.' I'll know."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning is a great place to be. I'm learning too. Mostly about me. It's weirdly interesting.",
+            "Come get ice cream with me sometime."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We've had some rough patches.",
+          "reaction": [
+            "Rough patches are real. Don't be hard on yourselves.",
+            "I'm living proof that the other side of hard is still a decent place to stand.",
+            "I'll be here."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "I'm glad you told me how you feel.",
+          "reaction": [
+            "Me too. I don't say this to just anyone. Don't let it go to your head.",
+            "But thanks. For being a real one."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P01",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "A guy at the berry stand smiled at me today.",
+        "I smiled back. Then I walked away like a professional. Do NOT say anything."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You smiled back!!",
+          "reaction": [
+            "I did. Barely. A half-smile. It was like my face remembered how, but only a little.",
+            "Don't make it weird. I'm still recovering from the smile."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Proud of you.",
+          "reaction": [
+            "Stop. Okay. Thanks. I feel like I'm in a very slow movie about myself.",
+            "Where the protagonist sometimes smiles at strangers. It's growth."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P02",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I cleaned my whole apartment today. Like, deep cleaned.",
+        "I found one of his socks behind the couch. I didn't cry. I put it in a drawer. A drawer called 'later.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A drawer called 'later' is smart.",
+          "reaction": [
+            "It's the best drawer.",
+            "It holds a lot of 'later.' Every day I think 'maybe I'll deal with it.' And then I close the drawer.",
+            "It's called healthy avoidance."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How did it feel to clean?",
+          "reaction": [
+            "Weirdly good. Like I wiped away dust and, like, five percent of grief.",
+            "It's a small percentage. But it adds up. I'll be at ninety by spring."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P03",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I tried a new coffee shop today. I sat at a table by myself.",
+        "I used to think that was sad. Today it felt kind of peaceful. I read my book. I didn't check my phone once. Okay, twice."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds nice.",
+          "reaction": [
+            "It was! A very pretty latte. I took a photo.",
+            "Then I realized I had no one to send it to.",
+            "Then I sent it to my mom. She replied with eight hearts. Healing."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Twice is a good number.",
+          "reaction": [
+            "It's honestly a good number. A month ago it was forty. I'm making strides.",
+            "Small, caffeine-filled strides. Please clap quietly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P04",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I deleted his number today. Actually deleted it.",
+        "I know it by heart. Of course I do. But still. Deleting felt like a very dramatic act. I'm proud and a little nauseous."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That takes courage.",
+          "reaction": [
+            "Thanks. I held my paw over the button for five minutes. Then I did it.",
+            "And then I ate a snack. Because that's my after-courage ritual."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Do you still remember it?",
+          "reaction": [
+            "Embarrassingly, yes. I'll probably forget it in a year. Or never. Whatever.",
+            "The point is that it's not in my phone. Gotta start somewhere."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P05",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "A friend invited me to a party. A real one. With people.",
+        "I said yes before I could overthink it. Now I'm panicking. What do I wear? Who do I talk to? What if I cry in the snack bowl?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You'll do great.",
+          "reaction": [
+            "Thank you. I choose to believe you. I'm going to wear the green scarf.",
+            "It's the only thing that doesn't remind me of anyone. Fresh start scarf."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Don't cry in the snack bowl.",
+          "reaction": [
+            "Noted. I'll cry in the bathroom like a civilized fox.",
+            "And then I'll return to the snacks. With dignity. And fresh eye makeup."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P06",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I went to the party. I stayed for ninety minutes.",
+        "Someone asked about my ex. I said 'we're not together.' And then I changed the subject to cheese. Cheese is a safe topic."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's smart.",
+          "reaction": [
+            "Cheese saves lives. It's a conversation that doesn't hurt. I talked about brie for ten minutes.",
+            "Everyone loved it. I might become the brie fox. It could be a personality."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Ninety minutes is great.",
+          "reaction": [
+            "Thanks! It was longer than I expected. I only checked the clock twice. A new record.",
+            "I even laughed at a joke. A real laugh. It scared me a little.",
+            "Then it felt good."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P07",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I found a song that doesn't remind me of him.",
+        "It's a very silly pop song. It has a kazoo. I danced to it in my kitchen. Alone. In a bathrobe. It was glorious."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Kazoo songs are healing.",
+          "reaction": [
+            "Underrated medicine. A kazoo doesn't care about your feelings. It just toots.",
+            "And somehow that's exactly what I needed. I might make it my anthem."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A kitchen dance party!",
+          "reaction": [
+            "The best kind. I did a spin and knocked over a spoon. I kept going.",
+            "A spoon on the floor is the sound of freedom. Don't tell my neighbors."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P08",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I wrote a letter to Rowan. I didn't send it.",
+        "I just needed to say things. I wrote five pages. Then I tore it into confetti. I put the confetti in a jar. It's actually pretty."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds cathartic.",
+          "reaction": [
+            "It really was. The ripping part was the best. I think I screamed a little.",
+            "A neighbor knocked. I said 'sorry, bad paper.' It's now a jar of pastel feelings."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Good call not sending it.",
+          "reaction": [
+            "I think so. He doesn't need to read it. I did. That was the point.",
+            "Now I have a jar of confetti and a lighter heart. It's a fair trade."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P09",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the hoodie? I donated my own hoodie today.",
+        "It was a gray one. It reminded me of a bad chapter. I felt like I was clearing space. A little more air. A little more room."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good feeling.",
+          "reaction": [
+            "It's like taking a deep breath after being underwater. I still have things I love.",
+            "But the ones that felt heavy? They're gone. I'm lighter.",
+            "I might even buy a new hoodie. A bright one."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Space helps.",
+          "reaction": [
+            "It really does. Physical space makes emotional space. I read that on a mug.",
+            "But it's true. I put the mug away too. It was the same advice."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P10",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still go to the berry stand. The squirrel from that day waved at me.",
+        "I waved back. We're not friends. We're 'berry stand acquaintances.' It's a very warm category."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good category.",
+          "reaction": [
+            "It's wonderful. They never ask questions. They just wave. And sometimes they hold a berry out.",
+            "It's low pressure and high comfort. The perfect amount of human contact."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Berry stand friends are the best.",
+          "reaction": [
+            "I think so too.",
+            "I never would have guessed that a berry stand would be where I'd heal.",
+            "But here we are. Berries and quiet waves."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P11",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the cracker victory? I upgraded to a cheese-and-cracker victory.",
+        "Progress. I even added a little grape. It's basically a fancy dinner for one. I felt very sophisticated."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds delicious.",
+          "reaction": [
+            "It was! Sophisticated and a little sad and a little proud.",
+            "A grape on a plate looks very put-together. I started taking photos of my meals.",
+            "It's a new hobby."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You're really leveling up.",
+          "reaction": [
+            "I am, aren't I? A few weeks ago I was eating dry cereal in the dark.",
+            "Now it's cheese. And grapes. And natural light. I'm practically a food blogger."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P12",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The song with the kazoo? It's now my morning alarm.",
+        "I wake up and immediately smile. It's so ridiculous. I think that's the point. I'm learning that joy can be silly. Or maybe silly can be joy."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's great.",
+          "reaction": [
+            "It really is. I had no idea that a kazoo could change my mornings.",
+            "It's like a tiny, very goofy sunrise. Every day. Highly recommend."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A kazoo alarm sounds loud.",
+          "reaction": [
+            "It's very loud. My neighbors have strong opinions.",
+            "But I'm not going to apologize for my healing. It's loud. It's allowed to be loud."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P13",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Getting over someone is just learning to eat dinner alone with good taste."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's kind of beautiful.",
+          "reaction": [
+            "Wow. Okay. I'll take it. I came up with it at a very solitary pasta dinner.",
+            "It felt profound. And a little lonely. But mostly profound."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Haha, so true.",
+          "reaction": [
+            "I'm serious! Mostly! Dinner alone is a skill.",
+            "You have to pick the right song and the right lighting. It's an art form, honestly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P14",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Heartbreak is just your heart doing a full reset. Annoying, but necessary."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good way to see it.",
+          "reaction": [
+            "Thanks. I read about resets in a manual for a toaster. The principle is the same.",
+            "Unplug, wait, plug back in. Hopefully nothing catches fire."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Resets take time.",
+          "reaction": [
+            "They do. I keep pressing the button and nothing happens.",
+            "Then one day the screen lights up. A tiny 'hello.' That's when you know it's working.",
+            "I'm waiting for my 'hello.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P15",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: It's okay to miss someone and still know it's over."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I think that's true.",
+          "reaction": [
+            "It really is. The missing doesn't mean you made a mistake. It means you loved.",
+            "And it's okay to love something that's done. That's what the berry stand taught me."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Missing is hard.",
+          "reaction": [
+            "It is. Like carrying a tiny rock in your pocket.",
+            "You forget it's there until you reach for your keys. And then it's the rock.",
+            "I'm learning to carry it lightly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P16",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Do you ever worry about losing your partner?",
+        "Not in a doom way. Just in a 'wow, it matters' way."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sometimes, yeah.",
+          "reaction": [
+            "Same. It's a weird mix of fear and gratitude. Maybe that's what love is.",
+            "A little scared and very thankful. I think I'm learning that from the other side."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I try to focus on today.",
+          "reaction": [
+            "Today. Okay. That's wise. I'm trying to do that too. Today I had a nice latte.",
+            "Tomorrow I'll worry about tomorrow. Today, the latte wins."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P17",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's something your partner does that makes you feel really appreciated?",
+        "I'm researching. For my future. Whenever that is."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They say thank you for small things.",
+          "reaction": [
+            "Small things. Yes. I remember when Rowan said thank you for passing the salt.",
+            "It felt like a warm hug. I think gratitude is basically love in a tiny hat."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They notice when I've had a long day.",
+          "reaction": [
+            "Noticing. I loved when he did that. A tiny 'rough one, huh?' That's all it took.",
+            "I want that again someday. With someone steady. With good cheese."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P18",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "If you could give one piece of advice about breakups to a friend, what would it be?",
+        "I'll write it on a sticky note."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Be gentle with yourself.",
+          "reaction": [
+            "Gentle. A beautiful word.",
+            "I wrote it on a sticky note and put it on my mirror.",
+            "Under 'drink water' and 'call Mom.' It's in good company."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Let yourself feel it.",
+          "reaction": [
+            "Feel it. That's the one I'm working on.",
+            "Not skipping to 'fine.' Sitting in the 'not fine' for a minute. It's uncomfortable.",
+            "But I think it's the way through."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P19",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Juniper holds out a small jar of pastel confetti.",
+      "lines": [
+        "Look. It's the letter I never sent.",
+        "It's pretty now. I think that's the most poetic thing I've ever done. Do you want some? For luck?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I'd love some.",
+          "reaction": [
+            "Okay. Here, a pinch. It's a bit sticky. But it's lucky. I think.",
+            "It's made of things I needed to say. Now it's just shiny. That's a good transformation."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Keep it for yourself.",
+          "reaction": [
+            "That's what I thought you'd say. I'll keep it on my shelf.",
+            "A little jar of pastel feelings. It's like a snow globe, but sadder and prettier."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "JN-P20",
+      "friendId": "adventure_friend_jn",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Juniper stands at the edge of the berry stand, looking at the sunset, and takes a long breath.",
+      "lines": [
+        "Hey. I just realized I haven't thought about Rowan for three hours.",
+        "Three hours. That's the longest in a month. It felt kind of nice. And kind of weird. Like a quiet room."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's huge.",
+          "reaction": [
+            "It is. I almost didn't notice.",
+            "I was too busy being mesmerized by a very good sunset. Okay, I noticed.",
+            "And then I thought of him for a second. But only a second. Progress."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A quiet room is peaceful.",
+          "reaction": [
+            "It really is. I used to think quiet meant empty. Today it felt like space.",
+            "Like a room with a window open. The breeze felt good. I might stay."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_33",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G01",
+      "name": "Pear Cordial",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 33,
+      "file": "Beverage Bottles/Pear Cordial.webp",
+      "key": "burrow/adventure-gifts/v1/33-308393a1f89a4154.webp",
+      "sha256": "308393a1f89a4154cc9227b3024b1b516a8d993e41919e940b38a30f6ae754a1",
+      "bytes": 12862
+    },
+    {
+      "id": "adventure_gift_34",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G02",
+      "name": "Orange Soda",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 34,
+      "file": "Beverage Bottles/Orange Soda.webp",
+      "key": "burrow/adventure-gifts/v1/34-71194e2207641a66.webp",
+      "sha256": "71194e2207641a66e06130a64a475bc6fc93fffe549524c7bea250d51c6e471b",
+      "bytes": 18646
+    },
+    {
+      "id": "adventure_gift_35",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G03",
+      "name": "Plum Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 35,
+      "file": "Beverage Bottles/Plum Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/35-2497c586c0be62f0.webp",
+      "sha256": "2497c586c0be62f01f572ad6adfb4009450042098a2ade87459d09474a673a8e",
+      "bytes": 21032
+    },
+    {
+      "id": "adventure_gift_36",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G04",
+      "name": "Mountain Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 36,
+      "file": "Beverage Bottles/Mountain Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/36-7f9d9c30987478b8.webp",
+      "sha256": "7f9d9c30987478b8a191554eda9f2d43b8a11ceea7aa61b4b253015def9e4c57",
+      "bytes": 15874
+    },
+    {
+      "id": "adventure_gift_37",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G05",
+      "name": "Cherry Tonic",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 37,
+      "file": "Beverage Bottles/Cherry Tonic.webp",
+      "key": "burrow/adventure-gifts/v1/37-32e7cba1dc82b47d.webp",
+      "sha256": "32e7cba1dc82b47dd617ad599e274022be7808728f2670cb0268b17a79c9fd5f",
+      "bytes": 16186
+    },
+    {
+      "id": "adventure_gift_38",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G06",
+      "name": "Bee Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 38,
+      "file": "Beverage Bottles/Bee Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/38-bde653cd6d642d47.webp",
+      "sha256": "bde653cd6d642d470af96312a754a7fb5e4d64af28ff701752a06ca3e5b11a18",
+      "bytes": 19156
+    },
+    {
+      "id": "adventure_gift_39",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G07",
+      "name": "Palm Tonic",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 39,
+      "file": "Beverage Bottles/Palm Tonic.webp",
+      "key": "burrow/adventure-gifts/v1/39-afaf093fc12b9dc4.webp",
+      "sha256": "afaf093fc12b9dc4a0c6d55d847bb16fdf0d5cf85ac1d262702dae99d8bed2b5",
+      "bytes": 17408
+    },
+    {
+      "id": "adventure_gift_40",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G08",
+      "name": "Strawberry Soda",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 40,
+      "file": "Beverage Bottles/Strawberry Soda.webp",
+      "key": "burrow/adventure-gifts/v1/40-1ad19f76690ad295.webp",
+      "sha256": "1ad19f76690ad295e4b2138b8f445da47638c252c7dc61a10c2a555d3d5457ac",
+      "bytes": 17926
+    },
+    {
+      "id": "adventure_gift_41",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G09",
+      "name": "Sailboat Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 41,
+      "file": "Beverage Bottles/Sailboat Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/41-1545d6125bdfa39c.webp",
+      "sha256": "1545d6125bdfa39c7d5106f95ecb6c27a8301921cef59de700fdd5ec191444ed",
+      "bytes": 21014
+    },
+    {
+      "id": "adventure_gift_42",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G10",
+      "name": "Lemonade Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 42,
+      "file": "Beverage Bottles/Lemonade Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/42-a5029e5ad09cdae7.webp",
+      "sha256": "a5029e5ad09cdae72d2eb9b2c22d6bf3990c3b9b5cb619e297d00da57a0cf912",
+      "bytes": 18522
+    },
+    {
+      "id": "adventure_gift_43",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G11",
+      "name": "Moon Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 43,
+      "file": "Beverage Bottles/Moon Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/43-ff5b0e9d5dcdf4b5.webp",
+      "sha256": "ff5b0e9d5dcdf4b52ea6963fa71aed4421e92ae0c074c4cc9cdf8e2d6ab62bf7",
+      "bytes": 18160
+    },
+    {
+      "id": "adventure_gift_44",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G12",
+      "name": "Peach Soda",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 44,
+      "file": "Beverage Bottles/Peach Soda.webp",
+      "key": "burrow/adventure-gifts/v1/44-bece55fd9faab395.webp",
+      "sha256": "bece55fd9faab395d7029bf6763a8136ca04048b60608406ad3422f911ffd160",
+      "bytes": 17796
+    },
+    {
+      "id": "adventure_gift_45",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G13",
+      "name": "Diamond Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 45,
+      "file": "Beverage Bottles/Diamond Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/45-c1b87c9b093ced43.webp",
+      "sha256": "c1b87c9b093ced43d82655069ed988c2e7813013bcdb7bb9ec9f6cbdcd448c9b",
+      "bytes": 13178
+    },
+    {
+      "id": "adventure_gift_46",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G14",
+      "name": "Cocoa Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 46,
+      "file": "Beverage Bottles/Cocoa Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/46-0959c5287db14ea0.webp",
+      "sha256": "0959c5287db14ea0a18e52ca21fd5fea80989e4d9bcfaff59f039d37d17859c3",
+      "bytes": 15884
+    },
+    {
+      "id": "adventure_gift_47",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G15",
+      "name": "Citrus Flask",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 47,
+      "file": "Beverage Bottles/Citrus Flask.webp",
+      "key": "burrow/adventure-gifts/v1/47-5503f170e6e7bd91.webp",
+      "sha256": "5503f170e6e7bd9116996ad4a515bc4c1313350bd4b1cbf93371763b0e58afde",
+      "bytes": 21432
+    },
+    {
+      "id": "adventure_gift_48",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G16",
+      "name": "Star Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 48,
+      "file": "Beverage Bottles/Star Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/48-842862e48d83ee13.webp",
+      "sha256": "842862e48d83ee13354dde9fd05ff01c17090bb5d8d58029b3347f7d0229caeb",
+      "bytes": 17884
+    },
+    {
+      "id": "adventure_gift_49",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G17",
+      "name": "Lavender Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 49,
+      "file": "Beverage Bottles/Lavender Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/49-80efa55776363f6c.webp",
+      "sha256": "80efa55776363f6c35174cb3955bd28ca41941254700974a0e77c8fd0d9f421d",
+      "bytes": 15298
+    },
+    {
+      "id": "adventure_gift_50",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G18",
+      "name": "Citrus Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 50,
+      "file": "Beverage Bottles/Citrus Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/50-f0aed9f8292fbcf4.webp",
+      "sha256": "f0aed9f8292fbcf46c92c7710a066036bbc10baee255a67e88e2a99845f3f102",
+      "bytes": 19894
+    },
+    {
+      "id": "adventure_gift_51",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G19",
+      "name": "Blueberry Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 51,
+      "file": "Beverage Bottles/Blueberry Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/51-b8609120ac2e696e.webp",
+      "sha256": "b8609120ac2e696e55e790ebdf208f4475a29b371bead07dff98f3f5a37c3877",
+      "bytes": 22920
+    },
+    {
+      "id": "adventure_gift_52",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G20",
+      "name": "Swan Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 52,
+      "file": "Beverage Bottles/Swan Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/52-9dacc87549c95a30.webp",
+      "sha256": "9dacc87549c95a30270ab577995b94ebb0e18a4a11cecd1596cc67a8ad7fe729",
+      "bytes": 17718
+    },
+    {
+      "id": "adventure_gift_53",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G21",
+      "name": "Fig Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 53,
+      "file": "Beverage Bottles/Fig Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/53-5b98ff2cdfad3018.webp",
+      "sha256": "5b98ff2cdfad3018f13ab5ce12bea1325b61ac2fe66182f78fd2a877059fc4ff",
+      "bytes": 18556
+    },
+    {
+      "id": "adventure_gift_54",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G22",
+      "name": "Blossom Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 54,
+      "file": "Beverage Bottles/Blossom Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/54-8c07db8de46158e7.webp",
+      "sha256": "8c07db8de46158e7ee06b19f408fa5a919cf89fb6aa3f57f98cd495e7d311b75",
+      "bytes": 15148
+    },
+    {
+      "id": "adventure_gift_55",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G23",
+      "name": "Agave Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 55,
+      "file": "Beverage Bottles/Agave Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/55-5a72d7e5b8eda20f.webp",
+      "sha256": "5a72d7e5b8eda20f506908ee001ef6da889b4dafec5f9831be06533e230a4bb3",
+      "bytes": 24300
+    },
+    {
+      "id": "adventure_gift_56",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G24",
+      "name": "Lightning Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 56,
+      "file": "Beverage Bottles/Lightning Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/56-42f17494c77984cf.webp",
+      "sha256": "42f17494c77984cfce82058924e542165919944b84b4113e78370b0d48c79bdc",
+      "bytes": 14452
+    },
+    {
+      "id": "adventure_gift_57",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G25",
+      "name": "Chess Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 57,
+      "file": "Beverage Bottles/Chess Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/57-700d37849521a3e5.webp",
+      "sha256": "700d37849521a3e5303af115563cf6e09da1fa21fca76f79a887a4f77ec2def0",
+      "bytes": 16682
+    },
+    {
+      "id": "adventure_gift_58",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G26",
+      "name": "Coconut Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 58,
+      "file": "Beverage Bottles/Coconut Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/58-8cae014d0d68c706.webp",
+      "sha256": "8cae014d0d68c706151f1e8cfc381b448adf232e7cebc39086bcfc5ab4ef9edb",
+      "bytes": 25566
+    },
+    {
+      "id": "adventure_gift_59",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G27",
+      "name": "Compass Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 59,
+      "file": "Beverage Bottles/Compass Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/59-9a1cb7778e8b6a3f.webp",
+      "sha256": "9a1cb7778e8b6a3ff4548ea93c63eeae7d9382243d94a7450134168663a50d3d",
+      "bytes": 22210
+    },
+    {
+      "id": "adventure_gift_60",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G28",
+      "name": "Orchard Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 60,
+      "file": "Beverage Bottles/Orchard Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/60-25f0b89dfe29a522.webp",
+      "sha256": "25f0b89dfe29a522ce41ef6df3085d3123e6a1d6176df58700c29293f8ee24bd",
+      "bytes": 22100
+    },
+    {
+      "id": "adventure_gift_61",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G29",
+      "name": "Royal Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 61,
+      "file": "Beverage Bottles/Royal Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/61-758e94f842bbc1a5.webp",
+      "sha256": "758e94f842bbc1a5e12cfb89249a5b575ef230b6303fb23eb04ddebdac74ebc7",
+      "bytes": 22256
+    },
+    {
+      "id": "adventure_gift_62",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G30",
+      "name": "Botanical Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 62,
+      "file": "Beverage Bottles/Botanical Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/62-b5e5d0dcbbe55e4f.webp",
+      "sha256": "b5e5d0dcbbe55e4fb80ee16dda897f5cdcbef37ee119307c536dcf84546001ae",
+      "bytes": 17908
+    },
+    {
+      "id": "adventure_gift_63",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G31",
+      "name": "Flower Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 63,
+      "file": "Beverage Bottles/Flower Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/63-33793342616de2d1.webp",
+      "sha256": "33793342616de2d1046fac75d2f73ac0b36f108a437a33bf2f08749a44f6e381",
+      "bytes": 20350
+    },
+    {
+      "id": "adventure_gift_64",
+      "friendId": "adventure_friend_jn",
+      "giftId": "JN-G32",
+      "name": "Dandelion Bottle",
+      "category": "Beverage Bottles",
+      "categoryCode": "C02",
+      "sourceId": 64,
+      "file": "Beverage Bottles/Dandelion Bottle.webp",
+      "key": "burrow/adventure-gifts/v1/64-e77506f17ad286ed.webp",
+      "sha256": "e77506f17ad286ed0dfe4daa5c2b7fe1f939a32a329496309185d6c0339746eb",
+      "bytes": 17232
+    }
+  ]
+}

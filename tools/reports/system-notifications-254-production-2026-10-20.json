@@ -1,0 +1,69 @@
+{
+  "task": "System notification policy 254",
+  "production": {
+    "migration": "20261020000254",
+    "deploymentId": "dpl_VM2DcE7qsiJ6ZpMSMMBr1y5nwixU",
+    "url": "https://api.soulsayit.com",
+    "candidateUrl": "https://novame-monorepo-lvrpty7p0-soulsayit.vercel.app",
+    "previousDeploymentId": "dpl_sskQNK3f4dpV5C2cBEppGq5atGxt",
+    "verifiedAt": "2026-10-21T06:00:49.550Z",
+    "productionLockfileSha1": "f8e4946b392815f23687329b348806711d0ba829",
+    "verifiedSourceFiles": 272,
+    "changedApiFiles": 11,
+    "adminUnchanged": true,
+    "notificationCron": "* * * * *",
+    "avatarCleanupCronUnchanged": true
+  },
+  "policy": {
+    "adventureReminder": "20:00 in profile timezone, opted-in supported devices only, no Adventure started that day and no active prior Adventure; expires at 20:15",
+    "affection": "First successful Affection per recipient local day and pair version, shared across all types; unread/current-pair delivery check",
+    "surprise": "One notification per committed send, unread/current-pair delivery check; expires after 24 hours",
+    "gameInvite": "{partner_name} finished a game. It’s your turn to play!",
+    "gameResultCopyUnchanged": true,
+    "partnerDailyRecordNotificationRemoved": true,
+    "partnerReflectPaywallRetired": true,
+    "courtPushRetiredBusinessRetained": true,
+    "widgetNativeTargetsRetainedUpdatesPaused": true,
+    "silentPushDisabled": true,
+    "appRedDotBusinessLogicUnchanged": true
+  },
+  "verification": {
+    "regressionTestsPassed": 269,
+    "regressionTestsFailed": 0,
+    "isolatedDatabaseTestsIncludeRealMigration": true,
+    "emergencyPushQuarantineTestPassed": true,
+    "mobileTypecheck": "passed",
+    "apiProductionBuild": "passed",
+    "iosProductionExport": "passed",
+    "androidProductionExport": "passed",
+    "candidatePermissionSmokeChecks": 11,
+    "productionPermissionSmokeChecks": 11,
+    "existingBusinessFunctionsUnchanged": 392,
+    "existingBusinessTriggersUnchanged": true,
+    "atomicBeforeAfterBusinessDataComparison": "passed for profiles, pairings, adventures, affection_events, burrow_surprises, device_push_tokens excluding new default columns",
+    "serviceOnlyFunctionsAndPrivateRlsTables": "passed",
+    "productionRuntimeContextChecks": "passed for real recent game and affection rows, reminder predicate and two enabled sidecar triggers",
+    "testAccountsCreated": 0,
+    "manualProductionPushesSent": 0,
+    "physicalPairedDevicePushDelivery": "not tested; requires signed-in devices with updated client"
+  },
+  "compatibility": {
+    "oldTokenRegistrationsPreserveNewPreferences": true,
+    "oldClientsKeepGameNotifications": true,
+    "newNotificationTypesRequireClientVersion2Registration": true,
+    "oldPaywallEndpointReturnsNoCampaign": true,
+    "failedNotificationSidecarsDoNotRollbackBusinessActions": true,
+    "boundedCronRepairAndTransportRetry": true,
+    "offlineReminderPreferencesRemainPendingAndRetry": true,
+    "rollbackScript": "tools/rollback-system-notifications-254.sql",
+    "rollbackCaution": "Quarantine OS push before promoting the previous API, which cannot interpret new notification types. Preserve additive schema and all business data. In-flight accepted push cannot be recalled. Quarantine was isolated-tested, not executed on production."
+  },
+  "deliveryLimits": {
+    "mobileSourceUpdated": true,
+    "mobileStoreBuildOrOtaPublished": false,
+    "requiresUpdatedClientForWidgetPauseLegacyLocalTimerCancellationAndNewPushRoutes": true,
+    "pushDeliveryTimingSubjectToOsAndNetwork": true,
+    "serverReminderCannotObserveUnsentOfflineAdventureStart": true
+  },
+  "evidenceDirectory": "/private/tmp/burrow-notifications254-release.7qJqPv"
+}

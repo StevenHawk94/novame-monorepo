@@ -1,0 +1,1506 @@
+{
+  "code": "DC",
+  "id": "adventure_friend_dc",
+  "name": "Duchess",
+  "gender": "she",
+  "species": "Badger",
+  "partner": "Bartholomew (he)",
+  "emotionalState": "40年老伴，倦怠后重新找回好奇与亲密",
+  "speakingStyle": "从容，爱讲故事，偶尔俏皮",
+  "catchphrase": "Oh, dear.",
+  "art": [
+    "Badger_02_Variant1.webp",
+    "Badger_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "DC-01",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "An elderly badger in round spectacles adjusts a knitting bag and nods slowly as you approach.",
+      "lines": [
+        "Ah. A new face. Sit, sit. I don't bite. Much.",
+        "I'm Duchess. I've been wandering these tunnels longer than most of these trees have been standing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's lovely to meet you.",
+          "reaction": [
+            "Likewise, dear. You have kind eyes. I can always tell.",
+            "It's a gift that comes with age, along with sore knees and strong opinions."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You must have stories.",
+          "reaction": [
+            "Oh, I have plenty. Some are even true.",
+            "I'll tell you a few, if you promise to listen. It's all I ask.",
+            "That and a good biscuit."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Do you need help with the bag?",
+          "reaction": [
+            "How thoughtful. I can manage, but I appreciate the offer.",
+            "Most young people just stare at the knitting. You, my dear, are polite.",
+            "I like you already."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-02",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I've been knitting a scarf for forty years. It's about nine feet long.",
+        "It's for nobody in particular. Or perhaps for everybody. I haven't decided. It keeps growing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a lot of scarf.",
+          "reaction": [
+            "It's a lot of life, dear. Each row remembers something.",
+            "Row nine hundred is the day my knee gave out.",
+            "Row two thousand is my sister's wedding. It's a sweater of memories."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Who is it for?",
+          "reaction": [
+            "I suspect, in the end, it's for me. Or for the one who sits by me.",
+            "I'm not sure yet. Knitting doesn't ask for conclusions. It just asks for the next stitch."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Can I see it?",
+          "reaction": [
+            "Of course. Careful, it's a bit tangled. So am I.",
+            "But isn't that the charm of anything worth keeping? A little tangle, a lot of warmth."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-03",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "My husband's name is Bartholomew. We've been together for forty years.",
+        "He's out in the garden right now. Probably talking to a turnip. He does that."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Forty years! That's amazing.",
+          "reaction": [
+            "Isn't it?",
+            "Sometimes I look at him and think 'who is this old badger?' And then I remember: oh yes, the one I picked.",
+            "Over and over. Every day. It's a choice, you know."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A turnip?",
+          "reaction": [
+            "He says turnips are good listeners. I say it's because they don't answer back.",
+            "We've both been right for four decades."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "How did you meet?",
+          "reaction": [
+            "At a harvest dance. He stepped on my foot.",
+            "I said 'watch it.' He said 'I'll try.' We've been negotiating ever since. Quite happily."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-04",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Bartholomew and I have a quiet routine. Morning tea. Evening crossword.",
+        "We rarely speak during either. We just sit. It's comfortable. Perhaps too comfortable."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds peaceful.",
+          "reaction": [
+            "It is. It's very peaceful.",
+            "But lately I've been wondering if peace and distance share a front door. Hm.",
+            "I'm not sure. I'm still thinking about it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What's wrong with comfortable?",
+          "reaction": [
+            "Nothing, dear. Truly. It's a gift. But comfort has a way of quietly erasing curiosity.",
+            "And I miss being curious about him. That's all."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Do you do the crossword together?",
+          "reaction": [
+            "He does the across. I do the down. We never compare.",
+            "It's a perfectly designed division of silence. We've never solved one entirely. Perhaps that's the secret."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-05",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Let me ask you something, little one.",
+        "When you've been with someone a long time, how do you keep from taking them for granted?",
+        "I'm not asking for myself. Well. I am. Don't tell Bartholomew."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I try to notice one new thing about them every day.",
+          "reaction": [
+            "One new thing. Every day. That's beautiful. It's like a very small adventure.",
+            "I might try it. I'll start with his ears. They've changed. Tufts. Magnificent."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We say thank you for small things.",
+          "reaction": [
+            "Small thank-yous. Yes. We've gotten lazy with those.",
+            "'Pass the salt' has replaced 'thank you for the salt.' I miss the 'thank you.' I'll bring it back."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, I'm still working on that.",
+          "reaction": [
+            "Ah, honest. I like honest. It's good to know that even young ones struggle with that.",
+            "Perhaps nobody ever finishes learning. It would be rather dull if we did."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-06",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I tried something odd today. I asked Bartholomew what he dreamed about last night.",
+        "He looked at me for a full minute. Then he said, 'a giant turnip.' We both laughed. First real laugh in weeks."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's wonderful.",
+          "reaction": [
+            "It was! A giant turnip. Of course.",
+            "He'd never admit it, but I think he dreams about vegetables affectionately.",
+            "It was a lovely little crack in the routine."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What did you dream about?",
+          "reaction": [
+            "I dreamed about my first dance. With him.",
+            "He still stepped on my foot in the dream. I found it deeply romantic.",
+            "I may have woken up smiling."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "A giant turnip, really?",
+          "reaction": [
+            "Really. The size of a house. He was walking toward it with tea.",
+            "I'm told it was 'dignified.' I'm told many things by that man, and I treasure every one."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-07",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Duchess sets down her knitting and looks out at the tunnel.",
+      "lines": [
+        "May I be honest with you? It's the kind of honesty one saves for strangers.",
+        "Sometimes I wonder if we've run out of things to learn about each other.",
+        "It frightens me. A little."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a very human fear.",
+          "reaction": [
+            "Thank you, dear.",
+            "It's easier to admit to a stranger than to the person asleep beside you.",
+            "But I think it's the beginning of something, not the end."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe there's more to discover.",
+          "reaction": [
+            "Perhaps. There's always more. That's the strange thing about people.",
+            "Forty years in, and Bartholomew still surprised me with a turnip dream.",
+            "There may be a few more."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Duchess.",
+          "reaction": [
+            "...Thank you. It's been a while since someone simply sat with me.",
+            "I forget how much comfort a quiet moment can give. You're a rare young one."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-08",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I told Bartholomew. About feeling distant.",
+        "He put down his crossword. That's the biggest gesture he's made in years. He said, 'I thought it was just me.'",
+        "We talked until midnight. It was our longest conversation in a decade."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's moving.",
+          "reaction": [
+            "It was. Two old badgers discovering the same worry.",
+            "We were both too polite to mention it. Isn't that absurd?",
+            "Forty years, and we still hide things to be kind."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Midnight is a good length.",
+          "reaction": [
+            "It was a lovely stretch of time. We sat up. We had cocoa.",
+            "He brought a blanket.",
+            "At one point he held my paw and I thought, 'ah. There he is.'"
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You both felt it.",
+          "reaction": [
+            "We did. Sometimes the bravest thing isn't a grand gesture.",
+            "It's saying 'I miss you' to someone sitting three feet away. Oh, how silly. How necessary."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-09",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "We went stargazing last night. Just the two of us.",
+        "He pointed at a star and said, 'that one's new.' I said, 'it's older than both of us.' He said, 'new to me.' I held his paw.",
+        "I think that's the whole of love, really. Being new to each other, even after forty years."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "Thank you, dear. I'm still smiling.",
+            "I think that's what I want to say to every young couple: stay new to each other.",
+            "It's the secret to a long marriage. And excellent cocoa."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A new star, really?",
+          "reaction": [
+            "A new star, to him. And I decided to believe him. Why not?",
+            "He's been seeing the world for eighty years and still finds something new.",
+            "That's the man I married."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and listen.",
+          "reaction": [
+            "Thank you for listening, dear. These stories are lovelier when shared.",
+            "I'll tell you more some day. Perhaps about the turnip. It's a long one."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-10",
+      "friendId": "adventure_friend_dc",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten visits, little one. I've been counting. Old habit.",
+        "Bartholomew and I have started a new tradition. Every Sunday, we try something neither of us has done. Last week it was pottery. We made a lopsided bowl. It's glorious.",
+        "It isn't perfect. But it's ours.",
+        "Now, you. How are you and your partner? I've shared enough. Tell me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Still learning. That is the right answer, my dear. Come to tea.",
+            "Bartholomew will show you the bowl. He's insufferably proud of it. It leaks."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We've been a bit distant lately.",
+          "reaction": [
+            "Distance is part of any long road. Don't be afraid of it.",
+            "Ask a small question tonight. Something you don't know. You may be surprised. I certainly was."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You've shown me what to hope for.",
+          "reaction": [
+            "Oh, that's the kindest thing, dear. I may need to sit down. I'm already sitting.",
+            "I may need to sit down more. Thank you."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P01",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We tried a dance class. A real one, with a teacher and everything.",
+        "Bartholomew stepped on my foot. On the second beat. Forty years of consistency. I wept with laughter."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's perfect.",
+          "reaction": [
+            "It really was.",
+            "The instructor said 'it takes practice.' I said 'we've had forty years.' He said 'then you're advanced.' I've never felt so honored by a dance teacher."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you enjoy it?",
+          "reaction": [
+            "Immensely. My hips complained for three days. My heart didn't.",
+            "We held each other's paws the whole time. I think we looked ridiculous and enchanting."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P02",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Bartholomew wrote me a letter. A real one. With ink.",
+        "He left it under my teacup. It said, 'You're still my favorite surprise.' I read it fourteen times and then I put it in my knitting bag."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so romantic.",
+          "reaction": [
+            "It's the most romantic thing he's done since the turnip. He's not a poet.",
+            "He's a crossword man. But those words were poetry. Better than any sonnet."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Fourteen times?",
+          "reaction": [
+            "I counted. It's an old habit. Fourteen readings, and each time I noticed something new.",
+            "The way he crossed his T. A tiny smudge. He must have been nervous."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P03",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We rearranged the living room. Together. Without arguing.",
+        "I moved the armchair. He moved it back. I moved it again. Eventually we agreed it looked best by the window. We both pretended it was my idea."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Compromise at its finest.",
+          "reaction": [
+            "Indeed. Forty years of practice. We argue like old friends now.",
+            "It's less a fight and more a dance with furniture. I rather like it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's very couple.",
+          "reaction": [
+            "It is, isn't it? A little push, a little pull.",
+            "The chair ended up exactly where it started.",
+            "Which means all that effort was just a very elaborate form of flirting."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P04",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We made pottery. A bowl. A very lopsided bowl.",
+        "Bartholomew said it looks like a 'rebellious pancake.' I said it looks like us. He considered that for a moment and said, 'fair.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A bowl that looks like you two.",
+          "reaction": [
+            "It's perfect. Slightly crooked, held together by stubbornness, and surprisingly sturdy.",
+            "We use it for fruit now. Mostly it holds apples and our sense of humor."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Rebellious pancake?",
+          "reaction": [
+            "He has a flair for names.",
+            "Last week he called the kettle 'sir.' I'm told it's affection. I've decided to believe him.",
+            "It makes mornings more interesting."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P05",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We took a walk at dusk. Hand in hand. Like teenagers.",
+        "A young couple passed us and smiled. I felt a little proud. And a little shy. A badger can still blush, you know."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's lovely.",
+          "reaction": [
+            "It was. We walked all the way to the pond and back.",
+            "He told me about his day for the first time in months.",
+            "I told him about mine. It was a small conversation. A great one."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Like teenagers!",
+          "reaction": [
+            "Without the nervous giggling. Mostly. I may have giggled once. He pretended not to notice.",
+            "It's one of the kindest things he does."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P06",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I surprised Bartholomew with breakfast in bed. He nearly fell out of it.",
+        "He said, 'what's the occasion?' I said, 'Tuesday.' He cried. Just a little. I pretended I didn't notice."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so sweet.",
+          "reaction": [
+            "It was. Sometimes the best occasions are plain ones.",
+            "He said it was the nicest Tuesday of his life.",
+            "I thought, 'good. Let's have more Tuesdays.'"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "He cried?",
+          "reaction": [
+            "A single tear. A very dignified one. He blamed it on the pepper.",
+            "There wasn't any pepper. I let him have his excuse. Love includes graceful lies."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P07",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We told each other three new things today. Things we'd never shared.",
+        "He told me he's afraid of butterflies. After forty years! I told him I used to want to be a painter. He said, 'you still could.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so touching.",
+          "reaction": [
+            "It is. We've started a little game. Three new things a week.",
+            "It's turned into the best thing we do.",
+            "I never thought I'd discover butterfly phobias at this age. Life is wonderful."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "He's afraid of butterflies?",
+          "reaction": [
+            "Terrified. He says it's their wings.",
+            "I said 'what about wings?' He said 'they're too... flappy.' I've lived with this man for forty years and he's still a surprise."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P08",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I painted a little picture today. A watercolor of our porch.",
+        "Bartholomew hung it on the wall and told everyone it's a masterpiece. It's a blob with a chair. But I'll take it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's adorable.",
+          "reaction": [
+            "He's my biggest critic and my loudest fan.",
+            "I've never seen a man so proud of a blob.",
+            "I'm going to make him another one. Perhaps a turnip."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Keep painting!",
+          "reaction": [
+            "I intend to. My hands shake a little, but the colors still sing.",
+            "I think that's what age gives you. A shaky hand and a fearless brush."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P09",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the turnip dream? Bartholomew's started a turnip garden.",
+        "He says it's for 'research.' I say it's for love. We both pretend to be right. He talks to them. I think they listen."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so funny.",
+          "reaction": [
+            "It's the tenderest thing. A man planting vegetables after a dream. He gave one a name.",
+            "'Sir Percival.' I'm not sure how to feel. Mostly amused. And touched."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Turnip research?",
+          "reaction": [
+            "He keeps notes. A tiny notebook.",
+            "'Day nine: Sir Percival looks thoughtful.' It's the most endearing document I've ever read.",
+            "I'm saving it for our grandchildren. If we ever have any."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P10",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The Sunday tradition continues. Last week it was kite flying.",
+        "My kite got stuck in a tree. Bartholomew climbed it. At his age. I screamed. He waved. Then he fell. Gently. Onto a bush. We laughed for an hour."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Is he okay?",
+          "reaction": [
+            "He's fine. A bit scratched, mostly proud.",
+            "He says he was 'rescuing the kite.' I say he was 'impressing me.' Either way, it worked.",
+            "I'm still impressed."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's quite an adventure.",
+          "reaction": [
+            "It truly was.",
+            "I think the secret to a long love is a regular supply of mild chaos.",
+            "Not the dangerous kind. The 'kite in a tree' kind. It keeps the heart honest."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P11",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still have that scarf. Nine feet and growing.",
+        "I added a row for the stargazing night. A little silver thread. It's the loveliest row yet."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "I think so too. The scarf is like a diary written in wool.",
+            "If someone unrolled it, they'd read forty years of tea, laughter, and the occasional argument about turnips."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Is it almost done?",
+          "reaction": [
+            "Never. And I like that. A finished thing is a sort of ending.",
+            "I prefer to keep adding. A row for each good day.",
+            "It may end up reaching the moon."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P12",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The three-new-things game? We're up to forty-two.",
+        "Today I learned he once ate a whole pie in a bet. He lost the bet. But he won the pie. A questionable victory, but a delicious one."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Forty-two!",
+          "reaction": [
+            "Isn't it grand? I think we'll still be playing at ninety.",
+            "We'll say, 'I never told you about the pie.' And the other will say, 'tell me everything.'"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That sounds like a fun game.",
+          "reaction": [
+            "It's the best thing we've done in years.",
+            "A weekly peek into a person you thought you knew. Turns out there are many rooms.",
+            "Some are full of pie."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P13",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Long love isn't about never getting bored. It's about getting curious again."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's wise.",
+          "reaction": [
+            "Thank you, dear. It took me forty years to put it into a sentence.",
+            "And I'm still not sure I've got it right. But I like how it sounds."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I think both matter.",
+          "reaction": [
+            "Indeed. A little boredom is natural. It's like fallow soil.",
+            "It just needs a bit of attention and a few seeds. Or a turnip."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P14",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: A good partner is someone who still surprises you at breakfast."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I love that.",
+          "reaction": [
+            "Me too. Bartholomew once served me toast in the shape of a heart. It was burnt.",
+            "It was perfect. I still have the crumbs. In a tiny box. Don't tell anyone."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Breakfast is important.",
+          "reaction": [
+            "Terribly important. A day that begins with tenderness has a chance.",
+            "A day that begins with a cold biscuit is a gamble.",
+            "I'm a gambler, but I prefer warm toast."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P15",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Growing old together is the greatest adventure, and no one warns you how funny it is."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so true.",
+          "reaction": [
+            "Funny, tender, and sometimes tragic about knees. But mostly funny.",
+            "I wouldn't trade a creak for anything. Not even the creak in my left hip."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It sounds fun.",
+          "reaction": [
+            "It really is. Don't let anyone tell you otherwise. There's mischief in old love.",
+            "We play tricks. We hide each other's glasses. It's a game that never ends."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P16",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What do you and your partner do that no one else knows about?",
+        "Bartholomew and I have a secret handshake. Four taps and a wink. Don't tell."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We have a nickname for each other.",
+          "reaction": [
+            "A nickname! How delightful. Private names are the heartbeat of intimacy. Bartholomew calls me 'Duchess' still.",
+            "Forty years of royalty. It never gets old."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We share a silly ritual.",
+          "reaction": [
+            "Silly rituals are the very best kind. They're like secret tunnels between two hearts.",
+            "I hope you keep it forever. Even when you forget why it started."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P17",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you comfort each other when things are hard?",
+        "I'm curious. I never tire of learning how others do it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We just stay close.",
+          "reaction": [
+            "Staying close. The simplest and the hardest thing. Bartholomew does that. No words.",
+            "Just a hand on my shoulder. It's all I've ever needed. I think."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We try to make each other laugh.",
+          "reaction": [
+            "Laughter. A noble medicine. We have a joke about a turnip that works every time.",
+            "I won't explain it. It involves a hat. And Sir Percival."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P18",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's something you want to do with your partner someday?",
+        "I love a good plan. A dream, I mean. The older I get, the more I love dreams."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Travel somewhere new together.",
+          "reaction": [
+            "Travel. Oh, yes. Bartholomew and I always said we'd see the sea. We never did.",
+            "Perhaps this year. I'll pack the knitting. He'll pack the crossword. And a very large turnip."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Learn something new together.",
+          "reaction": [
+            "A marvelous idea. We've started pottery. Perhaps next year, a language. French, I think.",
+            "'Je t'aime' sounds better with a badger accent. Don't you agree?"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P19",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Duchess hands you a small, slightly crooked bowl.",
+      "lines": [
+        "This is the bowl Bartholomew and I made. The rebellious pancake.",
+        "I want you to have it. Fill it with anything. Apples. Pebbles. Love letters. It holds all of them."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I'll treasure it.",
+          "reaction": [
+            "I know you will. That's why I'm giving it to you.",
+            "Some things are best passed along. It's a bit lopsided, but so is life.",
+            "And so, my dear, is love. In the best way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Are you sure?",
+          "reaction": [
+            "Quite sure. We made another. It's even more crooked. It's our masterpiece.",
+            "Please keep it, and think of two old badgers who learned to laugh again."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "DC-P20",
+      "friendId": "adventure_friend_dc",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Bartholomew shuffles in, adjusts his hat, and tips it to you with great ceremony.",
+      "lines": [
+        "Ah. The friend. Duchess speaks highly of you.",
+        "She says you listen. A rare gift. Thank you for it. I'm not always so good at it myself. But I'm learning. Slowly. Like a turnip."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Duchess is wonderful.",
+          "reaction": [
+            "She is. She is quite simply the best part of every day.",
+            "I forget to say so, you know. I'm going to say it tonight.",
+            "Possibly with a heart-shaped toast."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "It's nice to meet you, Bartholomew.",
+          "reaction": [
+            "And you, dear. Please, sit. I'll put the kettle on.",
+            "Duchess will tell stories and I'll pretend I haven't heard them.",
+            "Forty years, and I still laugh at the good ones."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_337",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G01",
+      "name": "Toadstool Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 337,
+      "file": "Mushroom Domes/Toadstool Dome.webp",
+      "key": "burrow/adventure-gifts/v1/337-fcc7ac39d193cb38.webp",
+      "sha256": "fcc7ac39d193cb38b3c624411aebd43b79dd49cb6be5f768a763bc6b58465d63",
+      "bytes": 28052
+    },
+    {
+      "id": "adventure_gift_338",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G02",
+      "name": "Chanterelle Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 338,
+      "file": "Mushroom Domes/Chanterelle Dome.webp",
+      "key": "burrow/adventure-gifts/v1/338-3d03a385a3905417.webp",
+      "sha256": "3d03a385a3905417cddd45a6ddcc1fda292328f3b7c9b57e7536ce321d5dc107",
+      "bytes": 24970
+    },
+    {
+      "id": "adventure_gift_339",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G03",
+      "name": "Porcini Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 339,
+      "file": "Mushroom Domes/Porcini Dome.webp",
+      "key": "burrow/adventure-gifts/v1/339-ae6560df4b9721ff.webp",
+      "sha256": "ae6560df4b9721fffd40f0c66eefa282f9a11282654e8e1742be669b14132f22",
+      "bytes": 29884
+    },
+    {
+      "id": "adventure_gift_340",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G04",
+      "name": "Morel Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 340,
+      "file": "Mushroom Domes/Morel Dome.webp",
+      "key": "burrow/adventure-gifts/v1/340-a05c44a57f08012d.webp",
+      "sha256": "a05c44a57f08012d2daf838bdbef0990c944988b26367680d7ae167fc796fccb",
+      "bytes": 25826
+    },
+    {
+      "id": "adventure_gift_341",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G05",
+      "name": "Oyster Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 341,
+      "file": "Mushroom Domes/Oyster Dome.webp",
+      "key": "burrow/adventure-gifts/v1/341-2d30a9f269ef17ea.webp",
+      "sha256": "2d30a9f269ef17eadee4dd7a2e3546e2a86f7a26c47d773d6da78d05903cd5ff",
+      "bytes": 25672
+    },
+    {
+      "id": "adventure_gift_342",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G06",
+      "name": "Shiitake Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 342,
+      "file": "Mushroom Domes/Shiitake Dome.webp",
+      "key": "burrow/adventure-gifts/v1/342-65ac793d35b1814a.webp",
+      "sha256": "65ac793d35b1814a6356113c0b3abde8ad4c818ed0d78128485155682e18897b",
+      "bytes": 29548
+    },
+    {
+      "id": "adventure_gift_343",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G07",
+      "name": "Enoki Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 343,
+      "file": "Mushroom Domes/Enoki Dome.webp",
+      "key": "burrow/adventure-gifts/v1/343-7aaa1f0629edd017.webp",
+      "sha256": "7aaa1f0629edd017d43a98dfcaee89a3f9bc5b8c8d6feda5cd0815be756c8b67",
+      "bytes": 28300
+    },
+    {
+      "id": "adventure_gift_344",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G08",
+      "name": "King Oyster",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 344,
+      "file": "Mushroom Domes/King Oyster.webp",
+      "key": "burrow/adventure-gifts/v1/344-364d44723c938501.webp",
+      "sha256": "364d44723c93850139c673e8e301e9230729d086731ca5613dfe7d7d0b811b86",
+      "bytes": 28656
+    },
+    {
+      "id": "adventure_gift_345",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G09",
+      "name": "Inkcap Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 345,
+      "file": "Mushroom Domes/Inkcap Dome.webp",
+      "key": "burrow/adventure-gifts/v1/345-b64b44bd8468f5db.webp",
+      "sha256": "b64b44bd8468f5db5a53630f26e715799ecfbdde11c3352ccdedc6273650b2d1",
+      "bytes": 26310
+    },
+    {
+      "id": "adventure_gift_346",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G10",
+      "name": "Indigo Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 346,
+      "file": "Mushroom Domes/Indigo Dome.webp",
+      "key": "burrow/adventure-gifts/v1/346-53d5f46e526fe297.webp",
+      "sha256": "53d5f46e526fe29799a53423300ce6ecdbcaff37643b189d0707cda3283da564",
+      "bytes": 27246
+    },
+    {
+      "id": "adventure_gift_347",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G11",
+      "name": "Saffron Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 347,
+      "file": "Mushroom Domes/Saffron Dome.webp",
+      "key": "burrow/adventure-gifts/v1/347-62156deb54eeb971.webp",
+      "sha256": "62156deb54eeb971d1b715488a3bf86aef089ea205d6373798dd8633d1815d95",
+      "bytes": 27740
+    },
+    {
+      "id": "adventure_gift_348",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G12",
+      "name": "Amethyst Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 348,
+      "file": "Mushroom Domes/Amethyst Dome.webp",
+      "key": "burrow/adventure-gifts/v1/348-df25d385badc3a10.webp",
+      "sha256": "df25d385badc3a10e09e943d7259e5b1f6693d5c2a900d9e46302721b535945d",
+      "bytes": 27550
+    },
+    {
+      "id": "adventure_gift_349",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G13",
+      "name": "Lion Mane",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 349,
+      "file": "Mushroom Domes/Lion Mane.webp",
+      "key": "burrow/adventure-gifts/v1/349-8b298a11904bf3d9.webp",
+      "sha256": "8b298a11904bf3d91bc05cd9abe977adbe48b14e0857592bf71fa5c498f4d8d2",
+      "bytes": 27162
+    },
+    {
+      "id": "adventure_gift_350",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G14",
+      "name": "Chicken Mushroom",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 350,
+      "file": "Mushroom Domes/Chicken Mushroom.webp",
+      "key": "burrow/adventure-gifts/v1/350-5c7addf10bb539ff.webp",
+      "sha256": "5c7addf10bb539fff041d39805a14a2152bd6c7d1ef4a7dbcdd86df6a24a3999",
+      "bytes": 29172
+    },
+    {
+      "id": "adventure_gift_351",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G15",
+      "name": "Scarlet Cups",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 351,
+      "file": "Mushroom Domes/Scarlet Cups.webp",
+      "key": "burrow/adventure-gifts/v1/351-2eff1a7066218ff0.webp",
+      "sha256": "2eff1a7066218ff0423cfd5fcc0d78e8d3eb9dbe8500f2fc30529546f72fd9b6",
+      "bytes": 28552
+    },
+    {
+      "id": "adventure_gift_352",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G16",
+      "name": "Puffball Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 352,
+      "file": "Mushroom Domes/Puffball Dome.webp",
+      "key": "burrow/adventure-gifts/v1/352-47d518a486b4e637.webp",
+      "sha256": "47d518a486b4e63704c0c4e158f4f68370b30d136e2989fdd37935bd23c1a82d",
+      "bytes": 26288
+    },
+    {
+      "id": "adventure_gift_353",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G17",
+      "name": "Parasol Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 353,
+      "file": "Mushroom Domes/Parasol Dome.webp",
+      "key": "burrow/adventure-gifts/v1/353-ede353271b364ce5.webp",
+      "sha256": "ede353271b364ce5c64920efbdb5a2e4c9af2e3dbf2887af21fecd4099f3dc4f",
+      "bytes": 29658
+    },
+    {
+      "id": "adventure_gift_354",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G18",
+      "name": "Turkey Tail",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 354,
+      "file": "Mushroom Domes/Turkey Tail.webp",
+      "key": "burrow/adventure-gifts/v1/354-bc9d4e841e00de81.webp",
+      "sha256": "bc9d4e841e00de81938dfe1c99ab8f9ef3922e58f54b697a8fa49bd709018f68",
+      "bytes": 28944
+    },
+    {
+      "id": "adventure_gift_355",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G19",
+      "name": "Purple Mushroom",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 355,
+      "file": "Mushroom Domes/Purple Mushroom.webp",
+      "key": "burrow/adventure-gifts/v1/355-b98e84198a63e0a9.webp",
+      "sha256": "b98e84198a63e0a9529f335e1a3149f9e07418d6c3ac6e45e69eb69d5f61bed1",
+      "bytes": 26850
+    },
+    {
+      "id": "adventure_gift_356",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G20",
+      "name": "Black Trumpet",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 356,
+      "file": "Mushroom Domes/Black Trumpet.webp",
+      "key": "burrow/adventure-gifts/v1/356-a168ee9db229fda1.webp",
+      "sha256": "a168ee9db229fda1c23131c763da2fe47e5a9482736cc019f186bd02a2fcae9d",
+      "bytes": 27372
+    },
+    {
+      "id": "adventure_gift_357",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G21",
+      "name": "Pink Oyster",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 357,
+      "file": "Mushroom Domes/Pink Oyster.webp",
+      "key": "burrow/adventure-gifts/v1/357-c5988b8a652ad889.webp",
+      "sha256": "c5988b8a652ad88948b63afc8f199b5c9ff0afd2c8f7b0fce30a146485cb151e",
+      "bytes": 27206
+    },
+    {
+      "id": "adventure_gift_358",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G22",
+      "name": "Golden Oyster",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 358,
+      "file": "Mushroom Domes/Golden Oyster.webp",
+      "key": "burrow/adventure-gifts/v1/358-d2633378a870f7e7.webp",
+      "sha256": "d2633378a870f7e79440335105e979e70efda0b4f2b3622e5f6955ccbec100e5",
+      "bytes": 27848
+    },
+    {
+      "id": "adventure_gift_359",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G23",
+      "name": "Blue Oyster",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 359,
+      "file": "Mushroom Domes/Blue Oyster.webp",
+      "key": "burrow/adventure-gifts/v1/359-92dc298d0b247d9c.webp",
+      "sha256": "92dc298d0b247d9ce9abd3c7125ec31a7000a53c816d3250924cea8c90cbd299",
+      "bytes": 26026
+    },
+    {
+      "id": "adventure_gift_360",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G24",
+      "name": "Reishi Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 360,
+      "file": "Mushroom Domes/Reishi Dome.webp",
+      "key": "burrow/adventure-gifts/v1/360-d23b3deb51cddbea.webp",
+      "sha256": "d23b3deb51cddbea7d6c1e0db8d33b3612d69cf55b74e4f2521c938159ae2662",
+      "bytes": 26386
+    },
+    {
+      "id": "adventure_gift_361",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G25",
+      "name": "Cauliflower Mushroom",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 361,
+      "file": "Mushroom Domes/Cauliflower Mushroom.webp",
+      "key": "burrow/adventure-gifts/v1/361-fb132c01cb59e04f.webp",
+      "sha256": "fb132c01cb59e04f47490c1246b6a4d635ac1ed43c96425d85c217d44701e798",
+      "bytes": 29426
+    },
+    {
+      "id": "adventure_gift_362",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G26",
+      "name": "Coral Mushroom",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 362,
+      "file": "Mushroom Domes/Coral Mushroom.webp",
+      "key": "burrow/adventure-gifts/v1/362-ad377348e4afb6f5.webp",
+      "sha256": "ad377348e4afb6f5fe7e178403d65d2daa1920567978c02586cec733795766d9",
+      "bytes": 27228
+    },
+    {
+      "id": "adventure_gift_363",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G27",
+      "name": "Wood Ear",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 363,
+      "file": "Mushroom Domes/Wood Ear.webp",
+      "key": "burrow/adventure-gifts/v1/363-5f5b1a0c90f343d7.webp",
+      "sha256": "5f5b1a0c90f343d76693e4720a6cd76b263c0b4243690568cb5b715a831c75a3",
+      "bytes": 26308
+    },
+    {
+      "id": "adventure_gift_364",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G28",
+      "name": "Orange Cups",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 364,
+      "file": "Mushroom Domes/Orange Cups.webp",
+      "key": "burrow/adventure-gifts/v1/364-5457f59aefb4fd98.webp",
+      "sha256": "5457f59aefb4fd981c7d44a17f602542bb80911d8d442f7aa04a01aab427f063",
+      "bytes": 26222
+    },
+    {
+      "id": "adventure_gift_365",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G29",
+      "name": "Violet Coral",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 365,
+      "file": "Mushroom Domes/Violet Coral.webp",
+      "key": "burrow/adventure-gifts/v1/365-238172c94a26423e.webp",
+      "sha256": "238172c94a26423efab8d3a67d0c01feb4f4a8860081863bfec7d2c45834a12d",
+      "bytes": 27158
+    },
+    {
+      "id": "adventure_gift_366",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G30",
+      "name": "Stinkhorn Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 366,
+      "file": "Mushroom Domes/Stinkhorn Dome.webp",
+      "key": "burrow/adventure-gifts/v1/366-831c0830d290ccd5.webp",
+      "sha256": "831c0830d290ccd5518fd743d5f41a481d922ccb05d5163bfbf102fe70f2e926",
+      "bytes": 28442
+    },
+    {
+      "id": "adventure_gift_367",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G31",
+      "name": "Lattice Mushroom",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 367,
+      "file": "Mushroom Domes/Lattice Mushroom.webp",
+      "key": "burrow/adventure-gifts/v1/367-71cbe9dfa2f7d084.webp",
+      "sha256": "71cbe9dfa2f7d084e49983ad8ea7ccd678f0e54ce1f4add89a0a8a70ebe8462f",
+      "bytes": 28360
+    },
+    {
+      "id": "adventure_gift_368",
+      "friendId": "adventure_friend_dc",
+      "giftId": "DC-G32",
+      "name": "Earthstar Dome",
+      "category": "Mushroom Domes",
+      "categoryCode": "C11",
+      "sourceId": 368,
+      "file": "Mushroom Domes/Earthstar Dome.webp",
+      "key": "burrow/adventure-gifts/v1/368-bca6fcdf63107830.webp",
+      "sha256": "bca6fcdf63107830782408862cbd229c57d2f7589c4fa9abc51494d9d8b2463c",
+      "bytes": 27060
+    }
+  ]
+}

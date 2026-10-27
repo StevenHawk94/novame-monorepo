@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-24",
+  "scope": "Love Note frontend interaction only",
+  "behavior": {
+    "homeEnvelope": "Explicit compose intent; focus editor and show native keyboard, including when unread exists",
+    "send": "Persist through existing enqueueLoveNote before showing local feedback; spin for 1000ms, display Love Note Sent ✓ and clear sent input",
+    "feedback": "No success dialog, no overlay registration, no automatic navigation, keyboard retained",
+    "newInput": "Typing after acknowledgement begins a separate note; original queued body/key are immutable",
+    "readRoutes": "History and incoming detail intent retain existing read and preparation rules",
+    "unpaired": "Private save still says Saved, not Sent",
+    "cleanup": "Local timer cancelled on unmount/exit; epoch, scope and request token guard stale callbacks"
+  },
+  "unchanged": ["server/API/database", "send limits", "durable outbox and retry", "receipt idempotency", "recipient readiness and read receipts", "native shared edge-back policy"],
+  "validation": {
+    "targetedTests": {"passed": 46, "failed": 0},
+    "domainGate": {"passed": 577, "failed": 0},
+    "mobileTypes": "passed",
+    "native": {
+      "environment": "iPhone 17 Pro / iOS 26.2 simulator, minified Hermes Release test host",
+      "realComponent": "LoveNoteScreen",
+      "fixtures": "Identity, storage, enqueue and History boundaries isolated; no real messages sent",
+      "verified": ["automatic input focus", "software keyboard visible on entry", "draft restored on re-entry", "Sent acknowledgement and input cleared", "keyboard retained after Send", "no success popup or touch-blocking overlay", "header Back returns to retained test Home"],
+      "edgeSwipe": "Existing native horizontal edge-back policy retained and no success overlay remains. Automated simulator drags did not yield a verified pop; physical-device/manual edge-gesture validation remains outstanding. No global gesture policy was changed to accommodate the test host.",
+      "workspace": "/private/tmp/burrow-love-note-inline-qa.aOf0aR"
+    },
+    "limits": ["No physical-device or Android-native validation", "No new frame-distribution measurement", "Not the entire retired test suite"]
+  },
+  "release": {"backendChanges": false, "productionDeployment": false, "appPublished": false, "requiresNextClientBuild": true},
+  "standards": "docs/burrow-development-standards.md version 1.5"
+}

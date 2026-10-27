@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { verifyToken } from '@/lib/auth-guard'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 
 export const runtime = 'edge'
 
@@ -58,7 +59,7 @@ export async function GET(request) {
       .select('subscription_tier')
       .eq('id', userId)
       .single()
-    const userTier = profileTier?.subscription_tier || 'free'
+    const userTier = await effectiveHasPlus(supabase,userId)?'plus':'free'
     const now = new Date().toISOString()
 
     // 获取所有活跃的公告

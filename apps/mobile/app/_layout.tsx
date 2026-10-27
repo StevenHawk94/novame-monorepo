@@ -2,9 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Platform, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { AppStatusBar } from '@/components/layout/app-status-bar';
 import * as Sentry from '@sentry/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { uiWorkPriority } from '@/lib/ui-work-priority';
+import { recordTouchStart, recordTouchRelease } from '@/lib/interaction-timing';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AdaptiveAppFrame } from '@/components/layout/adaptive-app-frame';
@@ -40,18 +42,22 @@ import {
 import { fetchMeStats } from '@/lib/me-stats';
 import { fetchAppConfig } from '@/lib/app-config-api';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
-import { checkForceUpdate } from '@/lib/force-update';
+import {prepareLaunchNotices,type LaunchNotices} from '@/lib/launch-notices';
 import { ForceUpdateGate } from '@/components/main/force-update-gate';
+import {AnnouncementLaunchGate} from '@/components/main/announcement-launch-gate';
+import {OnboardingAnnouncementGate} from '@/components/main/onboarding-announcement-gate';
+import {registerOverlay} from '@/lib/overlay-presence';
 import { AppDialogHost } from '@/components/ui/app-dialog';
 import { ErrorBoundary } from '@/components/main/error-boundary';
-import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
 import { BURROW_LAUNCH_BACKGROUND } from '@/lib/burrow-onboarding-design';
 import { beginHomeEntry, observeHomeEntryAppState } from '@/lib/home-entry-readiness';
+import { openPreparedBurrow } from '@/lib/burrow-page-entry';
+import { getBurrowSnapshot,observeBurrowAppState } from '@/lib/burrow-store';
+import {systemNotificationDestination} from '@/lib/system-notification-routing';
 import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
 import { touchActivity } from '@/lib/activity';
 import { checkContentVersionInBackground } from '@/lib/content-version';
-import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
 import {
   pauseDownloadQueue,
   resumeDownloadQueue,
@@ -66,20 +72,25 @@ import {
 import {
   reconcileDailyReminderSchedule,
   syncRemoteNotificationRegistration,
+  getNotificationSettings,
 } from '@/lib/notification-settings';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
-import { requestPartnerReflectPaywall } from '@/lib/partner-reflect-paywall';
-import { warmEntryBackgrounds } from '@/lib/prefetch';
 import { MetaPrivacyProvider } from '@/components/privacy/meta-privacy-provider';
 import { stageForegroundJobs } from '@/lib/ui-idle';
+import { CoinRewardBanner,CoinWalletProvider } from '@/components/burrow/coin-reward-banner';
+import { CoinPurchaseHost } from '@/components/burrow/coin-purchase-host';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
+  handleNotification: async notification => {
+    const data=notification.request.content.data;
+    const snapshot=getBurrowSnapshot().data;
+    const suppressed=data?.type==='adventure_reminder'&&(!getNotificationSettings().enabled||!!snapshot?.activeAdventure||snapshot?.dailyAdventureUsed===true);
+    return ({
+    shouldPlaySound: !suppressed,
     shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+    shouldShowBanner: !suppressed,
+    shouldShowList: !suppressed,
+  });},
 });
 
 // Per expo-splash-screen official docs: call preventAutoHideAsync in
@@ -173,19 +184,24 @@ function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const handledNotificationResponses = useRef(new Set<string>());
 
-  // Force-update (hard update) gate. Checked in the background on mount,
-  // INDEPENDENT of the prewarm gate above -- checkForceUpdate() fails open on
-  // every error and we never let it block splash hide / app render. When it
-  // resolves required=true (installed version < server min_version, platform
-  // matches), we overlay an unescapable full-screen update screen.
-  const [forceUpdate, setForceUpdate] = useState<{ message: string | null } | null>(null);
+  // Bounded version check completes behind native Splash. A required update
+  // replaces navigation entirely; only a compatible install prepares notices.
+  const [launchNotices,setLaunchNotices]=useState<LaunchNotices|null>(null);
+  const launchOverlay=useRef<(()=>void)|null>(null);
+  function closeLaunchAnnouncement(){
+    setLaunchNotices(value=>value?{...value,announcement:null}:value);
+    requestAnimationFrame(()=>{launchOverlay.current?.();launchOverlay.current=null;});
+  }
   useEffect(() => {
     let active = true;
-    void checkForceUpdate().then((res) => {
-      if (active && res.required) setForceUpdate({ message: res.message });
+    void prepareLaunchNotices().catch(()=>({update:{required:false,message:null},announcement:null,userId:null})).then(result=>{
+      if(!active)return;
+      if(result.announcement)launchOverlay.current=registerOverlay({});
+      setLaunchNotices(result);
     });
     return () => {
       active = false;
+      launchOverlay.current?.();launchOverlay.current=null;
     };
   }, []);
 
@@ -234,28 +250,24 @@ function RootLayout() {
     let active = true;
     const openNotification = (response: Notifications.NotificationResponse | null) => {
       if (!active || !response) return;
-      const data = response.notification.request.content.data as { type?: unknown; route?: unknown; reflectId?: unknown; sessionId?: unknown } | null;
-      const isCourt = data?.route === 'thump' && typeof data?.type === 'string' && data.type.startsWith('court_');
-      if (isCourt) {
-        const responseId = response.notification.request.identifier;
-        if (handledNotificationResponses.current.has(responseId)) return;
-        handledNotificationResponses.current.add(responseId);
-        setTimeout(() => {
-          if (active) router.navigate('/(main)/thump' as never);
-        }, 0);
-        Notifications.clearLastNotificationResponse();
-        return;
+      const data = response.notification.request.content.data as { type?: unknown; route?: unknown; reflectId?: unknown; sessionId?: unknown;surpriseId?:unknown } | null;
+      const destination=systemNotificationDestination(data);
+      if(destination){
+        const id=response.notification.request.identifier;
+        if(handledNotificationResponses.current.has(id))return;
+        handledNotificationResponses.current.add(id);
+        setTimeout(()=>{if(active)openPreparedBurrow(destination as never);},0);
+        Notifications.clearLastNotificationResponse();return;
       }
-      if (data?.type === 'game_ready' && typeof data.sessionId === 'string') {
+      if (['game_ready','game_invite'].includes(String(data?.type)) && typeof data?.sessionId === 'string') {
         const responseId = response.notification.request.identifier;
         if (handledNotificationResponses.current.has(responseId)) return;
         handledNotificationResponses.current.add(responseId);
-        setTimeout(() => { if (active) router.push({ pathname: '/(main)/game-room', params: { sessionId: data.sessionId as string } } as never); }, 0);
+        setTimeout(() => { if (active) openPreparedBurrow({ pathname: '/(main)/game-room', params: { sessionId: data.sessionId as string,...(data.type==='game_ready'?{result:'1'}:{}) } } as never); }, 0);
         Notifications.clearLastNotificationResponse();
         return;
       }
       if (data?.type !== 'partner_reflect') return;
-      if (typeof data.reflectId === 'string') requestPartnerReflectPaywall(data.reflectId);
       const responseId = response.notification.request.identifier;
       if (handledNotificationResponses.current.has(responseId)) return;
       handledNotificationResponses.current.add(responseId);
@@ -303,10 +315,6 @@ function RootLayout() {
   useEffect(() => {
     let cancelled = false;
 
-    // These are bundled files, so this performs no network request. Start
-    // their native WebP decode immediately but never delay the launch gate.
-    void warmEntryBackgrounds();
-
     const finish = () => {
       if (!cancelled) {
         setIsReady(true);
@@ -329,7 +337,6 @@ function RootLayout() {
         const initialNotification = Notifications.getLastNotificationResponse();
         const initialNotificationData = initialNotification?.notification.request.content.data as { type?: unknown; reflectId?: unknown } | null;
         if (initialNotificationData?.type === 'partner_reflect') {
-          if (typeof initialNotificationData.reflectId === 'string') requestPartnerReflectPaywall(initialNotificationData.reflectId);
           beginHomeEntry({ target: 'home', forceHomeData: true });
         } else if (isWidgetFriendsUrl(initialUrl)) {
           beginHomeEntry({ target: 'friends', forceHomeData: true });
@@ -338,9 +345,7 @@ function RootLayout() {
         const userId = session?.user?.id;
         void fetchAppConfig();
         if (userId) {
-          // Opportunistically cache the announcement image while startup work
-          // is already happening. This is also deliberately non-blocking.
-          void prepareUnreadAnnouncement(userId);
+          // Announcement preparation belongs exclusively to the version-first launch gate.
           void fetchSubscriptionTier(userId).catch(() => {});
           void fetchMeStats(userId).catch(() => {});
         }
@@ -394,6 +399,8 @@ function RootLayout() {
       const shouldCheckContentVersion = !isInitialPass && becameActive;
       isInitialPass = false;
       previousState = state;
+      observeBurrowAppState(state);
+      if (state !== 'active') uiWorkPriority.reset();
       observeHomeEntryAppState(state);
       cancelForegroundJobs?.();
       cancelForegroundJobs = null;
@@ -593,16 +600,21 @@ function RootLayout() {
   // flicker, that changed the Onboarding hero from regular to bold only after
   // tapping Start. Both gates are local and fail open, so this cannot turn a
   // network delay into a blocked launch.
-  if (!isReady || !fontsLoaded) return null;
+  if (!isReady || !fontsLoaded || !launchNotices) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}
+      onTouchStart={event => { recordTouchStart();uiWorkPriority.touch(event.nativeEvent.touches.length); }}
+      onTouchMove={event => uiWorkPriority.touch(event.nativeEvent.touches.length)}
+      onTouchEnd={event => { recordTouchRelease(); uiWorkPriority.touch(event.nativeEvent.touches.length); }}
+      onTouchCancel={() => uiWorkPriority.touch(0)}>
       <AdaptiveAppFrame>
         <BottomSheetModalProvider>
           <SafeAreaProvider>
             <ThemeProvider>
               <ErrorBoundary>
-                <MetaPrivacyProvider>
+                {launchNotices.update.required?<ForceUpdateGate message={launchNotices.update.message}/>:<MetaPrivacyProvider>
+                  <CoinWalletProvider>
                   <Stack
                     screenOptions={{
                       // Match the launch/entry cover. Destination screens paint
@@ -611,13 +623,18 @@ function RootLayout() {
                       headerShown: false,
                       contentStyle: { backgroundColor: BURROW_LAUNCH_BACKGROUND },
                       animation: 'none',
+                      gestureEnabled: false,
+                      fullScreenGestureEnabled: false,
                     }}
                   />
-                  {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
-                  <StatusBar style="dark" />
-                  <GoodVibesInboxGate />
+                  {launchNotices.announcement&&launchNotices.userId?<AnnouncementLaunchGate announcement={launchNotices.announcement} userId={launchNotices.userId} onClose={closeLaunchAnnouncement}/>:null}
+                  <OnboardingAnnouncementGate/>
+                  <AppStatusBar />
                   <AppDialogHost />
-                </MetaPrivacyProvider>
+                  <CoinRewardBanner />
+                  <CoinPurchaseHost />
+                  </CoinWalletProvider>
+                </MetaPrivacyProvider>}
               </ErrorBoundary>
             </ThemeProvider>
           </SafeAreaProvider>

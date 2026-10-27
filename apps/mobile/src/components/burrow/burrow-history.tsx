@@ -1,3 +1,4 @@
+import {UserAvatar} from '@/components/ui/user-avatar';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from './burrow-image';
@@ -27,8 +28,11 @@ function eventAction(eventType:string):{label:string;href:Href}{
   if(eventType==='gift_sent'||eventType==='gift_claimed')return {label:'Open Collection',href:'/(main)/burrow-detail?section=collection' as Href};
   return {label:'Go to Our Room',href:'/(main)/(tabs)' as Href};
 }
-function eventDescription(row: Extract<HistoryRow,{event_type:string}>) {
-  if (row.event_type === 'room_need_refilled') return row.payload.need === 'water' ? 'watered the flower' : row.payload.need === 'food' ? 'fed the bunny' : 'cared for the room';
+function eventDescription(row: Extract<HistoryRow,{event_type:string}>,selfId:string,partnerName:string) {
+  if (row.event_type === 'room_need_refilled') {
+    const owner=!row.target_id?'the':row.target_id===selfId?'your':row.actor_id===selfId?`${partnerName}'s`:'their';
+    return row.payload.need === 'water' ? `watered ${owner} flower` : row.payload.need === 'food' ? `fed ${owner} bunny` : 'cared for the room';
+  }
   if (row.event_type === 'affection_sent') return `sent ${affectionLabel[row.payload.affectionType] ?? 'a little affection'}`;
   if (row.event_type === 'room_media_updated') return row.payload.media === 'room_photo' ? 'changed a room photo' : 'changed the room music';
   if (row.event_type === 'room_decor_changed') {
@@ -129,10 +133,10 @@ export function BurrowHistory({data,kind,busy}:{data:MajorUpdateBootstrap;kind:H
       return <View key={row.id} style={[s.group,kind==='moments'&&s.timelineGroup]}>
         {heading&&<Text accessibilityRole="header" style={s.day}>{historyDayLabel(row.localDate,data.localDate)}</Text>}
         <View style={[s.card,kind==='moments'&&(featured?s.timelineFeatured:s.timelinePlain)]}>
-          {kind==='moments'?<View style={s.actorRow}><View style={[s.timelineDot,{left:featured?-41:-26}]}/><View style={s.avatar}>{avatarUrl?<Image source={{uri:avatarUrl}} contentFit="cover" style={s.avatarImage}/>:<Text style={s.avatarInitial}>{(actor===data.profile.id?data.profile.display_name:data.partner?.display_name)?.trim().charAt(0).toUpperCase()||'♡'}</Text>}</View>
+          {kind==='moments'?<View style={s.actorRow}><View style={[s.timelineDot,{left:featured?-41:-26}]}/><UserAvatar userId={actor} name={actor===data.profile.id?data.profile.display_name:data.partner?.display_name} otherUserId={actor===data.profile.id?data.partner?.id:data.profile.id} avatarUrl={avatarUrl} isDefaultAvatar={actor===data.profile.id?data.profile.is_default_avatar:data.partner?.is_default_avatar} size={42}/>
             <View style={{flex:1}}><Text style={[s.actorName,!featured&&s.actorNameLight]}>{actor===data.profile.id?'You':data.partner?.display_name??'Your person'}</Text><Text style={[s.timestamp,!featured&&s.timestampLight]}>{momentTime(row.created_at,page?.timezone??data.profile.timezone_name??'UTC')}</Text></View>
-          </View>:<Text style={s.title}>{actor===data.profile.id?'You':data.partner?.display_name??'Your person'}{memory?'':` ${row.record&&!row.record.shared&&!!data.partner?'recorded a private day':eventDescription(row)}`}</Text>}
-          {kind==='moments'&&<View style={s.momentActionRow}>{!featured&&<View style={s.eventBadge}><Text style={s.eventBadgeText}>{eventSymbol[row.event_type]??'♡'}</Text></View>}<Text style={[s.momentAction,!featured&&s.momentActionLight]}>{memory?'Saved a memory':row.record&&!row.record.shared&&!!data.partner?'Recorded a private day':eventDescription(row)}</Text></View>}
+          </View>:<Text style={s.title}>{actor===data.profile.id?'You':data.partner?.display_name??'Your person'}{memory?'':` ${row.record&&!row.record.shared&&!!data.partner?'recorded a private day':eventDescription(row,data.profile.id,data.partner?.display_name?.trim()||'Your person')}`}</Text>}
+          {kind==='moments'&&<View style={s.momentActionRow}>{!featured&&<View style={s.eventBadge}><Text style={s.eventBadgeText}>{eventSymbol[row.event_type]??'♡'}</Text></View>}<Text style={[s.momentAction,!featured&&s.momentActionLight]}>{memory?'Saved a memory':row.record&&!row.record.shared&&!!data.partner?'Recorded a private day':eventDescription(row,data.profile.id,data.partner?.display_name?.trim()||'Your person')}</Text></View>}
           {memory?<><Text selectable style={s.copy}>{row.body}</Text><MemoryPhotos data={editorData} entry={row}/>
             {actor===data.profile.id&&<View style={s.row}><Button title="Edit" disabled={busy} onPress={()=>{setEdit({scope,entry:row});if(!data.partner)setSoloDraft(row.body);}}/>
               <Button title="Delete" disabled={busy} onPress={()=>Alert.alert('Delete this memory?','It will disappear from your room.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:()=>{void runBurrowAction(`delete-memory:${row.id}`,()=>deleteMemoryRoomEntry(row.id));}}])}/></View>}

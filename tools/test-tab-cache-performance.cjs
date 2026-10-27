@@ -15,32 +15,31 @@ test('tab pre-rendering remains enabled while focus reconciliation yields to nav
     'apps/mobile/app/(main)/(tabs)/bags.tsx',
     'apps/mobile/app/(main)/(tabs)/quests.tsx',
     'apps/mobile/app/(main)/(tabs)/friends.tsx',
-    'apps/mobile/app/(main)/(tabs)/status.tsx',
   ]) {
-    assert.match(read(file), /afterUiSettles\(/, `${file} must defer focus reconciliation`);
+    assert.match(read(file), /BurrowScreen/, `${file} uses the shared retained-page controller`);
+    assert.doesNotMatch(read(file), /useFocusEffect|fetch\(/, `${file} must not start independent focus reads`);
   }
+  const retiredInsights = read('apps/mobile/app/(main)/(tabs)/status.tsx');
+  assert.match(retiredInsights, /<Redirect href="\/\(main\)\/\(tabs\)"/);
+  assert.doesNotMatch(retiredInsights, /fetchInsights|useFocusEffect|afterUiSettles/,
+    'retired Insights must not fetch data on focus');
 });
 
-test('primary navigation exposes Court while Home owns the Quests shortcut', () => {
+test('current primary navigation uses Burrow tabs without mounting retired Court/Insights screens', () => {
   const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
   const tabs = read('apps/mobile/src/components/main/bottom-tab-bar.tsx');
   const layout = read('apps/mobile/app/(main)/(tabs)/_layout.tsx');
-  const court = read('apps/mobile/app/(main)/(tabs)/court.tsx');
-
-  assert.match(home, /router\.push\('\/\(main\)\/\(tabs\)\/quests'/);
-  assert.match(home, />Quests<\/Text>/);
-  assert.match(home, />Reflect<\/Text>/);
-  assert.match(tabs, /label: 'Home'[\s\S]*label: 'Court'[\s\S]*label: 'Moments'[\s\S]*label: 'Insights'[\s\S]*label: 'Collection'/);
+  assert.match(home, /BurrowScreen section="home" asTab/);
+  assert.match(tabs, /label: 'Home'[\s\S]*label: 'Burrow'[\s\S]*label: 'Quests'[\s\S]*label: 'Shop'[\s\S]*label: 'Moments'/);
   assert.doesNotMatch(tabs, /label: 'Paired'|label: 'Connection'|label: 'Memories'/);
-  assert.match(layout, /name="court"/);
-  assert.match(court, /export \{ default \} from '\.\.\/thump'/);
+  assert.doesNotMatch(layout, /component=\{Court/);
 });
 
 test('Home ignores unrelated R2 completions and Thump does not force its render', () => {
   const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
-  assert.match(home, /useR2AssetRevision\(selectedSceneRemoteUrl\)/);
+  assert.match(home, /BurrowScreen/);
   assert.doesNotMatch(home, /setCosmeticTick/);
-  assert.match(home, /sameMemoryBubbles/);
+  assert.doesNotMatch(home, /subscribeR2AssetChanges|useR2AssetRevision/);
 
   const queue = read('apps/mobile/src/lib/download-queue.ts');
   assert.match(queue, /subscribeR2AssetKeyChanges/);
@@ -59,14 +58,13 @@ test('foreground recovery is staged and Connection caches refresh globally', () 
   assert.match(realtime, /knownChanged: true/);
 });
 
-test('Scenes and Outfits postpone catalog reads and speculative image warming', () => {
+test('retired Scenes and Outfits redirect to current Shop without duplicate catalogue reads', () => {
   for (const file of [
     'apps/mobile/app/(main)/(modals)/scene-select.tsx',
     'apps/mobile/app/(main)/(modals)/skin-select.tsx',
   ]) {
     const source = read(file);
-    assert.ok((source.match(/afterUiSettles\(/g) || []).length >= 2, file);
-    assert.match(source, /delayMs: 100/);
-    assert.match(source, /delayMs: 140/);
+    assert.match(source, /NativeTabRedirect href="\/\(main\)\/\(tabs\)\/shop"/);
+    assert.doesNotMatch(source, /fetch|preload|useFocusEffect/);
   }
 });

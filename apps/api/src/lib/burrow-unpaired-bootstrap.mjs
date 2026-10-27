@@ -3,6 +3,18 @@ function requireRow(result) {
   return result.data
 }
 
+// PostgREST caps each response at 1,000 rows. Growing gift collections must
+// not silently truncate either the catalogue or a long-time user's inventory.
+async function completeRows(first, page) {
+  const rows = [...(requireRow(first) || [])];
+  if (rows.length < 1000) return rows;
+  for (let offset = 1000; ; offset += 1000) {
+    const next = requireRow(await page(offset)) || [];
+    rows.push(...next);
+    if (next.length < 1000) return rows;
+  }
+}
+
 function projectedNeed(value, updatedAt, now) {
   const safeValue = Math.max(0, Math.min(100, Math.trunc(Number(value) || 0)))
   const updatedMs = new Date(updatedAt).getTime()
@@ -27,13 +39,20 @@ function localDate(now, timezone) {
 
 /** Self-scoped snapshot. Never expose a former partner's private data. */
 export async function unpairedBurrowBootstrap(db, userId) {
-  const [profile, revision] = await Promise.all([
+  const [profile, revision, entitlement, economicCalendar] = await Promise.all([
     db.from('profiles').select('id,display_name,avatar_url,subscription_tier,timezone_name').eq('id', userId).maybeSingle(),
     db.from('app_config').select('value').eq('key', 'app_major_update_content_revision').maybeSingle(),
+    db.rpc('burrow_has_plus_v1',{p_user:userId}),
+    db.rpc('economic_calendar_v1',{p_user:userId}),
   ])
   const person = requireRow(profile)
+  const hasPlus=requireRow(entitlement)
+  if(typeof hasPlus!=='boolean')throw new Error('entitlement_unavailable')
+  if(person)person.subscription_tier=hasPlus?'plus':'free'
   const contentRevision = requireRow(revision)?.value
   if (!person || !contentRevision) throw new Error('unpaired_bootstrap_unavailable')
+  const calendar = requireRow(economicCalendar)
+  if (!calendar?.timezone || !/^\d{4}-\d{2}-\d{2}$/.test(calendar.localDate || '')) throw new Error('economic_calendar_unavailable')
   const published = requireRow(await db.from('content_revisions').select('id')
     .eq('id', contentRevision).eq('status', 'published').maybeSingle())
   if (!published) throw new Error('unpaired_bootstrap_unavailable')
@@ -41,26 +60,33 @@ export async function unpairedBurrowBootstrap(db, userId) {
   if (initialized?.error) throw new Error(initialized.error)
 
   const now = new Date()
-  const day = localDate(now, person.timezone_name)
+  const day = calendar.localDate
   const [wallet, needs, catalog, inventory, loadouts, friends, discoveries, prompts,
     quests, specials, moments, memories, adventures, readyRecords, music, photos, dollChanges] = await Promise.all([
     db.from('wallets').select('carrot_balance,version').eq('user_id', userId).maybeSingle(),
     db.from('room_needs').select('food_value,food_updated_at,water_value,water_updated_at').eq('owner_id', userId).maybeSingle(),
     db.from('catalog_items').select('stable_id,item_type,category,title,description,price,plus_only,tradable,tags,asset,metadata,is_placeholder').eq('revision_id', contentRevision).eq('status', 'active').order('category').order('stable_id'),
-    db.from('user_inventory').select('id,owner_id,item_id,source').eq('owner_id', userId),
+    db.from('user_inventory').select('id,owner_id,item_id,source,acquired_at').eq('owner_id', userId).order('id'),
     db.from('room_loadouts').select('room_type,owner_id,slot,item_id').eq('room_type', 'home').eq('owner_id', userId),
     db.from('friend_definitions').select('stable_id,name,subtitle').eq('revision_id', contentRevision).eq('status', 'active'),
-    db.from('user_friend_discoveries').select('user_id,friend_id,interaction_completed_at').eq('user_id', userId),
+    db.from('user_friend_discoveries').select('user_id,friend_id,source_adventure_id,interaction_completed_at').eq('user_id', userId),
     db.from('memory_prompts').select('stable_id,prompt').eq('revision_id', contentRevision).eq('status', 'active').order('position'),
     db.rpc('assign_daily_quests_v1', { p_user_id: userId }),
     db.rpc('burrow_special_quests_v1', { p_user_id: userId }),
-    db.from('moment_events').select('id,actor_id,event_type,reference_id,reference_type,created_at,payload').eq('pair_low', userId).eq('pair_high', userId).order('created_at', { ascending: false }).limit(50),
+    db.from('moment_events').select('id,actor_id,target_id,event_type,reference_id,reference_type,created_at,payload').eq('pair_low', userId).eq('pair_high', userId).order('created_at', { ascending: false }).limit(50),
     db.from('memory_room_entries').select('id,author_id,body,prompt_id,created_at,updated_at').eq('pair_low', userId).eq('pair_high', userId).is('deleted_at', null).order('created_at', { ascending: false }).limit(100),
     db.from('adventures').select('id,status,started_at,ends_at,local_date').eq('user_id', userId).eq('partner_id', userId).order('created_at', { ascending: false }).limit(1),
     db.from('reflects').select('id').eq('user_id', userId).eq('local_date', day).in('journal_kind', ['write_freely', 'tap_your_day']).order('id').limit(10),
     db.from('room_music').select('track_id').eq('owner_id', userId).maybeSingle(),
     db.from('room_photos').select('id,owner_id,kind,toy_id,updated_at').eq('pair_low', userId).eq('pair_high', userId),
     db.from('room_photo_uploads').select('id,toy_id').eq('actor_id', userId).eq('kind', 'doll').eq('committed_date', day),
+  ])
+  const [allCatalog, allInventory] = await Promise.all([
+    completeRows(catalog, offset => db.from('catalog_items')
+      .select('stable_id,item_type,category,title,description,price,plus_only,tradable,tags,asset,metadata,is_placeholder')
+      .eq('revision_id', contentRevision).eq('status', 'active').order('category').order('stable_id').range(offset, offset + 999)),
+    completeRows(inventory, offset => db.from('user_inventory').select('id,owner_id,item_id,source,acquired_at')
+      .eq('owner_id', userId).order('id').range(offset, offset + 999)),
   ])
   const timestamp = now.toISOString()
   const room = requireRow(needs)
@@ -103,12 +129,12 @@ export async function unpairedBurrowBootstrap(db, userId) {
   return {
     unpaired: true,
     rollout: { enabled: true, contentRevision },
-    serverNow: timestamp, localDate: day,
-    profile: person, partner: null, hasPlus: !!person.subscription_tier && person.subscription_tier !== 'free',
+    serverNow: timestamp, localDate: day, economicTimezone: calendar.timezone,
+    profile: person, partner: null, hasPlus,
     wallet: { balance: balance?.carrot_balance ?? 0, version: balance?.version ?? 0 },
     roomNeeds: {
-      food: projectedNeed(room?.food_value ?? 100, foodUpdatedAt, now.getTime()), foodValue: room?.food_value ?? 100, foodUpdatedAt,
-      water: projectedNeed(room?.water_value ?? 100, waterUpdatedAt, now.getTime()), waterValue: room?.water_value ?? 100, waterUpdatedAt,
+      food: projectedNeed(room?.food_value ?? 0, foodUpdatedAt, now.getTime()), foodValue: room?.food_value ?? 0, foodUpdatedAt,
+      water: projectedNeed(room?.water_value ?? 0, waterUpdatedAt, now.getTime()), waterValue: room?.water_value ?? 0, waterUpdatedAt,
       serverNow: timestamp,
     },
     partnerNeeds: { food: 100, water: 100 },
@@ -125,7 +151,7 @@ export async function unpairedBurrowBootstrap(db, userId) {
     memoryPrompts: (requireRow(prompts) || []).map(row => ({ id: row.stable_id, prompt: row.prompt })),
     memoryEntries: personalMemories.map(row => ({ ...row, photos: memoryPhotos.filter(photo => photo.entry_id === row.id)
       .map(photo => ({ id: photo.id, slot: photo.slot, updatedAt: photo.updated_at })) })),
-    catalog: requireRow(catalog) || [], inventory: requireRow(inventory) || [], loadouts: requireRow(loadouts) || [],
+    catalog: allCatalog, inventory: allInventory, loadouts: requireRow(loadouts) || [],
     friends: requireRow(friends) || [], discoveries: requireRow(discoveries) || [], friendContent: [],
     moments: personalMoments.map(row => {
       const record = row.reference_type === 'reflect' ? momentRecords.find(item => item.id === row.reference_id) : null

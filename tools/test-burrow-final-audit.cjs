@@ -23,7 +23,8 @@ for(const [path,method] of [['bubbles/pop','POST'],['quests/start','POST'],['que
 }
 test('sharing API requires generation, version and receipt key and binds actor to auth',async()=>{
   const calls=[];
-  const route=load('apps/api/src/app/api/vnext/command/route.js',{
+  const route=load('apps/api/src/app/api/vnext/command/route.js',{'@/lib/adventure-bootstrap.mjs':{readAdventureDisplay:async()=>null},
+    '@/lib/burrow-reward-wallet.mjs':{withRewardWallet:async(_,__,result)=>result},
     'next/server':{NextResponse:response},'@/lib/app-major-update':{authenticatedUserId:async()=>a,majorUpdateEnabled:async()=>true,commandStatus:()=>200,
       appMajorUpdateServiceClient:()=>({rpc:async(...args)=>{calls.push(args);return {data:{shared:false,version:2}};}})},
   });

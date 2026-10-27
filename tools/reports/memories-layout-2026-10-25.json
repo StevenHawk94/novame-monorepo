@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-25",
+  "scope": "Memories Room artwork/content alignment; client layout only",
+  "cause": [
+    "The full-screen ScrollView used independent percentage padding. Right padding was 8.5% while the paper's safe right inset is about 16.8%, so question text and answer cards extended past the paper.",
+    "Vertical content and History capacity used the whole screen rather than the actual writable paper rectangle. Content began too close to the upper paper edge and could scroll onto the desk.",
+    "Using viewport size without measuring the rendered root can mismatch the background when the navigation host provides a different size."
+  ],
+  "fix": {
+    "geometry": "Shared source-art coordinates for the unchanged 841x1870 background: content rectangle x140..700, y375..1530; both axes mapped to actual root dimensions, matching the existing fill rendering.",
+    "scroll": "Today, historical details and History use the same bounded, clipped paper ScrollView. No second screen-padding transform and no automatic safe-area content inset. Long content remains scrollable inside the paper.",
+    "history": "Capacity uses paper height, heading, two-line rows, padding, gap and font scale; typically four entries on tested phone dimensions, fewer for small/large-type displays and up to five where space permits. Server cursor/batch size unchanged.",
+    "resize": "Root onLayout only updates dimensions when they actually change; no network work, new timer, global subscription, image regeneration or decoding path."
+  },
+  "preserved": ["Draft persistence", "Durable Save/outbox", "Only own answer editable", "Original full text and four-line preview", "Page lifecycle/timezone", "History identity and server cursor", "Notification readiness and per-page unread", "Exit behavior", "Original background bytes", "Shared image renderer/cache"],
+  "verification": {
+    "domainGate": {"passed": 618, "failed": 0, "log": "/private/tmp/burrow-memories-layout-domain.log"},
+    "memoriesUi": {"passed": 7, "failed": 0, "log": "/private/tmp/burrow-memories-layout-ui.log"},
+    "mobileTypes": {"passed": true, "log": "/private/tmp/burrow-memories-layout-types.log"},
+    "geometryMatrix": ["320x568", "393x852", "414x896", "430x932", "393x852 / font scale 1.8", "852x393", "Actual root resize", "History capacity on tall screens"],
+    "native": {
+      "device": "iPhone 17 Pro Simulator / iOS 26.2",
+      "build": "Minified Release Hermes host with actual CoupleJournalScreen, shared image, draft/cache/outbox and native navigation; offline identity/network/storage/avatar fixtures only",
+      "workspace": "/private/tmp/burrow-dual-bunny-native.WuZ2RA",
+      "checks": ["Screenshot-equivalent question, empty own/partner cards and divider fully within paper", "Visible History entries 1-4, next page 5-8, all inside paper", "History back to Today", "Edit/input line wrapping", "Software keyboard shown; dismissing it exposes Save, paper remains aligned", "Save immediately projects text during five-second simulated backend delay", "Full-answer modal opens/closes", "Back returns to QA landing"],
+      "limits": "Not a physical-device or Android native matrix, production two-user write flow, or frame-time benchmark. Geometry matrix uses real layout helper/component contracts, not screenshots from every listed device."
+    }
+  },
+  "release": {"clientCodeUpdated": true, "appPublished": false, "apiChanged": false, "databaseChanged": false, "productionChanged": false, "backgroundChanged": false, "standardsChanged": false, "reason": "Restores existing layout/interaction requirements; no core business contract changed."}
+}

@@ -2,6 +2,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
 const { load } = require('./lifecycle-test-utils.cjs');
 const registry = 'apps/mobile/src/lib/burrow-art-assets.ts';
 const source = fs.readFileSync(registry, 'utf8');
@@ -14,10 +16,20 @@ const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry =
   return entry.isDirectory() ? walk(file) : [file];
 });
 
-test('every supplied WebP has a bundled reference, without requiring deleted PNGs', () => {
+test('supplied WebPs are bundled room art or registered R2-only adventure gifts, without deleted PNG references', () => {
   const code = [...walk('apps/mobile/src'), ...walk('apps/mobile/app')]
     .filter(file => /\.[jt]sx?$/.test(file)).map(file => fs.readFileSync(file, 'utf8')).join('\n');
+  // Adventure gifts intentionally moved to R2; bundling them would inflate
+  // the app and contradict the remote-only reward/prefetch contract.
+  const remoteGifts = new Set(walk('apps/api/src/data/adventure-friends').filter(file=>file.endsWith('.json'))
+    .flatMap(file=>JSON.parse(fs.readFileSync(file,'utf8')).gifts)
+    .filter(gift=>gift.key.startsWith('burrow/adventure-gifts/v1/')&&gift.sha256)
+    .map(gift=>path.join('apps/mobile/assets/burrow-webp/Gift Collection Webp',gift.file)));
   for (const file of walk('apps/mobile/assets/burrow-webp').filter(file => file.endsWith('.webp'))) {
+    if (remoteGifts.has(file)) {
+      assert.ok(!code.includes(file.replace('apps/mobile/assets/', '')), `R2 gift must not be bundled: ${file}`);
+      continue;
+    }
     assert.ok(code.includes(file.replace('apps/mobile/assets/', '')), `unmapped WebP: ${file}`);
   }
   for (const file of Object.values(imports)) assert.ok(fs.existsSync(file), file);
@@ -45,7 +57,26 @@ test('Burrow artwork uses the standard WebP decoder and Home opens Affection', (
     assert.ok(fs.readFileSync(`apps/mobile/src/components/burrow/${file}.tsx`, 'utf8').includes("from './burrow-image'"));
   }
   const home = fs.readFileSync('apps/mobile/src/components/burrow/home-art-scene.tsx', 'utf8');
-  assert.ok(home.includes('onPress={onAffection}'));
+  assert.ok(home.includes('onPress={pull.guard(onAffection)}'));
   assert.ok(home.includes('>Affection</Text>'));
   assert.ok(!home.includes('onQuests'));
+});
+
+test('Home and its offline preview use the current layered bunny, never retired flattened artwork', () => {
+  const home = fs.readFileSync('apps/mobile/src/components/burrow/home-art-scene.tsx', 'utf8');
+  const renderer = fs.readFileSync('apps/mobile/src/components/burrow/outfit-bunny.tsx', 'utf8');
+  assert.match(home, /<OutfitBunny outfit=\{slots.outfit\}/);
+  assert.match(renderer, /BUNNY_RIG\.drawOrderBottomToTop\.map/);
+  assert.match(renderer, /source=\{layers\[layer as keyof typeof layers\]/);
+  const preview = fs.readFileSync('tools/preview-burrow-home.cjs', 'utf8');
+  assert.doesNotMatch(preview, /home-bunny\.webp|BURROW_FIXED_ART\.bunny|HOME_BUNNY_PLACEMENT/);
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'novame-layered-home-preview-'));
+  const output = path.join(directory, 'home.png');
+  try {
+    const result = spawnSync(process.execPath, ['tools/preview-burrow-home.cjs', output], { encoding: 'utf8', timeout: 30000 });
+    assert.equal(result.status, 0, result.stderr);
+    const png = fs.readFileSync(output);
+    assert.equal(png.subarray(1, 4).toString(), 'PNG');
+    assert.equal(png.readUInt32BE(16), 900); assert.equal(png.readUInt32BE(20), 1950);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });

@@ -1,0 +1,137 @@
+Burrow 原生绘制慢帧优化 / 2026-10-19
+
+结论
+已完成本轮绘制热点优化、完整回归与两轮 iOS Release 复测。
+没有重写导航；未改现有 UI 的配色/布局/素材尺寸、动画节奏、业务规则或通知机制。
+同环境旧版基线的 >34ms 帧回调间隔占比约 12.2%，优化后两轮分别约 2.8% / 3.1%。
+仍有少量尖峰，不宣称所有设备零掉帧，也不把模拟器结果等同于视频级真机最终验收。
+
+真实负载与修改
+1. 兔子每帧重复形变计算
+   - 原实现每个身体网格点都读取 state.value，并重复计算只与源坐标有关的 smoothstep。
+   - 3,969 个点 × 每帧；身体/头部共享网格，耳朵/尾巴也逐点读取共享姿态。
+   - 30 秒减法采样中，主线程明显集中在 AnimationFrameQueue / worklets / Hermes 调用链。
+     去掉 Expo 渐变后该负载仍然存在，说明不能把全部卡顿简单归因于渐变或开发环境。
+   - 现在预计算固定权重，每个派生网格只读一次姿态；身体依赖原始呼吸相位的数值，
+     尾巴独动的休息阶段复用未变形身体，不再构造整张身体网格。
+   - 没有降低网格密度、减帧、加速或关闭动画。4 秒周期及所有枢轴/锚点不变。
+   - 241 个相位 × 全部 3,969 点的新旧坐标偏差 <1e-10 源像素，源 UV/索引没有改变。
+
+2. 不必要的全屏 CPU 渐变位图
+   - 本项目所用 Expo iOS LinearGradientLayer 在 display() 中创建 UIGraphics 图像，
+     以 CoreGraphics 绘制渐变；setter 会 setNeedsDisplay。旧采样中能看到该绘制链。
+   - Home 自己有不透明全屏底色，却仍在其下绘制渐变；Burrow、Quests、Adventure
+     入口的两个渐变颜色完全相同，也仍使用渐变视图。
+   - 这些纯色/完全被遮挡的背景改用相同颜色的 View；没有改变可见背景。
+   - 仍可见的竖向渐变保留原颜色、180°方向与均匀停靠点。
+     iOS Fabric 使用已随 RN 0.81 编译的 CAGradientLayer 合成路径，且独立 memo；
+     不再由父页面的每秒倒计时更新重建全屏渐变位图。
+   - 仅限当前固定、不透明、竖向背景。没有全局改写其他渐变/透明效果。
+   - experimental_backgroundImage 是当前锁定 RN 的已有能力，没有升级依赖或增加原生代码。
+     Android、Web、非 Fabric 的旧 iOS 客户端保留 Expo 路径，避免不支持时丢失渐变。
+     最终 Release 记录确认 __DEV__=false、Fabric=true。
+
+3. 冒险进度更新重画静态土路
+   - 同一个 SVG 内的 AnimatedPath 更新会使整个 SVG 绘图表面失效；
+     原来连同两条不变的土路描边与土色渐变一起重画。
+   - 拆成保留的静态 TunnelBed 与独立动态橙色表面。
+     曲线、描边宽度、颜色、圆角、裁剪、角色位置函数及进度时间线不变。
+   - 没有降低进度/挖土动画更新频率；角色与路径仍使用同一个 shared progress。
+   - 三种尺寸 × 六个进度的 SVG 栅格对照：仅有分层 8-bit 边缘合成舍入，
+     最大通道差 <=2/255，全图平均通道差 <0.03/255。不是图片替换或位置重设计。
+
+4. 额外修复预挂载首帧时钟边界
+   - 隐藏的 Adventure React 定时器会暂停。重新聚焦时，旧 clock 有可能先启动 UI 动画，
+     然后下一次计时更新只更新文字，表现为倒计时正确但路径从旧位置开始。
+   - 现在只对获得焦点的 Adventure，在首个 render 读取当前单调时钟，
+     在原有运动 effect 启动前得到正确进度/剩余时间。
+   - 起止时间、冒险时长、结算/领取、后台确认和通知规则均未改变。
+   - 增加“隐藏两分钟再打开”的代码回归，并在性能窗口外用 QA 单调时钟偏移复现，
+     实际查看到角色和橙色路径已到对应位置，而不是只有文字更新。
+
+冻结回归 / 构建
+- 54 个测试文件，696/696 通过，0 失败，约 33.6 秒。
+- 涵盖此前通知就绪/旧响应/账号配对隔离/权限/游戏结果/日记/信件/Moments/钱包恢复/
+  购买与领取幂等/冒险/Plushie/房间与 Tabs 生命周期，以及本轮网格、渐变与路径绘制。
+- 业务数据库测试为临时 PGlite；没有连接或写入生产数据库。
+- TypeScript 检查通过；git diff --check 通过。
+- Android production-mode Bundle：9,626,982 bytes / 1,328 assets。
+- iOS production-mode Bundle：9,569,075 bytes / 1,324 assets。
+- Android 未运行模拟器；无新增素材或原生依赖。
+- 日志：/private/tmp/novame-drawing-final-complete-regression.log
+  /private/tmp/novame-drawing-frozen-types.log
+  /private/tmp/novame-drawing-frozen-bundles.log
+
+Release 对照方法
+- 独立 com.novame.navigationreleaseqa，arm64 原生 Release host + Hermes -O 生产字节码。
+  不覆盖用户主安装；仅账号、网络、存储与业务 store 边界使用本地隔离数据。
+- 实际 Home/Skia 兔子、Affection、Adventure、Friends、Memories、Quests、Shop、Moments、
+  Collection、原生 Stack 与 retained Tabs；120 件商品、12 条 Moments、本地伴侣日记。
+- 禁止所有业务写入和外部请求；只允许 loopback 输出指标。没有发送真实通知。
+- 使用与上一轮相同的自动流程：29 次详情打开/返回、36 次 Tab 切换请求，约 59 秒。
+  旧版字节码在本轮机器环境中重新安装并运行，不能只拿上个任务的数字当作基线。
+- 正式统计窗口内不运行构建、回归或线程采样。额外隐藏时钟/后台检查在窗口结束后。
+- 第二轮只增加窗口外的长隐藏时钟检查及 Fabric 标记，统计窗口步骤和数据保持相同。
+
+帧回调与 JS 定时器观测
+                              旧版重测       优化第 1 轮    优化第 2 轮
+测试窗口秒数                  59.13          58.47          58.34
+UI frame callback 数          1,829          3,267          3,248
+间隔 >34ms 的 callback 数       224             91            100
+上述间隔占比                  12.25%          2.79%          3.08%
+最长 UI callback 间隔          653.1ms        255.5ms        365.2ms
+最大 JS 16ms 定时器漂移        548.4ms        291.7ms        337.1ms
+捕获的运行/准备错误                0              0              0
+
+焦点反馈 P50 / P95（ms；最终第 2 轮）
+打开 Affection          15.5 / 42.1       旧版 46.9 / 71.5
+打开 Adventure          19.2 / 36.0       旧版 56.2 /115.1
+打开 Friends Room       32.2 / 48.9       旧版 54.1 /110.9
+打开 Memories Room      28.1 / 31.7       旧版 58.2 / 82.5
+返回 Home               15.4 / 27.0       旧版 32.5 / 53.5
+返回 Burrow             25.4 / 37.2       旧版 54.2 / 96.9
+切换 Quests             30.7 / 41.9       旧版 59.1 / 77.2
+切换 Shop               25.4 / 32.9       旧版 41.9 / 72.9
+切换 Moments            24.7 / 26.7       旧版 32.2 / 49.6
+切换 Collection         29.0 / 41.6       旧版 43.4 / 69.7
+切换 Home               33.1 / 53.9       旧版 38.0 / 66.2
+切换 Burrow             19.4 / 25.1       旧版 53.8 / 77.2
+
+手动 Release 检查
+- Home 房间画面、边缘、家具位置保持原状；仍按现有冒险状态隐藏兔子。
+- Adventure 橙色进度与角色位置同步，原渐变、端点图标、文字和按钮布局保持。
+- 模拟隐藏两分钟后正确定位；真实切后台恢复后倒计时及进度继续，不重播从零开始。
+- Back to Home 返回完整 Home，QA 中没有中途 Splash 或闪退。
+
+边界与未被本报告夸大的部分
+- frame callback 间隔是 UI 调度观测，不是对屏幕实际呈现的每一帧逐像素追踪，
+  不等同于硬件 FPS、用户端掉帧概率或所有设备的保证。
+- 焦点反馈为自动 dispatch 到 React 导航 focus 回调，不是手指松开到首像素的端到端值；
+  每个入口样本较少。原生转场时长没有被删掉或加速。
+- 仍观察到 256–365ms 的个别尖峰，未声称每个残余尖峰都已归因或完全消除。
+  不把所有剩余波动归咎于开发环境、网络或模拟器。
+- 单独去掉渐变的诊断包并没有全面改善，故未作为交付方案；
+  兔子单项与渐变减法样本保留，但不为各项改动分摊未经验证的提速百分比。
+- 原生绘制层/算法改动合并后的收益在两轮中重复观察到，不代表线上双账号/真机验收已替代。
+  真实配对账号、实际通知流量、目标 iPhone 的 Release 最终验收仍待用户登录后进行。
+- 本轮没有改 API/Admin/数据库，没有执行迁移、Vercel 发布或客户端/OTA 发布。
+
+主要代码
+apps/mobile/src/lib/bunny-idle-motion.ts
+apps/mobile/src/components/burrow/outfit-bunny-native.tsx
+apps/mobile/src/lib/burrow-surface.ts
+apps/mobile/src/components/burrow/native-vertical-gradient.tsx
+apps/mobile/src/components/burrow/adventure-digging-route.tsx
+apps/mobile/src/components/burrow/adventure-progress-screen.tsx
+apps/mobile/src/components/burrow/burrow-screen.tsx
+
+原始记录（/private/tmp/novame-navigation-release-JJ9z9e/）
+events-before-drawing-current-load.json      本轮重测旧版
+events-drawing-optimized-1.json              优化第 1 轮
+events-drawing-optimized-2.json              冻结版第 2 轮及窗口外隐藏时钟检查
+events-drawing-optimized-2-with-resume.json  第 2 轮及后台/返回记录
+events-gradient-subtraction.json            仅用于归因的渐变减法，不是最终 UI
+events-bunny-math.json                      单独数学优化诊断样本
+gradient-subtraction-sample.txt             原生 worklets 线程采样
+navigation-sample.txt                       先前原生绘制线程采样
+before-drawing.hbc / bunny-math.hbc          保留的旧版及单项诊断字节码

@@ -1,5 +1,7 @@
-import { type ReactNode, useMemo } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { type ReactNode, useMemo,useEffect,useRef,useState } from 'react';
+import { Keyboard,StyleSheet, useWindowDimensions, View } from 'react-native';
+import {AppViewportContext} from '@/lib/app-viewport';
+import {appViewportLayout,keyboardViewportLayout,APP_CANVAS_BACKGROUND} from '@/lib/app-viewport-layout';
 
 /**
  * Phase-one large-screen compatibility frame.
@@ -12,47 +14,46 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
  *
  * Compact portrait phones remain exactly full width. On a large display (the
  * Android medium-width breakpoint) or a clearly landscape/wide window, the
- * canvas is capped at 520dp. Its height also informs the cap so short, wide
- * displays get a naturally phone-shaped canvas instead of a squat one.
+ * canvas is capped at 520dp. Prefer 9:20; shorter windows may use up to 9:16.
+ * Tall windows get vertical as well as horizontal letterboxing. Nothing is
+ * stretched, and keyboard resizing does not select another composition.
  */
-export const LARGE_SCREEN_BREAKPOINT = 600;
-export const APP_FRAME_MIN_WIDTH = 390;
-export const APP_FRAME_MAX_WIDTH = 520;
-export const APP_FRAME_PORTRAIT_RATIO = 9 / 16;
+export {LARGE_SCREEN_BREAKPOINT,APP_FRAME_MIN_WIDTH,APP_FRAME_MAX_WIDTH} from '@/lib/app-viewport-layout';
+export const APP_FRAME_PORTRAIT_RATIO = 9 / 20;
 
 export type AdaptiveFrameMetrics = {
   constrained: boolean;
   width: number;
+  height:number;
+  left:number;
+  top:number;
 };
 
 export function getAdaptiveFrameMetrics(
   windowWidth: number,
   windowHeight: number,
 ): AdaptiveFrameMetrics {
-  const safeWidth = Math.max(0, windowWidth);
-  const safeHeight = Math.max(0, windowHeight);
-  const isLargeScreen = safeWidth >= LARGE_SCREEN_BREAKPOINT;
-  const isClearlyWide = safeHeight > 0 && safeWidth / safeHeight >= 1.1;
-  const constrained = isLargeScreen || isClearlyWide;
-
-  if (!constrained) return { constrained: false, width: safeWidth };
-
-  const heightBasedWidth = Math.max(
-    APP_FRAME_MIN_WIDTH,
-    Math.round(safeHeight * APP_FRAME_PORTRAIT_RATIO),
-  );
-  return {
-    constrained: true,
-    width: Math.min(safeWidth, APP_FRAME_MAX_WIDTH, heightBasedWidth),
-  };
+  return appViewportLayout(windowWidth,windowHeight);
 }
 
 export function AdaptiveAppFrame({ children }: { children: ReactNode }) {
-  const { width, height } = useWindowDimensions();
+  const native = useWindowDimensions(),{width,height}=native;
+  const [keyboardVisible,setKeyboardVisible]=useState(()=>Keyboard.isVisible());
+  useEffect(()=>{
+    const show=Keyboard.addListener('keyboardDidShow',()=>setKeyboardVisible(true));
+    const hide=Keyboard.addListener('keyboardDidHide',()=>setKeyboardVisible(false));
+    return()=>{show.remove();hide.remove();};
+  },[]);
+  const previous=useRef<{windowWidth:number;frame:ReturnType<typeof appViewportLayout>}|null>(null);
+  const keyboard=keyboardVisible||Keyboard.isVisible();
   const frame = useMemo(
-    () => getAdaptiveFrameMetrics(width, height),
-    [width, height],
+    () => keyboardViewportLayout(width,height,previous.current,keyboard),
+    [width, height,keyboard],
   );
+  if(!keyboard)previous.current={windowWidth:width,frame};
+  // Moving an unchanged canvas within a larger window must not redraw every
+  // retained page. Native-coordinate outlets subscribe separately to offsets.
+  const viewport=useMemo(()=>({...native,width:frame.width,height:frame.height}),[native.scale,native.fontScale,frame.width,frame.height]);
 
   return (
     <View style={styles.outside}>
@@ -60,10 +61,10 @@ export function AdaptiveAppFrame({ children }: { children: ReactNode }) {
         testID="adaptive-app-frame"
         style={[
           styles.canvas,
-          frame.constrained ? { width: frame.width } : styles.compactCanvas,
+          frame.constrained ? { width: frame.width,height:frame.height,flex:0 } : styles.compactCanvas,
         ]}
       >
-        {children}
+        <AppViewportContext.Provider value={viewport}>{children}</AppViewportContext.Provider>
       </View>
     </View>
   );
@@ -73,12 +74,13 @@ const styles = StyleSheet.create({
   outside: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#E7DEC5',
+    justifyContent:'center',
+    backgroundColor: APP_CANVAS_BACKGROUND,
   },
   canvas: {
     flex: 1,
     overflow: 'hidden',
-    backgroundColor: '#4C331B',
+    backgroundColor: APP_CANVAS_BACKGROUND,
   },
   compactCanvas: {
     width: '100%',

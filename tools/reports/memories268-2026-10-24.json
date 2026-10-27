@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-24",
+  "feature": "Memories Room completed-page lifecycle, durable saves and revision-scoped unread",
+  "authorization": {
+    "implementation": "User approved the proposed Memories redesign",
+    "timezone": "Keep the existing shared calendar timezone, fixed per page/book boundary",
+    "production": "User approved migration 268 and API deployment after verification"
+  },
+  "production": {
+    "migration": "20261024000268",
+    "apiDeployment": "dpl_8tEmVanEHk8Wgm2KSan4MmfQ2QEw",
+    "domain": "https://api.soulsayit.com",
+    "verifiedAt": "2026-10-24T13:35:53.288Z",
+    "sourceFilesVerified": 276,
+    "overlays": ["apps/api/src/app/api/vnext/couple-journal/route.js", "apps/api/src/lib/burrow-attention.mjs", "apps/api/src/app/api/vnext/bootstrap/route.js", "apps/api/src/middleware.ts"],
+    "protectedExistingDataTablesUnchanged": 18,
+    "unrelatedFunctionsAndPermissionsUnchanged": true,
+    "adminUnchanged": true,
+    "announcementsAndForceUpdateUnchanged": true,
+    "anonymousGetStatus": 401,
+    "anonymousReadReceiptStatus": 401,
+    "appStoreReleasePerformed": false,
+    "privateReleaseEvidence": "/private/tmp/burrow-memories268-release.EJLldG"
+  },
+  "validation": {
+    "domainGate": {"command": "pnpm test:domain-isolation", "passed": 553, "failed": 0, "note": "Includes journal, outbox, UI and notification-layer contracts; not the entire retired feature suite."},
+    "journalQueueUiAndCacheTests": {"passed": 24, "failed": 0},
+    "notificationBatchAndReadLayerTests": {"passed": 3, "failed": 0},
+    "isolatedPostgresAssertions": 29,
+    "mobileTypeCheck": "passed",
+    "native": {
+      "device": "iPhone 17 Pro simulator",
+      "os": "iOS 26.2",
+      "build": "production/minified JavaScript + Hermes in isolated Release host",
+      "realComponent": "CoupleJournalScreen",
+      "fixtures": "Network, identity, storage and avatar boundaries; no production-user writes",
+      "checks": ["book layout", "four-line ellipsis with original full text", "scrollable full-text modal and close", "edit and one-tap exit", "draft restored after re-entry", "immediate Save projection despite five-second simulated server delay", "History pagination and page detail", "own-only edit control"],
+      "workspace": "/private/tmp/burrow-memories268-qa.82F4ya"
+    }
+  },
+  "contracts": {
+    "complete": "Both authenticated authors must save valid nonempty answers",
+    "rollover": "Next natural midnight in frozen shared timezone; one next page, never skipped empty pages",
+    "solo": "Original private daily behavior retained",
+    "save": "Durable local intent before optimistic projection; immutable receipt retries; explicit conflict recovery",
+    "unread": "Page/answer revision ready before reminder; History entry dismissal is not row read; exact sub-millisecond revisions remain distinct",
+    "preparationBudget": "At most four missing pages per batch, concurrency two, yield between reads",
+    "compatibility": "Old clients keep date cursors and their original notification shape; X-Burrow-Journal: 2 gates new metadata. New client uses UUID cursors; both read the opted-in pair current page."
+  },
+  "limitations": [
+    "Client changes require the next App release; backend deployment does not replace installed client UI.",
+    "The reported occasional full native freeze was not deterministically reproduced. Confirmed editor/back traps were removed; do not claim every possible native freeze has one proven cause.",
+    "Same-page duplicate submissions wait for the first saved intent to reconcile; drafts remain retained.",
+    "Android native, physical devices, production two-user write flows and formal frame-time distributions were not verified in this task.",
+    "No all-device zero-dropped-frame or all-retired-tests claim is made."
+  ],
+  "documentation": ["docs/burrow-development-standards.md", "docs/memories-room-review-and-plan.md"]
+}

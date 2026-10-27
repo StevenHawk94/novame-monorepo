@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { BackIcon } from '@/components/burrow/burrow-back-button';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { Platform,
   ActivityIndicator,
@@ -352,7 +353,7 @@ export default function AuthScreen() {
           hitSlop={12}
           style={({ pressed }) => [styles.topBackButton, pressed && { opacity: 0.6 }]}
         >
-          <Text style={styles.topBackArrow}>{'\u2190'}</Text>
+          <BackIcon color="#FFFFFF"/>
         </Pressable>
         <View style={styles.body}>
           <Branding />
@@ -531,12 +532,6 @@ function makeStyles(
     left: 20,
     zIndex: 10,
     padding: 8,
-  },
-  topBackArrow: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontFamily: 'Inter_600SemiBold',
-    lineHeight: 28,
   },
   backLink: {
     marginTop: scale(16),

@@ -1,5 +1,15 @@
 # NovaMe 代码库总览
 
+> **当前 Burrow 开发基线**：新增功能、UI 调整、修 Bug 和发布前先读
+> [Burrow 开发基线与变更验收规范](docs/burrow-development-standards.md)。
+> 下文含历史 NovaMe 产品与架构描述，不能据此覆盖现行的独立房间、经济幂等、通知就绪及性能约定。
+
+> Burrow 商品更新入口：只编辑 `catalog/burrow-shop-products.json` 中的永久 ID
+> 和本地素材绑定，执行 `pnpm catalog:prepare`。不要按数组序号重建商品，也不要
+> 为常规商品更新逐个修改 Shop/Admin/奖池；统一生成和发布流程见
+> [catalog/README.md](catalog/README.md)。下架用 `retired`，保留拥有记录和素材。
+> 262 修复后，`retired` 只保留历史数据，不再提供已下架商品的摆放兼容；常规维护仅更新和上新。
+
 > Journal. Reflect. Evolve. — 日记 / 反思 / 游戏化成长类 App
 >
 > 本文档由 Claude Code 于 2026-07-21 基于全量代码阅读生成。
@@ -328,7 +338,7 @@ mobile 与 api 共享的单一事实来源，所有文件带决策编号注释�
 - **gems.ts**：每维度 +10；正文 <20 字不给（防刷）；免费档只记 prompt 维度，付费 AI 分析至多 3 维度（「付费买宽度不买单价」）；画像 5 阶段边界 `[600,2000,4500,9000]`
 - **battle.ts + monsters.ts**：怪物 60 HP；伤害 default 10 / learned 20 / hidden 50；8 只怪一一对应维度（The Swallower、Overthinking、Procrastination、The Fog、The Spiral、The Hollow、The Comparer、The Wall）；文案避免「击败/摧毁」用语
 - **skills/skill-dedup.ts**：关键词 Jaccard 相似度去重（阈值 0.35；上线前拟升级 pgvector）
-- **items/item-matcher.ts + dictionary.json**：物品匹配 —— tokenize（归一化弯引号）→ 词典查表 → 否定守卫（noun 前 3 token 检 didn't/no/without…）→ 去重 → 最多 5 个按稀有度排序；词典当前 15 items 样本（正式版 480 items 直接换 JSON）
+- **items/display-catalog.ts + display-catalog.json**：历史名称和图片映射元数据；保留 5,439 个基础 item ID 和 5 个人物 ID。Tap Your Day 使用 187 个手动选择；自动关键词匹配、规则发布和学习 Cron 已退役，迁移 241 只关闭旧权限，不删历史数据。
 
 ### 6.3 @novame/ui-tokens — 设计令牌
 
@@ -443,3 +453,20 @@ profiles / subscriptions、wisdoms / wisdom_cards / card_keywords / card_saves /
 - 技能去重为测试期方案（Jaccard 0.35），上线前升级 pgvector；物品词典为 15 条样本（正式 480 条）
 - `backlog.md` 有完整的跨阶段待办台账（B55 AI 降级链告警、B56 MMKV v4 dev build 持久化、B57 测试期阈值恢复等）
 - 遗留命名：R2 manifest 仍叫 `video-manifest.json`；admin 表单默认 creator 仍是旧名「Visdom Team」
+# Current Burrow isolation contracts (2026-10-23)
+
+The legacy product notes below are historical, not the current room ownership
+contract. See `docs/app-domain-isolation-work-plan.md` for execution evidence.
+
+- Rooms: `room-edit-design.ts` / `room-edit-queue.ts` own client presentation and
+  durable intent; personal-v2 API commands accept actor-bound deltas only.
+- Both Plushie purchase entrances call `enqueueBurrowPlushie`; ordinary Shop
+  baskets use the same atomic personal-room checkout and wallet reservations.
+- Private images: costume-specific alpha masks, shared private-file resolver,
+  pure SVG/Skia rendering. Never wrap native views in SVG ForeignObject.
+- Shared infrastructure: request identity fencing, registered storage scopes,
+  verified receipt/local-application separation and isolated observer dispatch.
+- Version negotiation keeps installed old clients on their original protocol.
+  New financial room work requires a verified personal-v2 bootstrap and receipt.
+- Gate: `pnpm test:domain-isolation`; DB: `pnpm test:personal-rooms:db` with the
+  pinned isolated PGlite runtime. The workflow does not access production.

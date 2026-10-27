@@ -1,6 +1,7 @@
 import {
   ITEM_CATALOG_VERSION,
   isRemoteItemManifest,
+  projectItemDisplayManifest,
   type RemoteItemManifest,
 } from '@novame/engine';
 
@@ -15,7 +16,7 @@ function readCached(): RemoteItemManifest | null {
   try {
     const raw = storage.getString(kRemoteItemManifest.name);
     const value = raw ? JSON.parse(raw) : null;
-    return isRemoteItemManifest(value) ? value : null;
+    return isRemoteItemManifest(value) ? projectItemDisplayManifest(value) : null;
   } catch {
     return null;
   }
@@ -33,8 +34,8 @@ export function subscribeRemoteItemManifest(listener: () => void): () => void {
 }
 
 function install(manifest: RemoteItemManifest): void {
-  current = manifest;
-  storage.set(kRemoteItemManifest.name, JSON.stringify(manifest));
+  current = projectItemDisplayManifest(manifest);
+  storage.set(kRemoteItemManifest.name, JSON.stringify(current));
   for (const listener of listeners) listener();
 }
 
@@ -63,7 +64,7 @@ export function fetchRemoteItemManifest(version: string): Promise<RemoteItemMani
       // validated by Admin against this base version before publishing.
       if (!value.baseCatalogVersion) value.baseCatalogVersion = ITEM_CATALOG_VERSION;
       install(value);
-      return value;
+      return current;
     } catch {
       return current;
     } finally {

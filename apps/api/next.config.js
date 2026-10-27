@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+const path = require('node:path')
 const nextConfig = {
   transpilePackages: ['@novame/core', '@novame/engine', '@novame/domain'],
   reactStrictMode: true,
@@ -17,6 +18,15 @@ const nextConfig = {
 
   // Vercel deployment optimizations
   output: 'standalone',
+  // pnpm keeps native binaries outside the API directory. Sharp 0.35 resolves
+  // libvips dynamically, beyond NFT's static import graph. Include only this
+  // route's native packages; never copy the whole workspace or mobile assets.
+  outputFileTracingRoot: path.join(__dirname, '../..'),
+  outputFileTracingIncludes: {
+    '/api/upload-avatar': [
+      '../../node_modules/.pnpm/@img+sharp-*/node_modules/@img/sharp-*/**/*',
+    ],
+  },
 
   // Disable type checking on build (we run `pnpm type-check` separately in CI)
   // This is fine for an API project — Next handles route validation at runtime

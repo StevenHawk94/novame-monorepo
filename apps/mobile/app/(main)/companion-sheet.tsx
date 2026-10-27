@@ -1,10 +1,6 @@
-import { CompanionSheet } from '../../src/components/main/companion-sheet';
+import { NativeTabRedirect } from '@/components/main/native-tab-redirect';
 
-/**
- * Router-owned companion layer. Keeping this in the same native stack as the
- * Kit pages lets a Kit slide over the sheet and reveal the unchanged sheet
- * again when it closes.
- */
+/** The old companion Kit picker is no longer part of Burrow. */
 export default function CompanionSheetRoute() {
-  return <CompanionSheet />;
+  return <NativeTabRedirect href="/(main)/(tabs)" />;
 }

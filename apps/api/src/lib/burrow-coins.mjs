@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { decodeTransaction } from 'app-store-server-api'
+import { verifyAppleTransaction,currentAppleTransaction } from './apple-store-state.mjs'
 import { GoogleAuth } from 'google-auth-library'
 
 export const COIN_PRODUCTS = Object.freeze({'burrow.coin.200':200,'burrow.coin.400':400,'burrow.coin.1000':1000})
@@ -7,9 +7,9 @@ const uuid = v => typeof v === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}
 const fail = (code, status = 400) => { throw Object.assign(new Error(code), {status}) }
 export const coinProduct = id => Object.hasOwn(COIN_PRODUCTS, id ?? '')
 function environment(value) {
-  const expected = process.env.BURROW_IAP_ENVIRONMENT
-  if (!['sandbox','production'].includes(expected)) fail('store_not_configured',503)
-  if (value !== expected) fail('store_environment_mismatch')
+  // This value comes exclusively from the verified store response. Admission
+  // to the sticky economic domain is decided atomically by PostgreSQL.
+  if (!['sandbox','production'].includes(value)) fail('store_environment_mismatch')
   return value
 }
 export function appleCoin(tx, expectedUser, notification = null) {
@@ -38,8 +38,12 @@ export function googleCoin(data, token, expectedUser, productId) {
     p_credential:createHash('sha256').update(token).digest('hex'),p_product_id:line.productId,p_quantity:quantity,
     p_refunded:state === 'CANCELLED' ? quantity : quantity-refundable,p_signed_at:new Date().toISOString()}
 }
-export async function applyCoin(supabase, args, webhook = false) {
-  const {data,error} = await supabase.rpc('apply_burrow_coin_purchase_v1',args)
+export async function applyCoin(supabase, args, webhook = false, googleFinish = null) {
+  const allowSandboxRoom = args.p_environment === 'sandbox'
+  const fields={...args,p_allow_sandbox_room:allowSandboxRoom}
+  const {data,error} = googleFinish ? await supabase.rpc('credit_google_coin_v3',{
+    p_args:fields,p_token:googleFinish.token,p_consume:googleFinish.consume,
+  }) : await supabase.rpc('apply_burrow_coin_purchase_v2',fields)
   if (error) fail('purchase_credit_unavailable',503)
   // Account deletion must not make a store retry forever; the receipt tombstone
   // still prevents anyone else claiming it. Never ignore conflicts for clients.
@@ -52,12 +56,12 @@ export async function applyCoin(supabase, args, webhook = false) {
   if (!data) fail('purchase_credit_unavailable',503)
   return data
 }
-async function googleAccessToken() {
+export async function googleAccessToken() {
   const raw = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_PLAY_SERVICE_ACCOUNT
   let credentials
   try { credentials = raw ? JSON.parse(raw) : {client_email:process.env.GOOGLE_PLAY_SA_EMAIL,private_key:process.env.GOOGLE_PLAY_SA_PRIVATE_KEY?.replace(/\\n/g,'\n')} } catch { fail('store_not_configured',503) }
   if (!credentials?.client_email || !credentials.private_key) fail('store_not_configured',503)
-  const auth = new GoogleAuth({credentials,scopes:['https://www.googleapis.com/auth/androidpublisher']})
+  const auth = new GoogleAuth({credentials,scopes:['https://www.googleapis.com/auth/androidpublisher'],clientOptions:{transporterOptions:{timeout:10000}}})
   const token = await auth.getAccessToken()
   if (!token) fail('store_unavailable',503)
   return token
@@ -73,18 +77,16 @@ export async function verifyGoogleCoin(supabase, token, expectedUser, productId,
   if (webhook && purchase.productLineItem?.length === 1 && !coinProduct(purchase.productLineItem[0].productId)) return {ignored:true}
   if (webhook && purchase.purchaseStateContext?.purchaseState === 'PENDING') return {pending:true}
   const args = googleCoin(purchase,token,expectedUser,productId)
-  const result = await applyCoin(supabase,args,webhook)
-  // Server consumption closes the grant/acknowledge gap. Duplicate attempts
-  // re-read authoritative consumption state before trying again.
-  if (purchase.purchaseStateContext.purchaseState === 'PURCHASED' && purchase.productLineItem[0].productOfferDetails.consumptionState !== 'CONSUMPTION_STATE_CONSUMED') {
-    const consumed = await fetch(`${base}/products/${encodeURIComponent(args.p_product_id)}/tokens/${encodeURIComponent(token)}:consume`,{method:'POST',headers,signal:AbortSignal.timeout(15000)})
-    if (!consumed.ok) fail('purchase_acknowledgement_pending',503)
-  }
-  return result
+  const consume=purchase.purchaseStateContext.purchaseState==='PURCHASED'
+    && purchase.productLineItem[0].productOfferDetails.consumptionState!=='CONSUMPTION_STATE_CONSUMED'
+  const result=await applyCoin(supabase,args,webhook,{token,consume})
+  return {...result,acknowledgementPending:consume}
 }
 export async function verifyAppleCoin(supabase, jws, user, product) {
-  let tx
-  try { tx = await decodeTransaction(jws) } catch { fail('invalid_store_signature') }
+  const initial = await verifyAppleTransaction(jws)
+  // Historic signed receipts are lookup credentials, not proof that the
+  // consumable has not since been refunded before its first server upload.
+  const tx = await currentAppleTransaction(initial)
   const args = appleCoin(tx,user)
   if (product !== args.p_product_id) fail('invalid_store_transaction')
   return applyCoin(supabase,args)

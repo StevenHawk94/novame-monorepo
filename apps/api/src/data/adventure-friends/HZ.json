@@ -1,0 +1,1488 @@
+{
+  "code": "HZ",
+  "id": "adventure_friend_hz",
+  "name": "Hazel",
+  "gender": "she",
+  "species": "Squirrel",
+  "partner": "Walnut (he)",
+  "emotionalState": "即将/刚同居，计划狂，焦虑，同居磨合中",
+  "speakingStyle": "一口气不停，爱做 spreadsheet，爱数东西",
+  "catchphrase": "Okay, so...",
+  "art": [
+    "Squirrel_02_Variant1.webp",
+    "Squirrel_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "HZ-01",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "A squirrel zips down a trunk carrying three acorns and a rolled-up map, then freezes.",
+      "lines": [
+        "Oh! Hi! Sorry, I'm Hazel, I was just counting, it's a thing, I count when I'm nervous, and I'm nervous, and also happy, it's complicated.",
+        "Do you have a minute? ...Or three? I talk a lot."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Take all the time you need.",
+          "reaction": [
+            "Okay, great, wow, you're nice. I might actually need all of it.",
+            "Everyone says I talk the way I run, which is everywhere at once."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You're carrying a lot of acorns.",
+          "reaction": [
+            "Right?! Two hundred at home. Okay, one-fifty. I count them every night.",
+            "It's a whole system, and I'll explain it, but not right now."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Is that a map?",
+          "reaction": [
+            "Yes! A floor plan! Okay, that's a story for later.",
+            "Next time I'll tell you everything, I promise. I mean it. I always mean it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-02",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I have a spreadsheet for everything. Snacks, naps, weather, how many times I've looked at this map today.",
+        "It's forty-one. It's only noon."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a lot of looks.",
+          "reaction": [
+            "I know! But every time I find something new. Like a window I forgot about.",
+            "Yesterday it was a very small closet. I got emotional."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Can I see the spreadsheet?",
+          "reaction": [
+            "Yes! No. Maybe. It's color-coded, and you can't judge the colors. The pink column is feelings.",
+            "It's the longest one."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "What's on the map?",
+          "reaction": [
+            "A little burrow. Mine. Well. Ours.",
+            "I'm still getting used to saying that, so please be patient with me."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-03",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Okay, so, Walnut asked me something big yesterday. He asked me while we were sharing a nut, which is very romantic in squirrel culture.",
+        "I said yes before he finished the sentence. I'm still processing that I said yes."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What did he ask?",
+          "reaction": [
+            "To move in together! Same door, same pillow, same everything.",
+            "I'm so excited, and I'm also thinking about it very loudly. Mostly in my chest."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Congratulations!",
+          "reaction": [
+            "Thank you!! I've been waiting for someone to say that out loud.",
+            "It makes it feel real, which is great and also a little terrifying."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You said yes before he finished?",
+          "reaction": [
+            "Okay, so, I do that. Walnut laughed so hard he dropped the nut.",
+            "We spent an hour looking for it, and it was one of the best hours."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-04",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "We have a plan for the move. A very flexible plan. Walnut wrote 'figure it out' on page one.",
+        "I wrote nine pages. We compromised. His page goes first."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Page one: 'figure it out'?",
+          "reaction": [
+            "Right?? I almost fainted.",
+            "But then he drew a tiny heart next to it and I couldn't be mad.",
+            "He knows exactly what he's doing."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Nine pages is impressive.",
+          "reaction": [
+            "Thank you. Walnut says it's 'a lot.' He says it with love. I think.",
+            "I'm choosing to believe it was love."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Whose page is better?",
+          "reaction": [
+            "Mine. Obviously.",
+            "But his has a drawing of a squirrel in a hat, so it's a closer call than I'd like to admit."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-05",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Okay, real question, and I need a real answer.",
+        "What's the best thing you and your partner did when you first started sharing more space? Or, like, more time together?",
+        "I'm collecting wisdom. I'm putting it on page ten."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We set aside one evening that was just ours.",
+          "reaction": [
+            "One evening. Just ours. I love that. Okay, I'm writing 'Ours Night' on the calendar.",
+            "It has a name now, which makes it official."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We talked about the small annoying stuff early.",
+          "reaction": [
+            "The small annoying stuff. Yes. Okay. I'll start a list. I already have a list.",
+            "It's mostly about his socks. I'll add a second column."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Honestly, we figured it out as we went.",
+          "reaction": [
+            "Figured it out as you went. Hm. That's Walnut's whole philosophy.",
+            "Okay, maybe I need to hear it twice. Maybe three times."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-06",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "We went to look at the burrow today.",
+        "Walnut measured the doorway and said 'it's fine.' I measured and said 'it's three centimeters too narrow.' We argued for an hour.",
+        "Then we realized we were measuring different doors."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Different doors?!",
+          "reaction": [
+            "Different doors! We laughed so hard.",
+            "Turns out the whole argument was about nothing, and I'm keeping that story forever."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Who was right?",
+          "reaction": [
+            "Neither! Both! It's a draw.",
+            "I put it in the spreadsheet under 'Wins.' Everybody gets a win, that's my new policy."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "That's so couple.",
+          "reaction": [
+            "I know, right? We argue and then we're best friends again in five minutes.",
+            "It's honestly the best part of the whole thing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-07",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Hazel sits on a branch, not moving. This is rare.",
+      "lines": [
+        "Can I tell you something? I'm not counting right now. That's how you know it's serious.",
+        "I've lived alone my whole life. I know where everything is. I know where every acorn lives.",
+        "What if I'm bad at sharing? What if I'm better alone?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Being nervous doesn't mean it's wrong.",
+          "reaction": [
+            "Okay. Okay. That's a good point. Nervous isn't a no. I'm writing that down.",
+            "Not on page ten. On a good page, near the front."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Have you asked Walnut how he feels about it?",
+          "reaction": [
+            "I never asked. I just assumed he's fine. He probably has a spreadsheet too.",
+            "A secret one. With feelings in it."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Hazel.",
+          "reaction": [
+            "...Thanks. I stopped counting. That never happens.",
+            "It's kind of quiet in my head right now, and I actually like it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-08",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I told Walnut I was scared. Not 'I have concerns,' scared.",
+        "He said, 'Me too. I haven't eaten in two days.' We sat there. Two scared squirrels on a branch.",
+        "Then we ordered pizza. It helped."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's honest.",
+          "reaction": [
+            "It really was. I feel lighter. Okay, still scared, but lighter.",
+            "Like a scared squirrel with a better view."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Two scared squirrels is adorable.",
+          "reaction": [
+            "We were SO bad at it. He kept offering me crumbs.",
+            "I kept saying 'I'm not hungry' and eating them. It was a very quiet disaster."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Pizza fixes everything.",
+          "reaction": [
+            "It does not fix everything, but it fixes dinner.",
+            "And dinner is like seventy percent of a day. I'll take those odds."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-09",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": null,
+      "lines": [
+        "We moved the first box today.",
+        "Just one. A small one. Walnut carried it very slowly, like it was a baby.",
+        "I stood in the empty room and I didn't count anything. I just stood there. It felt like a held breath."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds like a good moment.",
+          "reaction": [
+            "It was. I'm usually so busy planning that I forget to feel it.",
+            "Today I felt it. It was big and warm and a little bit wobbly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "How did it feel?",
+          "reaction": [
+            "Like standing on the edge of a good thing. Scary and soft at the same time.",
+            "I think that's what 'home' feels like before it's home."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and listen.",
+          "reaction": [
+            "...You're good at this.",
+            "I could say the whole thing out loud because you just let me. Thank you.",
+            "I didn't even count the pauses."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-10",
+      "friendId": "adventure_friend_hz",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Okay, so. Ten visits. I counted. Obviously.",
+        "We moved in last weekend. The dishes are already a thing. Walnut loads them like it's a puzzle. I rearrange them. We both pretend it's fine.",
+        "It IS fine. It's more than fine. It's messy and loud and I'd never go back.",
+        "Your turn. How are you and your partner doing? I mean it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still figuring it out.",
+          "reaction": [
+            "Figuring it out is the whole thing. I'm so glad. Come visit!",
+            "Walnut will pretend he cleaned, and I'll pretend I believe him."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A bit tired, but we're okay.",
+          "reaction": [
+            "Tired and okay is real. Come over, I'll make tea, you can complain.",
+            "I'm an expert in complaining. I mean listening. Both."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "You've inspired me to talk more.",
+          "reaction": [
+            "Ahh! Really?? That's the nicest thing anyone's said. Okay, I'm writing that on page one.",
+            "Right next to 'figure it out.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P01",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We made a chore chart. Walnut added stickers. I'm now emotionally invested in the star system.",
+        "He gets a star when he does the dishes. I get a star when I don't alphabetize the pantry."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's cute.",
+          "reaction": [
+            "It IS cute. And dangerous. I'm competitive, so I've been eyeing the dishes.",
+            "He's been eyeing the pantry. It's a love war with glitter."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Who's winning?",
+          "reaction": [
+            "Walnut. By seven stars. He knows, and he's insufferable about it. I love him.",
+            "I also want a rematch, and I have a plan."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P02",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Walnut snores. I didn't know. We've shared a nap before, but never a whole night.",
+        "It's like a tiny motor. I can't decide if I hate it or I'm in love with it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Maybe both?",
+          "reaction": [
+            "Both. Definitely both.",
+            "Last night I put a pillow over my ears and then took it off, because it was weirdly comforting.",
+            "I'm a mess."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Earplugs?",
+          "reaction": [
+            "Tried those. I woke up, couldn't find him, panicked, and pulled them out.",
+            "Turns out the snore is my sleep signal now. That's very annoying."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P03",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I found three of Walnut's socks in the kitchen. Three. He only has two feet.",
+        "I put them in a basket. A basket of lonely socks. It's art now."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Gallery-worthy.",
+          "reaction": [
+            "Right?? I'm calling it 'Still Life with Missing Partner.' Walnut says it's a metaphor for us.",
+            "It's not. But I let him have it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you tell him?",
+          "reaction": [
+            "I did, lovingly. He said, 'those are decorations.' We both laughed.",
+            "I love that we have our own language for chaos."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P04",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I let Walnut organize the pantry today. By himself. I went on a walk and didn't look.",
+        "When I came back everything was in the wrong place. And somehow it was also exactly right."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That takes courage.",
+          "reaction": [
+            "It really did. I held onto a branch the whole walk.",
+            "But when I opened the cabinet, I could see his brain.",
+            "It was kind of sweet, in a messy way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you fix it?",
+          "reaction": [
+            "I moved one jar. Then I stopped. Then I put it back.",
+            "I'm learning that 'his way' can also be 'our way.' Slowly. With deep breaths."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P05",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We hosted our first dinner. For two guests. I made a spreadsheet.",
+        "Walnut made the soup. It was perfect. I overcooked the nuts. We pretended it was a feature."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sounds like a success.",
+          "reaction": [
+            "It was! Two guests, one near-disaster, zero fights.",
+            "Walnut squeezed my paw under the table at the exact moment I started to panic.",
+            "How does he know?"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Overcooked nuts are a feature.",
+          "reaction": [
+            "Right? 'Extra roasted.' The guests loved it, honestly. Walnut called me a genius.",
+            "I put that in the spreadsheet under 'Quotes to Keep.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P06",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I took the left side of the bed. Walnut took the left side of the bed. We had a standoff.",
+        "We settled it with a coin toss. I won. He then said, 'Fine, but I get the good blanket.' Evil."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Fair trade.",
+          "reaction": [
+            "Is it though? The good blanket is SO good.",
+            "But he looked so pleased that I'm letting it slide. This time.",
+            "I have a pending request on file."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Who won the blanket?",
+          "reaction": [
+            "Walnut. Obviously. But I'm sneaky. I've been slowly stealing it one corner per night.",
+            "He hasn't noticed. I think. I hope."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P07",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I got home late and Walnut left the lamp on for me. Just the lamp. No note.",
+        "It's the smallest thing. I stood at the door and almost cried. It's a lamp."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's not just a lamp.",
+          "reaction": [
+            "No, it isn't. It's a whole sentence.",
+            "It says 'I'm here, come home.' I didn't know a lamp could talk.",
+            "Walnut doesn't even know he's good at this."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's so sweet.",
+          "reaction": [
+            "It's SO sweet. I took a picture of it. Then I felt silly.",
+            "Then I took another one. I'm keeping both forever."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P08",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We have a Sunday ritual now. We walk to the berry stand together and don't talk. Just walk.",
+        "I didn't know I needed that. A silent walk. With somebody who doesn't need me to fill the silence."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds peaceful.",
+          "reaction": [
+            "It IS. And it's weird, because I'm usually the loud one.",
+            "But with him, quiet feels like a hug. I never thought I'd say that out loud."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Don't you miss talking?",
+          "reaction": [
+            "Not at all. We talk plenty the rest of the week.",
+            "This part is a little pocket of calm. I've started protecting it like a rare acorn."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P09",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember page one? 'Figure it out'? Walnut framed it.",
+        "It's in the hallway. Right next to my nine-page plan. Both on the wall. Both ours."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's adorable.",
+          "reaction": [
+            "Right? Visitors always ask.",
+            "I say 'it's our philosophy.' Walnut says 'it's my art.' We don't agree on the explanation, and it works."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "He framed it?!",
+          "reaction": [
+            "He framed it! With a little gold border.",
+            "He said, 'this was the beginning.' I almost cried into the pantry. Again."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P10",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still count my acorns at night. Walnut counts with me now. He gets it wrong on purpose.",
+        "'Two hundred and... a hat?' He thinks it's funny. It is. I'm annoyed. I'm in love."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good bit.",
+          "reaction": [
+            "It's the best bit.",
+            "Counting used to be my anxiety thing, and now it's our bedtime thing.",
+            "Weird how that happens."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does it still calm you?",
+          "reaction": [
+            "Even more, actually. The counting is the same, but now there's somebody to mess it up.",
+            "That's the part I didn't know I needed."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P11",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the two scared squirrels on the branch? Walnut brought it up yesterday.",
+        "He said, 'I'm glad we were scared together.' Then he went to do the dishes like he hadn't just wrecked me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "He's a keeper.",
+          "reaction": [
+            "He really is. He drops these little bombs and walks away.",
+            "I'm left standing there holding a spoon, completely undone."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's lovely.",
+          "reaction": [
+            "It is. I wrote it on a sticky note and put it on the fridge.",
+            "He's seen it and pretended not to. We're a good team."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P12",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "We started a thing on Thursdays. Just us. No plans. No spreadsheet.",
+        "Last week we lay in blankets and watched the ceiling. Best date ever."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That sounds perfect.",
+          "reaction": [
+            "It was. I love having a night that doesn't need to be anything.",
+            "Thursday is basically my favorite day now. I didn't even bring a notebook."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "No plan at all?",
+          "reaction": [
+            "None. Zero. I let the evening happen.",
+            "I think it might be the first time in my life.",
+            "Walnut said 'good job.' I said 'thanks.' We lost it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P13",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Planning is a love language. So is forgetting the plan and laughing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Both feel true.",
+          "reaction": [
+            "Right? I'm learning the second one from Walnut. It's way harder than it looks.",
+            "But the laughing part is the good part."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Plan or laugh, which wins?",
+          "reaction": [
+            "Laugh. Every time. But I'll make a plan to laugh.",
+            "Okay, that's the real problem, isn't it. I'm working on it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P14",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: Sharing a home isn't about sharing space. It's about sharing mornings."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's real.",
+          "reaction": [
+            "It really is. Mornings are where I see him most honestly.",
+            "Hair a mess, voice low, asking if I want tea. That's the good stuff."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Mornings are hard though.",
+          "reaction": [
+            "They are! Walnut is a zombie until the second cup.",
+            "But there's something about a zombie handing me tea that I'd trade a whole acorn for."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P15",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: The first fight in a new home is basically a housewarming gift."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Ha, that's a take.",
+          "reaction": [
+            "I stand by it! You learn each other's rules. We fought about towels.",
+            "Now we have a towel treaty. It's the most romantic document I own."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I'd return that gift.",
+          "reaction": [
+            "Fair! But honestly, the towel fight showed me how Walnut handles being wrong.",
+            "He apologized with a snack. I'd marry that."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P16",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Okay, I want a house rule from you.",
+        "What's one tiny habit you and your partner have that makes your days better?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We always say goodnight, even if we're annoyed.",
+          "reaction": [
+            "Oh, I love that. Even annoyed. It's like a safety net. I'm stealing it.",
+            "Walnut and I will have a goodnight clause."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We take turns choosing dinner.",
+          "reaction": [
+            "Turns. I love it. Equal and tasty. I'm going to make a rotating calendar.",
+            "Walnut's going to groan. Then he'll love it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P17",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Do you and your partner have a thing where you read each other's moods without talking?",
+        "Walnut does it with me, and I'm still trying to learn his."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Yeah, mostly.",
+          "reaction": [
+            "Mostly. That's the honest answer. I'll take 'mostly.' Okay. I'm going to watch Walnut's ears more.",
+            "They twitch when he's thinking."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Still working on it.",
+          "reaction": [
+            "Same. We're all out here squinting at each other's faces. It's reassuring, honestly.",
+            "Thank you for saying that."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P18",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's something you did for your partner that was small but landed huge?",
+        "I'm collecting these for Walnut's birthday. Don't tell him."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I left a note in their pocket.",
+          "reaction": [
+            "A note. In a pocket. That's so simple and so good. I'm going to do three.",
+            "One for every pocket. He's going to be so confused."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I made their favorite snack, no reason.",
+          "reaction": [
+            "No reason. Those are the best ones. I'm going to make his favorite nut loaf.",
+            "Burnt edges and all. It's practically a love letter."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P19",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Hazel invites you into the new burrow. Boxes everywhere. One lamp is on.",
+      "lines": [
+        "Okay, so, this is it. This is ours. Please ignore the boxes.",
+        "Walnut's in the kitchen pretending he knows where the mugs are."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It feels like a home already.",
+          "reaction": [
+            "Does it? Okay, that makes me so happy. I think it's the lamp. Or the boxes.",
+            "Or Walnut. Probably Walnut."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Where do you want me to sit?",
+          "reaction": [
+            "Anywhere! Wait, not there. That's the 'maybe' chair. It's holding my plant. Sit here. Yes. Perfect.",
+            "You look right at home."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "HZ-P20",
+      "friendId": "adventure_friend_hz",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Hazel stops mid-sentence, takes a breath, and just looks at you.",
+      "lines": [
+        "I just realized I haven't counted anything today.",
+        "Not once. I think that's because I'm... okay. Really okay."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a big deal.",
+          "reaction": [
+            "It really is. I almost didn't notice. Okay, I'll count how long it lasts. Wait. No.",
+            "I won't. Look at me, growing."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Smile at Hazel.",
+          "reaction": [
+            "Thank you for being here for all of it. I mean it. Okay, now I'm counting.",
+            "Three. Three nice things about today. That's allowed."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_465",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G01",
+      "name": "Tropical Muse",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 465,
+      "file": "Vinyl/01_Tropical_Muse.webp",
+      "key": "burrow/adventure-gifts/v1/465-b6383fdcb4fc37e1.webp",
+      "sha256": "b6383fdcb4fc37e1b05fa2aa89d642c6263e2ece58a5fad48a4339faf2042945",
+      "bytes": 26134
+    },
+    {
+      "id": "adventure_gift_466",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G02",
+      "name": "Dream Eyes",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 466,
+      "file": "Vinyl/02_Dream_Eyes.webp",
+      "key": "burrow/adventure-gifts/v1/466-15f17792a329a917.webp",
+      "sha256": "15f17792a329a91740bc13bb58ad71c24a060227406728a23c741ee602eb452d",
+      "bytes": 25174
+    },
+    {
+      "id": "adventure_gift_467",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G03",
+      "name": "Golden Muse",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 467,
+      "file": "Vinyl/03_Golden_Muse.webp",
+      "key": "burrow/adventure-gifts/v1/467-d9778eb0999821f4.webp",
+      "sha256": "d9778eb0999821f452b24c440b1dca3819e1e3c374c47f682c11634b9592015b",
+      "bytes": 26162
+    },
+    {
+      "id": "adventure_gift_468",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G04",
+      "name": "Orbit Star",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 468,
+      "file": "Vinyl/04_Orbit_Star.webp",
+      "key": "burrow/adventure-gifts/v1/468-ad425786d4688d90.webp",
+      "sha256": "ad425786d4688d90ad05012e3469ab76de5c421ec9e507082ad2a4222c5d309f",
+      "bytes": 26670
+    },
+    {
+      "id": "adventure_gift_469",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G05",
+      "name": "Cosmic Cat",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 469,
+      "file": "Vinyl/05_Cosmic_Cat.webp",
+      "key": "burrow/adventure-gifts/v1/469-4310b4d4b33c50bd.webp",
+      "sha256": "4310b4d4b33c50bd2d1006c0344e598e6d3a3eea45139a07ae35f1c6e82b3f5e",
+      "bytes": 25898
+    },
+    {
+      "id": "adventure_gift_470",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G06",
+      "name": "Cherry Pop",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 470,
+      "file": "Vinyl/06_Cherry_Pop.webp",
+      "key": "burrow/adventure-gifts/v1/470-190d62056c903814.webp",
+      "sha256": "190d62056c903814a5bbd8fa6fdb19f05b42bff4abebe6c24ef58892626dd126",
+      "bytes": 24178
+    },
+    {
+      "id": "adventure_gift_471",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G07",
+      "name": "Solar Touch",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 471,
+      "file": "Vinyl/07_Solar_Touch.webp",
+      "key": "burrow/adventure-gifts/v1/471-1814ff5533fe3042.webp",
+      "sha256": "1814ff5533fe30424e0ef6fce1aa667bf71786693dd1741006bfd48132dc298a",
+      "bytes": 25374
+    },
+    {
+      "id": "adventure_gift_472",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G08",
+      "name": "Dream Steps",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 472,
+      "file": "Vinyl/08_Dream_Steps.webp",
+      "key": "burrow/adventure-gifts/v1/472-99bb798ce8547976.webp",
+      "sha256": "99bb798ce8547976161af2b6fab5828656010ce2a433d72623fbc93311483217",
+      "bytes": 25566
+    },
+    {
+      "id": "adventure_gift_473",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G09",
+      "name": "Fire Spirit",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 473,
+      "file": "Vinyl/09_Fire_Spirit.webp",
+      "key": "burrow/adventure-gifts/v1/473-cac86a7e5917dc0b.webp",
+      "sha256": "cac86a7e5917dc0be602aa27796c50df79f9da739c39a9ccc03a2ade4fde07d9",
+      "bytes": 24936
+    },
+    {
+      "id": "adventure_gift_474",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G10",
+      "name": "Moon Bunny",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 474,
+      "file": "Vinyl/10_Moon_Bunny.webp",
+      "key": "burrow/adventure-gifts/v1/474-701f2ee4b4de6182.webp",
+      "sha256": "701f2ee4b4de6182d7f79db2d0d72d707eae4251be4d9392bdca2e3e51e40535",
+      "bytes": 26064
+    },
+    {
+      "id": "adventure_gift_475",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G11",
+      "name": "Lunar Fish",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 475,
+      "file": "Vinyl/11_Lunar_Fish.webp",
+      "key": "burrow/adventure-gifts/v1/475-86b692b49d04f734.webp",
+      "sha256": "86b692b49d04f7349b7fe8c7cb9c64a74d705f6cfb8ba8c79f591df3865fe449",
+      "bytes": 26220
+    },
+    {
+      "id": "adventure_gift_476",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G12",
+      "name": "Mint Muse",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 476,
+      "file": "Vinyl/12_Mint_Muse.webp",
+      "key": "burrow/adventure-gifts/v1/476-a99de47d19f902c8.webp",
+      "sha256": "a99de47d19f902c86044838102cdceb87e8ee37a7ff687bb378b73c80cf62193",
+      "bytes": 28048
+    },
+    {
+      "id": "adventure_gift_477",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G13",
+      "name": "Rose Vision",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 477,
+      "file": "Vinyl/13_Rose_Vision.webp",
+      "key": "burrow/adventure-gifts/v1/477-c519e1d706092a08.webp",
+      "sha256": "c519e1d706092a0872851d14f2381aa0e5c9316143f875b4ce2f59a161621227",
+      "bytes": 23532
+    },
+    {
+      "id": "adventure_gift_478",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G14",
+      "name": "Alien Duo",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 478,
+      "file": "Vinyl/14_Alien_Duo.webp",
+      "key": "burrow/adventure-gifts/v1/478-ffeebfff3d651eb9.webp",
+      "sha256": "ffeebfff3d651eb9d39411c45e23f841aa61b587effa0cb625e9a1e5b791d687",
+      "bytes": 24356
+    },
+    {
+      "id": "adventure_gift_479",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G15",
+      "name": "Winged Sneaker",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 479,
+      "file": "Vinyl/15_Winged_Sneaker.webp",
+      "key": "burrow/adventure-gifts/v1/479-7708a61ac1315020.webp",
+      "sha256": "7708a61ac13150205cb1ab0d719cc564a9083734d76b425032f5298ba863e6a8",
+      "bytes": 25684
+    },
+    {
+      "id": "adventure_gift_480",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G16",
+      "name": "Berry Planet",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 480,
+      "file": "Vinyl/16_Berry_Planet.webp",
+      "key": "burrow/adventure-gifts/v1/480-0247bf31f451d78d.webp",
+      "sha256": "0247bf31f451d78d90ca87eeafe03980a05309118c446a24cb8ec16dcde2d65a",
+      "bytes": 26158
+    },
+    {
+      "id": "adventure_gift_481",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G17",
+      "name": "Donut Party",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 481,
+      "file": "Vinyl/17_Donut_Party.webp",
+      "key": "burrow/adventure-gifts/v1/481-b37c40bb77e3fad2.webp",
+      "sha256": "b37c40bb77e3fad2b6c455ef2444923c046011a35f88929c3fafba29e3eb99df",
+      "bytes": 25702
+    },
+    {
+      "id": "adventure_gift_482",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G18",
+      "name": "Roller Rush",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 482,
+      "file": "Vinyl/18_Roller_Rush.webp",
+      "key": "burrow/adventure-gifts/v1/482-a52a2f242a535971.webp",
+      "sha256": "a52a2f242a5359715fc6b77fe9ea98a7bc2c171654fa1f2e3caa90005a323243",
+      "bytes": 24328
+    },
+    {
+      "id": "adventure_gift_483",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G19",
+      "name": "Popcorn Pop",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 483,
+      "file": "Vinyl/19_Popcorn_Pop.webp",
+      "key": "burrow/adventure-gifts/v1/483-fc28c9c3498dd5c0.webp",
+      "sha256": "fc28c9c3498dd5c0fe1e389223cb157a340ba73419dfb6b90670cbd0d4c3ecda",
+      "bytes": 26860
+    },
+    {
+      "id": "adventure_gift_484",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G20",
+      "name": "Cosmic Basketball",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 484,
+      "file": "Vinyl/20_Cosmic_Basketball.webp",
+      "key": "burrow/adventure-gifts/v1/484-f41fb423d5b258d3.webp",
+      "sha256": "f41fb423d5b258d3844a968a2d3dd1503be5212fd07086911bef1be9f7dead34",
+      "bytes": 24942
+    },
+    {
+      "id": "adventure_gift_485",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G21",
+      "name": "Cherry Shake",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 485,
+      "file": "Vinyl/21_Cherry_Shake.webp",
+      "key": "burrow/adventure-gifts/v1/485-1ba1b23baa0ef66e.webp",
+      "sha256": "1ba1b23baa0ef66ee575cbcba0ae94a56ce33b9b6257792320cc05ef444a2dc6",
+      "bytes": 24170
+    },
+    {
+      "id": "adventure_gift_486",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G22",
+      "name": "Happy Daisy",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 486,
+      "file": "Vinyl/22_Happy_Daisy.webp",
+      "key": "burrow/adventure-gifts/v1/486-a5526872eb770ae9.webp",
+      "sha256": "a5526872eb770ae952462068f7cf706f4060cd89d7c2efe5161ee7f1fd71e1b7",
+      "bytes": 26862
+    },
+    {
+      "id": "adventure_gift_487",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G23",
+      "name": "Heart Shades",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 487,
+      "file": "Vinyl/23_Heart_Shades.webp",
+      "key": "burrow/adventure-gifts/v1/487-94aa78b24a8d5988.webp",
+      "sha256": "94aa78b24a8d598874c036ef509f6d2a1342145bef889d4158d4aa769ae1b586",
+      "bytes": 26470
+    },
+    {
+      "id": "adventure_gift_488",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G24",
+      "name": "Arcade Nights",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 488,
+      "file": "Vinyl/24_Arcade_Nights.webp",
+      "key": "burrow/adventure-gifts/v1/488-19fbe2d18f4fbdf9.webp",
+      "sha256": "19fbe2d18f4fbdf9f6384a734c01fd7b8951bf6762a5547055dea9f02121f75c",
+      "bytes": 25708
+    },
+    {
+      "id": "adventure_gift_489",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G25",
+      "name": "Sunset Boots",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 489,
+      "file": "Vinyl/25_Sunset_Boots.webp",
+      "key": "burrow/adventure-gifts/v1/489-1990f0c3d80ce558.webp",
+      "sha256": "1990f0c3d80ce558b0b6c9b09b2e178f104d41db74c6dfca11120ef1a736a91a",
+      "bytes": 25026
+    },
+    {
+      "id": "adventure_gift_490",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G26",
+      "name": "Pizza Party",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 490,
+      "file": "Vinyl/26_Pizza_Party.webp",
+      "key": "burrow/adventure-gifts/v1/490-019dcf6a5948d509.webp",
+      "sha256": "019dcf6a5948d509b5c33888f5fa3c55027e10f3f7564e07bd42e7cb13bda272",
+      "bytes": 25048
+    },
+    {
+      "id": "adventure_gift_491",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G27",
+      "name": "Checker Skate",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 491,
+      "file": "Vinyl/27_Checker_Skate.webp",
+      "key": "burrow/adventure-gifts/v1/491-71d064e77b45c9ef.webp",
+      "sha256": "71d064e77b45c9ef73f8c08d3fcaa6c6a430d9292855f107b72acb0496bab377",
+      "bytes": 24090
+    },
+    {
+      "id": "adventure_gift_492",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G28",
+      "name": "Cherry Bow",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 492,
+      "file": "Vinyl/28_Cherry_Bow.webp",
+      "key": "burrow/adventure-gifts/v1/492-63883746fe02e048.webp",
+      "sha256": "63883746fe02e048183ea298fdb0f52171d2a8cc614436b6f046f0f24b916bee",
+      "bytes": 27140
+    },
+    {
+      "id": "adventure_gift_493",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G29",
+      "name": "Flower Camera",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 493,
+      "file": "Vinyl/29_Flower_Camera.webp",
+      "key": "burrow/adventure-gifts/v1/493-90df906c23d34e66.webp",
+      "sha256": "90df906c23d34e66254ad8d0a797ec2a9626f37298e3441c953401044c28aa8e",
+      "bytes": 26318
+    },
+    {
+      "id": "adventure_gift_494",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G30",
+      "name": "Pixel Play",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 494,
+      "file": "Vinyl/30_Pixel_Play.webp",
+      "key": "burrow/adventure-gifts/v1/494-81fee04734ac4b17.webp",
+      "sha256": "81fee04734ac4b17a4904ac1f672f73314b3a462055281a27e8433c9216c0581",
+      "bytes": 26538
+    },
+    {
+      "id": "adventure_gift_495",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G31",
+      "name": "Tennis Club",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 495,
+      "file": "Vinyl/31_Tennis_Club.webp",
+      "key": "burrow/adventure-gifts/v1/495-06db2845839d7cf3.webp",
+      "sha256": "06db2845839d7cf3da2efd52a3fcd2f92c28b93040e80178d8fdf8e42dd8b8c4",
+      "bytes": 26806
+    },
+    {
+      "id": "adventure_gift_496",
+      "friendId": "adventure_friend_hz",
+      "giftId": "HZ-G32",
+      "name": "Ghost Beats",
+      "category": "Vinyl",
+      "categoryCode": "C15",
+      "sourceId": 496,
+      "file": "Vinyl/32_Ghost_Beats.webp",
+      "key": "burrow/adventure-gifts/v1/496-4cd833999ccd5b1b.webp",
+      "sha256": "4cd833999ccd5b1beff8e3e8c61d878087dbb3248be0e4aa243ec08c663caa46",
+      "bytes": 23710
+    }
+  ]
+}

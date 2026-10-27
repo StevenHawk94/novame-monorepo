@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { BackIcon } from '@/components/burrow/burrow-back-button';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -7,9 +8,9 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Share,
   StatusBar,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -19,14 +20,14 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import * as StoreReview from 'expo-store-review';
 import Constants from 'expo-constants';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { PRICING_TIERS } from '@novame/core';
-import { PlanBillingSheet, type PlanBillingSheetRef } from '@/components/me/plan-billing-sheet';
+import {ProfileAvatarEditor} from '@/components/me/profile-avatar-editor';
+import {openOfficialRedeemCode} from '@/lib/redeem-offer';
 import { NotificationTimePicker } from '@/components/notifications/notification-time-picker';
 import { appAlert } from '@/components/ui/app-dialog';
 import { GridBackground } from '@/components/ui/grid-background';
@@ -44,42 +45,76 @@ import { fetchDuoStatus, type DuoStatus } from '@/lib/duo-api';
 import {
   fetchFriends,
   fetchPairing,
-  getCachedFriends,
   getCachedPairing,
+  subscribePairingStatus,
   unsetPairing,
   type PairingStatus,
 } from '@/lib/friends-api';
 import { fetchMeStats, getCachedMeStats } from '@/lib/me-stats';
 import { getBunnyName } from '@/lib/onboarding';
-import { resolveAvatarSource } from '@/lib/avatar';
+import {UserAvatar} from '@/components/ui/user-avatar';
 import { supabase } from '@/lib/supabase';
-import { useRef } from 'react';
 import { useMetaPrivacy } from '@/components/privacy/meta-privacy-provider';
+import { showPartnerPairing } from '@/lib/partner-pairing';
+import { invalidateBurrowPair, refreshBurrowAfterCurrent, useBurrowSnapshot } from '@/lib/burrow-store';
+import { sessionEpoch, sessionUserId } from '@/lib/session-lifecycle';
+import { getInteractionPreferences, setInteractionPreference, subscribeInteractionPreferences } from '@/lib/interaction-preferences';
 
 const PRIVACY_URL = 'https://www.burrow-app.com/privacy';
 const TERMS_URL = 'https://www.burrow-app.com/terms';
 
-/** Settings center; the menu artwork uses warm paper, copper icons and a curved brown header. */
+/** Warm-paper settings menu; shared pairing and coin routes retain this page underneath. */
 export default function MeScreen() {
+  const interaction = useSyncExternalStore(subscribeInteractionPreferences, getInteractionPreferences, getInteractionPreferences);
   const insets = useSafeAreaInsets();
-  const planBillingSheetRef = useRef<PlanBillingSheetRef>(null);
+  const { data: burrowData, pairInvalidated } = useBurrowSnapshot();
+  const [avatarEditor,setAvatarEditor]=useState(false);
   const tier = useSubscriptionTier();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [isDefaultAvatar, setIsDefaultAvatar] = useState<boolean | undefined>(undefined);
+  const [userId, setUserId] = useState<string | null>(()=>sessionUserId()??null);
+  const [displayName, setDisplayName] = useState(()=>getCachedMeStats()?.displayName||burrowData?.profile.display_name||getBunnyName()||'');
+  const [avatarUrl, setAvatarUrl] = useState(()=>getCachedMeStats()?.avatarUrl??burrowData?.profile.avatar_url??'');
+  const [isDefaultAvatar, setIsDefaultAvatar] = useState<boolean | undefined>(()=>getCachedMeStats()?.isDefaultAvatar??burrowData?.profile.is_default_avatar??undefined);
   const [duo, setDuo] = useState<DuoStatus>({ asOwner: null, asMember: null });
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [pairedModalStep, setPairedModalStep] = useState<'closed' | 'profile' | 'confirm'>('closed');
+  const [pairedModalPartnerId, setPairedModalPartnerId] = useState<string | null>(null);
   const [confirmText, setConfirmText] = useState('');
   const [unpairing, setUnpairing] = useState(false);
   const [unpairError, setUnpairError] = useState('');
+  const unpairLock = useRef(false);
+  const mounted = useRef(true);
+  const menuScope = `${burrowData?.profile.id??sessionUserId()??''}:${burrowData?.partner?.id??''}:${burrowData?.pairVersion??''}`;
+  const menuScopeRef = useRef(menuScope);menuScopeRef.current=menuScope;
+  // Bootstrap is updated before the connection-success screen appears. Do not
+  // briefly show the old unpaired label while the detailed date fetch completes.
+  const menuPairing: PairingStatus | null = pairInvalidated ? { paired: false, partner: null } : burrowData ? {
+    ...(pairing?.partner?.userId === burrowData.partner?.id ? pairing : {}),
+    paired: !!burrowData.partner,
+    partner: burrowData.partner ? {
+      userId: burrowData.partner.id,
+      displayName: burrowData.partner.display_name || 'Your partner',
+      avatarUrl: burrowData.partner.avatar_url || '',
+      isDefaultAvatar: burrowData.partner.is_default_avatar ?? undefined,
+    } : null,
+  } : pairing;
   const [notificationPermissionBusy, setNotificationPermissionBusy] = useState(false);
   const [notificationPickerOpen, setNotificationPickerOpen] = useState(false);
   const [notificationPickerSeed, setNotificationPickerSeed] = useState(
     () => getNotificationSettings(),
   );
   const metaPrivacy = useMetaPrivacy();
+  useEffect(() => subscribePairingStatus(setPairing), []);
+
+  useEffect(() => {
+    // A remotely ended/changed pairing must not leave an empty modal or an
+    // old confirmation that could accidentally target the new partner.
+    if (pairedModalStep !== 'closed' && menuPairing?.partner?.userId !== pairedModalPartnerId && !unpairing) {
+      Keyboard.dismiss();
+      setPairedModalStep('closed');
+      setConfirmText('');
+      setUnpairError('');
+    }
+  }, [menuPairing?.partner?.userId, pairedModalPartnerId, pairedModalStep, unpairing]);
 
   // Name + avatar come from me-stats (profiles), the same source Account
   // Management edits — so a save there shows here on the next focus.
@@ -88,6 +123,8 @@ export default function MeScreen() {
   // name the user typed outranks it.
   const refreshProfile = useCallback(() => {
     const cached = getCachedMeStats();
+    // Invalidating an in-flight cache must not blank an already-ready header.
+    if(!cached)return;
     const profileName =
       cached?.displayName && cached.displayName !== 'user' ? cached.displayName : '';
     setDisplayName(profileName || getBunnyName() || '');
@@ -95,34 +132,51 @@ export default function MeScreen() {
     setIsDefaultAvatar(cached?.isDefaultAvatar);
   }, []);
 
+  useEffect(()=>{
+    const profile=burrowData?.profile;if(!profile||profile.id!==userId)return;
+    if(profile.display_name&&profile.display_name!=='user')setDisplayName(profile.display_name);
+    if(profile.avatar_url!=null){setAvatarUrl(profile.avatar_url);setIsDefaultAvatar(profile.is_default_avatar??undefined);}
+  },[userId,burrowData?.profile.id,burrowData?.profile.display_name,burrowData?.profile.avatar_url,burrowData?.profile.is_default_avatar]);
+
   useEffect(() => {
+    mounted.current = true;
+    let active = true;
+    const epoch = sessionEpoch();
     void supabase.auth.getSession().then(({ data }) => {
+      if (!active || epoch !== sessionEpoch()) return;
       const uid = data.session?.user?.id ?? null;
       setUserId(uid);
       // Cache miss (Home warm-up failed / cold cache): fetch once so the
       // header doesn't sit on fallbacks forever.
       if (uid && !getCachedMeStats()) {
-        void fetchMeStats(uid).then(refreshProfile).catch(() => {});
+        void fetchMeStats(uid).then(() => { if (active && epoch === sessionEpoch()) refreshProfile(); }).catch(() => {});
       }
     });
+    return () => { active = false; mounted.current = false; };
   }, [refreshProfile]);
 
   // Refresh tier + profile on focus (e.g. returning from the paywall or
   // Account Management).
   useFocusEffect(
     useCallback(() => {
+      let active = true;
+      const epoch = sessionEpoch();
+      const scope = menuScopeRef.current;
+      const current = () => active && epoch === sessionEpoch() && scope === menuScopeRef.current;
       refreshProfile();
+      setDuo({ asOwner: null, asMember: null });
       void supabase.auth.getSession().then(({ data }) => {
+        if (!current()) return;
         const uid = data.session?.user?.id;
-        if (uid) void fetchSubscriptionTier(uid).catch(() => {});
+        if (uid) void fetchSubscriptionTier(uid, { force: true }).catch(() => {});
       });
-      void fetchDuoStatus().then(setDuo);
-      void fetchPairing().then(setPairing);
-      // Warm the stable invite code while the menu is visible. The row can
-      // then open the native share sheet immediately instead of waiting for
-      // the full friends/status payload (pairing, requests, feed identities).
-      void fetchFriends();
-    }, [refreshProfile]),
+      void fetchDuoStatus().then(value => { if (current()) setDuo(value); }).catch(() => {});
+      void fetchPairing({ force: true }).then(value => { if (current()) setPairing(value); }).catch(() => {});
+      void refreshBurrowAfterCurrent({ silent: true }).catch(() => {});
+      // Prepare the real invitation code silently for the shared pairing prompt.
+      void fetchFriends().catch(() => {});
+      return () => { active = false; };
+    }, [refreshProfile, menuScope]),
   );
 
 
@@ -177,49 +231,21 @@ export default function MeScreen() {
     }
   };
 
-  /** Design row "Invite Friends": share your friend code via the system sheet. */
-  const onInviteFriends = async () => {
-    void haptics.light();
-    const cachedCode = getCachedFriends().inviteCode;
-    if (cachedCode) {
-      // Revalidate silently; opening the system share sheet must not wait on
-      // network data that is already stable and cached locally.
-      void fetchFriends();
-      await Share.share({
-        message: `Add me on Burrow! My friend code is ${cachedCode} — let's share memory items together.`,
-      });
-      return;
-    }
-
-    // First-ever cold start only: no code exists locally yet, so fetch once.
-    // Menu focus already starts this request, making this branch uncommon.
-    try {
-      const status = await fetchFriends();
-      if (status.inviteCode) {
-        await Share.share({
-          message: `Add me on Burrow! My friend code is ${status.inviteCode} — let's share memory items together.`,
-        });
-        return;
-      }
-    } catch {
-      // fall through to the Friends tab, where the full add flow lives
-    }
-    router.push('/(main)/(tabs)/friends' as never);
-  };
-
   const onPairedRow = () => {
-    if (!pairing?.paired || !pairing.partner) {
-      void onInviteFriends();
+    if (!menuPairing?.paired || !menuPairing.partner) {
+      void haptics.pageOpen();
+      showPartnerPairing();
       return;
     }
     void haptics.light();
     setConfirmText('');
     setUnpairError('');
+    setPairedModalPartnerId(menuPairing.partner.userId);
     setPairedModalStep('profile');
   };
 
   const closePairedModal = () => {
-    if (unpairing) return;
+    if (unpairLock.current) return;
     Keyboard.dismiss();
     setConfirmText('');
     setUnpairError('');
@@ -227,7 +253,7 @@ export default function MeScreen() {
   };
 
   const goBackToPairedProfile = () => {
-    if (unpairing) return;
+    if (unpairLock.current) return;
     Keyboard.dismiss();
     setConfirmText('');
     setUnpairError('');
@@ -235,23 +261,42 @@ export default function MeScreen() {
   };
 
   const confirmUnpair = async () => {
-    if (confirmText.trim() !== 'Confirm' || unpairing) return;
+    if (confirmText.trim() !== 'Confirm' || unpairLock.current
+      || !pairedModalPartnerId || menuPairing?.partner?.userId !== pairedModalPartnerId) return;
+    unpairLock.current = true;
+    const epoch = sessionEpoch();
+    const owner = sessionUserId();
     Keyboard.dismiss();
     void haptics.warning();
     setUnpairing(true);
     setUnpairError('');
     const ok = await unsetPairing();
-    if (!ok) {
-      setUnpairError('We could not end this pairing. Please check your connection and try again.');
-      setUnpairing(false);
+    if (epoch !== sessionEpoch() || owner !== sessionUserId()) {
+      unpairLock.current = false;
+      if (mounted.current) setUnpairing(false);
       return;
     }
-    setPairing({ paired: false, partner: null });
-    setPairedModalStep('closed');
-    setConfirmText('');
-    setUnpairing(false);
-    void fetchDuoStatus().then(setDuo);
-    if (userId) void fetchSubscriptionTier(userId, { force: true }).catch(() => {});
+    if (!ok) {
+      unpairLock.current = false;
+      if (mounted.current) {
+        setUnpairError('We could not end this pairing. Please check your connection and try again.');
+        setUnpairing(false);
+      }
+      return;
+    }
+    // Purge shared room/history state immediately, including a read started
+    // before the mutation. Offline refresh must not expose the former partner.
+    invalidateBurrowPair();
+    void refreshBurrowAfterCurrent({ silent: true }).catch(() => {});
+    unpairLock.current = false;
+    if (mounted.current) {
+      setPairing({ paired: false, partner: null });
+      setPairedModalStep('closed');
+      setConfirmText('');
+      setUnpairing(false);
+    }
+    void fetchDuoStatus().then(value => { if (mounted.current && epoch === sessionEpoch()) setDuo(value); }).catch(() => {});
+    if (owner) void fetchSubscriptionTier(owner, { force: true }).catch(() => {});
     void haptics.success();
   };
 
@@ -270,33 +315,29 @@ export default function MeScreen() {
   // Defensive: a stale cache may still hold an old tier key (pro/basic/ultra)
   // that no longer exists in PRICING_TIERS. Any non-free unknown maps to plus.
   const safeTier = PRICING_TIERS[tier] ? tier : tier === 'free' ? 'free' : 'plus';
-  const isPlus = safeTier !== 'free';
+  const isPlus = burrowData ? burrowData.hasPlus : safeTier !== 'free';
   const appVersion = Constants.expoConfig?.version ?? '';
 
   return (
     <BottomSheetModalProvider>
       <View style={styles.root}>
         <StatusBar hidden />
-        <LinearGradient colors={['#4C3024','#43271E']} style={[styles.hero,{height:Math.max(100,insets.top+42)}]}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={() => { void haptics.light(); router.back(); }} style={[styles.closeBtn,{top:Math.max(18,insets.top-36)}]} hitSlop={8}>
-            <MaterialIcons name="close" size={38} color="#FFFFFF" />
+        <View style={[styles.navigation, { paddingTop: Math.max(insets.top, 16) + 8 }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={() => { void haptics.light(); router.back(); }} style={styles.closeBtn} hitSlop={8}>
+            <BackIcon color="#4A2B20"/>
           </Pressable>
-        </LinearGradient>
-        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
+        </View>
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false} bounces={false} contentInsetAdjustmentBehavior="never">
           <View style={styles.header}>
-            <View style={styles.userRow}>
-              <View style={styles.avatarWrap}>
-                <Image
-                  source={resolveAvatarSource(avatarUrl, isDefaultAvatar, userId)}
-                  style={styles.avatarImg}
-                  contentFit="cover"
-                  contentPosition="center"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.userName} numberOfLines={1}>{displayName || 'You'}</Text>
-              </View>
+            <View style={styles.coupleAvatars}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Change your profile photo" disabled={!userId} onPress={()=>setAvatarEditor(true)} style={styles.selfAvatar}>
+                <UserAvatar userId={userId} otherUserId={menuPairing?.partner?.userId} name={displayName} avatarUrl={avatarUrl} isDefaultAvatar={isDefaultAvatar} size={72}/>
+                <View style={styles.cameraBadge}><MaterialCommunityIcons name="camera-outline" size={14} color="#57351F"/></View>
+              </Pressable>
+              {menuPairing?.paired&&menuPairing.partner&&<UserAvatar userId={menuPairing.partner.userId} otherUserId={userId} name={menuPairing.partner.displayName}
+                avatarUrl={menuPairing.partner.avatarUrl} isDefaultAvatar={menuPairing.partner.isDefaultAvatar} size={72}/>}
             </View>
+            <Text style={styles.coupleNames}>{displayName||'You'}{menuPairing?.paired&&menuPairing.partner?` & ${menuPairing.partner.displayName}`:''}</Text>
           </View>
 
           {/* Enable Notifications card (design) */}
@@ -331,12 +372,14 @@ export default function MeScreen() {
               </View>
               <Text style={styles.plusSub}>
                 {isPlus
-                  ? "You're on Plus. Every premium feature is yours."
+                  ? duo.asMember ? `Plus shared by ${duo.asMember.ownerName}.`
+                    : duo.asOwner?.claimed ? `Plus for you and ${duo.asOwner.memberName}.`
+                    : "You're on Plus. Both of you are covered."
                   : 'Unlock premium for both of you.'}
               </Text>
             </View>
             <Pressable
-              onPress={() => { void haptics.pageOpen(); planBillingSheetRef.current?.present(); }}
+              onPress={() => goTo('/(main)/(modals)/subscription-paywall')}
               style={({ pressed }) => [styles.plusViewBtn, pressed && styles.pressedBtn]}
             >
               <Text style={styles.plusViewText}>View</Text>
@@ -346,43 +389,23 @@ export default function MeScreen() {
           {/* Settings list (design rows) */}
           <View style={styles.menuCard}>
             <MenuRow icon="account" label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
-            <MenuRow icon="wallet" label="Plan and Billing" onPress={() => { void haptics.pageOpen(); planBillingSheetRef.current?.present(); }} divider />
             <MenuRow
               icon="account-group"
-              label={pairing?.paired ? 'My Paired' : 'Invite Friends'}
+              label={menuPairing?.paired ? 'My Paired' : 'Pair with My Partner'}
               onPress={onPairedRow}
               divider
             />
+            <MenuRow icon="cash-multiple" label="Get More Coins" onPress={() => goTo('/(main)/coin-shop')} divider />
+            <MenuRow icon="ticket-percent-outline" label="Redeem Code" onPress={()=>{void haptics.light();void openOfficialRedeemCode();}} divider />
             <MenuRow icon="link-variant" label="Connect Account" onPress={() => goTo('/(main)/(modals)/connect-account')} divider />
             <MenuRow icon="star" label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
             <MenuRow icon="bug" label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
-            <MenuRow icon="heart" label="Help Center" onPress={() => goTo('/(main)/(modals)/support')} />
+            <MenuRow icon="heart" label="Help Center" onPress={() => goTo('/(main)/(modals)/support')} divider />
+            {(['sound','haptics'] as const).map(key => <MenuPreferenceRow key={key}
+              icon={key==='sound'?'volume-high':'vibrate'} label={key==='sound'?'Music & Sound Effects':'Haptic Feedback'}
+              value={interaction[key]} divider={key==='sound'}
+              onValueChange={value=>{try{setInteractionPreference(key,value);}catch{appAlert('Could not save setting','Free some device storage and try again.');}}}/>)}
           </View>
-
-          {/* Duo seat: auto-granted to the paired partner (2026-08-11) —
-              the manual invite-code entry is retired. */}
-          {duo.asOwner ? (
-            <View style={styles.duoCard}>
-              <Text style={styles.duoTitle}>Your Duo plan</Text>
-              {duo.asOwner.claimed ? (
-                <Text style={styles.duoBody}>
-                  {duo.asOwner.memberName} has joined your Plus. Both of you are covered.
-                </Text>
-              ) : (
-                <Text style={styles.duoBody}>
-                  Your Plus covers two people — pair with someone on the Connection tab and
-                  they get Plus automatically.
-                </Text>
-              )}
-            </View>
-          ) : duo.asMember ? (
-            <View style={styles.duoCard}>
-              <Text style={styles.duoTitle}>Plus via Duo</Text>
-              <Text style={styles.duoBody}>
-                You're on Plus through {duo.asMember.ownerName}'s Duo plan.
-              </Text>
-            </View>
-          ) : null}
 
           {/* Legal */}
           <View style={styles.legalRow}>
@@ -400,7 +423,7 @@ export default function MeScreen() {
           {appVersion ? <Text style={styles.versionText}>Version {appVersion}</Text> : null}
         </ScrollView>
 
-        <PlanBillingSheet ref={planBillingSheetRef} />
+        {avatarEditor&&userId&&<ProfileAvatarEditor userId={userId} previousUrl={avatarUrl} onClose={()=>setAvatarEditor(false)}/>}
 
         <Modal
           visible={notificationPickerOpen}
@@ -455,30 +478,21 @@ export default function MeScreen() {
                   keyboardShouldPersistTaps="handled"
                   contentContainerStyle={styles.pairedModalContent}
                 >
-                {pairedModalStep === 'profile' && pairing?.partner ? (
+                {pairedModalStep === 'profile' && menuPairing?.partner ? (
                   <>
                     <Pressable onPress={() => { void haptics.pageClose(); closePairedModal(); }} style={styles.pairedClose} hitSlop={8}>
                       <MaterialIcons name="close" size={22} color="#FFFFFF" />
                     </Pressable>
                     <View style={styles.partnerAvatarWrap}>
-                      <Image
-                        source={resolveAvatarSource(
-                          pairing.partner.avatarUrl ?? '',
-                          pairing.partner.isDefaultAvatar,
-                          pairing.partner.userId,
-                        )}
-                        style={styles.partnerAvatar}
-                        contentFit="cover"
-                        contentPosition="center"
-                      />
+                      <UserAvatar userId={menuPairing.partner.userId} otherUserId={userId} name={menuPairing.partner.displayName} avatarUrl={menuPairing.partner.avatarUrl} isDefaultAvatar={menuPairing.partner.isDefaultAvatar} size={88}/>
                     </View>
-                    <Text style={styles.partnerName}>{pairing.partner.displayName}</Text>
-                    {pairing.relationship ? <Text style={styles.partnerRelationship}>{pairing.relationship}</Text> : null}
+                    <Text style={styles.partnerName}>{menuPairing.partner.displayName}</Text>
+                    <Text style={styles.partnerRelationship}>Status: Paired</Text>
                     <View style={styles.pairedDateCard}>
                       <MaterialIcons name="favorite" size={19} color="#B86A5B" />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.pairedDateLabel}>Paired since</Text>
-                        <Text style={styles.pairedDateValue}>{formatPairedDate(pairing.pairedAt)}</Text>
+                        <Text style={styles.pairedDateValue}>{formatPairedDate(menuPairing.pairedAt)}</Text>
                       </View>
                     </View>
                     <Pressable
@@ -494,12 +508,12 @@ export default function MeScreen() {
                       <Text style={styles.unpairButtonText}>Unpair</Text>
                     </Pressable>
                   </>
-                ) : pairedModalStep === 'confirm' && pairing?.partner ? (
+                ) : pairedModalStep === 'confirm' && menuPairing?.partner ? (
                   <>
                     <View style={styles.warningIcon}>
                       <MaterialIcons name="link-off" size={30} color="#A64235" />
                     </View>
-                    <Text style={styles.confirmTitle}>Unpair from {pairing.partner.displayName}?</Text>
+                    <Text style={styles.confirmTitle}>Unpair from {menuPairing.partner.displayName}?</Text>
                     <Text style={styles.confirmBody}>
                       Are you sure you want to end this pairing? After unpairing, you will no longer be able to view any of their memory items, journal entries, or connection information.
                     </Text>
@@ -564,14 +578,25 @@ function formatPairedDate(value?: string | null): string {
   });
 }
 
+function MenuPreferenceRow({icon,label,value,onValueChange,divider}:{
+  icon:'volume-high'|'vibrate';label:string;value:boolean;onValueChange:(value:boolean)=>void;divider?:boolean;
+}) {
+  return <View style={[styles.menuRow,divider&&styles.menuDivider]}>
+    <MaterialCommunityIcons name={icon} size={30} color="#B86949" style={styles.menuIcon}/>
+    <Text style={styles.menuLabel}>{label}</Text>
+    <Switch accessibilityLabel={label} value={value} onValueChange={onValueChange}
+      trackColor={{true:'#C96132'}} thumbColor={Platform.OS==='android'&&value?'#FFFFFF':undefined} style={styles.menuToggle}/>
+  </View>;
+}
+
 function MenuRow({ icon, label, onPress, divider }: {
-  icon: 'account' | 'wallet' | 'account-group' | 'link-variant' | 'star' | 'bug' | 'heart';
+  icon: 'account' | 'wallet' | 'account-group' | 'cash-multiple' | 'link-variant' | 'star' | 'bug' | 'heart' | 'ticket-percent-outline';
   label: string;
   onPress: () => void;
   divider?: boolean;
 }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.menuRow, divider && styles.menuDivider, { opacity: pressed ? 0.6 : 1 }]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.menuRow, divider && styles.menuDivider, { opacity: pressed ? 0.6 : 1 }]}>
       <MaterialCommunityIcons name={icon} size={30} color="#B86949" style={styles.menuIcon} />
       <Text style={styles.menuLabel}>{label}</Text>
       <MaterialIcons name="chevron-right" size={25} color="#A18A78" />
@@ -581,21 +606,26 @@ function MenuRow({ icon, label, onPress, divider }: {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFF9F0' },
-  hero: { width: '100%', borderBottomLeftRadius: 58, borderBottomRightRadius: 58 },
-  scroll: { paddingHorizontal: 16, paddingTop: 20 },
-  header: { marginBottom: 16 },
-  closeBtn: { position: 'absolute', left: 20, width: 50, height: 50, alignItems: 'center', justifyContent: 'center' },
-  userRow: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingHorizontal: 6, minHeight: 92 },
-  avatarWrap: { width: 78, height: 78, borderRadius: 39, backgroundColor: '#F2DACA', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  navigation: { paddingHorizontal: 20, paddingBottom: 8 },
+  scroll: { paddingHorizontal: 16, paddingTop: 22 },
+  header: { marginBottom: 28 },
+  coupleAvatars:{flexDirection:'row',justifyContent:'center',alignItems:'center',paddingBottom:20},
+  selfAvatar:{marginRight:-6,zIndex:1},cameraBadge:{position:'absolute',bottom:-4,alignSelf:'center',width:24,height:24,borderRadius:12,backgroundColor:'#FFF9F0',borderColor:'#57351F',borderWidth:1,alignItems:'center',justifyContent:'center'},
+  coupleNames:{textAlign:'center',color:'#4A3220',fontSize:23,fontFamily:'Inter_700Bold',paddingHorizontal:16},
+  closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  userRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 12, minHeight: 72 },
+  avatarWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F2DACA', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   avatarImg: { width: '100%', height: '100%' },
-  userName: { color: '#24100D', fontSize: 25, fontFamily: 'Inter_800ExtraBold' },
+  userName: { color: '#4A3220', fontSize: 19, fontFamily: 'Inter_700Bold' },
+  editButton: { minWidth: 80, minHeight: 38, paddingHorizontal: 20, borderRadius: 22, backgroundColor: '#4A3220', alignItems: 'center', justifyContent: 'center' },
+  editButtonText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
 
   cardIcon: { width: 35, textAlign: 'center' },
   pressedBtn: { transform: [{ translateY: 1 }], opacity: 0.85 },
 
   notifCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 74,
-    backgroundColor: '#FFFDFC', borderRadius: 18, paddingHorizontal: 15, paddingVertical: 13, marginBottom: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 18, paddingHorizontal: 15, paddingVertical: 13, marginBottom: 14,
   },
   notifTitle: { color: '#24100D', fontSize: 17, fontFamily: 'Inter_700Bold' },
   notifSub: { color: '#927D6C', fontSize: 12, fontFamily: 'Inter_500Medium', marginTop: 2 },
@@ -619,7 +649,7 @@ const styles = StyleSheet.create({
 
   plusBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 82,
-    backgroundColor: '#4A2B20', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 15, marginBottom: 14,
+    backgroundColor: '#4A2B20', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 18, marginBottom: 14,
   },
   plusIconWrap: {
     width: 42, height: 42, flexShrink: 0, borderRadius: 21,
@@ -633,15 +663,12 @@ const styles = StyleSheet.create({
   plusViewBtn: { backgroundColor: '#FFFAF5', borderRadius: 24, paddingHorizontal: 23, paddingVertical: 11 },
   plusViewText: { color: '#2B2B2B', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
-  menuCard: { backgroundColor: '#FFFDFC', borderRadius: 20, marginBottom: 14, paddingHorizontal: 14, overflow: 'hidden' },
-  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 58, paddingVertical: 12, paddingHorizontal: 3 },
+  menuCard: { backgroundColor: '#FFFFFF', borderRadius: 20, marginBottom: 14, paddingHorizontal: 14, overflow: 'hidden' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 60, paddingVertical: 14, paddingHorizontal: 3 },
   menuIcon: { width: 36, textAlign: 'center' },
+  menuToggle: { alignSelf: 'center', flexShrink: 0 },
   menuDivider: { borderBottomWidth: 1, borderBottomColor: '#EEE6DF' },
   menuLabel: { flex: 1, color: '#24100D', fontSize: 16, fontFamily: 'Inter_700Bold' },
-
-  duoCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#E8D5B0' },
-  duoTitle: { color: '#4A3423', fontSize: 15, fontFamily: 'Inter_800ExtraBold', marginBottom: 8 },
-  duoBody: { color: '#6B5B44', fontSize: 13, fontFamily: 'Inter_500Medium', lineHeight: 19, marginBottom: 6 },
 
   pairedBackdrop: { flex: 1, backgroundColor: 'rgba(41,27,18,0.58)' },
   pairedKeyboardView: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 28 },

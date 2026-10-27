@@ -67,7 +67,8 @@ test('trail progress is clamped, replayable, and never claims reward discoveries
   assert.equal(adventureTrail(start,end,Date.parse(start)+4*3600000).meters,500);
   assert.equal(adventureTrail(start,end,Date.parse(end)+10000).meters,1000);
   assert.equal(adventureTrail('bad',end,Date.now()).meters,0);
-  assert.equal(adventureTrail(start,end,Date.parse(start)+4*3600000).logs.length,3);
+  assert.equal(adventureTrail(start,end,Date.parse(start)+4*3600000).progress,.5);
+  assert.equal('logs' in adventureTrail(start,end,Date.now()),false);
 });
 test('history merging deduplicates pages and date headings use server date',()=>{
   const {mergeHistory,historyDayLabel}=load('apps/mobile/src/lib/burrow-history.ts',{'./api':{},'./async-lifecycle':{},'./session-lifecycle':{}});

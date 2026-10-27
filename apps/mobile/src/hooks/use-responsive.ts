@@ -20,7 +20,8 @@
  * philosophy that large text should not grow as fast on bigger screens.
  */
 import { useMemo } from 'react'
-import { useWindowDimensions, type TextStyle as RNTextStyle } from 'react-native'
+import { type TextStyle as RNTextStyle } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 
 import {
   makeScalers,

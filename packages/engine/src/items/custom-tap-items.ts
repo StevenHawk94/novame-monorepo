@@ -1,4 +1,4 @@
-import type { ItemDictionary } from './item-matcher';
+import type { ItemDictionary } from './item-types';
 import type { TapYourDayKind } from './tap-your-day';
 
 /** A separate version keeps already-installed v1/v2 clients compatible. */

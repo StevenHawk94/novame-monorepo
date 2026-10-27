@@ -1,0 +1,40 @@
+{
+  "status": "completed",
+  "migration": "20261023000263",
+  "migrationHash": "f09bac3315a64f95a21237311d28978c",
+  "effectiveDailyAllowance": {"free": 1, "plus": 6, "scope": "sender local calendar day, all six types combined"},
+  "production": {
+    "deployment": "dpl_3snAWJxB5GvgxXvEAoLS6McEJZvL",
+    "url": "https://api.soulsayit.com",
+    "state": "READY",
+    "healthStatus": 200,
+    "unauthenticatedReceiveStatus": 401,
+    "sourceFilesAudited": 275,
+    "changedSourceFiles": ["apps/api/src/app/api/vnext/command/route.js"],
+    "protectedUserRowsUnchangedInsideMigrationTransaction": true,
+    "unrelatedFunctionsUnchanged": true,
+    "serviceRoleOnlyWriters": true,
+    "realUserTestSends": 0,
+    "accountsCreatedOrImpersonated": 0,
+    "adminDeployed": false
+  },
+  "client": {
+    "paywallCopy": "Send 6x more affection every day.",
+    "grouping": "One live receipt card per unread type; tap freezes exact IDs; later arrivals form a new batch",
+    "gestureHints": "Kiss and Gratitude hands swapped; all six types anchored at the index fingertip",
+    "pendingSendsReserveDailySlots": true,
+    "confirmedServerKeysPreventDoubleCounting": true,
+    "requiresNewClientRelease": true,
+    "easBuildOrSubmitRequestedOrStarted": false
+  },
+  "verification": {
+    "affectionPhotoAndAssetTests": 72,
+    "walletPairingAndRetainedNavigationTests": 73,
+    "isolatedPostgresqlQuotaTest": "passed",
+    "exactMembershipReceiveApiTest": "passed",
+    "mobileTypecheck": "passed",
+    "iosExport": "passed",
+    "iosBundle": "index-088a0270c80a174eb81fa3aab6deb8d6.hbc",
+    "iosExportDirectory": "/private/tmp/burrow-affection263-final-ios"
+  }
+}

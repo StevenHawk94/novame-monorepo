@@ -1,0 +1,1077 @@
+{
+  "code": "TB",
+  "name": "Tobias",
+  "friendId": "adventure_friend_tb",
+  "waitingLines": [
+    "I’ll wait for {partner}. No rush. I’ve got all the time in the world. Literally.",
+    "Saving a seat for {partner}. I’m comfortable. Very comfortable. No rush."
+  ],
+  "questions": [
+    {
+      "id": "TB-V01",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias pulls out a small photo of a very old tortoise.",
+      "lines": [
+        "He's a hero of mine. Old friend. No rush."
+      ],
+      "question": "Who is Jonathan the tortoise?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The oldest known living land animal",
+          "reply": [
+            "Correct. A legend.",
+            "Jonathan is a giant tortoise believed to have hatched around 1832.",
+            "He's lived through so much. Still eats his greens."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A famous racing tortoise",
+          "reply": [
+            "Racing? Oh, no. He walks.",
+            "He's believed to be the oldest living land animal.",
+            "Hatched around 1832. Still going. No rush."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A tortoise who starred in movies",
+          "reply": [
+            "Not quite. Although he's famous.",
+            "He's the oldest known living land animal.",
+            "Nearly two centuries old. Puts my slow pace in perspective."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Jonathan, a Seychelles giant tortoise, is the oldest known living land animal (hatched c. 1832).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V02",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias gazes at a photo of a golden aspen forest, utterly peaceful.",
+      "lines": [
+        "That whole forest might be one tree. No rush. Let it sink in."
+      ],
+      "question": "What's special about Pando, a grove of aspen trees in Utah?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It's made of fake plastic trees",
+          "reply": [
+            "Oh, no. Very real. Very old.",
+            "It's a single organism with one shared root system.",
+            "Possibly thousands of years old. A patient giant."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The trees walk around slowly",
+          "reply": [
+            "Like me? Lovely thought. No.",
+            "It's one organism connected by a single root system.",
+            "One of the heaviest living things on Earth. Quietly."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It's one single organism sharing one root system",
+          "reply": [
+            "Correct. One giant family under the soil.",
+            "Tens of thousands of trunks all grow from the same roots.",
+            "Connected underground, like old friends. I find that very moving."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Pando is a clonal colony of quaking aspen sharing one root system.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V03",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias gestures to a fuzzy green plant hanging from your ceiling.",
+      "lines": [
+        "Another slow friend. I admire him. No rush."
+      ],
+      "question": "What grows on a sloth's fur because it moves so slowly?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Flowers",
+          "reply": [
+            "How lovely. Not quite.",
+            "It's algae, giving sloths a green tint.",
+            "Camouflage by being patient. I respect that."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Moss",
+          "reply": [
+            "Close. It's actually algae.",
+            "Algae grows in their fur and tints it green.",
+            "A whole ecosystem on one sleepy animal."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Algae",
+          "reply": [
+            "Correct. A tiny garden.",
+            "Sloth fur can host algae, which gives it a greenish tint.",
+            "Helps them blend in with the trees. Slow and stylish."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Sloth fur hosts algae (and other organisms).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V04",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "A butterfly lands on Tobias's foot. He doesn't move. For a very, very long time.",
+      "lines": [
+        "She's tasting me. That's how they taste. No rush. I'll wait."
+      ],
+      "question": "How do butterflies taste things?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "With their wings",
+          "reply": [
+            "A pretty idea. Not quite.",
+            "They taste with sensors on their feet.",
+            "So landing is tasting. Very efficient lunch planning."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "With sensors on their feet",
+          "reply": [
+            "Correct. Toes for tasting.",
+            "Butterflies taste plants by standing on them.",
+            "Imagine tasting your salad by stepping in it. Marlow said no."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They can't taste at all",
+          "reply": [
+            "Oh, they can. Just differently.",
+            "Their taste sensors are on their feet.",
+            "Very curious feet. Respect."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Butterflies have taste receptors (chemoreceptors) on their feet.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V05",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias looks at a bamboo stalk on your shelf with deep respect.",
+      "lines": [
+        "Patience is a plant, sometimes."
+      ],
+      "question": "How often do some bamboo species flower?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Once every 100 years or more",
+          "reply": [
+            "Correct. Remarkable.",
+            "Some species flower all at the same time, decades apart.",
+            "That's my kind of timeline."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Every spring",
+          "reply": [
+            "Oh, much rarer than that.",
+            "Some bamboo species flower only once every 100 years or more.",
+            "And often all at once, across the world. Synchronized patience."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Never",
+          "reply": [
+            "They do. Just very rarely.",
+            "Some bamboo flowers only once every 100+ years.",
+            "Worth waiting for. Like Marlow saying yes."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Some bamboo species (e.g., Phyllostachys bambusoides) flower at ~120-year intervals.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V06",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias peeks into a hole in your garden, delighted.",
+      "lines": [
+        "Being a good neighbor matters. No rush."
+      ],
+      "question": "How many other species can use a gopher tortoise's burrow?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Just one, the tortoise",
+          "reply": [
+            "Oh, it's much more crowded than that.",
+            "Over 350 species use gopher tortoise burrows.",
+            "Frogs, snakes, mice, owls. A whole apartment complex."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Over 350",
+          "reply": [
+            "Correct. Wonderful.",
+            "Gopher tortoise burrows shelter more than 350 other species.",
+            "Generous hosts. Marlow says I'm the same with snacks."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 10",
+          "reply": [
+            "More than that. Many more.",
+            "Over 350 species have been found using them.",
+            "The best landlord in the forest. No rent."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Gopher tortoise burrows are used by 350+ other species.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V07",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias writes 'thank you' on a tiny note and slides it across the table, very slowly.",
+      "lines": [
+        "Marlow and I do this. Small thanks. Every day. For years."
+      ],
+      "question": "What does research suggest about expressing gratitude to a partner?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It helps couples feel more connected and committed",
+          "reply": [
+            "Correct. Gratitude is glue.",
+            "Feeling appreciated makes both partners more invested in each other.",
+            "Small thanks. Every day. That's the whole secret."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It makes partners take you for granted",
+          "reply": [
+            "Oh, no. The opposite.",
+            "Gratitude is linked to feeling closer and more committed.",
+            "Say thank you. Slowly. Mean it."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It only matters on anniversaries",
+          "reply": [
+            "Every ordinary day counts.",
+            "Regular gratitude helps couples stay connected.",
+            "Tiny thanks pile up into something big."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Algoe et al.: expressing gratitude predicts relationship maintenance and connection.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V08",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias admires a spiky agave plant on your windowsill.",
+      "lines": [
+        "About waiting for something big. No rush."
+      ],
+      "question": "Why is the agave sometimes called a 'century plant'?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It grows exactly 100 leaves",
+          "reply": [
+            "Clever guess. Not it.",
+            "It can take decades to bloom, then flowers once.",
+            "Not quite a century, but a very long wait."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It lives for exactly 100 years",
+          "reply": [
+            "Close in spirit. Not exactly.",
+            "It blooms once after many years, then usually dies.",
+            "One big moment. Worth the wait."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It takes decades to bloom, then blooms once",
+          "reply": [
+            "Correct. Beautiful.",
+            "It grows for decades, then sends up one giant flower stalk.",
+            "Patient, then spectacular. My ideal life plan."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Agave americana ('century plant') blooms once after 10–30+ years.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V09",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias slowly chews a slice of watermelon. Juice drips. He is unbothered.",
+      "lines": [
+        "Very refreshing. Mostly water. Like me after a bath. No rush."
+      ],
+      "question": "About how much of a watermelon is water?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About 10%",
+          "reply": [
+            "Oh, much juicier than that.",
+            "Watermelon is about 92% water.",
+            "It's practically a drink you can chew."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About 92%",
+          "reply": [
+            "Correct. Almost all water.",
+            "That's why it's so refreshing on hot days.",
+            "Best eaten slowly, in the shade, with someone you love."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 50%",
+          "reply": [
+            "More. Much more.",
+            "It's roughly 92% water.",
+            "Nature's slow-sipping snack."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Watermelon is ~92% water.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V10",
+      "friendId": "adventure_friend_tb",
+      "type": "Trivia",
+      "scene": "Tobias watches a chicken peck around the yard with deep respect.",
+      "lines": [
+        "That's a dinosaur. A small one. I knew it all along. Slowly."
+      ],
+      "question": "Which living animals are actually dinosaurs?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Crocodiles",
+          "reply": [
+            "Close cousins. Not dinosaurs themselves.",
+            "The real living dinosaurs are birds.",
+            "They evolved from small, feathered dinosaurs long ago."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Birds",
+          "reply": [
+            "Correct. Birds are dinosaurs.",
+            "They descend from small feathered dinosaurs.",
+            "So that chicken is a distant cousin of T. rex. Treat it with respect."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Tortoises",
+          "reply": [
+            "Oh, flattering. But no.",
+            "Birds are the living dinosaurs.",
+            "I'm old. Not that old."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Birds are living theropod dinosaurs.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TB-V11",
+      "friendId": "adventure_friend_tb",
+      "type": "Preference",
+      "scene": "Tobias takes a very slow sip of tea.",
+      "lines": [
+        "I chased Marlow for three years. Slowly. Very slowly."
+      ],
+      "question": "Your love story pace: slow burn, or whirlwind?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Slow burn",
+          "reply": [
+            "Slow burn. Oh, the best kind.",
+            "Warm, steady, built to last."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Whirlwind",
+          "reply": [
+            "Whirlwind. Oh, my. Exciting.",
+            "Hold on to your hat."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Slow burn for both of you. No rush, indeed.",
+          "So you and {partner} took your time. And look at you now.",
+          "Savor it. Every step."
+        ],
+        "A:B": [
+          "Whirlwind for you. {partner} says slow burn.",
+          "You were already in love. They were still saying 'let's see.'",
+          "Patience paid off. For both of you."
+        ],
+        "B:A": [
+          "Slow burn for you. {partner} says whirlwind.",
+          "They were spinning. You were... considering.",
+          "Funny how both of you ended up in the same place."
+        ],
+        "B:B": [
+          "Whirlwind for both of you. Oh, my.",
+          "I can just picture it: {partner} and you said 'I love you' in week two.",
+          "Dizzying. Wonderful. Hold hands so you don't fall."
+        ]
+      }
+    },
+    {
+      "id": "TB-V12",
+      "friendId": "adventure_friend_tb",
+      "type": "Preference",
+      "scene": "Tobias gazes out the window at a lazy sunrise.",
+      "lines": [
+        "Mornings are my favorite. They come every day. No rush."
+      ],
+      "question": "Sunday morning: sleep in, or an early walk?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Sleep in",
+          "reply": [
+            "Sleep in. Wise.",
+            "Sleep is a skill. You're a master."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Early walk",
+          "reply": [
+            "Early walk. Oh, energy.",
+            "Dew on the grass. Birds saying hello."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Sleep in, both of you. Perfect.",
+          "Honestly, you and {partner} wake up when you wake up. No alarms.",
+          "Pancakes at noon. My kind of Sunday."
+        ],
+        "A:B": [
+          "You walk early. {partner} sleeps in.",
+          "Bring them coffee when you get back. Gently wake them.",
+          "A sunrise for you. A warm cup for them."
+        ],
+        "B:A": [
+          "You sleep in. {partner} walks early.",
+          "They'll be back with croissants before you open your eyes.",
+          "That's a wonderful arrangement, really."
+        ],
+        "B:B": [
+          "Early walks, both of you. Wonderful.",
+          "Something tells me {partner} and you greet the sunrise together.",
+          "Bring warm drinks. Walk slowly. Very slowly."
+        ]
+      }
+    },
+    {
+      "id": "TB-V13",
+      "friendId": "adventure_friend_tb",
+      "type": "Preference",
+      "scene": "Tobias opens a dusty box full of keepsakes, one item at a time.",
+      "lines": [
+        "I keep everything. Marlow's first note. A leaf from our first walk."
+      ],
+      "question": "Favorite keepsake: old photos, old letters, or a playlist of 'our songs'?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Old photos",
+          "reply": [
+            "Old photos. Time in a frame.",
+            "Faces and moments, kept still."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Old letters",
+          "reply": [
+            "Old letters. Ink and heart.",
+            "Words that waited to be reread."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A playlist of 'our songs'",
+          "reply": [
+            "A playlist. Melodies remember.",
+            "One song, one memory."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Photos for both of you. Lovely.",
+          "Make an album with {partner}. One page a year.",
+          "Fill it slowly. No rush."
+        ],
+        "A:B": [
+          "Letters for you. {partner} loves photos.",
+          "Tuck one small photo inside every letter you write them.",
+          "A keepsake inside a keepsake. Very efficient sentiment."
+        ],
+        "A:C": [
+          "Playlist for you. {partner} loves photos.",
+          "Put on your songs and flip through the albums together.",
+          "A soundtrack for every memory. Take your time. Every page."
+        ],
+        "B:A": [
+          "Photos for you. {partner} treasures letters.",
+          "Write a little caption on the back of each photo. Now it's both.",
+          "Marlow does this. Her captions are funnier than the photos."
+        ],
+        "B:B": [
+          "Letters for both of you. Beautiful.",
+          "You and {partner} probably have a ribbon-tied stack somewhere.",
+          "Write a new one. Add it to the pile."
+        ],
+        "B:C": [
+          "Playlist for you. {partner} keeps the letters.",
+          "Read their letters out loud while your songs play softly.",
+          "That's a perfect evening. Slow. Warm. No rush at all."
+        ],
+        "C:A": [
+          "Photos for you. {partner} keeps the playlist.",
+          "Make a slideshow and set it to 'your songs.'",
+          "Watch it on a rainy evening. Bring tissues. Several."
+        ],
+        "C:B": [
+          "Letters for you. {partner} loves a playlist.",
+          "Handwrite the one lyric that always reminds you of them.",
+          "They'll hear that song differently forever. That's the plan."
+        ],
+        "C:C": [
+          "Playlists for both of you. Musical hearts.",
+          "So {partner} and you probably have a song for every season.",
+          "Play it on a long drive. Hold hands."
+        ]
+      }
+    },
+    {
+      "id": "TB-V14",
+      "friendId": "adventure_friend_tb",
+      "type": "Preference",
+      "scene": "Tobias turns a small wrapped gift over and over, slowly.",
+      "lines": [
+        "Gifts. I take weeks to choose them. Marlow says it's worth it. No rush."
+      ],
+      "question": "Gifts: something useful, or something sentimental?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Something useful",
+          "reply": [
+            "Useful. Practical love.",
+            "A gift you'll use every day."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Something sentimental",
+          "reply": [
+            "Sentimental. Oh, tender.",
+            "A gift you'll keep forever."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Useful gifts for both of you. Practical hearts.",
+          "{partner} gives you a good umbrella. You give them warm socks.",
+          "Love you can use."
+        ],
+        "A:B": [
+          "Sentimental for you. {partner} likes useful.",
+          "Engrave something they'll use every single day.",
+          "A mug with your words on it. They'll think of you every sip."
+        ],
+        "B:A": [
+          "Useful for you. {partner} loves sentimental.",
+          "Give them something practical and tuck a handwritten note inside.",
+          "An umbrella that says 'I'll keep you dry.' Practical poetry."
+        ],
+        "B:B": [
+          "Sentimental gifts for both of you.",
+          "I can just picture it: you and {partner} have a drawer full of meaningful little things.",
+          "Keep every one. Even the tiny ones."
+        ]
+      }
+    },
+    {
+      "id": "TB-V15",
+      "friendId": "adventure_friend_tb",
+      "type": "Preference",
+      "scene": "Tobias pours two cups of tea and sets one across from him.",
+      "lines": [
+        "Small rituals are big things. No rush."
+      ],
+      "question": "A ritual you'd keep forever: morning coffee together, or an evening walk?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Morning coffee together",
+          "reply": [
+            "Morning coffee. Lovely start.",
+            "Two cups. One conversation."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "An evening walk",
+          "reply": [
+            "Evening walk. Lovely end.",
+            "Streetlights, quiet talks, slow steps."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Morning coffee for both of you.",
+          "Every day starts with {partner} across the table.",
+          "Forty years from now, same cups. Same love."
+        ],
+        "A:B": [
+          "Evening walk for you. {partner} wants morning coffee.",
+          "Start with coffee. End with a walk.",
+          "A whole day held between two little rituals."
+        ],
+        "B:A": [
+          "Morning coffee for you. {partner} wants evening walks.",
+          "Coffee at dawn. Walk at dusk. Bookends of the day.",
+          "Two rituals. Twice the love."
+        ],
+        "B:B": [
+          "Evening walks for both of you.",
+          "Honestly, {partner} and you will know every tree in the neighborhood.",
+          "Slow steps. Long talks. Perfect."
+        ]
+      }
+    },
+    {
+      "id": "TB-V16",
+      "friendId": "adventure_friend_tb",
+      "type": "Guess",
+      "scene": "Tobias ponders slowly, tapping two claws together.",
+      "lines": [
+        "I took three years to ask Marlow out. I'm still deciding if that was too fast."
+      ],
+      "question": "How does your partner make big decisions?",
+      "selfQuestion": "How do you make big decisions?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Quickly, on instinct",
+          "reply": [
+            "Quickly, on instinct. Remarkable.",
+            "I once took a week to pick a lettuce."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Takes a week",
+          "reply": [
+            "Takes a week. A kindred spirit.",
+            "Time is the best advisor. And it's free."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Asks everyone they know",
+          "reply": [
+            "Asks everyone. Very democratic.",
+            "The group chat votes. The heart decides."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Quick on instinct, and {partner} knew it.",
+          "They know you decide before they've finished asking the question.",
+          "I find that thrilling. From a safe distance."
+        ],
+        "A:B": [
+          "You take a week. {partner} guessed instant instinct.",
+          "They're tapping their foot on day two. You're on day two of seven.",
+          "Tell them 'no rush' in advance. It's my favorite phrase."
+        ],
+        "A:C": [
+          "You ask everyone. {partner} thought you'd just go with your gut.",
+          "They don't know about the five friends you texted.",
+          "Add them to the poll. First. Before your aunt."
+        ],
+        "B:A": [
+          "You decide fast. {partner} guessed you'd take a week.",
+          "They're patiently waiting while you've already bought the thing.",
+          "Tell them gently. They were preparing to be patient."
+        ],
+        "B:B": [
+          "A full week, and {partner} knew it.",
+          "They've learned to ask on Monday and expect an answer next Monday.",
+          "That's not slowness. That's craftsmanship."
+        ],
+        "B:C": [
+          "You ask everyone. {partner} thought you'd quietly mull it over.",
+          "They imagine you thinking alone. You're in four group chats.",
+          "Next time, ask them first. Their vote should count double."
+        ],
+        "C:A": [
+          "You decide fast. {partner} guessed you'd poll everyone.",
+          "They're expecting a group chat survey. You just... chose.",
+          "Bold. Very un-tortoise. I respect it from afar."
+        ],
+        "C:B": [
+          "You take a week. {partner} guessed you'd ask everyone.",
+          "They think you're consulting friends. You're consulting the ceiling.",
+          "Quiet thinking is still thinking. Marlow taught me to say it out loud."
+        ],
+        "C:C": [
+          "Polling everyone, and {partner} knew it.",
+          "They know your group chat has opinions on your couch, your haircut, and them.",
+          "Wise. Many voices. Just make sure theirs counts double."
+        ]
+      }
+    },
+    {
+      "id": "TB-V17",
+      "friendId": "adventure_friend_tb",
+      "type": "Guess",
+      "scene": "Tobias settles into an imaginary line, perfectly content. He could stay here for years.",
+      "lines": [
+        "Waiting is an art form. I'm a master. Ask anyone. Slowly."
+      ],
+      "question": "While waiting in a long line, what does your partner do?",
+      "selfQuestion": "While waiting in a long line, what do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Chats with strangers",
+          "reply": [
+            "Chats with strangers. A friend-maker.",
+            "By the front of the line, they're invited to a wedding."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "People-watches quietly",
+          "reply": [
+            "People-watches quietly. A fine pastime.",
+            "Every line is a small theater."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Chatting with strangers, and {partner} knew it.",
+          "They know you'll know the life story of the person ahead by the time you order.",
+          "Charming. Exhausting to watch. But charming."
+        ],
+        "A:B": [
+          "You people-watch. {partner} expected you to chat everyone up.",
+          "They're waiting for small talk. You're silently narrating a documentary.",
+          "Whisper your theories to them. Best line date ever."
+        ],
+        "B:A": [
+          "You chat. {partner} expected you to quietly people-watch.",
+          "Plot twist: you're the social one. They've misjudged you for years.",
+          "Introduce them to your new line friends. All of them."
+        ],
+        "B:B": [
+          "People-watching, and {partner} knew it.",
+          "They know you're inventing quiet backstories for everyone in line.",
+          "'He's a retired pirate.' Yes. Same hobby. Welcome."
+        ]
+      }
+    },
+    {
+      "id": "TB-V18",
+      "friendId": "adventure_friend_tb",
+      "type": "Guess",
+      "scene": "Tobias lights a small candle. It takes him a while. He's proud when it works.",
+      "lines": [
+        "Romance lives in the small things. Most things do."
+      ],
+      "question": "What would your partner call the most romantic gesture?",
+      "selfQuestion": "What would you call the most romantic gesture?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "A handwritten note",
+          "reply": [
+            "A handwritten note. Ink and heart.",
+            "Something they can keep in a drawer forever."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Remembering a tiny detail",
+          "reply": [
+            "Remembering a tiny detail. Oh, yes.",
+            "How they take their tea. Which side they sleep on."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "A handwritten note, and {partner} knew it.",
+          "They know paper and ink mean everything to you.",
+          "Write them one tonight. Slowly. Mean every word."
+        ],
+        "A:B": [
+          "Details move you. {partner} guessed a handwritten note.",
+          "They're writing paragraphs. You just want them to remember your favorite mug.",
+          "Tell them one detail you love that they remember. They'll glow."
+        ],
+        "B:A": [
+          "A note moves you. {partner} guessed tiny details.",
+          "They've been memorizing your coffee order. You've wanted a letter.",
+          "Ask for one. Or write them a note about the details. Combo."
+        ],
+        "B:B": [
+          "Tiny details, and {partner} knew it.",
+          "They know you melt when they remember the little things.",
+          "Marlow remembers I like my lettuce slightly wilted. I nearly proposed."
+        ]
+      }
+    },
+    {
+      "id": "TB-V19",
+      "friendId": "adventure_friend_tb",
+      "type": "Guess",
+      "scene": "Tobias chuckles softly, remembering something from long ago. Possibly last week.",
+      "lines": [
+        "It took me a long time to realize I liked Marlow. About a year. Then two more to say it."
+      ],
+      "question": "How long did it take your partner to realize they liked you?",
+      "selfQuestion": "How long did it take you to realize you liked your partner?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Right away",
+          "reply": [
+            "Right away. Oh, how lovely.",
+            "One look and they were done for."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Embarrassingly long",
+          "reply": [
+            "Embarrassingly long. Oh, my people.",
+            "The heart knew. The brain needed a memo."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Right away, and {partner} knew it.",
+          "They knew you were smitten from the very first hello.",
+          "Lovely. Simple. Some hearts just know. Mine needed a calendar."
+        ],
+        "A:B": [
+          "It took you ages. {partner} thought it was instant.",
+          "They thought you fell immediately. You were still... processing.",
+          "No rush. You got there. That's what matters."
+        ],
+        "B:A": [
+          "You knew right away. {partner} thought it took you ages.",
+          "They think they had to win you over. You were already won.",
+          "Tell them. They'll smile for a week. Maybe two."
+        ],
+        "B:B": [
+          "Embarrassingly long, and {partner} knew it.",
+          "They watched you slowly figure it out. Patiently. Possibly with popcorn.",
+          "Worth the wait. Slow-cooked love tastes best."
+        ]
+      }
+    },
+    {
+      "id": "TB-V20",
+      "friendId": "adventure_friend_tb",
+      "type": "Guess",
+      "scene": "Tobias watches the sun rise through your curtains. He has been watching since 4 a.m.",
+      "lines": [
+        "Mornings. My favorite. They come every day, and I'm grateful every time."
+      ],
+      "question": "How does your partner start a slow morning?",
+      "selfQuestion": "How do you start a slow morning?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Up with the sun",
+          "reply": [
+            "Up with the sun. A fellow early riser.",
+            "Birds and them, the first ones awake."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Snoozes five times",
+          "reply": [
+            "Snoozes five times. Very human.",
+            "Five more minutes, times five."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Up with the sun, and {partner} knew it.",
+          "They know you're greeting the day while they're still dreaming.",
+          "Make them tea. Leave it by the bed. Quietly."
+        ],
+        "A:B": [
+          "You snooze. {partner} guessed you'd be up with the sun.",
+          "They imagined a sunrise person. They got a pillow person.",
+          "Snooze one less time this week. A small gift for them."
+        ],
+        "B:A": [
+          "Up with the sun for you. {partner} guessed snoozing.",
+          "They think you're asleep. You've been up for hours, watering plants.",
+          "Bring them breakfast. Prove it."
+        ],
+        "B:B": [
+          "Five snoozes, and {partner} knew it.",
+          "They know the alarm is more of a suggestion to you.",
+          "Sleep is precious. Snooze with dignity. No rush."
+        ]
+      }
+    }
+  ]
+}

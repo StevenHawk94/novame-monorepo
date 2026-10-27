@@ -4,7 +4,8 @@
  * and falls under gravity. Pure Reanimated; pointer events always pass through.
  */
 import { useEffect, useMemo } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import Animated, {
   Easing,
   useAnimatedStyle,

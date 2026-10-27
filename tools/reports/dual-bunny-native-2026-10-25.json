@@ -1,0 +1,21 @@
+{
+  "scope": "First complete automated cycle, before manual UI interactions; extracted from the on-device JSON report",
+  "device": "iPhone 17 Pro simulator, iOS 26.2, 60Hz",
+  "build": "Existing Release native QA host, minified production JS, Hermes verified true",
+  "measurement": "JS requestAnimationFrame intervals, not an independent compositor/UI-thread trace",
+  "components": ["ChooseBunnyPage", "AdventureProgressScreen", "AdventureDiggingRoute", "NativeOutfitBunny", "OutfitThumbnail"],
+  "fixtures": "Account, journal and command boundaries isolated; no authenticated production business API calls. Native host vendor SDK initialization is not a proven network sandbox.",
+  "samples": [
+    {"scene":"choose","frames":476,"p50Ms":16.666,"p95Ms":18.350,"maxMs":60.907,"over50":1,"meanFps":59.53},
+    {"scene":"solo-free","frames":481,"p50Ms":16.666,"p95Ms":17.957,"maxMs":68.552,"over50":1,"meanFps":59.63},
+    {"scene":"duo-free","frames":481,"p50Ms":16.667,"p95Ms":17.750,"maxMs":19.074,"over50":0,"meanFps":60.00},
+    {"scene":"solo-plus","frames":481,"p50Ms":16.667,"p95Ms":17.064,"maxMs":43.969,"over50":0,"meanFps":59.75},
+    {"scene":"duo-plus","frames":481,"p50Ms":16.666,"p95Ms":16.722,"maxMs":18.090,"over50":0,"meanFps":60.00},
+    {"scene":"outfits-cold-stress","frames":843,"p50Ms":16.670,"p95Ms":40.191,"maxMs":257.202,"over50":18,"meanFps":51.98,"note":"19 outfits cycled every 850ms, including cold suite decoding"},
+    {"scene":"home-warm-widget","frames":1144,"p50Ms":16.668,"p95Ms":18.070,"maxMs":116.562,"over50":8,"meanFps":57.15,"note":"20 seconds of the default layered widget after outfit stress; includes entry/decoding and possible GC, not the complete Home page"},
+    {"scene":"ordinary-card-controls","frames":480,"p50Ms":16.648,"p95Ms":18.376,"maxMs":91.018,"over50":1,"meanFps":59.38,"note":"Diagnostic plain cards, NOT actual complete Game/Surprise/Music/Collection screens"}
+  ],
+  "visuals": ["Both choice icons visible", "Original ears/tail and cream areas preserved", "Pinky layered Default and clothed variants visible", "Follower trails leader through the route", "Plus badge no longer spans or covers title"],
+  "interaction": "Manual simulator click verified the real Adventure back button invokes its exit callback; test-shell navigation only",
+  "limitations": ["No zero-frame-drop claim", "Cold outfit stress still contains >50ms frames", "No strict identical-baseline comparison", "No physical device or Android native acceptance", "Not two real production accounts end-to-end"]
+}

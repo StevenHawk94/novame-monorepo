@@ -1,4 +1,4 @@
-import { ITEM_DICTIONARY, applyRemoteItemManifest, isRemoteItemManifest } from '@novame/engine'
+import { ITEM_DISPLAY_CATALOG, applyRemoteItemManifest, isRemoteItemManifest, projectItemDisplayManifest } from '@novame/engine'
 
 const R2_BASE = 'https://media.novameapp.com'
 const cache = new Map()
@@ -18,8 +18,9 @@ export async function getRemoteItemManifest(version) {
     const value = await response.json()
     if (!isRemoteItemManifest(value) || value.version !== version) throw new Error('invalid_item_manifest')
     if (cache.size > 8) cache.clear()
-    cache.set(version, { at: Date.now(), value })
-    return value
+    const display = projectItemDisplayManifest(value)
+    cache.set(version, { at: Date.now(), value: display })
+    return display
   } catch (error) {
     if (cached) return cached.value
     throw error
@@ -28,16 +29,5 @@ export async function getRemoteItemManifest(version) {
 
 /** Old clients omit itemsVersion and retain the catalog they previewed. */
 export async function getMergedDictionary(itemsVersion = '0') {
-  return applyRemoteItemManifest(ITEM_DICTIONARY, await getRemoteItemManifest(itemsVersion))
-}
-
-export async function getLatestMergedDictionary() {
-  try {
-    const response = await fetch(`${R2_BASE}/content-version.json?v=${Date.now()}`, { cache: 'no-store' })
-    if (!response.ok) return ITEM_DICTIONARY
-    const pointer = await response.json()
-    return getMergedDictionary(String(pointer?.itemsVersion ?? '0'))
-  } catch {
-    return ITEM_DICTIONARY
-  }
+  return applyRemoteItemManifest({ items: ITEM_DISPLAY_CATALOG }, await getRemoteItemManifest(itemsVersion))
 }

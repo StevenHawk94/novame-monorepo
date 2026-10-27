@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Platform, ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { userErrorMessage } from '@/lib/user-error-message';
+import { Platform, Linking } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Image as ExpoImage } from 'expo-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
 import {
@@ -16,42 +14,25 @@ import {
 import { getCachedSubscription } from '@/lib/subscription';
 import { supabase } from '@/lib/supabase';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
-import {
-  shouldPromptNotifAfterPurchase,
-  markNotifPromptedAfterPurchase,
-} from '@/lib/notification-settings';
-import { ICONS } from '@/lib/icons';
-import { DEFAULT_PLUS_BENEFITS, BURROW_PLUS_BENEFITS } from '@/lib/plus-benefits';
-import { useMajorUpdateEnabled } from '@/lib/use-major-update';
-import { GridBackground } from '@/components/ui/grid-background';
+import { BurrowPaywallPage } from '@/components/paywall/burrow-paywall-page';
 import { useStoreSubscriptionPricing } from '@/hooks/use-store-subscription-pricing';
 
 /**
- * Subscription paywall (2026-07-26 redesign — same look as onboarding):
- * the Burrow Plus benefits page on the beige grid, then Choose your plan
- * with store-localized prices. Solo monthly/yearly only (the onboarding
- * offer); duo lives in the Friend Pack flow.
+ * One shared two-step presentation for every entry, including onboarding
+ * and historical promotion routes. Monthly/yearly store products unchanged.
  *
  * Behaviors preserved from the previous paywall: global purchase listeners
- * (complete → home refresh + one-time notification prompt + dismiss;
+ * (complete → home refresh + account safety + dismiss;
  * error → alert), restore purchases (App Store requirement), dismiss →
  * home refresh, already-subscribed → Apple's manage-subscriptions page,
  * 'scheduled' outcomes explained (the one alert that must stay).
  */
-const INK = '#4A2F17';
-const CARD = '#FDF3E3';
-const BTN = '#4A3220';
-
 type Phase = 'benefits' | 'plans';
 
-export default function SubscriptionPaywallModal() {
-  const majorUpdate=useMajorUpdateEnabled();
-  const benefits=majorUpdate?BURROW_PLUS_BENEFITS:DEFAULT_PLUS_BENEFITS;
-  const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ phase?: string }>();
+export default function SubscriptionPaywallModal({ onContinue, onClose }: { onContinue?: () => void; onClose?: () => void } = {}) {
   const isPaid = (getCachedSubscription()?.tier ?? 'free') !== 'free';
 
-  const [phase, setPhase] = useState<Phase>(params.phase === 'plans' ? 'plans' : 'benefits');
+  const [phase, setPhase] = useState<Phase>('benefits');
   const [plan, setPlan] = useState<'yearly' | 'monthly'>('yearly');
   const [busy, setBusy] = useState<'idle' | 'purchasing' | 'restoring'>('idle');
   const [openingPlans, setOpeningPlans] = useState(false);
@@ -63,33 +44,21 @@ export default function SubscriptionPaywallModal() {
   } = useStoreSubscriptionPricing(true);
 
   // Global IAP listeners: close on success (no redundant alert — StoreKit
-  // already confirmed), then serialize account safety before notifications.
+  // already confirmed), then offer account safety without notification setup.
   useEffect(() => {
     const offComplete = onPurchaseComplete(() => {
       setBusy('idle');
       emitHomeRefresh();
       // Returning closes only the paywall; an underlying Reflect settlement
       // stays mounted and reacts to the refreshed tier. Keep the established
-      // account-safety -> notification prompt sequence unchanged.
-      const promptNotif = shouldPromptNotifAfterPurchase();
-      if (promptNotif) markNotifPromptedAfterPurchase();
+      // account-safety prompts, but never chain notification setup.
       if (router.canGoBack()) router.back();
-
-      const openNotificationSetup = () => {
-        if (promptNotif) router.push('/(main)/(modals)/notification-settings');
-      };
-      const continueToNotificationSetup = () => {
-        // AppDialog clears its overlay before this navigation starts, so the
-        // next native modal can never appear underneath the closing alert.
-        setTimeout(openNotificationSetup, 200);
-      };
       const openAccountConnection = () => {
         void haptics.pageOpen();
         router.push({
           pathname: '/(main)/(modals)/connect-account',
           params: {
             source: 'post-purchase',
-            ...(promptNotif ? { after: 'notification-settings' } : {}),
           },
         } as never);
       };
@@ -102,7 +71,7 @@ export default function SubscriptionPaywallModal() {
             'Keep your account safe',
             'We strongly recommend connecting an account. This helps keep your data and memories safe and recoverable if you change phones, reinstall the app, or clear app data.',
             [
-              { text: 'Close Anyway', style: 'cancel', onPress: continueToNotificationSetup },
+              { text: 'Close Anyway', style: 'cancel' },
               { text: 'Connect Account', onPress: openAccountConnection },
             ],
           );
@@ -110,8 +79,7 @@ export default function SubscriptionPaywallModal() {
       };
 
       // Resolve account state after dismissing the paywall, then present only
-      // one surface at a time. The notification setup is continued from the
-      // selected safety action instead of racing this alert on a timer.
+      // one surface at a time. Connected users need no additional setup.
       void (async () => {
         let needsAccountSafety = false;
         try {
@@ -124,10 +92,7 @@ export default function SubscriptionPaywallModal() {
         }
 
         setTimeout(() => {
-          if (!needsAccountSafety) {
-            openNotificationSetup();
-            return;
-          }
+          if (!needsAccountSafety) return;
 
           appAlert(
             'Keep your Plus safe',
@@ -147,7 +112,7 @@ export default function SubscriptionPaywallModal() {
       setBusy('idle');
       appAlert(
         err.code === 'pending' ? 'Payment Pending' : 'Purchase Failed',
-        err.message || 'Something went wrong with the purchase. Please try again.',
+        userErrorMessage(err,'Couldn’t finish the purchase. Please try again.'),
       );
     });
     return () => {
@@ -157,6 +122,7 @@ export default function SubscriptionPaywallModal() {
   }, []);
 
   const handleClose = () => {
+    onClose?.();
     void haptics.light();
     emitHomeRefresh();
     router.back();
@@ -175,6 +141,7 @@ export default function SubscriptionPaywallModal() {
       );
       return;
     }
+    onContinue?.();
     setPhase('plans');
   };
 
@@ -264,221 +231,10 @@ export default function SubscriptionPaywallModal() {
     }
   };
 
-  return (
-    <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
-      <GridBackground />
-      <View style={[styles.root, { paddingTop: insets.top + 14 }]}>
-        <Pressable onPress={handleClose} style={[styles.closeCircle, { top: insets.top + 6 }]} hitSlop={10}>
-          <MaterialIcons name="close" size={22} color="#FFFFFF" />
-        </Pressable>
-
-        {phase === 'benefits' ? (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
-            <View style={{ flex: 1, minHeight: '100%' }}>
-              <Text style={[styles.h1, { marginTop: 62 }]}>Feel closer through the little things.</Text>
-              <View style={styles.plusCard}>
-                <ExpoImage source={ICONS.obPaywallUnlock} style={styles.lockImg} contentFit="contain" />
-                <Text style={styles.plusTitle}>Burrow Plus</Text>
-                {benefits.map((t, index) => (
-                  <View key={t}>
-                    <View style={styles.benefitRow}>
-                      <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.benefitTitle}>{t}</Text>
-                      </View>
-                    </View>
-                    {index < benefits.length - 1 && <View style={styles.benefitDivider} />}
-                  </View>
-                ))}
-              </View>
-              <Text style={[styles.body, styles.subscriptionNote]}>
-                One Plus subscription unlocks the full experience for both of you.
-              </Text>
-              <View style={{ flex: 1, minHeight: 20 }} />
-              <Pressable
-                onPress={() => void handleOpenPlans()}
-                disabled={openingPlans}
-                style={({ pressed }) => [styles.cta, { opacity: openingPlans ? 0.65 : pressed ? 0.85 : 1 }]}
-              >
-                {openingPlans
-                  ? <ActivityIndicator color="#FFFFFF" />
-                  : (
-                    <Text style={styles.ctaText}>
-                      {pricing
-                        ? pricing.yearlyTrialEligible ? 'Start Free Trial' : 'Subscribe'
-                        : priceStatus === 'error' ? 'Try Again' : 'Continue'}
-                    </Text>
-                  )}
-              </Pressable>
-              <Pressable onPress={() => void handleRestore()} style={styles.restoreBtn} hitSlop={8}>
-                {busy === 'restoring' ? (
-                  <ActivityIndicator color={INK} size="small" />
-                ) : (
-                  <Text style={[styles.legalText, { marginBottom: insets.bottom + 8 }]}>Restore purchases</Text>
-                )}
-              </Pressable>
-            </View>
-          </ScrollView>
-        ) : (
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.h1, { marginTop: 62 }]}>Choose your plan</Text>
-            <Text style={styles.planSubtitle}>
-              Link their account to yours in the app, and they’ll{`\n`}
-              get access to all Plus features too.
-            </Text>
-            <Pressable
-              onPress={() => { void haptics.light(); setPlan('yearly'); }}
-              style={[styles.planCard, plan === 'yearly' && styles.planCardOn]}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.planTitle}>12 Months</Text>
-                {pricing ? (
-                  <Text style={styles.planPrice}>
-                    <Text style={styles.planStrike}>{pricing.monthlyAnnualized}</Text>
-                    {'  '}
-                    {pricing.yearly.displayPrice} ({pricing.yearlyPerMonth}/month)
-                  </Text>
-                ) : (
-                  <Text style={styles.planPricePending}>
-                    {priceStatus === 'error' ? 'Price unavailable' : 'Loading price…'}
-                  </Text>
-                )}
-              </View>
-              {pricing?.yearlyTrialEligible ? (
-                <View style={styles.trialBadge}>
-                  <Text style={styles.trialBadgeText}>3 Days Free Trial</Text>
-                </View>
-              ) : null}
-            </Pressable>
-            <Pressable
-              onPress={() => { void haptics.light(); setPlan('monthly'); }}
-              style={[styles.planCard, plan === 'monthly' && styles.planCardOn]}
-            >
-              <View>
-                <Text style={styles.planTitle}>Monthly</Text>
-                <Text style={pricing ? styles.planPrice : styles.planPricePending}>
-                  {pricing
-                    ? `${pricing.monthly.displayPrice} every month`
-                    : priceStatus === 'error' ? 'Price unavailable' : 'Loading price…'}
-                </Text>
-              </View>
-            </Pressable>
-            {priceStatus === 'error' && !pricing ? (
-              <Pressable
-                onPress={() => void retryPrices()}
-                style={styles.priceRetry}
-                hitSlop={8}
-              >
-                <MaterialIcons name="refresh" size={17} color={INK} />
-                <Text style={styles.priceRetryText}>Retry prices</Text>
-              </Pressable>
-            ) : null}
-            <View style={{ flex: 1 }} />
-            <Pressable
-              onPress={() => void handleSubscribe()}
-              disabled={busy !== 'idle' || (!isPaid && !pricing)}
-              style={({ pressed }) => [styles.cta, {
-                opacity: busy !== 'idle' || (!isPaid && !pricing) ? 0.6 : pressed ? 0.85 : 1,
-              }]}
-            >
-              {busy === 'purchasing' ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.ctaText}>
-                  {isPaid
-                    ? 'Manage Subscription'
-                    : plan === 'yearly' && pricing?.yearlyTrialEligible
-                      ? 'Start Free Trial'
-                      : 'Start My Plan'}
-                </Text>
-              )}
-            </Pressable>
-            {/* Apple 3.1.2: price-per-period, auto-renew and trial terms on the
-                purchase screen, plus working Privacy/Terms links. */}
-            <Text style={styles.disclosure}>
-              {pricing
-                ? plan === 'yearly'
-                  ? pricing.yearlyTrialEligible
-                    ? `Burrow Plus Yearly: ${pricing.yearly.displayPrice} per 12 months after a 3-day free trial. `
-                    : `Burrow Plus Yearly: ${pricing.yearly.displayPrice} per 12 months. `
-                  : `Burrow Plus Monthly: ${pricing.monthly.displayPrice} per month. `
-                : priceStatus === 'error'
-                  ? 'Subscription terms will appear when store prices are available. '
-                  : 'Loading localized subscription terms… '}
-              Subscription auto-renews unless cancelled at least 24 hours before the end
-              of the current period. Manage or cancel anytime in your{' '}
-              {Platform.OS === 'android' ? 'Google Play' : 'App Store'} settings.
-            </Text>
-            <View style={[styles.legalRow, { marginBottom: insets.bottom + 10, marginTop: 10 }]}>
-              <Pressable onPress={() => { void haptics.pageOpen(); void Linking.openURL('https://www.burrow-app.com/privacy'); }} hitSlop={8}>
-                <Text style={styles.legalLink}>Privacy</Text>
-              </Pressable>
-              <Pressable onPress={() => void handleRestore()} hitSlop={8}>
-                <Text style={styles.legalText}>
-                  {busy === 'restoring' ? 'Restoring…' : 'Restore purchases'}
-                </Text>
-              </Pressable>
-              <Pressable onPress={() => { void haptics.pageOpen(); void Linking.openURL('https://www.burrow-app.com/terms'); }} hitSlop={8}>
-                <Text style={styles.legalLink}>Terms</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      </View>
-    </View>
-  );
+  return <BurrowPaywallPage phase={phase} pricing={pricing} priceError={priceStatus === 'error'}
+    plan={plan} onSelectPlan={value => { void haptics.light(); setPlan(value); }}
+    onClose={handleClose} onBack={() => setPhase('benefits')}
+    onContinue={() => void handleOpenPlans()} onPurchase={() => void handleSubscribe()}
+    onRestore={() => void handleRestore()} onRetry={() => void retryPrices()}
+    openingPlans={openingPlans} purchasing={busy === 'purchasing'} restoring={busy === 'restoring'} isPaid={isPaid}/>;
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 22 },
-  closeCircle: {
-    position: 'absolute', left: 10, zIndex: 3,
-    width: 44, height: 44, borderRadius: 22, backgroundColor: BTN,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  disclosure: {
-    fontSize: 11.5, lineHeight: 16, fontFamily: 'Inter_500Medium', color: '#7A6A52',
-    textAlign: 'center', marginTop: 12, paddingHorizontal: 6,
-  },
-  legalLink: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#6B5B44', textDecorationLine: 'underline' },
-  h1: { fontSize: 27, lineHeight: 36, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
-  body: { fontSize: 16.5, lineHeight: 24, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center' },
-  subscriptionNote: { marginTop: 18, fontSize: 13.5, lineHeight: 20, paddingHorizontal: 12 },
-  planSubtitle: {
-    marginTop: 8, marginBottom: 26, paddingHorizontal: 10,
-    fontSize: 13.5, lineHeight: 19, fontFamily: 'Inter_500Medium',
-    color: '#3A2E1A', textAlign: 'center',
-  },
-
-  plusCard: { backgroundColor: 'rgba(90,64,40,0.85)', borderRadius: 26, padding: 20, marginTop: 44 },
-  lockImg: { width: 62, height: 62, alignSelf: 'center', marginTop: -52, marginBottom: 4 },
-  plusTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
-  benefitRow: { flexDirection: 'row', gap: 12, paddingVertical: 14, alignItems: 'center' },
-  benefitDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.18)' },
-  benefitTitle: { fontSize: 16.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-
-  planCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: CARD, borderRadius: 22, padding: 20, marginBottom: 16,
-    borderWidth: 2.5, borderColor: 'transparent',
-  },
-  planCardOn: { borderColor: BTN },
-  planTitle: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
-  planPrice: { fontSize: 15.5, fontFamily: 'Inter_600SemiBold', color: '#2A2118', marginTop: 6 },
-  planPricePending: { fontSize: 15.5, fontFamily: 'Inter_600SemiBold', color: '#9A8770', marginTop: 6 },
-  planStrike: { textDecorationLine: 'line-through', color: '#8A7A63' },
-  priceRetry: {
-    alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: -4, marginBottom: 12, paddingHorizontal: 12, paddingVertical: 8,
-  },
-  priceRetryText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: INK, textDecorationLine: 'underline' },
-  trialBadge: { backgroundColor: BTN, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10 },
-  trialBadgeText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
-  legalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12 },
-  legalText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: INK, textAlign: 'center' },
-  restoreBtn: { alignItems: 'center', paddingVertical: 12 },
-
-  cta: { backgroundColor: BTN, borderRadius: 18, paddingVertical: 18, alignItems: 'center' },
-  ctaText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-});

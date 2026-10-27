@@ -1,5 +1,11 @@
 # Tap Your Day and reviewed matching rules
 
+> Retired on 2026-10-15. The content below is archival, not rollout guidance.
+> Automatic keyword matching, rule authoring and the learning Cron are removed.
+> Migration 241 makes their tables read-only to service_role and revokes their
+> RPC permissions without deleting records. Keep manual Tap Your Day choices,
+> display-catalog.json, historical item IDs and artwork; do not restart this queue.
+
 ## Rollout
 
 1. Run `supabase/migrations/20260827000069_item_learning_review.sql` after the existing migrations (including 68). It is retry-safe, with a short DDL lock timeout. No production SQL has been run by this change.

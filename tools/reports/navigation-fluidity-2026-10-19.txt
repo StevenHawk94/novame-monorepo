@@ -1,0 +1,93 @@
+Burrow 页面打开 / 返回 / 连续切换优化
+2026-10-19
+
+交付范围
+在现有 Expo Router / 原生 Stack / retained Tabs 上做增量优化，没有重写导航。
+UI、素材比例、业务规则、通知就绪判断、权限、配对隔离、提交幂等及失败恢复不变。
+本轮不执行迁移，不部署 API/Admin，不发布客户端或 OTA。
+
+根因与实际修改
+1. 入口共用 pending/error 状态，已就绪目的地可能继承另一个入口的等待。
+   现在就绪入口同步 dispatch；独立 intent + generation 隔离旧导航；
+   同一未完成 intent 合并，超时及账号/配对变化仍阻断旧响应。
+2. Affection/普通 Adventure 原先点击后创建页面。现在 Home 空闲时使用
+   原生 stack.preload 分批准备；Burrow 空闲时准备 Memories Room。
+   稳定 getId 只复用无额外参数的普通入口；通知任务/历史目标/参数化入口不合并。
+   队列受焦点、前后台、账号代次、配对版本及业务阶段检查保护，数量有限。
+   不预挂载支付/摄像头/播放器/奖励结算，Friends Room 不提前启动拜访 runtime。
+3. 通知 registry 的全局 revision 会带动无关页面重画。
+   改成按可见计数订阅，hidden retained model 只消费自身相关通道；
+   正文就绪、版本、已读规则、实时更新/前台补查/兜底刷新不变。
+4. Home 焦点、时钟、余额变化导致整个房间 element tree 重建。
+   房间图层缓存稳定，动作代理始终调用最新权限/业务闭包；
+   家具、照片、装扮、季节、昼夜、身份、忙碌等相关变化仍会更新。
+   Home 图片准备不因 blur/focus 重做；可选解码不再阻塞已获授权的导航。
+5. Affection 去掉仅为时钟而订阅完整 store 的额外依赖，保留静态页面；
+   隐藏时不显示接收弹窗、不标已读；新 inbox 在打开首帧前形成接收状态。
+6. AdventureReveal 不再从 JS 同步读取 UI shared value 来判断完成。
+   动画完成、原速、减弱动态效果及后台恢复规则不变。
+7. Release 发现 native-stack placeholder 不允许 setOptions。
+   usePageBackGesture 改为有焦点才应用；隐藏 AdventureReady 不能注册返回锁。
+   正式打开后已记录页面仍只允许 Start，原业务限制不变。
+
+冻结版本回归
+- 50 个测试文件，662/662 通过，0 失败；约 66.4 秒。
+- 移动端 TypeScript 检查通过；git diff --check 通过。
+- 包含就绪/冷入口、超时重试、旧响应、换号/解绑、配对权限变化、通知版本/正文、
+  游戏后答者与完整结果、日记/信件读写竞态、Moments、钱包/购买恢复、冒险/好友/领取、
+  Plushie 生命周期、Home 下拉/装扮/照片、Tabs 保留/手势、hidden placeholder 等。
+- 数据库相关测试使用临时 PGlite，不写入生产数据库。
+- 最终 production-mode Bundle：Android 9,623,639 bytes / 1,328 assets；
+  iOS 9,565,661 bytes / 1,324 assets。两端均通过；未开 Android 模拟器。
+- 日志：/private/tmp/novame-nav-final-full-regression.log
+  /private/tmp/novame-nav-frozen-types.log
+  /private/tmp/novame-nav-final-platform-bundles.log
+
+iOS Release 验证方法
+- 独立 com.novame.navigationreleaseqa，不覆盖用户安装，无真实登录会话。
+- 已编译的 arm64 原生 Release host + 最终生产 JS，Hermes -O，__DEV__=false。
+  本轮没有新增原生依赖；不是 Expo Go / Metro 开发环境的性能结果。
+- 使用实际 BurrowScreen、Home/Skia 兔子、Affection、Adventure、Friends、Memories、
+  Quests、Shop、Moments、Collection、原生 Stack 和 retained Tabs。
+- 仅账号/网络/存储/业务 store 边界使用本地假数据。120 件商品、12 条 Moments、
+  本地伴侣日记；禁止所有写入和外部请求，只允许 loopback 输出测试指标。
+- 无并行构建或回归任务时两轮完整运行，最终一轮约 58.9 秒：29 次详情打开与返回，36 次 Tab 切换请求；
+  包括由 Home 进入 Affection/Adventure，由 Burrow 进入 Friends/Memories，以及 ongoing。
+- 完整自动场景 0 捕获的 JS / 准备错误。一次预挂载导航错误在修复后重测通过。
+- 手动 Back to Home 曾暴露 QA 适配器缺少 popToTop 辅助方法，已改为标准 Stack action；
+  这是隔离测试适配问题，不是生产 Expo Router 错误。另校准了假数据服务端时钟。
+- 最终手动检查：Affection 六种入口完整显示并正常返回；Adventure 初次打开即持续计时；
+  切后台再恢复按实际时间继续；Back to Home 不闪退、没有中途 Splash；
+  Burrow -> Memories 首屏已有本地伴侣正文，返回后保持 Burrow 页面。
+- 原生边缘手势策略自动回归通过，但 CUA 两次拖动未触发实际边缘返回；
+  本报告不把手动手势项记为通过，保留真机手势验收。
+
+Release 焦点反馈指标（毫秒）
+目的地                     次数    P50     P95
+打开 Affection                6    51.2    63.5
+打开 Adventure（含 ongoing） 11    49.7    86.0
+打开 Friends Room             6    30.9    70.5
+打开 Memories Room            6    27.4    50.6
+返回 Home                    17    32.7    83.2
+返回 Burrow                  12    21.1    39.6
+切换 Quests                   6    40.3    46.8
+切换 Shop                     6    32.5    36.5
+切换 Moments                  6    30.5    34.9
+切换 Collection               6    36.8    42.7
+切换 Home                     6    38.1    43.2
+切换 Burrow                   5    24.7    44.2
+
+指标边界 / 尚未通过的最终验收
+- 上表是本地 dispatch 到 React 导航 focus 回调，不是手指松开到像素显示的端到端时间，
+  也不表示原生转场已在该时刻完整结束。Burrow 首个重复选中请求不产生 focus，故 n=5。
+- 最终 UI 回调窗口记录 2,094 次 frame callback，其中 180 次间隔超过 34ms，最大约 629ms；
+  JS 定时器最大漂移约 517ms。前一完整轮为 2,045 / 191 / 最大 759ms、JS 最大 601ms。
+  两轮均有慢帧，不能用焦点指标掩盖，也不能宣称视频级无掉帧已验收。
+- 后续只读线程采样可见 CoreAnimation/CoreGraphics 图层与渐变绘制的明显主线程负载；
+  该样本不证明所有慢帧都来自同一原因，不能把它们一概称为开发环境或网络问题。
+- 模拟器、Mac 负载、截图/AX 工具都会影响测量；早期并行构建样本不用于性能结论。
+  不提供不具可比性的“提速百分比”。
+- 真实配对双账号/通知端到端和目标 iPhone 真机 Release 最终验收，仍按用户约定待其登录。
+- 原始记录保留在 /private/tmp/novame-navigation-release-JJ9z9e/；
+  events-final-stress-2.json 为最终轮指标及后台/手动返回原始输入；
+  events-final-stress.json 保留前一完整轮，navigation-sample.txt 为只读线程采样。

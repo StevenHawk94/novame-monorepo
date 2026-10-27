@@ -6,6 +6,7 @@ export function adventureNeedsCompletion(adventure: Adventure | undefined) {
   return adventure?.status === 'result_ready' || adventure?.status === 'interaction_required';
 }
 export function adventureHasArrived(adventure: Adventure | undefined, now: number) {
+  if (adventure?.localStartPending || adventure?.id.startsWith('pending:')) return false;
   return adventureNeedsCompletion(adventure) || (adventure?.status === 'in_progress' && Date.parse(adventure.ends_at) <= now);
 }
 export function adventureIsAway(adventure: Adventure | undefined, now: number) {
@@ -13,20 +14,23 @@ export function adventureIsAway(adventure: Adventure | undefined, now: number) {
 }
 export function roomSlots(data: MajorUpdateBootstrap, ownerId: string, _legacyShared = false) {
   const slots: Record<string, MajorUpdateCatalogItem> = {};
-  data.catalog.filter(item => item.metadata.starter && item.metadata.slot &&
+  data.catalog.filter(item => (item.status==null||item.status==='active') && item.metadata.starter && item.metadata.slot &&
     ['decor', 'outfit'].includes(item.item_type))
     .forEach(item => { slots[item.metadata.slot!] = item; });
-  // Both partners must see the same design. Until the first shared save,
-  // deterministically show the older personal design from the lower user ID.
-  const sharedRows = data.loadouts.filter(row => row.room_type === 'our' && row.slot !== 'outfit' &&
-    data.catalog.some(item => item.stable_id === row.item_id && item.item_type === 'decor'));
-  const legacyOwner = [data.profile.id, data.partner?.id].filter((id): id is string => !!id).sort()[0] ?? ownerId;
-  const rows = sharedRows.length ? sharedRows : data.loadouts.filter(row => row.room_type === 'home' && row.owner_id === legacyOwner && row.slot !== 'outfit');
+  // Shared artwork is immutable; a room selection is always personal. Never
+  // substitute a partner's design (or archived shared rows) for this owner.
+  const rows = data.loadouts.filter(row => row.room_type === 'home' && row.owner_id === ownerId && row.slot !== 'outfit');
   rows
-    .forEach(row => { const item = data.catalog.find(item => item.stable_id === row.item_id); if (item) slots[row.slot] = item; });
+    .forEach(row => { const item = data.catalog.find(item => item.stable_id === row.item_id && (item.status==null||item.status==='active')); if (item) slots[row.slot] = item; });
   const ownOutfit=data.loadouts.find(row => row.room_type === 'home' && row.owner_id === ownerId && row.slot === 'outfit');
-  const outfit=data.catalog.find(item => item.stable_id === ownOutfit?.item_id);
+  const outfit=data.catalog.find(item => item.stable_id === ownOutfit?.item_id && (item.status==null||item.status==='active'));
   if(outfit) slots.outfit=outfit;
+  const giftId = data.adventureCollection?.displays.find(row => row.user_id === ownerId)?.gift_id;
+  const gift = data.catalog.find(item => item.stable_id === giftId);
+  if (gift) slots.shelf_decor = gift;
+  // Old seasonal purchases may remain in cached loadouts/history. They no
+  // longer participate in room placement, ownership checks or checkout.
+  delete slots.background;
   return slots;
 }
 export function roomNeedDisplay(data: MajorUpdateBootstrap, partner: boolean, now: number) {

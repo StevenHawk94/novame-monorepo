@@ -1,0 +1,69 @@
+{
+  "verifiedAt": "2026-10-20T10:49:18.398Z",
+  "status": "Migration 251 committed; API promoted to production and verified",
+  "migration": {
+    "projectRef": "qleeohkhbrdvznbwgqad",
+    "version": "20261020000251",
+    "name": "moments_gifts_and_surprises",
+    "sourceMd5": "7f1d13c52b82aa0c0bbfa8247653ee2e",
+    "sourceSha256": "b559f008291c3dd912c1f61d71ddf2d90d67cf4753e13d87a9b362a32b63234e",
+    "applied": true,
+    "only251Executed": true,
+    "ddlAndMigrationHistoryAtomic": true,
+    "sourceMatchesRepository": true,
+    "legacyFunctionsBackedUpAndUnchanged": 8,
+    "newTriggersEnabled": 2,
+    "newFunctionAcl": { "anon": false, "authenticated": false, "serviceRole": true },
+    "historicalBusinessRowsModified": false,
+    "surpriseBackfillPerformed": false
+  },
+  "api": {
+    "projectId": "prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4",
+    "deploymentId": "dpl_9cvzPsdt1d5v7FaT1VaLv65zKK9y",
+    "deploymentUrl": "https://novame-monorepo-6pn77kcc6-soulsayit.vercel.app",
+    "productionDomain": "https://api.soulsayit.com",
+    "readyState": "READY",
+    "customDomainVerifiedViaAliasEndpoint": true,
+    "sourceFilesVerified": 270,
+    "onlyChangedRuntimeFile": "apps/api/src/lib/burrow-attention.mjs",
+    "productionLockfileRetainedSha1": "f8e4946b392815f23687329b348806711d0ba829",
+    "nativeAdminAndSecretsExcluded": true,
+    "adminUnchanged": true,
+    "nativeOrOtaPublished": false
+  },
+  "compatibility": {
+    "existingSendPurchaseClaimPairAndBroadcastFunctionsUnchanged": true,
+    "existingEventTypesRetained": true,
+    "newEventMetadataUsesExistingHistoryBootstrapAndReadinessPipeline": true,
+    "surpriseEventAtomicWithSuccessfulSend": true,
+    "receiptRetriesCannotDuplicateNewMoment": true,
+    "giftLabelsSnapshotAtSendAndLegacyCatalogueFallback": true,
+    "historicalSurprisesNotRetroactivelyNotified": true,
+    "clientRequirement": "Use the updated client to display revised wording and the new gift/Surprise event kinds; this deployment did not publish a mobile build or OTA."
+  },
+  "verification": {
+    "focusedRegressionAndIsolatedPostgresTestsPassed": 65,
+    "apiTypeScript": "passed",
+    "vercelProductionBuild": "passed",
+    "candidateAndProductionHttpChecks": {
+      "publicAppConfig": 200,
+      "unauthenticatedBootstrap": 401,
+      "unauthenticatedMomentsHistory": 401,
+      "unauthenticatedGameOverview": 401,
+      "unauthenticatedSurpriseGetAndPost": 401,
+      "unauthenticatedLegacyAndNewGiftClaim": 401
+    },
+    "accountsCreated": 0,
+    "customerBusinessDataWrites": 0,
+    "authenticatedTwoAccountTest": "Not performed; remains for user login and cross-account acceptance."
+  },
+  "rollback": {
+    "knownGoodApiDeploymentId": "dpl_CRN79WhWFPWLRov84VLooHrZpayb",
+    "command": "node /Users/nihao/.npm/_npx/69f9afb961c37556/node_modules/vercel/dist/vc.js rollback dpl_CRN79WhWFPWLRov84VLooHrZpayb --yes --scope soulsayit --cwd /var/folders/_v/j_qgbwt96t9b2j57xdhvw13m0000gn/T/novame-api-production-release-wvG6IZ",
+    "apiRollbackDatabasePolicy": "Keep additive migration 251 and all event rows; existing paid completion and claim APIs are unchanged.",
+    "databaseEmergencyStop": "If the new trigger path itself causes a production issue, disable only burrow_surprise_sent_moment on public.burrow_surprises and burrow_gift_moment_labels on public.moment_events. Preserve the expanded event constraint, all rows, and migration history. Reviewed SQL is saved in the evidence directory.",
+    "preMigrationBackup": "Original constraint, existing triggers and eight legacy function definitions saved before applying 251.",
+    "actualRollbackPerformed": false
+  },
+  "evidenceDirectory": "/private/tmp/novame-251-release-gbNMk5"
+}

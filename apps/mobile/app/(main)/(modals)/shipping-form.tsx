@@ -1,3 +1,4 @@
+import { BackIcon } from '@/components/burrow/burrow-back-button';
 /**
  * Shipping form modal — Stage 3.9.B.5
  *
@@ -22,18 +23,9 @@
  * inline with the payment intent creation.
  */
 import { useEffect, useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
+import {AppModal as Modal} from '@/components/layout/app-modal';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -149,7 +141,7 @@ export default function ShippingFormModal() {
             pressed && { opacity: 0.7 },
           ]}
         >
-          <MaterialIcons name="arrow-back" size={20} color="#FFFFFF" />
+          <BackIcon color="#FFFFFF"/>
         </Pressable>
         <Text style={styles.headerTitle}>Shipping Information</Text>
       </View>

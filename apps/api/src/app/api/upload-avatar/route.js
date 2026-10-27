@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { verifyToken } from '@/lib/auth-guard'
-import { rateLimit } from '@/lib/rate-limit'
+import { securityRateLimit,securityFailure } from '@/lib/security-boundary'
+import { normalizeProfileAvatar } from '@/lib/profile-avatar-image.mjs'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 const MIME_TYPES = {
   'image/jpeg': 'jpg',
@@ -47,20 +48,6 @@ function matchesDeclaredImageType(bytes, mimeType) {
   return false
 }
 
-function ownedAvatarPath(avatarUrl, userId) {
-  if (typeof avatarUrl !== 'string' || !avatarUrl) return null
-  try {
-    const marker = '/storage/v1/object/public/avatars/'
-    const pathname = new URL(avatarUrl).pathname
-    const markerIndex = pathname.indexOf(marker)
-    if (markerIndex < 0) return null
-    const path = decodeURIComponent(pathname.slice(markerIndex + marker.length))
-    return path.startsWith(`${userId}/`) ? path : null
-  } catch {
-    return null
-  }
-}
-
 export async function POST(request) {
   try {
     const authHeader = request.headers.get('authorization') || ''
@@ -69,7 +56,7 @@ export async function POST(request) {
     if (!authUser) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { action, userId, base64, mimeType, path: requestedPath } = body
+    const { action, userId, base64, mimeType, path: requestedPath, requestKey } = body
     if (authUser.id !== userId) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -77,11 +64,11 @@ export async function POST(request) {
     const supabase = getSupabaseAdmin()
 
     if (action === 'prepare') {
-      const limit = await rateLimit(supabase, `avatar-upload:${userId}`, 10, 3600)
-      if (!limit.allowed) {
-        return Response.json({ error: 'Too many uploads. Try again later.' }, { status: 429 })
-      }
-      const path = `${userId}/${crypto.randomUUID()}.jpg`
+      await securityRateLimit(supabase,request,userId,'avatar-upload',10,3600)
+      if(requestKey!==undefined&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestKey))return Response.json({error:'Invalid request key'},{status:400})
+      const ticket=await supabase.rpc('prepare_profile_avatar_v1',{p_user:userId,p_key:requestKey??crypto.randomUUID()})
+      if(ticket.error||ticket.data?.error||!ticket.data?.path)return Response.json({error:'Avatar upload is temporarily unavailable'},{status:503})
+      const path=ticket.data.path
       const { data, error } = await supabase.storage.from('avatars').createSignedUploadUrl(path)
       if (error || !data?.token) {
         console.error('[upload-avatar] signed upload ticket failed', error)
@@ -91,6 +78,7 @@ export async function POST(request) {
     }
 
     if (action === 'complete') {
+      await securityRateLimit(supabase,request,userId,'avatar-complete',30,60)
       const path = typeof requestedPath === 'string' ? requestedPath : ''
       if (!path.startsWith(`${userId}/`) || !/^[0-9a-f-]+\.jpg$/i.test(path.slice(userId.length + 1))) {
         return Response.json({ error: 'Invalid image path' }, { status: 400 })
@@ -107,33 +95,18 @@ export async function POST(request) {
         return Response.json({ error: 'Invalid uploaded image' }, { status: 400 })
       }
 
-      const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', userId)
-        .maybeSingle()
       const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(path)
+      const downloaded=await supabase.storage.from('avatars').download(path)
+      if(downloaded.error||!downloaded.data)return Response.json({error:'Could not validate photo'},{status:503})
+      let normalized
+      try{normalized=await normalizeProfileAvatar(new Uint8Array(await downloaded.data.arrayBuffer()))}
+      catch{return Response.json({error:'Invalid uploaded image'},{status:400})}
+      const sanitized=await supabase.storage.from('avatars').upload(path,normalized,{contentType:'image/jpeg',upsert:true,cacheControl:'31536000'})
+      if(sanitized.error)return Response.json({error:'Could not validate photo'},{status:503})
       const avatarUrl = publicData.publicUrl
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          avatar_url: avatarUrl,
-          is_default_avatar: false,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId)
-      if (profileError) {
-        await supabase.storage.from('avatars').remove([path])
-        console.error('[upload-avatar] profile update failed', profileError)
-        return Response.json({ error: 'Could not save photo' }, { status: 500 })
-      }
-
-      const oldPath = ownedAvatarPath(currentProfile?.avatar_url, userId)
-      if (oldPath && oldPath !== path) {
-        const { error: cleanupError } = await supabase.storage.from('avatars').remove([oldPath])
-        if (cleanupError) console.warn('[upload-avatar] old avatar cleanup failed', cleanupError)
-      }
-      return Response.json({ success: true, avatarUrl })
+      const committed=await supabase.rpc('complete_profile_avatar_v1',{p_user:userId,p_path:path,p_url:avatarUrl})
+      if(committed.error||!committed.data||committed.data.error)return Response.json({error:'Could not save photo'},{status:503})
+      return Response.json({success:true,...committed.data})
     }
 
     const extension = MIME_TYPES[mimeType]
@@ -146,10 +119,7 @@ export async function POST(request) {
       return Response.json({ error: 'Image is too large' }, { status: 413 })
     }
 
-    const limit = await rateLimit(supabase, `avatar-upload:${userId}`, 10, 3600)
-    if (!limit.allowed) {
-      return Response.json({ error: 'Too many uploads. Try again later.' }, { status: 429 })
-    }
+    await securityRateLimit(supabase,request,userId,'avatar-upload',10,3600)
 
     let bytes
     try {
@@ -164,12 +134,14 @@ export async function POST(request) {
       return Response.json({ error: 'Invalid image' }, { status: 400 })
     }
 
-    const path = `${userId}/${crypto.randomUUID()}.${extension}`
+    try { bytes=await normalizeProfileAvatar(bytes) }
+    catch { return Response.json({error:'Invalid image'},{status:400}) }
+    const path = `${userId}/${crypto.randomUUID()}.jpg`
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(path, bytes, {
         cacheControl: '31536000',
-        contentType: mimeType,
+        contentType: 'image/jpeg',
         upsert: false,
       })
     if (uploadError) {
@@ -179,22 +151,11 @@ export async function POST(request) {
 
     const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(path)
     const avatarUrl = publicData.publicUrl
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        avatar_url: avatarUrl,
-        is_default_avatar: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
-    if (profileError) {
-      await supabase.storage.from('avatars').remove([path])
-      console.error('[upload-avatar] profile update failed', profileError)
-      return Response.json({ error: 'Could not save photo' }, { status: 500 })
-    }
-
-    return Response.json({ success: true, avatarUrl })
+    const committed=await supabase.rpc('complete_profile_avatar_v1',{p_user:userId,p_path:path,p_url:avatarUrl})
+    if(committed.error||!committed.data||committed.data.error)return Response.json({error:'Could not save photo'},{status:503})
+    return Response.json({success:true,...committed.data})
   } catch (error) {
+    if(error.status)return securityFailure(error)
     console.error('[upload-avatar] unexpected error', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }

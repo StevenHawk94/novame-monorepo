@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-25",
+  "scope": "Decorate and Shop detail static room preview only; no production deployment",
+  "userApproved": {
+    "selection": "A and then B each immediately update the foreground draft. No debounce, selection dropping, minimum dwell timer, or async preparation gate. React/display frames are not an artificial per-tap playback queue.",
+    "background": "Only obsolete speculative work is replaceable/cancellable; active native decodes may finish into the immutable public image cache, never publish selection state.",
+    "outfit": "Decorate uses static artwork, no Skia or outfit animation. Reuse a full-canvas precomposite when it already exists; do not delete useful Shop/Collection artwork."
+  },
+  "rootCause": "BurrowShop created an entire withRoomDesign snapshot and invoked prepareHomeArt on preview selections. This re-entered environment/Home/five-layer bunny/Skia/private-photo preparation and changed live Home retention, despite the preview itself being static. Rapid choices could leave earlier background preparations in flight.",
+  "implementation": [
+    "Removed selection-triggered full Home preparation; the explicit purchase/Replace/apply-to-Home preparation and handoff remain unchanged.",
+    "Preview-only bunny uses one existing full-canvas bitmap with the same rig viewport geometry and explicit owner colour. Home animation and the layered native fallback are unchanged.",
+    "Dedicated preview preparation uses only current public slot artwork and the selected static outfit; no private-photo enumeration, environment refresh, Home retention mutation or Skia suite preparation.",
+    "Preview and product rail share two speculative decode workers and the existing common native decoder/cache. Already decoded immutable sources are reused. Pending obsolete preview jobs are replaced; focus/owner/variant/selection change and unmount cancel that preview's queued work.",
+    "Background preparation is scheduled after UI settles; the synchronous draft selection does not wait for it and late completion has no selection setter.",
+    "No source art regenerated or removed. All 38 brown/pink static images verified 1189x1323 with transparency; existing combined size 3090496 bytes. They serve other static surfaces, so removal would regress reuse."
+  ],
+  "preserved": ["Permanent product IDs and colour identity", "Quotes and prices", "Personal inventory and room ownership", "Wallet and payment receipts", "Purchase/Replace confirmation and local durable intent", "Notification/readiness/red-dot rules", "Startup priority", "Home five-layer animation", "Unified private-photo cache"],
+  "verification": {
+    "domainGate": {"passed": 616, "failed": 0, "log": "/private/tmp/burrow-decorate-domain.log"},
+    "selectionPreparationAndCheckout": {"passed": 18, "failed": 0, "command": "node --test tools/test-decorate-preview-preparation.cjs tools/test-decorate-room-scrolling.cjs tools/test-room-edit-ui.cjs"},
+    "additionalCrossPageAndGeometry": {"passed": 47, "failed": 0, "log": "/private/tmp/burrow-decorate-cross.log"},
+    "mobileTypes": "pnpm --filter @novame/mobile exec tsc --noEmit passed",
+    "catalogCheck": "passed; release 3e581bf854bf4e3758d2620371b0b883f97756ee26da051a4f6b145df5c76c5a unchanged",
+    "native": {
+      "report": "tools/reports/decorate-native-2026-10-25.json",
+      "environment": "iPhone 17 Pro Simulator / iOS 26.2 / minified Release Hermes host; actual BurrowShop, HomeArtPreview, HomeArtScene, cards, images and gestures; offline business fixture",
+      "interactions": "2 initial outfit choices, 20 warmed outfit choices and 20 cushion choices; observer recorded all 43 snapshots including initial room. Screenshots verified A outfit, then B outfit, then changed cushion; no movement of unrelated furniture or bunny proportions.",
+      "phaseStatistics": "Cold-entry/initial outfit phase 59.79fps P95 17.50ms max 139.64ms (4 >50ms); warm outfit phase 59.68fps P95 17.52ms max 81.16ms (6 >50ms); furniture phase 59.46fps P95 17.53ms max 158.36ms (11 >50ms). Phase data includes time between taps; not tap-to-photon latency or isolated interaction-window statistics.",
+      "lifecycle": "The initial QA-only Expo Router back call lacked a filesystem root and raised isReady TypeError. Fixed only the test router adapter to use its real React Navigation stack. Rebuilt/reinstalled the QA host; selection -> cancel, reopen -> selection -> reset -> cancel completed successfully twice. Product router was not changed.",
+      "limitations": "No matched before/after baseline; the earlier 257ms animation stress is not this workload. JS RAF is not an independent compositor trace. Some >50ms frames remain and their individual CPU/GPU causes were not isolated. No zero-slow-frame or every-device guarantee. Physical iOS/Android and real account/payment end-to-end were not exercised."
+    }
+  },
+  "release": {"clientCodeUpdated": true, "appPublished": false, "apiChanged": false, "databaseChanged": false, "productionChanged": false, "assetsChanged": false, "standardsChanged": false, "standardsReason": "Implements existing UI responsiveness/isolation requirements; no economic, ownership, notification, startup or acceptance contract changed."}
+}

@@ -1,0 +1,41 @@
+{
+  "scope": "Client-only: warm Home/Burrow return splash and Burrow map icons/labels",
+  "diagnosis": [
+    "BurrowEnvironmentGate rearmed its launch handoff whenever a detail/other tab returned to Home or Burrow, even with fully decoded retained views",
+    "Every background event also rearmed that handoff, without distinguishing a brief interruption from a long background",
+    "The two-frame environment paint handoff previously could not finish while a child page was still open"
+  ],
+  "changes": {
+    "warmNavigation": "Keep existing views mounted and interactive; returning focus does not rearm the launch cover",
+    "background": "Only a real background of at least 30 minutes may rearm the environment handoff; inactive system dialogs and short resumes do not",
+    "preparation": "Decode and finish the shared Home/Burrow environment handoff while a child page remains open; the store still commits complete scenes atomically",
+    "failure": "Warm decode failures retain the complete outgoing scene; initial entry/account replacement keeps its retryable readiness protection",
+    "icons": "Seven room icons use 80% of their prior width and height, centered in unchanged containers. My Room remains 100%; asset aspect ratios and hit targets are unchanged",
+    "labels": ["My Room", "Partner’s Room"]
+  },
+  "verification": {
+    "targetedTestsPassed": 51,
+    "mobileTypeCheck": "passed",
+    "targetedCoverage": [
+      "Repeated detail/interaction/tab returns never cover or block the retained destination",
+      "A prepared destination behind a child page needs no additional covered frames on return",
+      "Short resumes across day/night and month boundaries remain uncovered",
+      "Evicted image-cache entries and transient warm decode failures do not become launch splash",
+      "Long resumes and account changes retain preparation and stale-frame protection",
+      "All eight entries remain tappable; seven shrink proportionally and My Room is unchanged"
+    ],
+    "nativeQA": {
+      "platform": "iOS 26.2",
+      "device": "iPhone 17 Pro",
+      "scope": "Real environment gate/shared native image preparation/BurrowMap in an isolated local QA shell; no production account or full-app end-to-end claim",
+      "completedReturns": 40,
+      "warmCoverAppearances": 0,
+      "manualBackHome": "passed",
+      "shortBackgroundResume": "passed; retained the existing view state without splash",
+      "iconsAndLabels": "visually checked; all eight room destinations exposed in native accessibility",
+      "note": "An older test shell initially lacked ExpoSecureStore and an interrupted run was discarded. The completed run used the newer isolated shell with business/network boundaries disabled."
+    },
+    "fullRegression": {"tests": 1997, "passed": 1997, "failed": 0, "note": "The later-added month/cache-eviction boundary test is also covered by the final 51-test targeted rerun"}
+  },
+  "deployment": "No API, database, Admin or client-store deployment performed for this client-only change"
+}

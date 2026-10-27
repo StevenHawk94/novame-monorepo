@@ -25,7 +25,6 @@ import { disableAdMeasurement, initializeAdMeasurement } from '@/lib/ad-measurem
 import { hasSeenIntro } from '@/lib/onboarding';
 import { hideSplashOnce } from '@/lib/splash';
 import { storage } from '@/lib/storage';
-import { ICONS } from '@/lib/icons';
 import { kAdsPrivacyChoice } from '@/shared/storage/keys';
 
 type MetaPrivacyChoice = 'granted' | 'denied';
@@ -237,7 +236,7 @@ function ConsentSurface({
         </Pressable>
       ) : null}
       <View style={[styles.card, { marginTop: insets.top + 24, marginBottom: insets.bottom + 24 }]}>
-        <Image source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
+        <Image source={require('../../../assets/icon.png')} style={styles.bunny} contentFit="contain" />
         <Text style={styles.title}>Help improve Burrow</Text>
         <Text style={styles.body}>
           With your permission, Burrow will share limited app activity and device information with TikTok and Meta to measure whether our ads are effective and improve our campaigns.

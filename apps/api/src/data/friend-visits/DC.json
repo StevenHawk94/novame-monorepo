@@ -1,0 +1,1077 @@
+{
+  "code": "DC",
+  "name": "Duchess",
+  "friendId": "adventure_friend_dc",
+  "waitingLines": [
+    "Oh, dear, I couldn’t possibly leave without seeing {partner}. I’ll put the kettle on.",
+    "Oh, dear, I’ll just wait right here for {partner}. These scones won’t eat themselves."
+  ],
+  "questions": [
+    {
+      "id": "DC-V01",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess hesitates, then leans in delicately.",
+      "lines": [
+        "Oh, dear, this one's a bit cheeky. But it's true!"
+      ],
+      "question": "Where do badgers go to the toilet?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "In special pits called latrines",
+          "reply": [
+            "Oh, quite right, darling!",
+            "Badgers dig latrine pits, often near the edges of their territory.",
+            "They even double as boundary markers. Practical and polite."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Right in the bedroom",
+          "reply": [
+            "Oh, dear heavens, NO.",
+            "They dig special pits called latrines, away from the sett.",
+            "We have standards. Very high standards."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "In a neighbor's garden",
+          "reply": [
+            "Oh, dear, how rude! Though, occasionally...",
+            "They dig latrine pits away from the sett.",
+            "Tidy homes, tidy manners."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Badgers use dug latrine pits, often at territory boundaries.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V02",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess places a rose and an apple side by side, with a knowing smile.",
+      "lines": [
+        "Oh, dear, these two are related. Family secrets."
+      ],
+      "question": "What do roses and apples have in common?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They both grow underground",
+          "reply": [
+            "Oh, dear, no.",
+            "They're in the same plant family, the rose family.",
+            "Along with pears, cherries, and strawberries. A big, sweet family."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They're in the same plant family",
+          "reply": [
+            "Oh, splendid! Cousins indeed!",
+            "Roses, apples, pears, cherries, and strawberries are all in the rose family.",
+            "Bartholomew brings me both on our anniversary. Now I know why."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Nothing at all",
+          "reply": [
+            "Oh, dear, they're family!",
+            "Roses and apples are both in the rose family.",
+            "So an apple is, in a way, a rose's cousin. Lovely."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Roses and apples are both in the family Rosaceae.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V03",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess pours two cups of tea and slides one to you.",
+      "lines": [
+        "Tea question! My specialty."
+      ],
+      "question": "Black, green, white, and oolong tea all come from what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The same plant: Camellia sinensis",
+          "reply": [
+            "Oh, well done!",
+            "It's all how the leaves are dried, rolled, and oxidized.",
+            "One plant, many personalities. Like Bartholomew."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Different plants for each kind",
+          "reply": [
+            "Oh, dear, it surprises everyone!",
+            "They all come from the same plant, Camellia sinensis.",
+            "The difference is how the leaves are processed. One plant, many moods."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Lavender bushes",
+          "reply": [
+            "Oh, dear, lovely smell, wrong plant.",
+            "All true teas come from Camellia sinensis.",
+            "Herbal 'teas' like chamomile are technically infusions."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Black, green, white and oolong teas come from Camellia sinensis.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V04",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess opens a tiny jar of golden-red threads, very carefully.",
+      "lines": [
+        "Oh, dear, this cost more than my hat. Spice question."
+      ],
+      "question": "What is saffron, actually?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Ground-up golden rocks",
+          "reply": [
+            "Oh, dear, no rocks in my paella.",
+            "It's the dried stigmas of a crocus flower.",
+            "Each flower has just three. Hand-picked. Very fancy."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Tree sap",
+          "reply": [
+            "Oh, dear, sticky, but no.",
+            "It's dried threads from crocus flowers.",
+            "Thousands of flowers make a small jar. Worth every penny."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "The dried thread-like parts of a crocus flower",
+          "reply": [
+            "Oh, well done, dear!",
+            "Each flower has just three threads, all picked by hand.",
+            "It takes thousands of flowers for a small amount. Precious."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Saffron is the dried stigmas of Crocus sativus, three per flower.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V05",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess touches a very old wooden table with deep respect.",
+      "lines": [
+        "About things that last. Like my marriage."
+      ],
+      "question": "Bristlecone pines are among the oldest living things. How old can they get?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About 100 years",
+          "reply": [
+            "Oh, dear, far older!",
+            "Some bristlecone pines are over 4,000 years old.",
+            "Older than the pyramids. Puts my wrinkles in perspective."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Over 4,000 years",
+          "reply": [
+            "Oh, splendid! Some are older than the pyramids!",
+            "One bristlecone pine is estimated at over 4,800 years old.",
+            "And I thought forty years was a long time."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 500 years",
+          "reply": [
+            "Oh, dear, keep going!",
+            "Some are over 4,800 years old.",
+            "Patient, twisty, and still growing. Inspiring."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Some Great Basin bristlecone pines exceed 4,800 years.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V06",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess shows you a sketch of a badger and a coyote side by side.",
+      "lines": [
+        "An unlikely friendship. My favorite kind."
+      ],
+      "question": "Which animal sometimes hunts alongside American badgers?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The swan",
+          "reply": [
+            "Oh, dear, what a picture. But no.",
+            "It's the coyote! They sometimes hunt together.",
+            "The badger digs, the coyote chases. Very efficient."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The coyote",
+          "reply": [
+            "Oh, how thrilling! Yes!",
+            "The badger digs underground, the coyote waits above. Teamwork.",
+            "An odd couple. The best couples usually are."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "The house cat",
+          "reply": [
+            "Oh, dear, cats don't share.",
+            "It's the coyote. One digs, one chases.",
+            "Even wild animals know: teamwork makes the dream work."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "American badgers and coyotes sometimes hunt cooperatively.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V07",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess stirs her tea with a cinnamon stick, smiling.",
+      "lines": [
+        "Oh, dear, my secret ingredient. Do you know where it comes from?"
+      ],
+      "question": "What is cinnamon?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The inner bark of a tree",
+          "reply": [
+            "Oh, splendid! Bark, indeed!",
+            "It curls into sticks as it dries.",
+            "Bartholomew thought it grew on bushes. Forty years and he still surprises me."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A dried root",
+          "reply": [
+            "Oh, dear, close, but no.",
+            "Cinnamon is the inner bark of a tree.",
+            "It curls up into quills as it dries."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A seed pod",
+          "reply": [
+            "Oh, dear, that's vanilla or cardamom.",
+            "Cinnamon is tree bark.",
+            "Rolled up and dried. Simple and lovely."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Cinnamon is the dried inner bark of Cinnamomum trees.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V08",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess stands, bows to you, then does a slow little twirl.",
+      "lines": [
+        "Oh, dear, this one's about a dance that lasts a lifetime."
+      ],
+      "question": "What do Laysan albatross couples do to bond?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Build a nest of shiny things",
+          "reply": [
+            "Oh, dear, that's a bowerbird.",
+            "Albatrosses do a whole synchronized dance together.",
+            "Partners often stay together for life. Lovely."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Sing duets at night",
+          "reply": [
+            "Oh, how romantic. Not quite.",
+            "They perform an elaborate courtship dance.",
+            "Many pairs stay together for decades."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A synchronized courtship dance",
+          "reply": [
+            "Oh, yes, darling! Bows, clacks, sky-pointing!",
+            "Pairs perform elaborate dances, and many stay together for decades.",
+            "Bartholomew and I still dance. Badly. Lovingly."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Laysan albatrosses perform synchronized courtship dances; pairs often bond for life.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V09",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess holds up an old photo of her and Bartholomew, then a recent one.",
+      "lines": [
+        "Oh, dear, people say old couples start to look alike. Do we?"
+      ],
+      "question": "Do long-term couples' faces really grow more alike over time?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Yes, they become identical",
+          "reply": [
+            "Oh, dear, Bartholomew has whiskers. I do not.",
+            "A large study found no real facial convergence over time.",
+            "Couples might just choose similar-looking partners to begin with."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only if they share toothbrushes",
+          "reply": [
+            "Oh, dear! Never!",
+            "A large study found no real evidence of faces converging.",
+            "We look alike in spirit, darling. Not in snout."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A big study found no real evidence of it",
+          "reply": [
+            "Oh, how surprising!",
+            "A large 2020 study found couples' faces don't converge over the years.",
+            "People may pick partners who look alike from the start. Fancy that."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Tea-makorn & Kosinski (2020): no evidence of facial convergence in long-term couples.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V10",
+      "friendId": "adventure_friend_dc",
+      "type": "Trivia",
+      "scene": "Duchess knits a tiny cow-shaped tea cozy and holds it up.",
+      "lines": [
+        "Oh, dear, cows have best friends. I adore this."
+      ],
+      "question": "What did a study find when cows were with their best friends?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They mooed louder",
+          "reply": [
+            "Oh, dear, perhaps, but no.",
+            "Cows were calmer and less stressed with their favorite buddy.",
+            "Friendship is a comfort, darling."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They were calmer and less stressed",
+          "reply": [
+            "Oh, how sweet!",
+            "Cows showed lower stress when paired with a preferred buddy.",
+            "Everyone needs a best friend. Even cows. Even badgers."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They ate less",
+          "reply": [
+            "Oh, dear, quite the opposite of stress-eating, but no.",
+            "Being with a preferred partner made cows calmer.",
+            "Lower heart rates. Happier hearts."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "McLennan (2013): heifers paired with preferred partners showed reduced stress responses.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "DC-V11",
+      "friendId": "adventure_friend_dc",
+      "type": "Preference",
+      "scene": "Duchess flips through a worn photo album, landing on a café.",
+      "lines": [
+        "Bartholomew and I went here every Friday for 30 years."
+      ],
+      "question": "Date night after years together: the old favorite spot, or somewhere brand new?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The old favorite",
+          "reply": [
+            "The old favorite. Oh, how lovely.",
+            "Same table, same order, same smile."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Somewhere new",
+          "reply": [
+            "Somewhere new. Oh, adventurous!",
+            "New memories keep old love young."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Oh, the old favorite for both of you. How sweet.",
+          "Oh, I can just picture it: {partner} and you order without the menu now.",
+          "Tradition is a love language, darling."
+        ],
+        "A:B": [
+          "Somewhere new for you. {partner} loves the old spot.",
+          "Oh, dear, take them somewhere new, then end at the old place for dessert.",
+          "Best of both. I've done this. It works."
+        ],
+        "B:A": [
+          "The old favorite for you. {partner} wants somewhere new.",
+          "Oh, dear, alternate! Odd Fridays old, even Fridays new.",
+          "Or try a new dish at the old place. Gentle adventure."
+        ],
+        "B:B": [
+          "Oh, somewhere new for both. How exciting!",
+          "Darling, you and {partner} are still exploring together. That's the secret.",
+          "Bartholomew and I just started trying new places. At 70. Never too late."
+        ]
+      }
+    },
+    {
+      "id": "DC-V12",
+      "friendId": "adventure_friend_dc",
+      "type": "Preference",
+      "scene": "Duchess unfolds a yellowed letter tied with ribbon.",
+      "lines": [
+        "This was from Bartholomew. In 1986."
+      ],
+      "question": "Love letters: on paper, or in a text?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "On paper",
+          "reply": [
+            "On paper. Oh, timeless.",
+            "Something to keep in a shoebox forever."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "In a text",
+          "reply": [
+            "In a text. Oh, modern and quick.",
+            "Instant love. My grandcubs approve."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Paper for both of you. Oh, how romantic.",
+          "I'd wager {partner} and you have a box of letters somewhere.",
+          "Read them again when you're 80. You'll cry. Happily."
+        ],
+        "A:B": [
+          "Texts for you. {partner} prefers paper.",
+          "They want something to hold.",
+          "Print your favorite text. Hand it over. Sneaky and sweet."
+        ],
+        "B:A": [
+          "Paper for you. {partner} prefers texts.",
+          "Oh, dear, write them one letter a year. Just one.",
+          "They'll pretend it's old-fashioned. They'll keep it forever."
+        ],
+        "B:B": [
+          "Texts for both of you. Oh, efficient love.",
+          "So you and {partner} probably screenshot the good ones.",
+          "My granddaughter says 'that's the new shoebox.' Clever girl."
+        ]
+      }
+    },
+    {
+      "id": "DC-V13",
+      "friendId": "adventure_friend_dc",
+      "type": "Preference",
+      "scene": "Duchess strikes a match and lights a small candle on your table.",
+      "lines": [
+        "Oh, dear, keeping the spark alive. After 40 years, I'm an expert."
+      ],
+      "question": "Keeping the spark: weekly date night, little daily surprises, or one big trip a year?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Weekly date night",
+          "reply": [
+            "Weekly date night. Oh, reliable romance.",
+            "Never let a week go by without each other."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Little daily surprises",
+          "reply": [
+            "Daily surprises. Oh, how charming.",
+            "A note in a lunchbox, a flower on a pillow."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "One big trip a year",
+          "reply": [
+            "A big trip. Oh, how grand!",
+            "A whole year of looking forward to it."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Weekly date nights for both. Oh, how steady.",
+          "{partner} and you will never run out of Fridays.",
+          "Bartholomew and I never skipped one. Except for the flood of '94."
+        ],
+        "A:B": [
+          "Daily surprises for you. {partner} prefers a weekly date.",
+          "Oh, dear, sneak a surprise into every date night.",
+          "They'll never see it coming. Every week."
+        ],
+        "A:C": [
+          "Big trip for you. {partner} prefers weekly dates.",
+          "Oh, dear, plan the trip on your date nights.",
+          "Map out the adventure together. Very romantic."
+        ],
+        "B:A": [
+          "Weekly dates for you. {partner} loves daily surprises.",
+          "Oh, dear, combine them! A tiny surprise on every date night.",
+          "A flower on the table. A note in the menu. Lovely."
+        ],
+        "B:B": [
+          "Daily surprises for both. Oh, delightful.",
+          "Oh, I can just picture it: you and {partner} are always leaving little notes, aren't you?",
+          "Small things, every day. That's the real magic."
+        ],
+        "B:C": [
+          "Big trip for you. {partner} loves daily surprises.",
+          "Oh, dear, hide trip hints in their daily surprises.",
+          "By the end of the year, they'll know where you're going."
+        ],
+        "C:A": [
+          "Weekly dates for you. {partner} dreams of a big trip.",
+          "Oh, dear, save a little each date night for the big trip.",
+          "Romance and savings. Very sensible."
+        ],
+        "C:B": [
+          "Daily surprises for you. {partner} wants a big trip.",
+          "Oh, dear, leave clues to the trip in little daily notes.",
+          "A treasure hunt to the airport. Charming!"
+        ],
+        "C:C": [
+          "Big trips for both. Oh, adventurers!",
+          "Darling, {partner} and you probably plan the next one on the way home.",
+          "Send me a postcard, darling."
+        ]
+      }
+    },
+    {
+      "id": "DC-V14",
+      "friendId": "adventure_friend_dc",
+      "type": "Preference",
+      "scene": "Duchess sits in your rocking chair and rocks slowly, smiling at the ceiling.",
+      "lines": [
+        "Let's dream about growing old together."
+      ],
+      "question": "Growing old together: rocking chairs on a porch, or a tiny adventure van?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Rocking chairs",
+          "reply": [
+            "Rocking chairs. Oh, I'm with you.",
+            "Slow evenings, lemonade, waving at neighbors."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Adventure van",
+          "reply": [
+            "Adventure van. Oh, how daring!",
+            "Wrinkles and road trips."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Rocking chairs for both of you. Oh, so peaceful.",
+          "I'd wager {partner} and you will wave at every neighbor, every evening.",
+          "Bring a blanket. Porches get chilly."
+        ],
+        "A:B": [
+          "The van for you. {partner} wants rocking chairs.",
+          "Oh, dear, roam first, rock later.",
+          "Bring the rocking chairs IN the van. Problem solved."
+        ],
+        "B:A": [
+          "Rocking chairs for you. {partner} wants the van.",
+          "Oh, dear, take the van to visit porches!",
+          "Rock a little, roam a little."
+        ],
+        "B:B": [
+          "Adventure van for both. Oh, how bold!",
+          "So you and {partner} will be the coolest grandparents ever.",
+          "Bartholomew wants one now. Oh, dear."
+        ]
+      }
+    },
+    {
+      "id": "DC-V15",
+      "friendId": "adventure_friend_dc",
+      "type": "Preference",
+      "scene": "Duchess hums a waltz and sways slightly in your kitchen.",
+      "lines": [
+        "We still dance, Bartholomew and I."
+      ],
+      "question": "Dancing in the kitchen: constantly, or only on special occasions?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Constantly",
+          "reply": [
+            "Constantly. Oh, how wonderful.",
+            "Dishes get done slower, but who cares."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only on special occasions",
+          "reply": [
+            "Special occasions. Oh, saving the magic.",
+            "Makes it feel extra special."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both dance constantly. Oh, how joyful!",
+          "{partner} and you probably waltz while the pasta boils.",
+          "Never stop. Even when your knees complain."
+        ],
+        "A:B": [
+          "Special occasions for you. {partner} dances constantly.",
+          "Darling, they're twirling while you're stirring.",
+          "Join them once. Just one spin. You'll see."
+        ],
+        "B:A": [
+          "You dance constantly. {partner} saves it for special occasions.",
+          "Oh, dear, make every Tuesday a special occasion.",
+          "They'll catch on. Then join in."
+        ],
+        "B:B": [
+          "Special occasions only, both of you. Oh, how sweet.",
+          "Oh, I can just picture it: you and {partner} save the magic for birthdays and anniversaries.",
+          "When you do dance, it must feel like a movie."
+        ]
+      }
+    },
+    {
+      "id": "DC-V16",
+      "friendId": "adventure_friend_dc",
+      "type": "Guess",
+      "scene": "Duchess settles in with tea and a look that says 'story time.'",
+      "lines": [
+        "Oh, dear, every couple has a favorite story."
+      ],
+      "question": "What story does your partner love telling about you two?",
+      "selfQuestion": "What story do you love telling about you two?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "How we met",
+          "reply": [
+            "How you met. Oh, the classic.",
+            "Every detail, every time."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The time something went hilariously wrong",
+          "reply": [
+            "Something hilariously wrong. Oh, the best kind.",
+            "Disasters make the best stories."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "How you met, and {partner} knew it.",
+          "Oh, they've heard you tell it at every dinner party.",
+          "And they still smile. That's love."
+        ],
+        "A:B": [
+          "The disaster story for you. {partner} expected how you met.",
+          "Oh, dear, they think you're sentimental. You're a comedian.",
+          "Tell both. Start sweet, end with the disaster."
+        ],
+        "B:A": [
+          "How you met for you. {partner} expected the disaster story.",
+          "Well, they think you're all comedy. You're a romantic.",
+          "Tell the sweet version tonight."
+        ],
+        "B:B": [
+          "The disaster story, and {partner} knew it.",
+          "Ha! They've laughed at it a hundred times.",
+          "Bartholomew still tells the canoe story. I still blush."
+        ]
+      }
+    },
+    {
+      "id": "DC-V17",
+      "friendId": "adventure_friend_dc",
+      "type": "Guess",
+      "scene": "Duchess tucks a quilt over your knees, very gently.",
+      "lines": [
+        "Caring for each other is everything."
+      ],
+      "question": "When you're sick, what would your partner bring you?",
+      "selfQuestion": "When your partner is sick, what would you bring them?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Soup and tea",
+          "reply": [
+            "Soup and tea. Oh, a classic healer.",
+            "Warm hands, warm bowls."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A stack of comics",
+          "reply": [
+            "Comics. Oh, how fun!",
+            "Laughter is medicine."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Every blanket in the house",
+          "reply": [
+            "Every blanket. Oh, a nest builder!",
+            "Burrito mode, activated."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Soup and tea, and {partner} knew it.",
+          "Oh, they know you'd arrive with a pot of soup and a teapot, both steaming.",
+          "Old-fashioned remedies. Bartholomew swears by my leek soup. Swears."
+        ],
+        "A:B": [
+          "Comics for you. {partner} guessed soup and tea.",
+          "They think you're the serious caretaker.",
+          "Laughter first, soup second. A balanced recovery."
+        ],
+        "A:C": [
+          "Every blanket for you. {partner} guessed soup and tea.",
+          "Darling, they expected a bowl. You brought a blizzard of quilts.",
+          "Add one bowl. Make it perfect."
+        ],
+        "B:A": [
+          "Soup and tea for you. {partner} guessed comics.",
+          "Bless them, they think you're the fun one.",
+          "Bring both. Soup in one hand, comics in the other."
+        ],
+        "B:B": [
+          "Comics, and {partner} knew it.",
+          "Oh, they know you'd prescribe a stack of comics and a silly voice for every character.",
+          "Laughter really is medicine, darling. The fun kind."
+        ],
+        "B:C": [
+          "Every blanket for you. {partner} guessed comics.",
+          "Ha! They expected jokes. You brought warmth.",
+          "Read them comics from inside the fort."
+        ],
+        "C:A": [
+          "Soup and tea for you. {partner} guessed blankets.",
+          "They think you'd smother them in quilts.",
+          "You'd smother them in soup. Lovely either way."
+        ],
+        "C:B": [
+          "Comics for you. {partner} guessed blankets.",
+          "Oh, dear, comics under a blanket fort. Best sick day ever.",
+          "They'll recover just to thank you."
+        ],
+        "C:C": [
+          "Every blanket, and {partner} knew it.",
+          "Oh, they know you'll build a fort around them.",
+          "Nobody stays cold on your watch."
+        ]
+      }
+    },
+    {
+      "id": "DC-V18",
+      "friendId": "adventure_friend_dc",
+      "type": "Guess",
+      "scene": "Duchess hums softly while stirring her tea, then catches herself.",
+      "lines": [
+        "Bartholomew loves when I do that."
+      ],
+      "question": "Which little habit of yours does your partner secretly love?",
+      "selfQuestion": "Which little habit of your partner's do you secretly love?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Humming while cooking",
+          "reply": [
+            "Humming while cooking. Oh, how sweet.",
+            "The kitchen becomes a little concert."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Talking to plants",
+          "reply": [
+            "Talking to plants. Oh, how charming.",
+            "The ferns are listening."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Humming, and {partner} knew it.",
+          "Oh, they love the background music of your kitchen.",
+          "Keep humming. Never stop."
+        ],
+        "A:B": [
+          "Plant chats for you. {partner} guessed humming.",
+          "Oh, dear, they think it's the humming. It's the ferns.",
+          "Tell them which plant is your favorite."
+        ],
+        "B:A": [
+          "Humming for you. {partner} guessed plant chats.",
+          "Well, they think it's the plants. It's the humming.",
+          "Hum to the plants. Double charm."
+        ],
+        "B:B": [
+          "Talking to plants, and {partner} knew it.",
+          "Oh, they love how you say good morning to the ferns.",
+          "The ferns love it too, darling."
+        ]
+      }
+    },
+    {
+      "id": "DC-V19",
+      "friendId": "adventure_friend_dc",
+      "type": "Guess",
+      "scene": "Duchess pulls a leather notebook from her bag. 'My memoir,' she whispers.",
+      "lines": [
+        "Oh, dear, if love were a book..."
+      ],
+      "question": "If your partner wrote your love story, what genre would it be?",
+      "selfQuestion": "If you wrote your love story, what genre would it be?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Cozy romance",
+          "reply": [
+            "Cozy romance. Oh, how lovely.",
+            "Candlelight, rain, and tea."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Comedy of errors",
+          "reply": [
+            "Comedy of errors. Oh, how fun!",
+            "Chaos and laughter, chapter after chapter."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Cozy romance, and {partner} knew it.",
+          "Oh, they'd write chapter after chapter of cuddles.",
+          "A bestseller, I'm sure."
+        ],
+        "A:B": [
+          "Comedy for you. {partner} guessed cozy romance.",
+          "They think it's all candles. You remember the chaos.",
+          "Both are true. That's the secret of 40 years."
+        ],
+        "B:A": [
+          "Cozy romance for you. {partner} guessed comedy.",
+          "They think you see the chaos. You see the candlelight.",
+          "Co-write it. Romance with a funny chapter."
+        ],
+        "B:B": [
+          "Comedy of errors, and {partner} knew it.",
+          "Bless them, they'd include every disaster.",
+          "The best love stories are the funny ones."
+        ]
+      }
+    },
+    {
+      "id": "DC-V20",
+      "friendId": "adventure_friend_dc",
+      "type": "Guess",
+      "scene": "Duchess gazes out the window, smiling at something far away.",
+      "lines": [
+        "Forty years from now. Picture it, darling."
+      ],
+      "question": "Forty years from now, what will your partner still do every morning?",
+      "selfQuestion": "Forty years from now, what will you still do every morning?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Make the tea for two",
+          "reply": [
+            "Tea for two. Oh, how lovely.",
+            "A morning ritual for a lifetime."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Steal all the blankets",
+          "reply": [
+            "Steal the blankets. Oh, dear, a classic.",
+            "Some things never change."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Tea for two, and {partner} knew it.",
+          "Oh, a morning cup together forever.",
+          "Bartholomew makes mine. Forty years. Never missed one."
+        ],
+        "A:B": [
+          "Blanket thief. {partner} guessed tea.",
+          "Well, they expected a warm cup. They got cold toes.",
+          "Make them tea as an apology. Every morning."
+        ],
+        "B:A": [
+          "Tea for you. {partner} guessed blanket theft.",
+          "Ha! They think you're a thief. You're a tea maker.",
+          "Make the tea. Leave the blankets."
+        ],
+        "B:B": [
+          "Blanket theft, and {partner} knew it.",
+          "Darling, they've accepted their fate.",
+          "Forty more years of cold toes. That's commitment."
+        ]
+      }
+    }
+  ]
+}

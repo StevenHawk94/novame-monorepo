@@ -2,16 +2,16 @@
   "expo": {
     "name": "Burrow",
     "slug": "novame-mobile",
-    "version": "1.0.24",
+    "version": "1.0.25",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "novame",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/branding/splash-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#3D160B"
+      "backgroundColor": "#3f150b"
     },
     "ios": {
       "supportsTablet": true,
@@ -34,8 +34,8 @@
       "versionCode": 1,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F8E2C1"
+        "foregroundImage": "./assets/branding/android-adaptive-foreground.png",
+        "backgroundColor": "#3f150b"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": true,
@@ -46,6 +46,9 @@
         "android.permission.VIBRATE",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
+    },
+    "web": {
+      "favicon": "./assets/branding/favicon-32.png"
     },
     "plugins": [
       "expo-router",
@@ -93,7 +96,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "App needs microphone access to record voice to transcript to text and analyze."
+          "microphonePermission": "Burrow uses your microphone when you choose to record a private surprise message for your partner."
         }
       ],
       "./plugins/with-foreground-audio-only",
@@ -132,18 +135,21 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icon.png",
+          "image": "./assets/branding/splash-logo.png",
           "imageWidth": 140,
           "resizeMode": "contain",
-          "backgroundColor": "#3D160B",
+          "backgroundColor": "#3f150b",
           "android": {
-            "image": "./assets/icon.png",
+            "image": "./assets/branding/splash-logo.png",
             "imageWidth": 140,
-            "backgroundColor": "#3D160B"
+            "backgroundColor": "#3f150b"
           }
         }
       ],
-      "@sentry/react-native/expo"
+      "@sentry/react-native/expo",
+      ["expo-secure-store", { "faceIDPermission": false, "configureAndroidBackup": false }],
+      "./plugins/with-encrypted-storage-backup",
+      "./plugins/with-mobile-branding"
     ],
     "experiments": {
       "typedRoutes": true

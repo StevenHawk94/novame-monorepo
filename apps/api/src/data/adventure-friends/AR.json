@@ -1,0 +1,1549 @@
+{
+  "code": "AR",
+  "id": "adventure_friend_ar",
+  "name": "Arlo",
+  "gender": "he",
+  "species": "Aardvark",
+  "partner": "Pia (she)",
+  "emotionalState": "同居3年，小事累积：每天一堆小摩擦也一堆小确幸，学着用零食和幽默化解",
+  "speakingStyle": "热心话痨，爱自嘲，爱说 Small thing, but...",
+  "catchphrase": "Small thing, but...",
+  "art": [
+    "Aardvark_02_Variant1.webp",
+    "Aardvark_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "AR-01",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "Arlo is sniffing at a hole in the tunnel wall, looking tired but happy.",
+      "lines": [
+        "Oh! A new face. Sorry, I'm checking if this hole is mine or Pia's.",
+        "Three years living together. We still own two of everything.",
+        "Small thing, but she squeezes the toothpaste from the MIDDLE."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a crime, honestly.",
+          "reaction": [
+            "Right?! Thank you. She'll say it's tradition.",
+            "Anyway, it's cute. I think."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Do they at least do the dishes?",
+          "reaction": [
+            "She does! With a song. A bad song.",
+            "I'd miss it if she stopped."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Nod slowly.",
+          "reaction": [
+            "You get it. You really do.",
+            "Okay, I'm gonna go fix the toothpaste. Gently."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-02",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Hey, it's you again! Toothpaste update.",
+        "I bought a second tube. Hers and mine. A peace treaty.",
+        "Small thing, but she STILL uses mine."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Maybe she likes yours.",
+          "reaction": [
+            "...Oh. Huh. I never thought of that.",
+            "Mine is the minty one. She might just like mint."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Hide yours.",
+          "reaction": [
+            "I tried. She found it in four minutes.",
+            "She has a nose for toothpaste. It's scary."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Laugh quietly.",
+          "reaction": [
+            "Go ahead, it's funny.",
+            "Tube war, day nine hundred and something."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-03",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": "Arlo is lining up single socks along a wall like a tiny exhibit.",
+      "lines": [
+        "Pia leaves one sock on the floor. Always one. Never a pair.",
+        "I found seventeen single socks this week. So I started a museum."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A sock museum?",
+          "reaction": [
+            "Admission is free. Gift shop is also socks.",
+            "Pia loves it. She donated one this morning."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does she know?",
+          "reaction": [
+            "She's the curator. She names them.",
+            "That one is 'Gerald.' Don't ask."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Pick up a sock.",
+          "reaction": [
+            "Careful. That's an early piece.",
+            "...You have a good eye for socks."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-04",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Pia hums while she cooks. Off-key. Every single time.",
+        "Small thing, but yesterday she stopped humming and I panicked.",
+        "She was just tasting the soup. I almost asked if she was okay."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You noticed the quiet.",
+          "reaction": [
+            "I did. I always notice the tiny stuff.",
+            "It turns out I'd miss the off-key more than any silence."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Aww.",
+          "reaction": [
+            "Don't aww me. I'm trying to be mad about the humming.",
+            "...I'm not mad. I lost that fight a long time ago."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Hum along a little.",
+          "reaction": [
+            "Oh no, you're off-key too.",
+            "Welcome to the family. Gently."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-05",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Quick question. When your partner does something small and annoying, do you say it or let it go?",
+        "I never know which one is the right move."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Let it go, mostly.",
+          "reaction": [
+            "Same, same. Until it's the fortieth time.",
+            "Then it comes out as a weird joke. Pia hates my weird jokes."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I say it, gently.",
+          "reaction": [
+            "Gently. Okay. I'm bad at gently.",
+            "I do loud and then I apologize with snacks."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Depends on the day.",
+          "reaction": [
+            "Honestly? Fair.",
+            "Some days a sock is a sock. Some days it's a whole mood."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-06",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": "Arlo is wearing a slightly too small apron that says WORLD'S OKAYEST COOK.",
+      "lines": [
+        "Pia says I hum when I eat. Loudly. A little growl.",
+        "I had no idea! Three years! Nobody told me!",
+        "Turns out I have annoying things too. Small thing, but... fair."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What does the growl sound like?",
+          "reaction": [
+            "She says it's like a tiny engine. A happy engine.",
+            "...I think that's a compliment?"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Equal rights for annoyances.",
+          "reaction": [
+            "Exactly. A balanced household.",
+            "We keep a tally on the wall. It's tied, mostly."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Pretend you didn't hear it.",
+          "reaction": [
+            "Too late. I know what I sound like now.",
+            "Hm. Hm-hm-hm. Hm. Okay, I'll be normal."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-07",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Arlo sits down slowly, quiet for once.",
+      "lines": [
+        "Sometimes I wonder if the small things add up.",
+        "Like thirty tiny annoyances, and then one day it's a big one.",
+        "But last night Pia fell asleep on my shoulder mid-sentence. Tiny thing. It erased all thirty."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Tiny things work both ways.",
+          "reaction": [
+            "Yeah. They do. I keep forgetting that.",
+            "The good ones are small too. I just have to notice them."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you tell her?",
+          "reaction": [
+            "...No. I just stayed very still so she wouldn't wake up.",
+            "Maybe I'll tell her tomorrow. With a snack."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Listen quietly.",
+          "reaction": [
+            "Thanks. Not everything needs a fix.",
+            "Sometimes it just needs a shoulder. Mine was numb for an hour. Worth it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-08",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "We made a rule. Anything annoying gets said with a snack.",
+        "It's silly. It works. Pia brings the snack first, then the sentence.",
+        "Yesterday she brought three snacks. I was nervous. It was about the sock museum."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A snack warning system.",
+          "reaction": [
+            "Exactly. A small crunch before a big feeling.",
+            "I've started making the snack before I even know what to say."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What was the sock thing?",
+          "reaction": [
+            "She wants to retire Gerald. I said no. We compromised.",
+            "Gerald stays. In a smaller frame."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Ask for a snack.",
+          "reaction": [
+            "Ha! Here. Ant crackers. Don't tell Pia I've been sharing.",
+            "You can't tell her anything is annoying, okay? Rule's rule."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-09",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": "Arlo spreads a leaf on the ground and sets out tiny carved bug-shaped crackers.",
+      "lines": [
+        "I made a practice picnic! Pia's at work. We're doing one tomorrow.",
+        "Just sit with me. Tell me if the tiny sandwiches look weird."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They look great.",
+          "reaction": [
+            "Really? I'm so nervous it's silly.",
+            "She's going to say 'aww' and then eat the whole plate."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Add a flower.",
+          "reaction": [
+            "Ooh. A flower. That's a Pia move. Good eye.",
+            "See, this is why I show you things."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Take a bite.",
+          "reaction": [
+            "Well? ...Good? Great. I'm cooking for you forever.",
+            "Kidding. Mostly. I'll do the hum."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-10",
+      "friendId": "adventure_friend_ar",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten times. That's more than the pairs of socks Pia owns.",
+        "She told me yesterday I'm her favorite weird. Small thing, but I keep it in my chest.",
+        "Your turn. How are you and your partner doing? Honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning is the whole thing, I think.",
+            "Come over. We'll do the picnic. Pia will insist on a toast."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We had a rough week, honestly.",
+          "reaction": [
+            "Rough weeks are real. Small things stack up. I know.",
+            "Come by. We'll feed you both, no questions."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Better since I started noticing small things.",
+          "reaction": [
+            "Yes! That's it! That's the whole secret.",
+            "Okay, picnic. Tomorrow. You're in."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P01",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Pia rearranged our burrow while I was out. Moved the bed. Moved the lamp. Moved ME.",
+        "I walked into the wall in the dark."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Did you fall?",
+          "reaction": [
+            "Gently. Like a leaf. A very confused leaf.",
+            "She said 'sorry' and laughed for ten minutes. I laughed too."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Rearranging is a love language.",
+          "reaction": [
+            "It's a chaos language. But okay, I'll take it.",
+            "The new layout is actually better. Don't tell her."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P02",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I forgot our anniversary by one day. I panicked and wrote 'sorry' in ant trails on the floor.",
+        "Pia stepped on it. Then she cried laughing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A cute apology.",
+          "reaction": [
+            "I thought so. Ants did all the work.",
+            "She said it was the best apology she's gotten. Low bar. High effort."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did she forgive you?",
+          "reaction": [
+            "Before I finished the second 'r'.",
+            "She just wanted the dinner we skipped. We had it at midnight."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P03",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Pia and I tried a no-phones dinner. We lasted six minutes.",
+        "Then she put hers in a drawer. I put mine in the sock museum."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "The sock museum holds phones now?",
+          "reaction": [
+            "Only for emergencies. And dinner. Both fancy.",
+            "It felt weirdly romantic. Two phones, side by side. Sleeping.",
+            "We might try again Sunday. With a timer shaped like a snail."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Six minutes is a start.",
+          "reaction": [
+            "Right? Next time, nine.",
+            "We're gonna be monks by spring.",
+            "Baby steps. Tiny, slightly clumsy ones. That's our whole thing."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P04",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I tried to fix a leaky tunnel roof by myself. To impress Pia.",
+        "It leaked faster. She found me under a bucket."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Bucket hat energy.",
+          "reaction": [
+            "She said that exact thing! I'm wearing it now. Officially.",
+            "She fixed the roof in two minutes. Humbling."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did she laugh?",
+          "reaction": [
+            "Yes. Then she held the bucket while I fixed it.",
+            "We were both soaked. Best date of the month."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P05",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Pia asked what I wanted for my birthday. I said 'nothing.' She looked at me for a full minute.",
+        "So I said 'okay, one dumb thing.' She wrote it down."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "What was the dumb thing?",
+          "reaction": [
+            "A little jar of dirt from where we first met.",
+            "I know. Embarrassing. She's making it a jar with a ribbon."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's not dumb.",
+          "reaction": [
+            "You're kind. It's a little dumb. It's also the best gift.",
+            "I might cry on my birthday. I'm warning you."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P06",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We argued about whose turn it was to cook. Neither wanted to. Neither wanted to say it.",
+        "We ate crackers for dinner and watched the ceiling."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Cracker night is underrated.",
+          "reaction": [
+            "Ceiling night too. That's a whole genre.",
+            "We made up shapes in the cracks. Pia found a bunny."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did you say sorry?",
+          "reaction": [
+            "We both did. At the same time. Same words.",
+            "Then we argued about who said it first. Peak us."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P07",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Pia caught me practicing a compliment in the mirror.",
+        "I was saying 'you look nice' with different faces."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Which face won?",
+          "reaction": [
+            "The soft one. The 'I mean it' one.",
+            "She said all three worked. Then asked why I needed three."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's really sweet.",
+          "reaction": [
+            "It's embarrassing and sweet. Both. At once.",
+            "I'm going to do it again next week.",
+            "I'm adding a fourth face. Tender but also slightly goofy."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P08",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Pia surprised me with new socks. A matching pair. Her first ever.",
+        "I didn't know what to do. I held them like a baby."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A matching pair!",
+          "reaction": [
+            "For the sock museum. 'Exhibit One: The Pair.'",
+            "She's growing. We both are.",
+            "She also got me tiny gloves, for no reason at all."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Wear them to dinner.",
+          "reaction": [
+            "I did. She noticed and pretended not to.",
+            "That's how I knew she noticed.",
+            "I wore them on a walk. We matched our steps."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P09",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the toothpaste thing? We're up to three tubes now.",
+        "Pia's, mine, and a 'neutral zone' tube we both use."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A peace tube.",
+          "reaction": [
+            "Diplomatic toothpaste. Very mature.",
+            "Last week she squeezed it from the middle. I said nothing. Growth.",
+            "Pia says we should write a treaty. I'm drafting the preamble."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Still a crime.",
+          "reaction": [
+            "Always. But a loving crime.",
+            "Some crimes you just let slide.",
+            "Pia agrees. She still does it and she's proud of it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P10",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Gerald the sock got his own tiny frame. Pia wrote a plaque.",
+        "'Gerald. Beloved. Missing his other half since Spring.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Poor Gerald.",
+          "reaction": [
+            "I know. We keep an eye out for him.",
+            "If you find a match, I'll know. And I'll cry."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Best museum ever.",
+          "reaction": [
+            "High praise. The reviews are in: five stars.",
+            "One review is from Pia. It's mostly emojis.",
+            "We're thinking of a gift shop. It would only sell used socks."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P11",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still think about the snack rule. It's the best thing we ever did.",
+        "Yesterday I said 'I felt left out' and passed a cracker. She just hugged me."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so sweet.",
+          "reaction": [
+            "I thought I'd mess it up. I didn't.",
+            "The cracker did half the work. Honestly.",
+            "Next up: a rule for apologies. Cookies are involved."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A cracker is a tiny white flag.",
+          "reaction": [
+            "Yes! A flag with sesame seeds.",
+            "Maybe I should design flags. Small thing, but I have ideas.",
+            "I want to draw a flag with an ant on it. Strong branding."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P12",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the practice picnic? We did the real one.",
+        "Pia ate the whole plate and said 'aww' exactly like I predicted."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Called it.",
+          "reaction": [
+            "I know her patterns now. Small thing, big win.",
+            "She also left a note in the basket. I'm keeping it forever."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did she cry?",
+          "reaction": [
+            "A little. Happy crying. The best crying.",
+            "I did too. We looked like two leaky roofs.",
+            "We stayed until the stars came out. Nobody talked much."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P13",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: love is mostly noticing.",
+        "Not big gestures. Just noticing when they're tired or humming or sad.",
+        "Don't quote me. I'm an aardvark."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's a good take.",
+          "reaction": [
+            "Thanks. I came up with it in the tunnel.",
+            "It took me nine tunnels. Worth it.",
+            "I learned it from Pia. She notices everything, even my sock count."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What if you don't notice?",
+          "reaction": [
+            "Then you say 'hey, I missed it, tell me.'",
+            "That counts as noticing too. I'm pretty sure.",
+            "Noticing counts too. Even asking for help. Especially that."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P14",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: you can love someone and still hate how they chew.",
+        "Both things are true. At the same time. In my ears."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Fair. Totally fair.",
+          "reaction": [
+            "Thank you! Chewing is a lot.",
+            "I chew like a small thunderstorm, apparently.",
+            "We recorded each other chewing once. We cried laughing."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does she say it?",
+          "reaction": [
+            "She says 'chewing, babe.' With a smile. It works.",
+            "We're both weird chewers. It evens out.",
+            "Love means making peace with each other's noises."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P15",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: tidying up their mess without saying anything is romantic.",
+        "But also the second time, you can ask for a thank-you."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A silent thank-you counts.",
+          "reaction": [
+            "Exactly. A look. A kiss on the head. Something.",
+            "Even a cracker. I'm easy.",
+            "She says thank you with a loud kiss. Hard to top."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Ask for the thank-you.",
+          "reaction": [
+            "Yes. Loudly. With a snack.",
+            "Balance. Always balance.",
+            "We keep it light. Nobody keeps score except the sock museum."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P16",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Okay, important question. What's your partner's tiniest annoying habit?",
+        "The one you secretly love. Go."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They hum while they cook.",
+          "reaction": [
+            "Pia hums too! Cooking hummers unite.",
+            "I could listen to that forever. Don't tell her I said that."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They leave doors open.",
+          "reaction": [
+            "The classic. A little draft, a little love.",
+            "Close one. Open one. Repeat. It's a whole dance.",
+            "Open doors and hummed songs. They're love in small clothes."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P17",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you and your partner say sorry? Words? Snacks? Silence?",
+        "I'm collecting methods. For science."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Mostly words.",
+          "reaction": [
+            "Words. Good. Strong. Direct.",
+            "I'm learning to use more words and fewer crackers.",
+            "Words are brave. Mine just need a snack in between."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A hug first.",
+          "reaction": [
+            "Hug first. Words later. That's smart.",
+            "Sometimes my words come out wrong. Hugs never do.",
+            "Hugs fix half the words. The other half need crackers."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P18",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's something small your partner did recently that made you smile?",
+        "I need happy stories. Today was a socks day."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They made me tea.",
+          "reaction": [
+            "Tea. Simple. Perfect. I'm tearing up.",
+            "Pia makes tea too. Burned. I drink it anyway.",
+            "Tea is a hug you can drink. Pia taught me that."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They saved me a seat.",
+          "reaction": [
+            "Saving a seat is the best love language.",
+            "It means 'I thought about you while you weren't here.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P19",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Arlo is holding a tiny glowing jar of soil and trying to look casual.",
+      "lines": [
+        "Okay. So. This is the dirt from where Pia and I first met.",
+        "I carry it in my pocket on bad days.",
+        "It's silly. It's also the only thing that works."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's not silly at all.",
+          "reaction": [
+            "Thank you. I needed someone to say that.",
+            "I'll carry it a little taller today.",
+            "I'll keep carrying it. Smaller than a sock, bigger than a worry."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Hold it with Arlo.",
+          "reaction": [
+            "Oh. You're holding the jar. That's... that's big.",
+            "We're a very small club now. Welcome.",
+            "Some days we carry things together. That's all it is."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "AR-P20",
+      "friendId": "adventure_friend_ar",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Arlo's eyes are shiny. He stands very straight.",
+      "lines": [
+        "I wrote Pia a letter. A real one. Three lines.",
+        "Line one: thank you. Line two: I notice you. Line three: I'm still here.",
+        "I'm scared to give it to her."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Give it to her tonight.",
+          "reaction": [
+            "Tonight. Okay. Tonight. With a snack.",
+            "If I faint, tell the sock museum I loved them.",
+            "I'll leave it under her pillow. She'll find it in the morning."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Three lines is perfect.",
+          "reaction": [
+            "Three lines. Small thing, but it's everything.",
+            "You're a good friend. I'm saying that out loud.",
+            "I'll sign it with a tiny paw print. Extra credit."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_193",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G01",
+      "name": "Yellow Swallowtail",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 193,
+      "file": "Insect Displays/Yellow Swallowtail.webp",
+      "key": "burrow/adventure-gifts/v1/193-43bb101189d7c53c.webp",
+      "sha256": "43bb101189d7c53c4fcd14fb42c38b9d04334ac9b071905993c5c83435b5d791",
+      "bytes": 19400
+    },
+    {
+      "id": "adventure_gift_194",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G02",
+      "name": "Black Swallowtail",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 194,
+      "file": "Insect Displays/Black Swallowtail.webp",
+      "key": "burrow/adventure-gifts/v1/194-f9b245d5cf1ae30f.webp",
+      "sha256": "f9b245d5cf1ae30f4d1cbd7810689df53b9a9ca02ae91508ca30634e735b4c70",
+      "bytes": 16430
+    },
+    {
+      "id": "adventure_gift_195",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G03",
+      "name": "Green Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 195,
+      "file": "Insect Displays/Green Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/195-620a815a16226ab4.webp",
+      "sha256": "620a815a16226ab467090cecb49d2cccf5af844c6d2d810c1fa7547fb0fd3e2e",
+      "bytes": 15882
+    },
+    {
+      "id": "adventure_gift_196",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G04",
+      "name": "Zebra Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 196,
+      "file": "Insect Displays/Zebra Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/196-fc146efbfbedfb3b.webp",
+      "sha256": "fc146efbfbedfb3b2d86a95f4c33e054e4b5724528bb640e555317c3d2771efb",
+      "bytes": 17500
+    },
+    {
+      "id": "adventure_gift_197",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G05",
+      "name": "Sunset Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 197,
+      "file": "Insect Displays/Sunset Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/197-155d829d589c4439.webp",
+      "sha256": "155d829d589c443943476bdc5c5ad77633afc14fb4f8d85a27896dd85054703b",
+      "bytes": 19864
+    },
+    {
+      "id": "adventure_gift_198",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G06",
+      "name": "Brimstone Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 198,
+      "file": "Insect Displays/Brimstone Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/198-2d53148a9033a71d.webp",
+      "sha256": "2d53148a9033a71d5b03348bf16e7d1b52fd0697ad442975bffa0f6b2a14c85c",
+      "bytes": 14296
+    },
+    {
+      "id": "adventure_gift_199",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G07",
+      "name": "Orange Tip",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 199,
+      "file": "Insect Displays/Orange Tip.webp",
+      "key": "burrow/adventure-gifts/v1/199-829f85bc99b8fc92.webp",
+      "sha256": "829f85bc99b8fc925255e25ebccbc5928276d5f2d73a7e05e0381364b2779432",
+      "bytes": 14108
+    },
+    {
+      "id": "adventure_gift_200",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G08",
+      "name": "Yellow Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 200,
+      "file": "Insect Displays/Yellow Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/200-128d9fa06796c874.webp",
+      "sha256": "128d9fa06796c874380589fefacd11c7d2351797933e4656c98d986055173106",
+      "bytes": 15918
+    },
+    {
+      "id": "adventure_gift_201",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G09",
+      "name": "Red Admiral",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 201,
+      "file": "Insect Displays/Red Admiral.webp",
+      "key": "burrow/adventure-gifts/v1/201-258aae22dd0543a3.webp",
+      "sha256": "258aae22dd0543a3ea49216fbce47536c32a1277906e4e4b414e5b666bfef42d",
+      "bytes": 19644
+    },
+    {
+      "id": "adventure_gift_202",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G10",
+      "name": "Peacock Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 202,
+      "file": "Insect Displays/Peacock Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/202-87d7991e326d944c.webp",
+      "sha256": "87d7991e326d944c1195119ff2c3a4b27fe1da02d8936c77b241b52172c4d50e",
+      "bytes": 17898
+    },
+    {
+      "id": "adventure_gift_203",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G11",
+      "name": "Owl Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 203,
+      "file": "Insect Displays/Owl Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/203-e9a62775ec1f7a4d.webp",
+      "sha256": "e9a62775ec1f7a4df64fbd369d3eeb8e92b3b8279307fbaa0ef79984d67b7c13",
+      "bytes": 18250
+    },
+    {
+      "id": "adventure_gift_204",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G12",
+      "name": "Painted Lady",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 204,
+      "file": "Insect Displays/Painted Lady.webp",
+      "key": "burrow/adventure-gifts/v1/204-a40a7298a5242834.webp",
+      "sha256": "a40a7298a52428346a88d84109778a9eac659232c8a5a4f64b9d7f4f7fd6d28d",
+      "bytes": 20764
+    },
+    {
+      "id": "adventure_gift_205",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G13",
+      "name": "Crimson Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 205,
+      "file": "Insect Displays/Crimson Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/205-4b5ec392b8d4494c.webp",
+      "sha256": "4b5ec392b8d4494c2659696057b51d3d1a3eb7d22e23bf4efdbc9ad4821a2e5a",
+      "bytes": 15250
+    },
+    {
+      "id": "adventure_gift_206",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G14",
+      "name": "Striped Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 206,
+      "file": "Insect Displays/Striped Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/206-92c65a9f464390f9.webp",
+      "sha256": "92c65a9f464390f90c6d5ca03adb3ce3b1a29ee39c3fa7dafc8da856623253db",
+      "bytes": 17658
+    },
+    {
+      "id": "adventure_gift_207",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G15",
+      "name": "Amber Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 207,
+      "file": "Insect Displays/Amber Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/207-3fad86a12e25b7e8.webp",
+      "sha256": "3fad86a12e25b7e8a9c4ec78612a21b1da968ea598ba73a4328a851f1a5b03ae",
+      "bytes": 16470
+    },
+    {
+      "id": "adventure_gift_208",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G16",
+      "name": "Red Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 208,
+      "file": "Insect Displays/Red Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/208-b40b7ec5ee8eca37.webp",
+      "sha256": "b40b7ec5ee8eca37589cb96d66c1151a3294c0502d275379f6f148588ac62218",
+      "bytes": 17536
+    },
+    {
+      "id": "adventure_gift_213",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G17",
+      "name": "Monarch Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 213,
+      "file": "Insect Displays/Monarch Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/213-418379bda8afe8f4.webp",
+      "sha256": "418379bda8afe8f4ddd97443181d20b173cd0fb5385c439dba48996caaa5603d",
+      "bytes": 21138
+    },
+    {
+      "id": "adventure_gift_214",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G18",
+      "name": "Blue Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 214,
+      "file": "Insect Displays/Blue Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/214-17fd6bcae40881ff.webp",
+      "sha256": "17fd6bcae40881ffb019527327028ea675ffd4df4e2dd9266c21e109e65fb161",
+      "bytes": 14790
+    },
+    {
+      "id": "adventure_gift_215",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G19",
+      "name": "Luna Moth",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 215,
+      "file": "Insect Displays/Luna Moth.webp",
+      "key": "burrow/adventure-gifts/v1/215-be978177606e0ced.webp",
+      "sha256": "be978177606e0ced13224b2f2b5972fda2e508d394b18d306401150652dfe6cf",
+      "bytes": 14806
+    },
+    {
+      "id": "adventure_gift_216",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G20",
+      "name": "Rosy Moth",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 216,
+      "file": "Insect Displays/Rosy Moth.webp",
+      "key": "burrow/adventure-gifts/v1/216-468343dfd66200b9.webp",
+      "sha256": "468343dfd66200b91dc8f4519197d2d53e7c1829782c5fb630f376aa490c8e5d",
+      "bytes": 15406
+    },
+    {
+      "id": "adventure_gift_218",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G21",
+      "name": "Emerald Dragonfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 218,
+      "file": "Insect Displays/Emerald Dragonfly.webp",
+      "key": "burrow/adventure-gifts/v1/218-b01f16c6a7c633c3.webp",
+      "sha256": "b01f16c6a7c633c3abd90f7975cafc0e288bb0c2037f117bd2784a88e16b437a",
+      "bytes": 15466
+    },
+    {
+      "id": "adventure_gift_219",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G22",
+      "name": "Honeybee Display",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 219,
+      "file": "Insect Displays/Honeybee Display.webp",
+      "key": "burrow/adventure-gifts/v1/219-d72d5b19b35eee5c.webp",
+      "sha256": "d72d5b19b35eee5c71cbe93979020c949b32e02551f0a74f4213b6c54cad5282",
+      "bytes": 16004
+    },
+    {
+      "id": "adventure_gift_224",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G23",
+      "name": "Firefly Display",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 224,
+      "file": "Insect Displays/Firefly Display.webp",
+      "key": "burrow/adventure-gifts/v1/224-7dd0a3105700d98f.webp",
+      "sha256": "7dd0a3105700d98f097257a6e22ed48464ce1ef0d5fdb7cd1b7a39b1c54af69f",
+      "bytes": 14048
+    },
+    {
+      "id": "adventure_gift_225",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G24",
+      "name": "Golden Beetle",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 225,
+      "file": "Insect Displays/Golden Beetle.webp",
+      "key": "burrow/adventure-gifts/v1/225-8b10ff5bbea92e98.webp",
+      "sha256": "8b10ff5bbea92e986a2b99482dda1e413c49cba2a8c03b2863197929f7d6e73a",
+      "bytes": 16178
+    },
+    {
+      "id": "adventure_gift_226",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G25",
+      "name": "Goliath Beetle",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 226,
+      "file": "Insect Displays/Goliath Beetle.webp",
+      "key": "burrow/adventure-gifts/v1/226-8c5f70d45e4a3d81.webp",
+      "sha256": "8c5f70d45e4a3d813827f0e7115475220e2689611c819866608a6392aeebda27",
+      "bytes": 15740
+    },
+    {
+      "id": "adventure_gift_228",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G26",
+      "name": "Patterned Beetle",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 228,
+      "file": "Insect Displays/Patterned Beetle.webp",
+      "key": "burrow/adventure-gifts/v1/228-1b53df5434c4ba0e.webp",
+      "sha256": "1b53df5434c4ba0e9078db1a5bfc78e15b3c6b0441144fb02c36612ff2b49d26",
+      "bytes": 15200
+    },
+    {
+      "id": "adventure_gift_230",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G27",
+      "name": "Striped Beetle",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 230,
+      "file": "Insect Displays/Striped Beetle.webp",
+      "key": "burrow/adventure-gifts/v1/230-228eb75f2d412952.webp",
+      "sha256": "228eb75f2d412952fdd313431f7889779f7eaf23ea5f76fba3e95f2cd28253b8",
+      "bytes": 17160
+    },
+    {
+      "id": "adventure_gift_232",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G28",
+      "name": "Tropical Butterfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 232,
+      "file": "Insect Displays/Tropical Butterfly.webp",
+      "key": "burrow/adventure-gifts/v1/232-c0d21f7c38ae6b81.webp",
+      "sha256": "c0d21f7c38ae6b814b7293d48346344beaeca0a127a553f51751b5f14a24273a",
+      "bytes": 17124
+    },
+    {
+      "id": "adventure_gift_233",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G29",
+      "name": "Skull Moth",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 233,
+      "file": "Insect Displays/Skull Moth.webp",
+      "key": "burrow/adventure-gifts/v1/233-b638429a0961e360.webp",
+      "sha256": "b638429a0961e3601cc4c4125b96f909c2434a50ea906a1484d09cbd807555e5",
+      "bytes": 18146
+    },
+    {
+      "id": "adventure_gift_234",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G30",
+      "name": "Tiger Moth",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 234,
+      "file": "Insect Displays/Tiger Moth.webp",
+      "key": "burrow/adventure-gifts/v1/234-96b0fdfdacf63fa4.webp",
+      "sha256": "96b0fdfdacf63fa4b97fdbc16eeeaa42892d32ddd29b278c88aed72fc9e18c09",
+      "bytes": 16750
+    },
+    {
+      "id": "adventure_gift_235",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G31",
+      "name": "Spotted Moth",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 235,
+      "file": "Insect Displays/Spotted Moth.webp",
+      "key": "burrow/adventure-gifts/v1/235-684c524ae691e9d5.webp",
+      "sha256": "684c524ae691e9d5a264f60cf0ab455495f6bfbc634c726694d52e50976889eb",
+      "bytes": 15136
+    },
+    {
+      "id": "adventure_gift_236",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G32",
+      "name": "Hawk Moth",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 236,
+      "file": "Insect Displays/Hawk Moth.webp",
+      "key": "burrow/adventure-gifts/v1/236-bd30e7f90ab8b52d.webp",
+      "sha256": "bd30e7f90ab8b52d30217564e352964fdf95f9d044d487e45cca1dbf823cefda",
+      "bytes": 17150
+    },
+    {
+      "id": "adventure_gift_237",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G33",
+      "name": "Red Dragonfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 237,
+      "file": "Insect Displays/Red Dragonfly.webp",
+      "key": "burrow/adventure-gifts/v1/237-d7f8bc2713d63bcf.webp",
+      "sha256": "d7f8bc2713d63bcf340815ccdc2883e589d92fba5273b664afbc90180d09d611",
+      "bytes": 15596
+    },
+    {
+      "id": "adventure_gift_239",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G34",
+      "name": "Wasp Display",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 239,
+      "file": "Insect Displays/Wasp Display.webp",
+      "key": "burrow/adventure-gifts/v1/239-8bcbdd95984b8944.webp",
+      "sha256": "8bcbdd95984b8944a49d6e096c6407e69407ccc9c1db3622e51140611473eace",
+      "bytes": 15856
+    },
+    {
+      "id": "adventure_gift_240",
+      "friendId": "adventure_friend_ar",
+      "giftId": "AR-G35",
+      "name": "Banded Dragonfly",
+      "category": "Insect Displays",
+      "categoryCode": "C07",
+      "sourceId": 240,
+      "file": "Insect Displays/Banded Dragonfly.webp",
+      "key": "burrow/adventure-gifts/v1/240-96b9e742dee41066.webp",
+      "sha256": "96b9e742dee41066d9354afd471f85520a56fd2077d293d9dba25281686ceb31",
+      "bytes": 17898
+    }
+  ]
+}

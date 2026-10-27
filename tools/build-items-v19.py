@@ -8,7 +8,7 @@ their icon and pixels from neighboring cells cannot leak into the output.
 
 Outputs:
   tools/item-source/memory-items/each/memory.<icon-name>.webp
-  apps/mobile/assets/items/each/ (the selected 256 runtime icons only)
+  apps/mobile/assets/items/each/ (the current Tap Your Day base icons only)
   tools/item-source/memory-items/standardized-preview.html
   tools/item-source/memory-items/items-v31-image-qa.json
 
@@ -56,17 +56,17 @@ CANONICAL_ART_PROMOTIONS: dict[str, Path] = {
     "memory.1421_bed": OUTPUT_DIR / "memory.1457_bedroom.webp",
     "memory.2127_bus": OUTPUT_DIR / "memory.1439_car.webp",
     "memory.0718_rice_noodles": OUTPUT_DIR / "memory.0050_ramen.webp",
-    "memory.1541_workplace": ROOT / "apps/mobile/assets/items/tap-person/Work.webp",
-    "memory.1435_appointment_book": ROOT / "apps/mobile/assets/items/tap-person/Appointment.webp",
-    "memory.1304_yoga": ROOT / "apps/mobile/assets/items/tap-person/Yoga.webp",
-    "memory.1403_picnic": ROOT / "apps/mobile/assets/items/tap-person/Socializing.webp",
-    "memory.1491_restaurant": ROOT / "apps/mobile/assets/items/tap-person/Date.webp",
-    "memory.2261_event_ticket": ROOT / "apps/mobile/assets/items/tap-person/Event.webp",
-    "memory.1594_volunteer_center": ROOT / "apps/mobile/assets/items/tap-person/Volunteering.webp",
-    "memory.1363_movie_theater": ROOT / "apps/mobile/assets/items/tap-person/Movie.webp",
-    "memory.1362_television": ROOT / "apps/mobile/assets/items/tap-person/TV.webp",
-    "memory.5385_social_media": ROOT / "apps/mobile/assets/items/tap-person/social-media.webp",
-    "memory.2876_notebook": ROOT / "apps/mobile/assets/items/tap-person/Writing.webp",
+    "memory.1541_workplace": SOURCE_DIR / "canonical-promotions/memory.1541_workplace.webp",
+    "memory.1435_appointment_book": SOURCE_DIR / "canonical-promotions/memory.1435_appointment_book.webp",
+    "memory.1304_yoga": SOURCE_DIR / "canonical-promotions/memory.1304_yoga.webp",
+    "memory.1403_picnic": SOURCE_DIR / "canonical-promotions/memory.1403_picnic.webp",
+    "memory.1491_restaurant": SOURCE_DIR / "canonical-promotions/memory.1491_restaurant.webp",
+    "memory.2261_event_ticket": SOURCE_DIR / "canonical-promotions/memory.2261_event_ticket.webp",
+    "memory.1594_volunteer_center": SOURCE_DIR / "canonical-promotions/memory.1594_volunteer_center.webp",
+    "memory.1363_movie_theater": SOURCE_DIR / "canonical-promotions/memory.1363_movie_theater.webp",
+    "memory.1362_television": SOURCE_DIR / "canonical-promotions/memory.1362_television.webp",
+    "memory.5385_social_media": SOURCE_DIR / "canonical-promotions/memory.5385_social_media.webp",
+    "memory.2876_notebook": SOURCE_DIR / "canonical-promotions/memory.2876_notebook.webp",
 }
 
 GRID = 7
@@ -633,8 +633,11 @@ def main() -> None:
         raise ValueError(f"Output directory mismatch: unexpected={unexpected[:5]}, missing={missing[:5]}")
 
     bundled_ids = set(json.loads(BUNDLE_PATH.read_text())["itemIds"])
-    if len(bundled_ids) != 256:
-        raise ValueError(f"Expected 256 bundled item IDs, found {len(bundled_ids)}")
+    groups = json.loads((ROOT / "packages/engine/src/items/tap-your-day-local.json").read_text())
+    approved_ids = {choice["itemId"] for group in groups for key in ("defaults", "optional")
+                    for choice in group[key] if choice["itemId"].startswith("memory.")}
+    if bundled_ids != approved_ids:
+        raise ValueError("Bundled item IDs must match the current Tap Your Day vocabulary")
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     for existing in RUNTIME_DIR.glob("memory.*.webp"):
         if existing.stem not in bundled_ids:

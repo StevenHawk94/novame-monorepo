@@ -1,115 +1,58 @@
-import { createClient } from '@supabase/supabase-js'
-import { verifyToken } from '@/lib/auth-guard'
+import {createClient} from '@supabase/supabase-js'
+import {verifySensitiveSession} from '@/lib/auth-guard'
+import {securityRateLimit,securityFailure} from '@/lib/security-boundary'
+import {createHmac,randomInt} from 'node:crypto'
+export const runtime='nodejs'
+const uuid=v=>typeof v==='string'&&/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(v)
+const fail=(message,status=409)=>{throw Object.assign(Error(message),{status})}
 
-export const runtime = 'edge'
-
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  )
-}
-
-/**
- * POST: 删除用户账号及所有相关数据
- * 
- * App Store 要求：用户必须能在 App 内删除自己的账号
- * 
- * The retired Wisdom/community tables no longer need endpoint-specific
- * cleanup. Removing the profile applies the current schema's ON DELETE
- * cascades; the Auth row is deleted only after that succeeds.
- */
-export async function POST(request) {
-  try {
-    const { userId } = await request.json()
-    
-    if (!userId) {
-      return Response.json({ error: 'Missing userId' }, { status: 400 })
-    }
-    
-    const supabase = getSupabaseAdmin()
-
-    // ============================================================
-    // SECURITY (Module 6 #6 Step 1): require Bearer token matching
-    // body.userId. delete-account is the highest-impact endpoint --
-    // it cascade-deletes ALL of a user's data + their Supabase Auth
-    // entry. Before this guard, any anon caller knowing a user UUID
-    // could permanently destroy that account.
-    //
-    // Mobile attaches the token automatically via apiClient
-    // (apps/mobile/src/lib/account-api.ts line 130), so backend-only.
-    // Same pattern as publish-wisdom (commit 84e8151) and
-    // wisdom-center (commit 099973f).
-    // ============================================================
-    const authHeader = request.headers.get('authorization') || ''
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
-    if (!token) {
-      console.warn('[delete-account] POST rejected: no bearer token')
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const authUser = await verifyToken(token); const authErr = authUser ? null : new Error('invalid token')
-    if (authErr || !authUser) {
-      console.warn('[delete-account] POST rejected: token verify failed', authErr && authErr.message)
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (authUser.id !== userId) {
-      console.warn('[delete-account] POST rejected: token user', authUser.id, '!= body userId', userId)
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    console.log('Starting account deletion for user:', userId)
-    
-    // Delete the user's uploaded avatar before the profile row disappears.
-    {
-      const { data: profile, error: avatarProfileError } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', userId)
-        .maybeSingle()
-      if (avatarProfileError) throw avatarProfileError
-      
-      if (profile?.avatar_url && profile.avatar_url.includes(`/${userId}/`)) {
-        const urlParts = profile.avatar_url.split('/avatars/')
-        if (urlParts.length > 1) {
-          const filePath = urlParts[1]
-          const { error: avatarStorageError } = await supabase.storage.from('avatars').remove([filePath])
-          if (avatarStorageError) throw avatarStorageError
-        }
-      }
-    }
-    
-    // Delete the profile and all current relational dependents.
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId)
-    
-    // This single statement atomically applies every ON DELETE cascade. Do not
-    // continue to auth deletion unless the relational delete is confirmed.
-    if (profileError) throw profileError
-    
-    // Delete the Supabase Auth user last.
-    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-    
-    if (authError) throw authError
-    
-    console.log('Account deletion completed for user:', userId)
-    
-    return Response.json({
-      success: true,
-      message: 'Account and all associated data have been deleted',
-    })
-    
-  } catch (error) {
-    console.error('Delete account error:', error)
-    // Never report success for partial deletion. The client can retry safely;
-    // deletes and storage removals are idempotent.
-    return Response.json({ error: 'Account deletion is incomplete. Please try again.' }, { status: 500 })
+/** The confirmation is bound to one live session and expires in ten minutes.
+ * Linked accounts prove mailbox ownership again. Anonymous accounts have no
+ * recovery credential: they retain deletion, with explicit UI confirmation. */
+export async function POST(request){
+ try{
+  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
+  const identity=await verifySensitiveSession(request,db)
+  if(!identity)fail('Unauthorized',401)
+  const raw=await request.text();if(raw.length>2000)fail('invalid_request',400)
+  let body;try{body=JSON.parse(raw)}catch{fail('invalid_request',400)}
+  const {user,sessionId}=identity
+  if(body.userId!==user.id)fail('Unauthorized',401)
+  await securityRateLimit(db,request,user.id,'delete-account',10,600)
+  const proof=(id,code)=>createHmac('sha256',process.env.SUPABASE_SERVICE_ROLE_KEY).update(`delete:${user.id}:${sessionId}:${id}:${code}`).digest('hex')
+  const command=async(id,action,p_proof=null)=>{
+   const result=await db.rpc('security_delete_challenge_v1',{p_user:user.id,p_session:sessionId,p_id:id,p_action:action,p_proof})
+   if(result.error)fail('confirmation_unavailable',503)
+   if(result.data?.error)fail(result.data.error)
+   return result.data
   }
+  if(body.action==='prepare'){
+   const challengeId=crypto.randomUUID()
+   const requiresCode=user.is_anonymous!==true
+   const code=String(randomInt(10000000,100000000))
+   await command(challengeId,'create',requiresCode?proof(challengeId,code):null)
+   if(requiresCode){
+    if(!user.email||!user.email_confirmed_at)fail('Reconnect your sign-in method before deleting this account.',403)
+    if(!process.env.RESEND_API_KEY)fail('Confirmation email is temporarily unavailable.',503)
+    const sent=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,'Content-Type':'application/json'},
+     body:JSON.stringify({from:'Burrow Security <noreply@soulsayit.com>',to:[user.email],subject:'Confirm your Burrow account deletion',
+      text:`Your account deletion code is ${code}. It expires in 10 minutes. Enter it only if you want to permanently delete your Burrow account. If you did not request deletion, do not share this code.`}),signal:AbortSignal.timeout(10000)})
+    if(!sent.ok)fail('Could not send the confirmation code. Please try again.',503)
+   }else await command(challengeId,'authorize_guest')
+   return Response.json({success:true,challengeId,requiresCode},{headers:{'Cache-Control':'no-store'}})
+  }
+  if(body.action!=='delete'||!uuid(body.challengeId))fail('confirmation_required')
+  const previous=await command(body.challengeId,'status')
+  if(!previous.authorized){
+   if(typeof body.code!=='string'||!/^\d{6,8}$/.test(body.code))fail('Enter the confirmation code sent to your email.',400)
+   await command(body.challengeId,'verify',proof(body.challengeId,body.code))
+  }
+  // No permanent mutation happens before the explicit, verified confirmation.
+  // Triggers queue exact owned media for cleanup; a partial failure stays retryable.
+  const profile=await db.from('profiles').delete().eq('id',user.id)
+  if(profile.error)fail('Account deletion is incomplete. Please try again.',503)
+  const removed=await db.auth.admin.deleteUser(user.id)
+  if(removed.error)fail('Account deletion is incomplete. Please try again.',503)
+  return Response.json({success:true},{headers:{'Cache-Control':'no-store'}})
+ }catch(error){return securityFailure(error)}
 }

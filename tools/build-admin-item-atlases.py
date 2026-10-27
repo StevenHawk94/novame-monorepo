@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "tools/item-source/memory-items/each"
 OUTPUT = ROOT / "apps/admin/public/item-atlas"
 GENERATED = ROOT / "apps/admin/src/generated/item-atlas.json"
-METADATA = ROOT / "packages/engine/src/items/rule-metadata.json"
+METADATA = ROOT / "packages/engine/src/items/display-catalog.ts"
 FIRST_ROW = 2
 COUNT = 5439
 CELL = 64
@@ -29,7 +29,7 @@ def row_number(path: Path) -> int:
 
 
 def main() -> None:
-    catalog_version = json.loads(METADATA.read_text())["version"]
+    catalog_version = re.search(r"ITEM_CATALOG_VERSION = '([^']+)'", METADATA.read_text())[1]
     paths = sorted(SOURCE.glob("memory.*.webp"), key=row_number)
     actual = [row_number(path) for path in paths]
     expected = list(range(FIRST_ROW, FIRST_ROW + COUNT))

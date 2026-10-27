@@ -15,17 +15,21 @@ export async function authenticatedUserId(request) {
     .trim()
   if (!token) return null
   const verified = await verifyToken(token)
+  const expectedActor=request.headers.get('x-burrow-actor')
+  if(expectedActor&&expectedActor!==verified?.id)return null
   return verified?.id || null
 }
 
 export function commandStatus(error) {
   if (!error) return 200
-  if (error === 'price_changed' || error === 'price_confirmation_required') return 409
+  if (error === 'bunny_finalized' || error === 'adventure_invite_unavailable') return 409
+  if (error === 'price_changed' || error === 'price_confirmation_required' || error === 'day_changed') return 409
   if (error === 'memory_conflict' || error === 'journal_conflict' || error === 'sharing_conflict' || error === 'pair_changed') return 409
-  if (error === 'client_upgrade_required') return 409
+  if (error === 'client_upgrade_required' || error === 'photo_sync_pending') return 409
+  if (['visit_expired', 'visit_session_changed', 'already_completed'].includes(error)) return 409
   if (error === 'photo_conflict' || error === 'upload_expired') return 409
   if (error === 'not_found') return 404
-  if (error === 'not_paired' || error === 'plus_required' || error === 'feature_disabled') return 403
+  if (error === 'not_paired' || error === 'plus_required' || error === 'feature_disabled' || error === 'own_toy_only' || error === 'economic_domain_mismatch') return 403
   if (error === 'insufficient_balance') return 402
   if (error === 'cooldown_active' || error === 'care_cooldown' || error === 'daily_adventure_used'
       || error === 'already_full' || error === 'not_completed'
@@ -34,7 +38,7 @@ export function commandStatus(error) {
       || error === 'result_not_ready' || error === 'interaction_not_ready'
       || error === 'reward_no_longer_eligible' || error === 'adventure_pending'
       || error === 'record_already_used' || error === 'idempotency_conflict'
-      || error === 'game_locked' || error === 'answer_conflict' || error === 'answer_out_of_order'
+      || error === 'game_locked' || error === 'answer_conflict' || error === 'answer_out_of_order' || error === 'interaction_required'
       || error === 'battle_required' || error === 'already_done' || error === 'daily_limit_reached') return 409
   if (error === 'invalid_request' || error === 'invalid_amount'
       || error === 'quest_not_assigned' || error === 'not_in_progress'

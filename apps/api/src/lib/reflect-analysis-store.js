@@ -120,7 +120,7 @@ export async function persistReflectAnalyzerResult(supabase, {
     prompt_version: analyzer.promptVersion || REFLECT_ANALYZER_VERSION,
     weekly_eligible: false,
     weekly_evidence: null,
-    visual_concepts: analyzer.data.visualConcepts,
+    visual_concepts: [],
     connection_signals: analyzer.data.connectionSignals || [],
     connection_eligible: context.connectionEligible,
     connection_updates: updates,
@@ -142,24 +142,6 @@ export async function persistReflectAnalyzerResult(supabase, {
   const { error: analysisError } = await supabase.from('reflect_ai_analyses')
     .upsert(analysisRow, { onConflict: 'reflect_id' })
   if (analysisError) throw analysisError
-
-  if (analyzer.data.visualConcepts.length > 0) {
-    const { error: learningError } = await supabase.from('item_learning_jobs').upsert({
-      reflect_id: reflectId,
-      concepts: analyzer.data.visualConcepts,
-      matched_item_ids: (matchedItems || []).map((item) => item.itemId),
-      status: 'pending',
-      attempts: 0,
-      error: null,
-      processed_at: null,
-      evidence_version: 2,
-    }, { onConflict: 'reflect_id', ignoreDuplicates: true })
-    if (learningError) {
-      // This admin-only learning queue must never block a user's Connection
-      // update after the durable analysis row has already been saved.
-      console.warn('[reflect-analysis] item learning enqueue failed:', learningError.message)
-    }
-  }
 
   if (!context.pair || !updates) return
   if (connectionMode === 'immediate') {

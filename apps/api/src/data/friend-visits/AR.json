@@ -1,0 +1,1143 @@
+{
+  "code": "AR",
+  "name": "Arlo",
+  "friendId": "adventure_friend_ar",
+  "waitingLines": [
+    "Small thing, but I’d really like to say hi to {partner} before I go. Cracker?",
+    "Small thing, but I saved {partner} the best cracker. I’m guarding it till they’re back."
+  ],
+  "questions": [
+    {
+      "id": "AR-V01",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo shuffles in, sniffing your floorboards like they owe him money.",
+      "lines": [
+        "Small thing, but I brought a quiz. And crackers. Mostly crackers. Okay, question!"
+      ],
+      "question": "What does the name 'aardvark' mean?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Ant vacuum",
+          "reply": [
+            "Honestly accurate. Not the answer though.",
+            "It means 'earth pig,' from Afrikaans.",
+            "We're not pigs. We're just enthusiastic about dirt."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Earth pig",
+          "reply": [
+            "Yes! Earth pig. Pia calls me that when I hog the blanket.",
+            "It comes from Afrikaans: 'aarde' means earth, 'vark' means pig.",
+            "Not a pig, by the way. Just digs like one. Eats like one too."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Snout king",
+          "reply": [
+            "I'll take it as a compliment! But no.",
+            "It means 'earth pig' in Afrikaans.",
+            "Pia says snout king is my royal title now. No take-backs."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "'Aardvark' = 'earth pig' (Afrikaans).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V02",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo holds up a red coffee cherry from a plant, squinting.",
+      "lines": [
+        "Small thing, but this is where coffee comes from. I didn't know."
+      ],
+      "question": "What are coffee beans, actually?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The seeds inside a cherry-like fruit",
+          "reply": [
+            "Yes! Coffee beans are seeds!",
+            "They grow inside red 'coffee cherries,' usually two per fruit.",
+            "Pia's morning mood depends on a fruit seed. Respect the seed."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Beans from a bean plant, like green beans",
+          "reply": [
+            "Nope! Not related to green beans!",
+            "They're seeds inside a red, cherry-like fruit.",
+            "The fruit is edible too. Sweet, even."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Tree roots",
+          "reply": [
+            "Ha! No!",
+            "Coffee beans are seeds inside a red coffee cherry.",
+            "Pia would be very upset if coffee were roots."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Coffee beans are seeds of the coffee cherry (Coffea fruit).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V03",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo picks up a building block from your shelf and studies it.",
+      "lines": [
+        "This one is weird. Very weird."
+      ],
+      "question": "Which animal makes cube-shaped poop?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Penguin",
+          "reply": [
+            "Penguins are elegant! No cubes!",
+            "It's the wombat. Their poop comes out cube-shaped.",
+            "Their intestines have stretchy and stiff sections that form the corners."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Giraffe",
+          "reply": [
+            "Ha! Imagine dropping that from that height.",
+            "It's the wombat! Cubes!",
+            "They use the cubes to mark territory, and cubes don't roll away. Genius."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Wombat",
+          "reply": [
+            "YES. Wombat cubes! Nature's dice!",
+            "Their intestines shape it into cubes as it dries.",
+            "They stack them to mark territory. Pia wants me to stop telling this at dinner."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Wombats produce cube-shaped feces.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V04",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo boops your nose with his paw, then looks at the paw.",
+      "lines": [
+        "Small thing, but dogs have a special ID system. Right there on their nose."
+      ],
+      "question": "What's unique about a dog's nose print?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It changes color with the weather",
+          "reply": [
+            "Ha! Mood nose! No!",
+            "Every dog's nose print has a unique pattern.",
+            "Like fingerprints, but cuter and wetter."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Its pattern is unique, like a fingerprint",
+          "reply": [
+            "Yes! Unique nose prints!",
+            "Each dog's nose has its own pattern of ridges and bumps.",
+            "Some places even use them for identification. Boop ID."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "All dogs have the same nose print",
+          "reply": [
+            "Nope! Every dog's is different!",
+            "Nose prints are unique, like fingerprints.",
+            "Boop with confidence. Each boop is unique."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Dog nose prints have unique ridge patterns, comparable to fingerprints.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V05",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo puts his ear to the ground, eyes wide.",
+      "lines": [
+        "Small thing, but this happens only every 13 or 17 years."
+      ],
+      "question": "What do periodical cicadas do between their emergences?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Migrate south for the winter",
+          "reply": [
+            "No flying south! They stay put. Underground.",
+            "Periodical cicadas spend 13 or 17 years underground feeding on root sap.",
+            "Then they all come up at once. Huge, loud party."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Live underground, sipping tree roots, for 13 or 17 years",
+          "reply": [
+            "Yes! Long underground lives!",
+            "They drink sap from tree roots, then emerge all at once.",
+            "Billions sometimes. It's like a surprise party that took 17 years to plan."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Sleep in tree branches",
+          "reply": [
+            "Nope, they're underground the whole time!",
+            "13 or 17 years below ground, sipping root sap.",
+            "Then they all pop up at once and sing their hearts out."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Periodical cicadas live underground 13 or 17 years feeding on xylem from roots.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V06",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo sticks his tongue out, very far, then quickly pulls it back in. Embarrassed.",
+      "lines": [
+        "Don't be weird about this."
+      ],
+      "question": "About how long can an aardvark's tongue get?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About 12 inches",
+          "reply": [
+            "Yep! Basically a ruler!",
+            "Around 30 centimeters, long and sticky for scooping termites.",
+            "Pia once asked me to grab the remote with it. I did. We don't talk about it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About 2 inches",
+          "reply": [
+            "Ha! Cute. Way longer.",
+            "Aardvark tongues can reach around 12 inches.",
+            "Perfect for slurping termites. Terrible for kissing. Pia disagrees."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 6 feet",
+          "reply": [
+            "Okay, that's a garden hose, not a tongue!",
+            "It's around 12 inches. Still very long!",
+            "Long enough to slurp tens of thousands of termites in a night."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Aardvark tongues reach ~30 cm (about 12 in).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V07",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo eats bamboo-flavored crackers very slowly, one after another.",
+      "lines": [
+        "Small thing, but pandas would beat me in a snack contest."
+      ],
+      "question": "About how many hours a day can giant pandas spend eating?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About 1 hour",
+          "reply": [
+            "Way more! Way, way more!",
+            "Pandas can eat 10 to 16 hours a day.",
+            "Bamboo isn't very nutritious, so they eat constantly."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They don't eat at all",
+          "reply": [
+            "A panda on a diet? Never!",
+            "They eat 10 to 16 hours a day.",
+            "Bamboo all day. The ultimate snack schedule."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 10 to 16 hours",
+          "reply": [
+            "Yes! Most of the day!",
+            "Bamboo has few nutrients, so pandas eat a LOT of it.",
+            "They're basically professional snackers. Goals."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Giant pandas spend roughly 10–16 hours a day feeding.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V08",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo spots a photo of two prairie dogs touching faces on your wall.",
+      "lines": [
+        "This is the cutest greeting ever."
+      ],
+      "question": "How do prairie dogs greet family members?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They high-five",
+          "reply": [
+            "Ha! Love it. Not it.",
+            "They touch teeth and noses, like a little kiss.",
+            "It helps them recognize their own family members."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They ignore each other",
+          "reply": [
+            "Nope! Super social!",
+            "They greet with a 'kiss,' touching teeth.",
+            "Family recognition. Very wholesome."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They touch teeth, like a little kiss",
+          "reply": [
+            "Yes! A prairie dog kiss!",
+            "They press their mouths together to recognize family.",
+            "Pia and I tried. It was mostly nose. Still cute."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Prairie dogs greet relatives with 'greet kisses' (touching teeth).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V09",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo fans himself with a paper plate.",
+      "lines": [
+        "Termites are smarter than my thermostat."
+      ],
+      "question": "How do some termite mounds stay cool in hot weather?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The termites flap their wings constantly",
+          "reply": [
+            "Ha! Exhausting! No.",
+            "The mound's tunnels and chimneys move air around.",
+            "Natural ventilation. Engineers took notes."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Tunnels and chimneys move air through the mound",
+          "reply": [
+            "Yes! Natural air conditioning!",
+            "Air flows through chimneys and tunnels, helping keep the nest comfortable.",
+            "Architects have even copied the idea for buildings. Termites: honored."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They put ice in the middle",
+          "reply": [
+            "Where would they get ice?!",
+            "The mound is built with air channels that help control temperature.",
+            "It's basically a breathing building."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Termite mounds use passive ventilation; inspired Eastgate Centre design.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V10",
+      "friendId": "adventure_friend_ar",
+      "type": "Trivia",
+      "scene": "Arlo grabs your hand, then lets go, very shy.",
+      "lines": [
+        "Small thing, but this is the cutest fact ever."
+      ],
+      "question": "What do sea otters sometimes do while they sleep?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Hold hands so they don't drift apart",
+          "reply": [
+            "YES. I'm crying. They hold hands.",
+            "Sea otters often hold paws or wrap in kelp so they don't float away.",
+            "Pia and I tried it. Our burrow doesn't have currents. Still nice."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Sleep on the beach in a pile",
+          "reply": [
+            "Nope! They sleep in the water.",
+            "They hold paws so they don't drift apart.",
+            "Sometimes they wrap themselves in kelp too. Ocean blankets."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Snore really loudly",
+          "reply": [
+            "Maybe! But that's not the fact.",
+            "Sea otters hold hands so they don't drift apart.",
+            "Love that keeps you anchored. Literally."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Sea otters sometimes hold paws or wrap in kelp while resting.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "AR-V11",
+      "friendId": "adventure_friend_ar",
+      "type": "Preference",
+      "scene": "Arlo eyes your toothbrush cup with deep suspicion.",
+      "lines": [
+        "This matters to me. A lot."
+      ],
+      "question": "Toothpaste: squeeze from the middle, from the end, or roll it up?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "From the middle",
+          "reply": [
+            "A middle squeezer! No judgment.",
+            "Okay, a tiny bit of judgment. Pia does it too."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "From the end",
+          "reply": [
+            "From the end. Neat and tidy, I respect it.",
+            "The tube is calm. The tube feels safe."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Roll it up",
+          "reply": [
+            "Rolled up?! You're an artist.",
+            "Pia would like to meet you. Professionally."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "So you and {partner} are both middle squeezers! That's lovely.",
+          "No tube wars in your house. Just chaos, shared equally.",
+          "Honestly, that's what love is."
+        ],
+        "A:B": [
+          "Neat and tidy from the end. I respect it.",
+          "But {partner} might still squeeze from the middle. Don't fight, okay?",
+          "Think of their messy tube as a love note. A squished one."
+        ],
+        "A:C": [
+          "Rolled up, so fancy.",
+          "{partner} squeezes from the middle. An artist and a rebel!",
+          "Be gentle when you fix it every morning. It's love maintenance."
+        ],
+        "B:A": [
+          "A middle squeezer, no judgment.",
+          "But {partner} squeezes from the end. Tiny tube war ahead.",
+          "Buy two tubes. Trust me. It saved my relationship."
+        ],
+        "B:B": [
+          "You both squeeze from the end! A tidy household.",
+          "The tube in your bathroom is living its best life with {partner}.",
+          "Pia and I could never. We've tried. Twice."
+        ],
+        "B:C": [
+          "You roll it up. {partner} squeezes from the end.",
+          "Two tidy approaches. That's a strong team.",
+          "Just don't swap tubes by accident. It'll confuse everyone."
+        ],
+        "C:A": [
+          "Middle squeezer! Rebel energy.",
+          "But {partner} rolls it up like a pro.",
+          "Let them fix the tube. You bring the snacks. Fair trade."
+        ],
+        "C:B": [
+          "From the end, so neat.",
+          "{partner} rolls it up. You're both tidy people. Rare!",
+          "Different technique, same energy. Tube-approved couple."
+        ],
+        "C:C": [
+          "You both roll it up! Gallery-worthy bathroom.",
+          "Honestly, {partner} and you probably fold towels into swans too.",
+          "Pia and I are officially jealous. Teach us."
+        ]
+      }
+    },
+    {
+      "id": "AR-V12",
+      "friendId": "adventure_friend_ar",
+      "type": "Preference",
+      "scene": "Arlo notices your window cracked open and sniffs the breeze.",
+      "lines": [
+        "Pia and I fight about this every single night."
+      ],
+      "question": "Bedroom window at night: open a crack, or sealed shut?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Open a crack",
+          "reply": [
+            "Brave! Fresh air and a cold nose.",
+            "Pia would sleep with the window open in a snowstorm."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Sealed shut",
+          "reply": [
+            "Cozy fortress mode. Respect.",
+            "A sealed burrow is a happy burrow."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both sleep with a crack open! Matching cold noses.",
+          "Nobody negotiates the window in your house. {partner} and you just agree.",
+          "Must be nice. Pia and I have a treaty."
+        ],
+        "A:B": [
+          "Sealed shut for you. Cozy fortress.",
+          "But {partner} wants fresh air. Classic Pia-and-me energy.",
+          "Half-open window, extra blanket for you. Done. You're welcome."
+        ],
+        "B:A": [
+          "A crack of fresh air for you. Brave!",
+          "But {partner} wants it sealed shut. Cold nose versus warm blanket.",
+          "Try a tiny crack and an extra blanket on their side. Peace achieved."
+        ],
+        "B:B": [
+          "You both like it sealed shut! A warm little fortress.",
+          "I can picture it: {partner} and you sleep like toasty burritos. No drafts allowed.",
+          "Sweet dreams, you two. Very jealous."
+        ]
+      }
+    },
+    {
+      "id": "AR-V13",
+      "friendId": "adventure_friend_ar",
+      "type": "Preference",
+      "scene": "Arlo looks at your couch, then out the window, torn.",
+      "lines": [
+        "Small thing, but this is a big decision."
+      ],
+      "question": "Perfect lazy day: stay in all day, or a picnic outside?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Stay in all day",
+          "reply": [
+            "Blanket fort life. I'm already there.",
+            "Snacks within arm's reach. No shoes required."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Picnic outside",
+          "reply": [
+            "Fresh air and cracker crumbs!",
+            "Ants as guests. They'll bring friends."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Stay-in day for both of you! Blankets, snacks, zero plans.",
+          "{partner} and you don't leave the couch. That's an order.",
+          "Honestly the best kind of date."
+        ],
+        "A:B": [
+          "Picnic for you. Yay sunshine!",
+          "But {partner} wants to stay in the blanket fort. Classic.",
+          "Take the blanket outside and nap in the sun. Both win."
+        ],
+        "B:A": [
+          "Stay in for you. Blanket fort time.",
+          "But {partner} wants a picnic. Hmm.",
+          "Picnic in the living room. Crumbs included. Everyone's happy."
+        ],
+        "B:B": [
+          "Picnic for both of you! Fresh air date locked in.",
+          "Lowkey, you and {partner} probably have a picnic blanket ready by the door.",
+          "Pack crackers. Pack extra crackers. Ants are coming."
+        ]
+      }
+    },
+    {
+      "id": "AR-V14",
+      "friendId": "adventure_friend_ar",
+      "type": "Preference",
+      "scene": "Arlo spots a sticky note on your fridge and smiles knowingly.",
+      "lines": [
+        "Apologies are my specialty. I do a lot of them."
+      ],
+      "question": "After a small fight, what feels best?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A note",
+          "reply": [
+            "A note! Soft and sweet.",
+            "Written words can hug too."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Saying it out loud",
+          "reply": [
+            "Out loud. Brave. Face to face.",
+            "Hard to say, easy to feel."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A snack first, words after",
+          "reply": [
+            "The snack rule! Genius.",
+            "A crunch before a big feeling."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both pick notes! Tiny letter exchange.",
+          "{partner} and you probably have a drawer full of 'sorry' notes.",
+          "Keep them. Read them on anniversaries. Cry a little."
+        ],
+        "A:B": [
+          "Out loud for you. Brave!",
+          "But {partner} would rather get a note.",
+          "Say it, then leave a sticky note on their pillow. Double sorry."
+        ],
+        "A:C": [
+          "Snack first, genius.",
+          "But {partner} would love a note.",
+          "Tuck the note under the snack plate. Crunch and read."
+        ],
+        "B:A": [
+          "A note for you. Soft and sweet.",
+          "But {partner} needs to hear it out loud.",
+          "Write it, then read it to them. Both love languages covered."
+        ],
+        "B:B": [
+          "You both say it out loud! Brave couple.",
+          "So you and {partner} just look each other in the eye and fix it.",
+          "That's rare. Pia and I need snacks first."
+        ],
+        "B:C": [
+          "A snack first for you. Smart.",
+          "{partner} wants to hear it out loud.",
+          "Snack, then talk. The full apology combo. Patent pending."
+        ],
+        "C:A": [
+          "A note for you. Nice.",
+          "But {partner} wants a snack first.",
+          "Tape the note to a cookie. Perfect delivery system."
+        ],
+        "C:B": [
+          "Out loud for you. So brave.",
+          "{partner} wants a snack first. Honestly, snacks make words easier.",
+          "Bring a cracker. Then speak. Trust the process."
+        ],
+        "C:C": [
+          "Snack first, words after! You two follow the Arlo Rule.",
+          "Honestly, {partner} and you probably have a designated 'sorry snack.'",
+          "Pia and I are so proud of you."
+        ]
+      }
+    },
+    {
+      "id": "AR-V15",
+      "friendId": "adventure_friend_ar",
+      "type": "Preference",
+      "scene": "Arlo peeks into your kitchen, humming off-key.",
+      "lines": [
+        "Kitchens are where relationships are tested."
+      ],
+      "question": "Dinner at home: cook together, or one cooks and one cleans?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Cook together",
+          "reply": [
+            "Elbows and spoons! Chaos with kisses.",
+            "The soup might be bad. The night will be great."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "One cooks, one cleans",
+          "reply": [
+            "A well-oiled machine!",
+            "Efficient and secretly romantic."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both want to cook together! Elbows, spoons, chaos.",
+          "Every dinner with {partner} is a date. Soup optional.",
+          "Pia and I tried. The smoke alarm joined us."
+        ],
+        "A:B": [
+          "One cooks, one cleans for you. Efficient.",
+          "But {partner} wants to cook side by side.",
+          "Let them stir the soup while you set the table. Close enough."
+        ],
+        "B:A": [
+          "Cook together for you. So cute.",
+          "But {partner} likes one cooks, one cleans.",
+          "Cook together, then split the dishes. Or bribe them with dessert."
+        ],
+        "B:B": [
+          "You both like split duty. Well-oiled team.",
+          "I can picture it: {partner} and you never argue about who does what. Efficient love.",
+          "Somebody give you two a trophy."
+        ]
+      }
+    },
+    {
+      "id": "AR-V16",
+      "friendId": "adventure_friend_ar",
+      "type": "Guess",
+      "scene": "Arlo finds a party hat on your shelf and puts it on, very seriously.",
+      "lines": [
+        "Small thing, but this could go very wrong."
+      ],
+      "question": "If you threw your partner a surprise party, how would they react?",
+      "selfQuestion": "If your partner threw you a surprise party, how would you react?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Love it",
+          "reply": [
+            "A party lover! Confetti everywhere.",
+            "They'll be glowing all night."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hate it",
+          "reply": [
+            "Yikes, a quiet soul.",
+            "A surprise party is a gamble. Noted."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Pretend to love it",
+          "reply": [
+            "The polite smile! I know it well.",
+            "Smiles outside, panic inside."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You'd love it, and {partner} called it!",
+          "They know you well. Start planning the confetti.",
+          "Pia threw me one. I cried. Happy tears."
+        ],
+        "A:B": [
+          "You'd hate it, but {partner} guessed you'd love it. Yikes!",
+          "There might be a surprise party in your future.",
+          "Tell them now. Before the balloons arrive."
+        ],
+        "A:C": [
+          "You'd pretend. But {partner} guessed you'd love it.",
+          "Your polite smile is very convincing. Too convincing.",
+          "Maybe tell them the truth gently. Over snacks."
+        ],
+        "B:A": [
+          "You'd love it! But {partner} guessed you'd hate it.",
+          "They've been protecting you from parties for no reason.",
+          "Tell them you love surprises. Prepare for confetti."
+        ],
+        "B:B": [
+          "You'd hate it, and {partner} knew!",
+          "They read you perfectly. No parties, ever.",
+          "Surprise quiet dinner instead. Much safer."
+        ],
+        "B:C": [
+          "You'd pretend. But {partner} guessed you'd hate it.",
+          "They suspect more than you think.",
+          "Close enough. They'll probably plan something small."
+        ],
+        "C:A": [
+          "You'd love it, but {partner} thought you'd just pretend.",
+          "Your real joy looked fake to them. Oops!",
+          "Tell them it's real. Then let them plan one."
+        ],
+        "C:B": [
+          "You'd hate it. {partner} thought you'd pretend. So close!",
+          "They know you'd be polite. They just don't know how much you'd suffer.",
+          "Be honest. They'll plan a quiet dinner instead."
+        ],
+        "C:C": [
+          "You'd pretend to love it, and {partner} guessed it! Busted.",
+          "They see right through your polite smile.",
+          "That's real love. Seeing through the smile."
+        ]
+      }
+    },
+    {
+      "id": "AR-V17",
+      "friendId": "adventure_friend_ar",
+      "type": "Guess",
+      "scene": "Arlo sniffs a glowing mushroom by your door, eyes wide.",
+      "lines": [
+        "This is a personality test."
+      ],
+      "question": "Your partner finds a pretty glowing mushroom. What do they do?",
+      "selfQuestion": "You find a pretty glowing mushroom. What do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Bring it home to share",
+          "reply": [
+            "A romantic! Glowing gifts are the best gifts.",
+            "Pia would cry."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Tuck it away as a secret treasure",
+          "reply": [
+            "A collector! They have plans.",
+            "A secret mushroom museum is coming."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You'd bring it home to share, and {partner} knew!",
+          "They know you share every shiny thing you find.",
+          "Glowing gifts for everyone."
+        ],
+        "A:B": [
+          "You'd keep it as a treasure. {partner} guessed you'd share.",
+          "They're waiting for a glowing gift. It's in your drawer.",
+          "Let them admire it. Just for a minute. Then hide it again."
+        ],
+        "B:A": [
+          "You'd bring it home to share. {partner} guessed you'd keep it.",
+          "They think you're a secret collector. You're a sharer!",
+          "Surprise them tonight with the glow."
+        ],
+        "B:B": [
+          "You'd keep it as a treasure, and {partner} called it!",
+          "They know about the secret collection. They've seen the drawer.",
+          "The mushroom museum is officially open."
+        ]
+      }
+    },
+    {
+      "id": "AR-V18",
+      "friendId": "adventure_friend_ar",
+      "type": "Guess",
+      "scene": "Arlo notices a blanket draped over your couch and nods slowly.",
+      "lines": [
+        "Rough days happen. Pia had one yesterday. I brought crackers. It helped. Mostly."
+      ],
+      "question": "After a rough day, what does your partner want?",
+      "selfQuestion": "After a rough day, what do you want?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Space and quiet",
+          "reply": [
+            "Quiet mode. Understood.",
+            "Sometimes a closed door is a hug."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A big hug",
+          "reply": [
+            "A hugger! Arms ready.",
+            "Hugs fix half of everything."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A snack and a rant",
+          "reply": [
+            "Snack and rant combo. Classic.",
+            "Bring the good crackers."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You want quiet, and {partner} knew!",
+          "That's real attention. They give you space before you ask.",
+          "Gold star for {partner}. Quiet gold star."
+        ],
+        "A:B": [
+          "You want a hug. {partner} guessed space.",
+          "They're giving you room when you want arms.",
+          "Ask for the hug out loud. They'll be so relieved."
+        ],
+        "A:C": [
+          "You want a snack and a rant. {partner} guessed space.",
+          "They're tiptoeing away. You're holding crackers and complaints.",
+          "Call them back. Hand them a cracker. Start ranting."
+        ],
+        "B:A": [
+          "You want quiet. {partner} guessed a hug.",
+          "They're coming in with open arms. You need ten minutes alone.",
+          "Tell them: quiet first, hug later. A delayed hug still counts."
+        ],
+        "B:B": [
+          "You want a big hug, and {partner} knew it!",
+          "Their arms were already open before you walked in.",
+          "That's the dream, honestly."
+        ],
+        "B:C": [
+          "You want a snack and a rant. {partner} guessed a hug.",
+          "They want to hold you. You want to vent.",
+          "Rant into the hug. Best of both."
+        ],
+        "C:A": [
+          "You want quiet. {partner} guessed a snack and a rant.",
+          "They're ready to listen. You're ready to be silent.",
+          "Say 'quiet first, snacks later.' They'll get it."
+        ],
+        "C:B": [
+          "You want a hug. {partner} guessed a snack and rant.",
+          "Close! Just add a hug to the snack.",
+          "Hug while ranting. Multitasking."
+        ],
+        "C:C": [
+          "You want a snack and a rant, and {partner} guessed it!",
+          "They'll bring the crackers and nod at every complaint.",
+          "Pia and I do this every Tuesday."
+        ]
+      }
+    },
+    {
+      "id": "AR-V19",
+      "friendId": "adventure_friend_ar",
+      "type": "Guess",
+      "scene": "Arlo eyes a single cookie on your counter. He doesn't move. Neither do you.",
+      "lines": [
+        "Small thing, but this one's life or death."
+      ],
+      "question": "One cookie left. What would your partner do?",
+      "selfQuestion": "One cookie left. What would you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Offer it to the other one",
+          "reply": [
+            "Aww, a generous soul.",
+            "I'd cry at the cookie."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Eat it immediately",
+          "reply": [
+            "Ruthless! A real cookie monster.",
+            "No regrets. Delicious."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You'd offer it, and {partner} knew it!",
+          "They know you'd give away the last cookie every time.",
+          "Bake two next time. Everyone gets one."
+        ],
+        "A:B": [
+          "You'd eat it immediately. {partner} thought you'd share.",
+          "They believed in your generosity. Oops.",
+          "Next time, break it in half. Rebuild their trust."
+        ],
+        "B:A": [
+          "You'd offer it. {partner} thought you'd eat it immediately.",
+          "They underestimated your sweetness.",
+          "Hand it over. Watch them melt. Like the chocolate chips."
+        ],
+        "B:B": [
+          "You'd eat it immediately, and {partner} knew!",
+          "They've watched you inhale it before. No hesitation.",
+          "Respect. Cookies wait for no one."
+        ]
+      }
+    },
+    {
+      "id": "AR-V20",
+      "friendId": "adventure_friend_ar",
+      "type": "Guess",
+      "scene": "Arlo yawns very loudly, then looks at you like he's sorry.",
+      "lines": [
+        "Sleep habits say everything. Everything."
+      ],
+      "question": "How does your partner fall asleep?",
+      "selfQuestion": "How do you fall asleep?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Instantly, mid-sentence",
+          "reply": [
+            "Instantly! A sleep champion.",
+            "One second awake, next second gone."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "After scrolling for an hour",
+          "reply": [
+            "Scrolling for an hour. Relatable.",
+            "Just one more video. Then twelve more."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Instant sleeper, and {partner} knew!",
+          "They've watched you fall asleep mid-sentence. Many times.",
+          "Pia says I do it mid-word. Very efficient."
+        ],
+        "A:B": [
+          "You scroll for an hour. {partner} thought you'd sleep instantly.",
+          "They're asleep. You're watching cooking videos.",
+          "Put the phone down. Or send them one in the morning."
+        ],
+        "B:A": [
+          "You fall asleep instantly. {partner} thought you'd scroll.",
+          "They didn't realize you're gone the second your head hits the pillow.",
+          "Lucky you. Maybe teach them the trick."
+        ],
+        "B:B": [
+          "Scrolling for an hour, and {partner} knew!",
+          "They've seen the glow of your phone at 1 a.m.",
+          "Respect. Just one more video, right?"
+        ]
+      }
+    }
+  ]
+}

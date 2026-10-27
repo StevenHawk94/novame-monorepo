@@ -1,0 +1,58 @@
+{
+  "scope": "Notification logo and pending Vercel source audit",
+  "ios": {
+    "finding": "The main AppIcon source already matches the latest transparent master composited on #3f150b; notification payload contains no icon override. The screenshot alone cannot distinguish an older installed native build from an OS icon cache.",
+    "sourcePixelVerification": "passed",
+    "xcodeAssetCatalogCompilation": "passed",
+    "compiledPrimaryIcon": "AppIcon",
+    "compiledIconVisualCheck": "new sleeping bunny and burrow logo",
+    "evidenceDirectory": "/private/tmp/burrow-notification-catalog-q2RNy9",
+    "requiresNewNativeBuildAndInstallation": true,
+    "deviceInstalledOrAppStoreSubmitted": false,
+    "cannotBeChangedByVercelOrMetroReload": true
+  },
+  "android": {
+    "finding": "Independent notification-icon.png still used the old bunny silhouette and was omitted from the branding synchronization pipeline.",
+    "fix": "Generate a white transparent alpha mask from the latest logo, excluding diffuse glow; synchronize all five native notification densities with the official Expo plugin implementation.",
+    "sourceSize": [96, 96],
+    "nativeSizes": [24, 36, 48, 72, 96],
+    "newSourceSha256": "29f1eaa8ae2e12b4d256bd02283f70f3518b0cf806d91a8704512d957338dcc0",
+    "pushAndLocalNotificationResourceReferencesVerified": true,
+    "nativeBuildPublished": false
+  },
+  "branding": {
+    "canonicalBackground": "#3f150b",
+    "iosAndroidLauncherSplashAndWidgetRegenerated": true,
+    "originalMasterPixelsPreserved": true,
+    "backgroundAndUIUnchanged": true,
+    "androidSmallNotificationIconException": "Android requires a monochrome transparent mask; its system-owned notification surface is not an app logo background."
+  },
+  "verification": {
+    "brandingTestsPassed": 17,
+    "isolatedOfflineFrozenLockfileCheck": "passed",
+    "scriptSyntaxChecks": "passed",
+    "realDeviceNotificationDelivery": "not performed; verify with a new installed native build"
+  },
+  "vercelAudit": {
+    "method": "Read production aliases and Vercel uploaded source receipts; compare every uploaded file with isolated current-workspace API/Admin snapshots, including additions and removals.",
+    "api": {
+      "domain": "api.soulsayit.com",
+      "deploymentId": "dpl_CRN79WhWFPWLRov84VLooHrZpayb",
+      "state": "READY",
+      "sourceFiles": 270,
+      "pendingRuntimeChanges": 0,
+      "productionLockfileRetained": true
+    },
+    "admin": {
+      "domain": "novame-monorepo-admin.vercel.app",
+      "deploymentId": "dpl_5rZDMHsLE1D79P9VsPxEyRh1yy1f",
+      "state": "READY",
+      "sourceFiles": 875,
+      "pendingRuntimeChanges": 0,
+      "onlyWorkspaceDifference": "pnpm-lock.yaml adds sharp 0.35.0 to apps/mobile devDependencies; no Admin dependency or runtime change."
+    },
+    "deploymentNeeded": false,
+    "deploymentPerformed": false,
+    "databaseChanges": false
+  }
+}

@@ -1,9 +1,8 @@
 import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { majorUpdateEnabled } from '@/lib/app-major-update'
-import { drainPushNotificationOutbox } from '@/lib/push-notifications'
 import {
-  courtServiceClient, enqueueCourtNotification,
+  courtServiceClient,
   loadCourtSessionContent, loadPair, processCourtVerdictJob,
   sessionView, validateCourtAnswers,
 } from '@/lib/bunny-court'
@@ -81,20 +80,7 @@ export async function POST(request, context) {
     }
     if (action === 'nudge') {
       if (session.initiator_id !== userId || session.status !== 'awaiting_partner') return NextResponse.json({ error: 'nudge_not_allowed' }, { status: 409 })
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      const { data: recentNudge } = await supabase.from('notification_outbox').select('id')
-        .eq('recipient_user_id', session.partner_id).like('event_key', `court:nudge:${session.id}:%`)
-        .gte('created_at', since).limit(1).maybeSingle()
-      if (recentNudge) return NextResponse.json({ error: 'already_nudged_today' }, { status: 409 })
-      const { error } = await supabase.from('notification_outbox').insert({
-        recipient_user_id: session.partner_id, event_key: `court:nudge:${session.id}:${Date.now()}`,
-        event_type: 'court_nudge',
-        payload: { sessionId: session.id, title: 'Bunny Court is waiting.', body: 'Your person nudged the case. Add your testimony when you are ready.' },
-      })
-      if (error?.code === '23505') return NextResponse.json({ error: 'already_nudged_today' }, { status: 409 })
-      if (error) throw error
-      void drainPushNotificationOutbox(supabase, 10).catch(() => {})
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ error: 'notifications_retired' }, { status: 410 })
     }
     if (action === 'complete') {
       if (!['ready', 'completed'].includes(session.status)) return NextResponse.json({ error: 'not_ready' }, { status: 409 })
@@ -128,9 +114,6 @@ export async function POST(request, context) {
       const now = new Date().toISOString()
       const { error } = await supabase.from('court_sessions').update({ status: 'awaiting_partner', updated_at: now }).eq('id', session.id).eq('status', 'awaiting_initiator')
       if (error) throw error
-      await enqueueCourtNotification(supabase, session.partner_id, session.id, 'invite', {
-        title: content.definition.notification_copy?.inviteTitle, body: content.definition.notification_copy?.inviteBody,
-      })
     } else {
       const pair = await loadPair(supabase, userId)
       const expectedPartner = userId === session.initiator_id ? session.partner_id : session.initiator_id

@@ -1,0 +1,262 @@
+{
+  "date": "2026-10-24",
+  "scope": "Funds, store receipts, test economic domain, fixed economic calendar, account deletion and avatar data safety",
+  "authorization": {
+    "production": "User approved deployment after isolated verification",
+    "testDomain": "User approved automatic Sandbox economic isolation",
+    "calendar": "User explicitly selected fixed economic calendar; Memories common calendar unchanged"
+  },
+  "production": {
+    "migrations": [
+      {
+        "file": "20261024000269_security_boundaries.sql",
+        "sha256": "f0e78f7974faffbe9cce5af526540be867ca4e3802146e6908d1210bee5f5696"
+      },
+      {
+        "file": "20261024000270_store_subscription_state.sql",
+        "sha256": "fcf7125573dd79a81b85d8108e6c88b3820ebf8b87a6d712ccfad9eeda99e2ad"
+      },
+      {
+        "file": "20261024000271_economic_domains.sql",
+        "sha256": "3e8e5c1626fc1896c91a43f4555b43fb5f499206155d7825938daeefda37edb4"
+      },
+      {
+        "file": "20261024000272_fixed_economic_calendar.sql",
+        "sha256": "8ca038bc79acb6b0a162e588f7683996d5f7d3bcde32d4c059047ae48755ca63"
+      }
+    ],
+    "api": "dpl_DjXdSBRozxJZXkHcEfD2bnERmNgo",
+    "domain": "https://api.soulsayit.com",
+    "adminUnchanged": true,
+    "protectedTables": 22,
+    "verifiedAt": "2026-10-25T03:11:20.299Z",
+    "sourceFiles": 288,
+    "overlays": [
+      ".vercelignore",
+      "pnpm-lock.yaml",
+      "apps/api/package.json",
+      "apps/api/vercel.json",
+      "apps/api/next.config.js",
+      "tools/check-apple-store-config.mjs",
+      "tools/check-avatar-runtime.mjs",
+      "apps/api/src/middleware.ts",
+      "apps/api/src/lib/security-boundary.js",
+      "apps/api/src/lib/auth-guard.ts",
+      "apps/api/src/lib/burrow-coins.mjs",
+      "apps/api/src/lib/apple-store-state.mjs",
+      "apps/api/src/lib/google-store-state.mjs",
+      "apps/api/src/lib/store-subscription-state.mjs",
+      "apps/api/src/lib/store-subscription-jobs.mjs",
+      "apps/api/src/lib/store-finish-jobs.mjs",
+      "apps/api/src/lib/store-entitlement.js",
+      "apps/api/src/lib/profile-avatar-image.mjs",
+      "apps/api/src/lib/burrow-unpaired-bootstrap.mjs",
+      "apps/api/src/lib/app-major-update.js",
+      "apps/api/src/lib/reflect-completion.js",
+      "apps/api/src/lib/reflect-analysis-jobs.js",
+      "apps/api/src/lib/economic-calendar-contract.mjs",
+      "apps/api/src/lib/user-local-date.js",
+      "apps/api/src/app/api/apple-iap/route.js",
+      "apps/api/src/app/api/google-iap/route.js",
+      "apps/api/src/app/api/book-payment/route.js",
+      "apps/api/src/app/api/payment-checkout/route.js",
+      "apps/api/src/app/api/payment-result/route.js",
+      "apps/api/src/app/api/webhooks/airwallex/route.js",
+      "apps/api/src/app/api/webhooks/apple/route.js",
+      "apps/api/src/app/api/webhooks/google/route.js",
+      "apps/api/src/app/api/delete-account/route.js",
+      "apps/api/src/app/api/upload-avatar/route.js",
+      "apps/api/src/app/api/vnext/coins/verify/route.js",
+      "apps/api/src/app/api/vnext/command/route.js",
+      "apps/api/src/app/api/vnext/surprise/route.js",
+      "apps/api/src/app/api/duo/join/route.js",
+      "apps/api/src/app/api/duo/status/route.js",
+      "apps/api/src/app/api/user-sync/route.js",
+      "apps/api/src/app/api/me-stats/route.js",
+      "apps/api/src/app/api/announcements/route.js",
+      "apps/api/src/app/api/reflect/route.js",
+      "apps/api/src/app/api/reflect/prepare/route.js",
+      "apps/api/src/app/api/reflect/finalize/route.js",
+      "apps/api/src/app/api/reflect/enrich/route.js",
+      "apps/api/src/app/api/reflect/status/route.js",
+      "apps/api/src/app/api/friends/insights/route.js",
+      "apps/api/src/app/api/friends/insights/history/route.js",
+      "apps/api/src/app/api/dev/set-tier/route.js",
+      "apps/api/src/app/api/cron/store-reconcile/route.js",
+      "apps/api/src/app/api/vnext/bootstrap/route.js"
+    ],
+    "protectedExistingRowsUnchangedDuringMigration": true,
+    "unrelatedFunctionsAndAclsUnchanged": true,
+    "newServerOnlyFunctionPermissions": 19,
+    "announcementsAndForceUpdateUnchanged": true,
+    "appStoreReleasePerformed": false,
+    "privateReleaseEvidence": "/private/tmp/burrow-security271-release.XJN1mi"
+  },
+  "validation": {
+    "domain": {
+      "passed": 592,
+      "failed": 0
+    },
+    "specialists": {
+      "passed": 60,
+      "failed": 0
+    },
+    "isolatedDatabaseWithDeployedSchemaDefinitions": {
+      "passed": 15,
+      "failed": 0
+    },
+    "isolatedDatabaseRepositoryFixture": {
+      "passed": 15,
+      "failed": 0
+    },
+    "personalRoomAndJournalMigrationSuites": {
+      "passed": 2,
+      "failed": 0
+    },
+    "mobileTypeCheck": "passed",
+    "domainBoundaryCheck": {
+      "sourceFiles": 454,
+      "unsafeNativeImports": 0,
+      "rawStorageKeys": 0
+    },
+    "productionBuild": "passed",
+    "appleConfig": {
+      "secretsExported": false,
+      "formatChecks": "passed",
+      "productionAuthenticated": true,
+      "sandboxAuthenticated": true,
+      "syntheticReadOnlyLookup": true
+    },
+    "avatarRuntime": {
+      "darwinCodec": true,
+      "linuxCodec": true,
+      "tracedNativeFiles": 2,
+      "tracedSharedLibraries": 2,
+      "candidateHttpStatus": 401
+    },
+    "productionAnonymousAndRetiredEndpointChecks": {
+      "at": "2026-10-25T03:11:09.075Z",
+      "results": [
+        {
+          "path": "/api/apple-iap",
+          "method": "POST",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/google-iap",
+          "method": "POST",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/vnext/coins/verify",
+          "method": "POST",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/vnext/command",
+          "method": "POST",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/vnext/bootstrap",
+          "method": "GET",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/delete-account",
+          "method": "POST",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/upload-avatar",
+          "method": "POST",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/webhooks/google",
+          "method": "POST",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/cron/store-reconcile",
+          "method": "GET",
+          "expected": 401,
+          "status": 401,
+          "passed": true
+        },
+        {
+          "path": "/api/book-payment",
+          "method": "POST",
+          "expected": 410,
+          "status": 410,
+          "passed": true
+        },
+        {
+          "path": "/api/payment-checkout",
+          "method": "POST",
+          "expected": 410,
+          "status": 410,
+          "passed": true
+        },
+        {
+          "path": "/api/payment-result",
+          "method": "POST",
+          "expected": 410,
+          "status": 410,
+          "passed": true
+        },
+        {
+          "path": "/api/webhooks/airwallex",
+          "method": "POST",
+          "expected": 410,
+          "status": 410,
+          "passed": true
+        }
+      ]
+    }
+  },
+  "compatibility": {
+    "clientReleaseRequired": [
+      "Session-bound email confirmation UI for account deletion; legacy unconfirmed delete requests fail closed",
+      "Economic timezone split for display; legacy bootstrap projects the fixed zone without changing stored profile"
+    ],
+    "newClientCapability": "X-Burrow-Economy: 1",
+    "dailyLimits": "Existing Free/Plus amounts unchanged",
+    "memories": "Shared calendar and rollover unchanged",
+    "testAccounts": "No allowlist; verified Sandbox admission only; existing real paid account cannot become sandbox, sandbox account cannot become real; use separate account"
+  },
+  "releaseNotes": [
+    "Initial post-deploy avatar probe found missing libvips in serverless bundle. Added route-scoped native tracing and actual trace/codec build gate; corrected candidate verified before final promotion.",
+    "Permission verifier was scoped to application functions, matching its baseline; pre-existing avg/sum aggregates are not new economic RPCs."
+  ],
+  "limitations": [
+    "No real charge, refund or two-device Sandbox/Play purchase was performed.",
+    "No real email-delivery or authenticated Google Pub/Sub integration test was performed.",
+    "No fresh all-device FPS distribution; no native app runtime dependency or global UI subscription added.",
+    "Normal offline JWT validation retains natural expiry window; deletion additionally checks active online session.",
+    "Legacy subscriptions with unknown environment are not guessed, backfilled or mass revoked.",
+    "Queue throughput/oldest job and store acknowledgement deadline need ongoing operational monitoring.",
+    "WAF, cloud MFA, key rotation, PITR and backup restoration are outside this verified code release."
+  ],
+  "documentation": [
+    "docs/security-audit-2026-10-24.md",
+    "docs/security-hardening-2026-10-24.md",
+    "docs/burrow-development-standards.md"
+  ]
+}

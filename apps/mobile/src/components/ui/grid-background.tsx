@@ -2,7 +2,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Defs, Path, Pattern, Rect } from 'react-native-svg';
 
 /**
- * Code-drawn replacement for assets/Background/connection.webp: the warm
+ * Code-drawn warm
  * beige checked paper. Colors and geometry measured from the original image
  * (base #F9DCB8, lines #FFECC8, ~56px cells / ~5px lines at 841px wide →
  * 25pt cells / 2pt lines on screen). Vector, so it stays crisp at any

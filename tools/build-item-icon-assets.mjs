@@ -1,195 +1,115 @@
 #!/usr/bin/env node
-/**
- * Build the mobile item-icon split.
- *
- * - Keeps a deterministic 256-icon offline bundle.
- * - Generates the static require() map (only these files enter Expo builds).
- * - Generates an auditable R2 inventory for every base-catalog icon.
- *
- * Usage ranking is an optional JSON array of [itemId, count] pairs. It is used
- * only while choosing the checked-in bundle; future builds remain reproducible
- * from bundled-item-ids.json without access to production data.
+/** Package only the current manual Tap Your Day vocabulary.
+ * --check is read-only; --prune removes byte-verified runtime duplicates.
+ * --inventory separately rebuilds historical R2 metadata. --select is retained
+ * for compatibility but frequency ranking no longer adds unrelated icons.
  */
 import { createHash } from 'node:crypto';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  statSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE_DIR = join(ROOT, 'tools/item-source/memory-items/each');
-const RUNTIME_DIR = join(ROOT, 'apps/mobile/assets/items/each');
-const DICTIONARY_PATH = join(ROOT, 'packages/engine/src/items/dictionary.json');
-const RULE_METADATA_PATH = join(ROOT, 'packages/engine/src/items/rule-metadata.json');
-const TAP_PATH = join(ROOT, 'packages/engine/src/items/tap-your-day.ts');
-const ONBOARDING_PATH = join(ROOT, 'apps/mobile/app/(onboarding)/index.tsx');
-const BUNDLE_PATH = join(ROOT, 'apps/mobile/src/lib/bundled-item-ids.json');
-const MAP_PATH = join(ROOT, 'apps/mobile/src/lib/item-images.g.ts');
-const INVENTORY_PATH = join(ROOT, 'tools/item-source/memory-items/r2-base-icons-manifest.json');
-const TARGET_COUNT = 256;
-
-function idsFrom(source, pattern) {
-  return [...source.matchAll(pattern)].map((match) => match[1]);
+const SOURCE = join(ROOT, 'tools/item-source/memory-items/each');
+const RUNTIME = join(ROOT, 'apps/mobile/assets/Tap-your-day-Icons');
+const LIB = join(ROOT, 'apps/mobile/src/lib');
+const groups = JSON.parse(readFileSync(join(ROOT, 'packages/engine/src/items/tap-your-day-local.json'), 'utf8'));
+const catalogVersion = readFileSync(join(ROOT, 'packages/engine/src/items/display-catalog.ts'), 'utf8').match(/ITEM_CATALOG_VERSION = '([^']+)'/)[1];
+const choices = groups.flatMap(group => [...group.defaults, ...group.optional]);
+const ids = choices.map(choice => choice.itemId);
+if (new Set(ids).size !== ids.length) throw Error('Duplicate Tap Your Day IDs');
+const people = new Set(['just_me', 'partner', 'family', 'friends', 'pets']);
+const baseIds = ids.filter(id => id.startsWith('memory.')).sort();
+const files = walk(RUNTIME);
+const byFilename = new Map(files.map(file => [basename(file), file]));
+if (byFilename.size !== files.length) throw Error('Duplicate source filenames');
+// Explicit workbook filenames: these are new meanings/IDs, not aliases for
+// the retired broad Dessert/Alcohol choices in historical records.
+const workbookFiles = { 'memory.new_ice_cream': 'memory.0455_ice_cream.webp', 'memory.new_beer': 'memory.0557_beer.webp' };
+function assetPath(id) {
+  const filename = workbookFiles[id] ?? (/^memory\.(?:\d{4}|new)_[a-z0-9_]+$/.test(id) ? id + '.webp'
+    : id.startsWith('tap.person.') && people.has(id.slice('tap.person.'.length)) ? id.slice('tap.person.'.length) + '.webp' : null);
+  const file = filename && byFilename.get(filename);
+  if (!file) throw Error('Missing curated icon: ' + id);
+  return file;
 }
-
-function mandatoryIds() {
-  const tap = readFileSync(TAP_PATH, 'utf8');
-  const onboarding = readFileSync(ONBOARDING_PATH, 'utf8');
-  const ids = new Set([
-    ...idsFrom(tap, /\['[^']+',\s*'(memory\.[^']+)'\]/g),
-    ...idsFrom(onboarding, /itemId:\s*'(memory\.[^']+)'/g),
-  ]);
-  // Static art outside ItemSprite must never be removed from the Expo bundle.
-  ids.add('memory.1486_park');
-  return ids;
+const assets = new Set(ids.map(assetPath));
+const args = new Set(process.argv.slice(2)), check = args.has('--check');
+if (check && args.has('--inventory')) throw Error('--inventory cannot be combined with --check');
+const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+function validWebp(file) {
+  const bytes = readFileSync(file);
+  if (bytes.toString('ascii', 0, 4) !== 'RIFF' || bytes.toString('ascii', 8, 12) !== 'WEBP') throw Error('Invalid WebP: ' + file);
+  return bytes;
 }
-
-function loadRanking(path) {
-  if (!path) return [];
-  const value = JSON.parse(readFileSync(resolve(path), 'utf8'));
-  const rows = Array.isArray(value) ? value : value.top;
-  if (!Array.isArray(rows)) throw new Error('Ranking must be an array or { top: [...] }.');
-  return rows
-    .filter((row) => Array.isArray(row) && typeof row[0] === 'string')
-    .map(([id, count]) => [id, Number(count) || 0]);
+// Validate every retained source before changing anything. People already live
+// in their canonical local folder; base icons use the development source.
+const sources = new Map(ids.map(id => {
+  const asset = assetPath(id), source = join(RUNTIME, asset);
+  return [asset, { source, bytes: validWebp(source) }];
+}));
+function walk(dir, prefix = '') {
+  return readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory()
+    ? walk(join(dir, entry.name), prefix + entry.name + '/')
+    : entry.name.endsWith('.webp') ? [prefix + entry.name] : []);
 }
+const extras = files.filter(asset => !assets.has(asset));
+if (extras.length) throw Error('Unmapped supplied icons: ' + extras.join(', '));
 
-function selectBundled(dictionary, ranking) {
-  const required = mandatoryIds();
-  const selected = new Set([...required].filter((id) => dictionary.items[id]));
-  for (const [id] of ranking) {
-    if (selected.size >= TARGET_COUNT) break;
-    if (dictionary.items[id]) selected.add(id);
-  }
-  // Deterministic, category-balanced fallback for a new/empty production DB.
-  const buckets = new Map();
-  for (const [id, item] of Object.entries(dictionary.items)) {
-    if (selected.has(id)) continue;
-    const key = item.bagsCategory || item.category || 'Other';
-    const bucket = buckets.get(key) || [];
-    bucket.push(id);
-    buckets.set(key, bucket);
-  }
-  const keys = [...buckets.keys()].sort();
-  while (selected.size < TARGET_COUNT) {
-    let added = false;
-    for (const key of keys) {
-      const id = buckets.get(key)?.shift();
-      if (!id) continue;
-      selected.add(id);
-      added = true;
-      if (selected.size >= TARGET_COUNT) break;
-    }
-    if (!added) break;
-  }
-  if (selected.size !== TARGET_COUNT) {
-    throw new Error(`Expected ${TARGET_COUNT} bundled icons, selected ${selected.size}.`);
-  }
-  return { required, selected: [...selected] };
+const outputs = new Map();
+const header = '/** GENERATED by tools/build-item-icon-assets.mjs. Current local Tap Your Day art only. */\n';
+function requireMap(name, selectedIds) {
+  return header + 'export const ' + name + ': Record<string, number> = {\n'
+    + selectedIds.map(id => "  '" + id + "': require('../../assets/Tap-your-day-Icons/" + assetPath(id) + "'),").join('\n') + '\n};\n';
 }
-
-function validateFiles(ids) {
-  for (const id of ids) {
-    const path = join(SOURCE_DIR, `${id}.webp`);
-    if (!existsSync(path) || statSync(path).size <= 0) throw new Error(`Missing icon: ${id}`);
+outputs.set(join(LIB, 'item-images.g.ts'), requireMap('ITEM_IMAGES', baseIds));
+outputs.set(join(LIB, 'tap-day-images.g.ts'), requireMap('TAP_DAY_IMAGES', ids));
+outputs.set(join(LIB, 'tap-person-images.ts'), requireMap('TAP_PERSON_IMAGES', ids.filter(id => id.startsWith('tap.person.'))));
+outputs.set(join(LIB, 'bundled-item-ids.json'), JSON.stringify({ schemaVersion: 1, catalogVersion,
+  selectionVersion: 'tap-your-day-v5', targetCount: baseIds.length, selection: 'Current Tap Your Day defaults + optional choices only; historical art stays on R2',
+  mandatoryCount: baseIds.length, itemIds: baseIds }, null, 2) + '\n');
+const lines = ['Tap Your Day 当前在用图标名称列表',
+  '共 ' + ids.length + ' 个：默认 ' + groups.reduce((sum, group) => sum + group.defaults.length, 0) + ' 个；可选添加 ' + groups.reduce((sum, group) => sum + group.optional.length, 0) + ' 个。',
+  '来源：packages/engine/src/items/tap-your-day-local.json。名称为当前界面显示名称，保留原有 item ID。',
+  '素材目录：apps/mobile/assets/Tap-your-day-Icons/。所有 391 款均使用提供的本地素材。', ''];
+for (const group of groups) {
+  lines.push(group.title + ' (' + (group.defaults.length + group.optional.length) + ')');
+  for (const [key, title] of [['defaults', '默认'], ['optional', '可选添加']]) {
+    if (!group[key].length) continue;
+    lines.push(title + '：' + group[key].map(choice => choice.label).join('、'));
+    for (const choice of group[key]) lines.push('  ' + choice.label + '\t' + choice.itemId + '\t' + assetPath(choice.itemId));
   }
+  lines.push('');
 }
-
-function buildRequireMap(ids) {
-  const lines = [
-    '/**',
-    ' * GENERATED by tools/build-item-icon-assets.mjs — DO NOT EDIT.',
-    ` * ${ids.length} common icons remain bundled; the rest resolve through R2.`,
-    ' */',
-    '',
-    'export const ITEM_IMAGES: Record<string, number> = {',
-  ];
-  for (const id of [...ids].sort()) {
-    lines.push(`  '${id}': require('../../assets/items/each/${id}.webp'),`);
-  }
-  lines.push('};', '');
-  writeFileSync(MAP_PATH, lines.join('\n'));
-}
-
-function syncRuntimeBundle(ids) {
-  const expected = new Set(ids.map((id) => `${id}.webp`));
-  mkdirSync(RUNTIME_DIR, { recursive: true });
-  for (const filename of readdirSync(RUNTIME_DIR)) {
-    if (filename.endsWith('.webp') && !expected.has(filename)) {
-      unlinkSync(join(RUNTIME_DIR, filename));
-    }
-  }
-  for (const filename of expected) {
-    copyFileSync(join(SOURCE_DIR, filename), join(RUNTIME_DIR, filename));
-  }
-  const actual = readdirSync(RUNTIME_DIR).filter((filename) => filename.endsWith('.webp'));
-  if (actual.length !== expected.size || actual.some((filename) => !expected.has(filename))) {
-    throw new Error(`Runtime icon directory must contain exactly ${expected.size} selected WebPs.`);
-  }
-}
-
-function buildInventory(dictionary, catalogVersion) {
-  const entries = Object.keys(dictionary.items).sort().map((itemId) => {
-    const filename = `${itemId}.webp`;
-    const path = join(SOURCE_DIR, filename);
-    const bytes = readFileSync(path);
-    return {
-      itemId,
-      key: `Items/base-icons/${catalogVersion}/${filename}`,
-      bytes: bytes.length,
-      sha256: createHash('sha256').update(bytes).digest('hex'),
-    };
-  });
-  const manifest = {
-    schemaVersion: 1,
-    catalogVersion,
-    generatedAt: new Date().toISOString(),
-    count: entries.length,
-    totalBytes: entries.reduce((sum, entry) => sum + entry.bytes, 0),
-    entries,
-  };
-  writeFileSync(INVENTORY_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
-  return manifest;
-}
-
-const args = process.argv.slice(2);
-const rankingArg = args.find((arg) => arg.startsWith('--ranking='))?.slice('--ranking='.length);
-const refreshSelection = args.includes('--select');
-const dictionary = JSON.parse(readFileSync(DICTIONARY_PATH, 'utf8'));
-const catalogVersion = JSON.parse(readFileSync(RULE_METADATA_PATH, 'utf8')).version;
-let bundle;
-if (refreshSelection) {
-  const { required, selected } = selectBundled(dictionary, loadRanking(rankingArg));
-  bundle = {
-    schemaVersion: 1,
-    catalogVersion,
-    targetCount: TARGET_COUNT,
-    selection: 'Tap My Day + onboarding/static requirements + 90-day production frequency + category-balanced fallback',
-    mandatoryCount: required.size,
-    itemIds: selected,
-  };
-  writeFileSync(BUNDLE_PATH, `${JSON.stringify(bundle, null, 2)}\n`);
+outputs.set(join(ROOT, 'docs/tap-your-day-icons.txt'), lines.join('\n'));
+// The supplied local folder is the artwork authority. Keep the verification
+// receipt in sync when art is replaced or moved, without changing item IDs,
+// labels, historical R2 inventory, or the approved selection vocabulary.
+const sourceRows = groups.flatMap(group => ['defaults', 'optional'].flatMap(kind => group[kind].map(choice => {
+  const asset = assetPath(choice.itemId);
+  return { itemId: choice.itemId, label: choice.label, group: group.title,
+    display: kind === 'defaults' ? '默认' : '可选添加', asset, sha256: digest(sources.get(asset).bytes) };
+})));
+outputs.set(join(ROOT, 'docs/tap-your-day-391-source.json'), '[\n'
+  + sourceRows.map(row => '  ' + JSON.stringify(row)).join(',\n') + '\n]\n');
+if (check) {
+  for (const [asset, { bytes }] of sources) if (digest(readFileSync(join(RUNTIME, asset))) !== digest(bytes)) throw Error('Runtime source mismatch: ' + asset);
+  for (const [file, content] of outputs) if (!existsSync(file) || readFileSync(file, 'utf8') !== content) throw Error('Stale generated file: ' + relative(ROOT, file));
 } else {
-  bundle = JSON.parse(readFileSync(BUNDLE_PATH, 'utf8'));
+  for (const [asset, { source }] of sources) {
+    const target = join(RUNTIME, asset); mkdirSync(dirname(target), { recursive: true });
+    if (source !== target) copyFileSync(source, target);
+  }
+  for (const [file, content] of outputs) writeFileSync(file, content);
 }
-if (bundle.catalogVersion !== catalogVersion) throw new Error('Bundled icon catalog version is stale. Re-run with --select.');
-if (!Array.isArray(bundle.itemIds) || new Set(bundle.itemIds).size !== TARGET_COUNT) {
-  throw new Error(`Bundled icon list must contain ${TARGET_COUNT} unique IDs.`);
+if (args.has('--inventory')) {
+  const dictionary = JSON.parse(readFileSync(join(ROOT, 'packages/engine/src/items/display-catalog.json'), 'utf8'));
+  const entries = Object.keys(dictionary).sort().map(itemId => {
+    const bytes = validWebp(join(SOURCE, itemId + '.webp'));
+    return { itemId, key: 'Items/base-icons/' + catalogVersion + '/' + itemId + '.webp', bytes: bytes.length, sha256: digest(bytes) };
+  });
+  writeFileSync(join(ROOT, 'tools/item-source/memory-items/r2-base-icons-manifest.json'), JSON.stringify({ schemaVersion: 1,
+    catalogVersion, generatedAt: new Date().toISOString(), count: entries.length,
+    totalBytes: entries.reduce((sum, entry) => sum + entry.bytes, 0), entries }, null, 2) + '\n');
 }
-validateFiles(Object.keys(dictionary.items));
-for (const id of mandatoryIds()) {
-  if (!bundle.itemIds.includes(id)) throw new Error(`Mandatory icon is not bundled: ${id}`);
-}
-buildRequireMap(bundle.itemIds);
-syncRuntimeBundle(bundle.itemIds);
-const inventory = buildInventory(dictionary, catalogVersion);
-console.log(`Bundled ${bundle.itemIds.length}/${inventory.count} icons.`);
-console.log(`R2 inventory: ${(inventory.totalBytes / 1024 / 1024).toFixed(2)} MiB at ${relative(ROOT, INVENTORY_PATH)}.`);
+console.log((check ? 'Verified' : 'Packaged') + ' ' + ids.length + ' local Tap Your Day icons (' + baseIds.length + ' base + ' + (ids.length - baseIds.length) + ' people). Historical IDs/art unchanged.');

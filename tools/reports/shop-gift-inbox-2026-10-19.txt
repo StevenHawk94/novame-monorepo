@@ -1,0 +1,62 @@
+Shop 收礼通知与逐份领取 — 2026-10-19
+
+交付范围
+1. Shop 红点显示已就绪、尚未领取的礼物数量。数量按唯一 gift ID 计数，
+   Shop 使用真实数字（例如 12），其余入口原有 9+ 规则不变。
+2. 接入既有 burrow_changed 私有广播 -> Bootstrap -> NotificationReadiness
+   链路；礼物授权数据、商品名称和实际展示的图片解码完成后才通知。
+   窗框同时准备季节风景层。无需另建推送/轮询通道。
+3. 普通 Shop 进入即展示米白圆角卡片 + 半透明黑色背景；预加载但未聚焦、
+   后台、送礼商店、Decorate 和他人收藏页面不会自动弹出。
+4. 礼物按创建时间/ID 排队，逐份 Claim。每份 Also replace 默认不勾选。
+   未勾选只加入收藏；勾选本地立即替换对应家具/本人装扮。
+   新礼物正在预备时不会打断已经就绪的当前弹窗。
+5. Claim 先持久化意图，再本地推进下一份，后台串行提交；不等待网络。
+   重复点击、断网、进程重启、响应丢失及旧 Bootstrap 回流均有保护。
+   明确业务拒绝恢复该礼物与该位置；网络不确定错误保留相同 ID 重试。
+   不将 shop-gift-preview 库存视为已确认购买资格，避免后续零价操作误扣款。
+6. 退市但仍待领取的礼物使用独立 giftCatalog 补充元数据，不重新上架。
+7. 保留页面增量更新字段加入 gifts/giftCatalog；原有 UI、送礼扣款和通知
+   权限模型保留，其他页面的业务流程没有改动。
+
+服务器与数据库
+新增迁移：supabase/migrations/20261019000250_shop_gift_claim.sql。
+新增命令：claim_shop_gift，RPC claim_shop_gift_v1。
+授权以登录接收方 + 当前伴侣 + pairVersion + gift.pair_version 为准。
+领取和可选的单个槽位替换在同一事务执行，完全不修改钱包。
+重复领取返回原礼物；不再次替换，避免丢失响应后的重试覆盖之后的布置。
+旧 claim_gift/claim_gift_v1 保留，旧客户端不受影响。
+RPC 暂未部署时返回 503 gift_claim_unavailable，客户端保留任务重试；
+不降级成“先领取但丢失替换选择”的非原子调用。
+
+上线顺序
+1. 先执行迁移 250。
+2. 部署 API（命令路由和 Bootstrap 的 giftCatalog 补充）。
+3. 使用新版客户端进行已配对双账号联测。
+初次代码交付仅本地实施与隔离验证。随后按用户明确授权，迁移 250 已执行，
+收礼 API 已上线至 api.soulsayit.com，旧接口保留；未修改真实用户业务数据。
+生产验证与回滚记录见 tools/reports/shop-gift-production-2026-10-19.json。
+
+验证
+- 新增赠礼队列、准备、UI、API、数据库隔离测试，以及实际 Store 接线测试。
+- 通知/页面预备/保留 Tab/房间编辑专项导航回归：53/53 通过。
+- TypeScript：通过；git diff --check：通过。
+- 最终生产 JS 打包：
+  Android 9,640,623 bytes / 1,328 assets；iOS 9,582,716 bytes / 1,324 assets。
+  两个包均检查到新原子接口、准备队列及保留 Shop 的礼物增量字段。
+- 较大范围回归：376 项，375 通过、1 项既有 Adventure 用例失败：
+  tools/test-burrow-mobile.cjs:44 仍预期收到有效开始收据后保持
+  localStartPending=true，而当前业务实现立即使用已确认的截止时间。
+  已在内存中剥离本次新增 Store 接线重跑该文件，仍为同一失败（15 通过、
+  1 失败）。未改冒险业务或修改旧用例掩盖失败。
+
+日志
+/private/tmp/novame-shop-gifts-final-regression.log
+/private/tmp/novame-shop-gifts-final-navigation.log
+/private/tmp/novame-shop-gifts-final-targeted.log
+/private/tmp/novame-shop-gifts-types.log
+/private/tmp/novame-shop-gifts-final-bundles.log
+
+限制
+没有运行模拟器或真实双账号登录测试；不存在“已经双端实测通过”的结论。
+生产包检查不是原生性能采样，也不是完整的 App Store 签名构建。

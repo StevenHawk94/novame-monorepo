@@ -1,5 +1,4 @@
 import { callAI, getAIModelConfig, parseAIJson } from './ai'
-import { itemLearningHints, cleanLearningSignals } from './item-learning-evidence'
 import { cleanConnectionSignals } from './connection-evidence'
 import { cleanConnectionUpdates } from './reflect-ai'
 import { matchConnectionTemplates } from './connection-template-matcher'
@@ -47,15 +46,15 @@ QUALITY, PRIVACY, AND VOICE
 Lead with analysis, not summary. Refer to the reflected person only as they, them, their, or theirs. Never quote or closely paraphrase private writing. Omit names, addresses, exact locations or itineraries, amounts, precise schedules, diagnoses, sexual information, and legal or financial secrets. Never invent motives, facts, causality, or relationship quality. Sound warm, observant, practical, and lightly human, not clinical or formulaic. Never begin with “It sounds like,” “It seems,” “They seem,” “This suggests,” or similar confidence padding.
 
 OPERATION ROUTE
-Do not write Connection cards. First find at most three plausible gaps in icon keyword coverage. Each learningCandidate is {phrase,concept,literal:true,privacySafe:true}. phrase must be the shortest useful exact contiguous source span, at most 12 words or 80 characters. concept is a canonical drawable object, food, place, animal, activity, tool, or supported emotion-icon meaning. Exclude accepted matches, bare ambiguous words, names, identifying locations, private narratives, diagnoses, financial facts, schedules, negated or hypothetical uses, metaphors, and uncertainty. Do not pad.
+Do not write Connection cards.
 
 If connectionEnabled is false, return no Connection signals. Otherwise apply the Connection value gate. Select at most three distinct high-value signals, ordered by value. familyCatalog is the only allowed family list. Choose the narrowest supported familyKey whose Section matches. If valuable evidence has no fitting family, keep familyKey null and preserve assignedSection for original writing. Never force a family.
 
 Each signal is {signalId,topicKey,kind,summary,continuity,sentiment,supportMode,confidence,expiresAt,cardEligible,assignedSection,familyKey}. signalId and topicKey use canonical snake_case. summary is one compact neutral privacy-safe evidence statement, not card copy. kind is event, state, pattern, preference, invitation, upcoming, or support_need. continuity is one_off, ongoing, or repeated. sentiment is positive, neutral, negative, or mixed. supportMode is comfort, encourage, listen, talk, companionship, practical_help, give_space, share, join_in, or null. assignedSection is missed, world, ways_in, between, or null. confidence is 0–1. Reject below 0.55. cardEligible is true only when the signal adds concrete second-layer value and is distinct from every other selected signal and the current board.
 
 ROUTE output only:
-{"decision":"no_update|update","connectionSignals":[],"learningCandidates":[]}
-decision is update only when at least one returned signal has cardEligible true. Return no more than three Connection signals and three learningCandidates. Do not output reasoning fields, card fields, prose, markdown, or chain of thought.
+{"decision":"no_update|update","connectionSignals":[]}
+decision is update only when at least one returned signal has cardEligible true. Return no more than three Connection signals. Do not output reasoning fields, card fields, prose, markdown, or chain of thought.
 
 OPERATION MATCH_AND_WRITE
 For every selected signal, inspect only Scenario candidates in its routed family. Choose matched only when one scenario's requiredEvidence is satisfied and no disqualifier applies. scenarioKey must be copied exactly. Choose custom when the signal remains valuable but familyKey is null or no Scenario clearly fits. Choose no_update only when reinspection shows that the signal is not useful, privacy-safe, sufficiently supported, or distinct.
@@ -99,7 +98,7 @@ function nullableString(description = null) {
 function routerResponseSchema() {
   return {
     type: 'OBJECT',
-    required: ['decision', 'signals', 'learning'],
+    required: ['decision', 'signals'],
     properties: {
       decision: { type: 'STRING', enum: ['no_update', 'update'] },
       signals: {
@@ -151,19 +150,6 @@ function routerResponseSchema() {
             fallbackCode: nullableString(),
             suppressionReason: nullableString(),
             expiresAt: nullableString(),
-          },
-        },
-      },
-      learning: {
-        type: 'ARRAY', maxItems: 3,
-        items: {
-          type: 'OBJECT',
-          required: ['phrase', 'concept', 'literal', 'privacySafe'],
-          properties: {
-            phrase: { type: 'STRING' },
-            concept: { type: 'STRING' },
-            literal: { type: 'BOOLEAN' },
-            privacySafe: { type: 'BOOLEAN' },
           },
         },
       },
@@ -540,7 +526,6 @@ export async function runConnectionRouter(input, { supabase = null } = {}) {
     currentBoard: currentBoardFingerprints(input.currentConnectionBoard),
     writerHistory: compactEvidence(input.writerRecentEvidence),
     readerHistory: compactEvidence(input.readerRecentEvidence),
-    iconHints: itemLearningHints(input.journal || ''),
   }
   const result = await callConnectionAI(supabase, {
     systemInstruction: CONNECTION_ROUTER_SYSTEM_PROMPT,
@@ -552,7 +537,6 @@ export async function runConnectionRouter(input, { supabase = null } = {}) {
       board: request.currentBoard,
       recent5dAndBackground6_10d: request.writerHistory,
       readerRecent5dAndBackground6_10d: request.readerHistory,
-      iconHints: request.iconHints,
     }),
     generationConfig: {
       temperature: 0.15,
@@ -615,7 +599,7 @@ export async function runConnectionRouter(input, { supabase = null } = {}) {
     result,
     latencyMs: Date.now() - started,
     data: {
-      visualConcepts: cleanLearningSignals(parsed?.learning || parsed?.learningCandidates, input.journal || ''),
+      visualConcepts: [],
       decision: parsed?.decision === 'update' && eligible.length > 0 ? 'update' : 'no_update',
       connectionSignals: signals,
       eligibleSignals: eligible,

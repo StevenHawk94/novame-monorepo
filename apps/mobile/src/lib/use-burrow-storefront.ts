@@ -14,6 +14,13 @@ function deviceCountry() {
 }
 
 let request: { epoch: number; promise: Promise<string | undefined> } | undefined;
+let visualEpoch=-1,visualCountry:string|undefined;
+export function countryForVisit(){
+  if(visualEpoch!==sessionEpoch()){
+    visualEpoch=sessionEpoch();visualCountry=storage.getString(kBurrowStorefrontCountry.name)??deviceCountry();
+  }
+  return visualCountry;
+}
 function refreshCountry() {
   const epoch = sessionEpoch();
   if (request?.epoch === epoch) return request.promise;
@@ -43,21 +50,20 @@ function refreshCountry() {
 
 /** Cache first, storefront first, explicit device region as the offline fallback. */
 export function useBurrowStorefront() {
-  const [country, setCountry] = useState(() => storage.getString(kBurrowStorefrontCountry.name) ?? deviceCountry());
+  const [country, setCountry] = useState(countryForVisit);
   useEffect(() => {
-    let active = true;
-    const refresh = async () => {
-      const epoch = sessionEpoch();
-      const code = await refreshCountry();
-      if (active && code && epoch === sessionEpoch()) setCountry(code);
-    };
+    // Persist the authoritative storefront for the NEXT foreground visit.
+    // All rooms in this visit share one region, including newly mounted rooms.
+    const refresh = () => refreshCountry();
     void refresh();
-    const foreground = AppState.addEventListener('change', state => { if (state === 'active') void refresh(); });
+    const foreground = AppState.addEventListener('change', state => {
+      if (state === 'active') { visualCountry=storage.getString(kBurrowStorefrontCountry.name)??deviceCountry();visualEpoch=sessionEpoch();setCountry(countryForVisit());void refresh(); }
+    });
     const unsubscribe = subscribeSessionIdentity(() => {
-      setCountry(deviceCountry());
+      setCountry(countryForVisit());
       void refresh();
     });
-    return () => { active = false; foreground.remove(); unsubscribe(); };
+    return () => { foreground.remove(); unsubscribe(); };
   }, []);
   return country;
 }

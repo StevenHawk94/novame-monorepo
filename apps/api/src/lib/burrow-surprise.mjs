@@ -1,6 +1,6 @@
 import { decodeRoomPhoto, photoUUID } from './burrow-photo.mjs'
 export const SURPRISE_BUCKET = 'burrow-surprises'
-export const SURPRISE_FRAMES = ['santa','bunny','flower','heart','birthday','star']
+export const SURPRISE_FRAMES = ["pumpkin","santa","birthday","ghost","good_night","witch_cauldron","bat","spicy_mood","christmas_ornament","snow_globe","christmas_elf","christmas_stocking","christmas_wreath","snowman","gingerbread_man","champagne","nightcap","alarm_clock","four_leaf_clover","heart","ice_cream","coffee_mug","gold_trophy","easter","popcorn","pizza","game_controller","lollipop","love_polaroid","fried_egg","wrapped_gift","party_hat","birthday_balloons","olive_branch","white_flag","rainbow"]
 /** Inspect container duration and audio-only tracks, not the client stopwatch. */
 export function surpriseAudioDuration(bytes) {
   const view = new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength)
@@ -30,7 +30,9 @@ export function surpriseAudioDuration(bytes) {
     }
   }
   boxes(0,bytes.length)
-  if(!audio||invalidTrack||!Number.isFinite(duration)||duration<1000||duration>60500)throw Error('invalid_request')
+  if(!audio||invalidTrack||!Number.isFinite(duration)||duration<1000||duration>60500){
+    const error=Error('invalid_request');error.reason=duration>0&&duration<1000?'audio_too_short':duration>60500?'audio_too_long':'audio_invalid';throw error
+  }
   return Math.min(60000,Math.round(duration))
 }
 export async function readSurpriseBody(request) {
@@ -53,13 +55,15 @@ export function decodeSurprise(body) {
   if (!photoUUID(body.key) || !photoUUID(body.partnerId) || !/^[a-f0-9]{32}$/.test(body.pairVersion ?? '')
       || !SURPRISE_FRAMES.includes(body.frame) || !Number.isInteger(body.durationMs) || body.durationMs < 1000 || body.durationMs > 60000)
     throw Error('invalid_request')
-  const photo = decodeRoomPhoto(body.photo)
+  let photo;try{photo=decodeRoomPhoto(body.photo,'surprise')}catch{const error=Error('invalid_request');error.reason='photo_invalid';throw error}
   if (typeof body.audio !== 'string' || body.audio.length > 2_097_152 || body.audio.length % 4
       || /[^A-Za-z0-9+/]/.test(body.audio.replace(/={1,2}$/, ''))) throw Error('invalid_request')
   const audio = Uint8Array.from(atob(body.audio), c => c.charCodeAt(0))
   // Native recording is AAC in an ISO-BMFF .m4a, never arbitrary uploads.
   if (audio.length < 32 || audio.length > 1_572_864 || String.fromCharCode(...audio.slice(4,8)) !== 'ftyp') throw Error('invalid_request')
-  const durationMs=surpriseAudioDuration(audio)
-  if(Math.abs(durationMs-body.durationMs)>2000)throw Error('invalid_request')
+  let durationMs;try{durationMs=surpriseAudioDuration(audio)}catch(error){error.reason??='audio_invalid';throw error}
+  // The encoded audio's bounded, audio-only duration is authoritative. A JS
+  // stopwatch/status mismatch cannot extend it, and must not reject a valid
+  // second recording after a native interruption or stale recorder tick.
   return { photo, audio, durationMs }
 }

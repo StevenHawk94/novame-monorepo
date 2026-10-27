@@ -9,7 +9,7 @@ export const HOME_ENTRY_ASSETS = [
   'home-layout', 'home-data', 'tabs-layout',
   'home-copy',
   'friends-background', 'friends-data', 'entry-copy',
-  'tab:burrow', 'tab:quests', 'tab:shop', 'tab:love', 'tab:collection', 'burrow-layout', 'burrow-data',
+  'tab:burrow', 'tab:quests', 'tab:shop', 'tab:love', 'tab:collection', 'burrow-layout', 'burrow-data', 'burrow-art',
 ] as const;
 
 export type HomeEntryAsset = typeof HOME_ENTRY_ASSETS[number];
@@ -24,6 +24,7 @@ type EntryState = {
   ready: readonly HomeEntryAsset[];
   failed: boolean;
   after: FollowUp;
+  startedAt: number;
 };
 
 const SHARED_ASSETS: readonly HomeEntryAsset[] = [
@@ -53,10 +54,17 @@ let state: EntryState = {
   ready: [],
   failed: false,
   after: null,
+  startedAt: 0,
 };
 const listeners = new Set<() => void>();
 export const HOME_RESUME_AFTER_MS = 30 * 60_000;
 export const HOME_ENTRY_TIMEOUT_MS = 5_000;
+/** One visual budget across onboarding, auth Splash and mounted Home.
+ * This does not abort the independent, longer-lived network/setup requests. */
+export const homeEntryTimeoutMs = (): number => HOME_ENTRY_TIMEOUT_MS;
+export const homeEntryRemainingMs = (): number => state.pending
+  ? Math.max(0, HOME_ENTRY_TIMEOUT_MS - Math.max(0, Date.now() - state.startedAt))
+  : HOME_ENTRY_TIMEOUT_MS;
 let backgroundAt: number | null = null;
 
 export function isHomeEntryRoute(segments: readonly string[]): boolean {
@@ -115,6 +123,7 @@ export function beginHomeEntry(options?: {
         attempt: state.attempt + 1,
         ready: [],
         failed: false,
+        startedAt: Date.now(),
       });
     } else if (forceData && !state.forceData) {
       publish({ ...state, forceData: true });
@@ -130,6 +139,7 @@ export function beginHomeEntry(options?: {
     attempt: state.attempt + 1,
     ready: [],
     failed: false,
+    startedAt: Date.now(),
   });
 }
 
@@ -139,8 +149,8 @@ export function deferHomeEntryNotification(): void {
 
 function requiredAssets(target: HomeEntryTarget): readonly HomeEntryAsset[] {
   if (experience === 'burrow' && target !== 'current') return [
-    'tab:index', 'tab:love', 'tab:shop', 'tab:friends', 'tab:collection',
-    'tabs-layout', 'entry-copy', 'burrow-layout', 'burrow-data',
+    'tab:index', 'tab:burrow', 'tab:quests', 'tab:shop', 'tab:friends',
+    'tabs-layout', 'burrow-layout', 'burrow-data', 'burrow-art',
   ];
   if (target === 'home') return HOME_ASSETS;
   if (target === 'friends') return FRIENDS_ASSETS;
@@ -154,7 +164,7 @@ export function homeEntryIsReady(): boolean {
 /** Android waits for JS data/layout, never for an image decoder callback. */
 export function homeEntryDataIsReady(): boolean {
   if (experience === 'burrow' && state.target !== 'current') {
-    return state.ready.includes('burrow-data') && state.ready.includes('burrow-layout');
+    return state.ready.includes('burrow-data') && state.ready.includes('burrow-layout') && state.ready.includes('burrow-art');
   }
   return state.target !== 'home' || (state.ready.includes('home-data') && state.ready.includes('home-copy'));
 }
@@ -184,6 +194,8 @@ export function finishHomeEntry(attempt: number, allowUnready = false): FollowUp
 /** Defensive fail-open. Late callbacks are ignored after release. */
 export function timeoutHomeEntry(attempt: number): FollowUp {
   if (!state.pending || attempt !== state.attempt) return null;
+  // Home already paints cached or bundled starter visuals without inventing
+  // wallet/ownership/Plus facts. Failed network readiness cannot trap entry.
   const after = state.after;
   publish({ ...state, pending: false, failed: true, after: null });
   return after;

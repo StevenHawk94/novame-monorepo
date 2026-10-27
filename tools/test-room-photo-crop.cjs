@@ -3,6 +3,15 @@ const assert = require('node:assert/strict');
 const { load } = require('./lifecycle-test-utils.cjs');
 
 const { centeredRoomPhotoCrop, positionedFrameCrop } = load('apps/mobile/src/lib/room-photo-crop.ts');
+const {positionedDollCrop}=load('apps/mobile/src/lib/room-photo-crop.ts');
+test('Plushie drag/zoom uses the exact square photo plane behind the costume opening, with bounded source pixels',()=>{
+ for(const [w,h] of [[800,1200],[2000,700],[600,600]])for(const z of [1,1.01,1.5,3])for(const x of [-9999,0,9999])for(const y of [-9999,0,9999]){
+  const g=positionedDollCrop(w,h,180,z,x,y),c=g.crop;
+  assert.equal(c.width,c.height);assert.ok(c.originX>=0&&c.originY>=0&&c.originX+c.width<=w+1e-9&&c.originY+c.height<=h+1e-9);
+  assert.ok(Math.abs(g.scale*c.width-180)<1e-8);
+  assert.ok(Math.abs((180-w*g.scale)/2+g.offsetX+c.originX*g.scale)<1e-8,'saved crop and visible left edge agree');
+ }
+});
 
 test('frame crops are 201:290 and doll crops stay square', () => {
   const frame = centeredRoomPhotoCrop(1200, 800, 'frame');

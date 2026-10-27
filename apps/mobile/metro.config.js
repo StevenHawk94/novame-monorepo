@@ -25,5 +25,9 @@ config.resolver.unstable_enablePackageExports = true;
 if (!config.resolver.assetExts.includes('lottie')) {
   config.resolver.assetExts.push('lottie');
 }
+// Supplied music uses .MP3; Metro's extension matching is case-sensitive.
+if (!config.resolver.assetExts.includes('MP3')) {
+  config.resolver.assetExts.push('MP3');
+}
 
 module.exports = config;

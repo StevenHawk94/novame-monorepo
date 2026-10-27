@@ -25,7 +25,8 @@ function load(file, imports = {}, globals = {}) {
   return module.exports;
 }
 function harness(platform = 'android') {
-  const api = load(stateFile), frames = new Map(), timers = new Map(), appListeners = new Set(), backListeners = new Set(), routes = [];
+  let now=0;
+  const api = load(stateFile, {}, {Date:{now:()=>now}}), frames = new Map(), timers = new Map(), appListeners = new Set(), backListeners = new Set(), routes = [];
   let next = 0, owner, cursor, segments = ['(main)', '(tabs)'], externalOverlay = false;
   const overlays = new Set();
   const same = (a, b) => a && b && a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
@@ -48,8 +49,7 @@ function harness(platform = 'android') {
   const appState = { currentState: 'active', addEventListener(_event, fn) { appListeners.add(fn); return { remove: () => appListeners.delete(fn) }; } };
   const components = load(gateFile, {
     './burrow-launch-screen': { BurrowLaunchScreen: 'BurrowLaunchScreen' },
-    '@/lib/burrow-onboarding-design': { BURROW_LAUNCH_BACKGROUND: '#3D160B' },
-    '../../../assets/favicon.png': 1,
+    '@/lib/burrow-onboarding-design': { BURROW_LAUNCH_BACKGROUND: '#3f150b' },
     react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': {
       View: 'View', Text: 'Text', Pressable: 'Pressable', ActivityIndicator: 'Spinner', Image: 'NativeImage',
@@ -71,6 +71,8 @@ function harness(platform = 'android') {
     '@/lib/auth': { getCurrentSession: async () => null },
     '@/lib/announcements-api': { prepareUnreadAnnouncement: async () => null },
     '@/lib/download-queue': { markAndroidP0UiReady() {} },
+    '@/lib/burrow-store': {getBurrowSnapshot:()=>({data:null}),refreshBurrow:async()=>{}},
+    '@/lib/onboarding-announcement-entry':{beginOnboardingAnnouncement(){}},
   }, {
     requestAnimationFrame(fn) { frames.set(++next, fn); return next; }, cancelAnimationFrame(id) { frames.delete(id); },
     setTimeout(fn, ms) { timers.set(++next, { fn, ms }); return next; }, clearTimeout(id) { timers.delete(id); },
@@ -84,6 +86,7 @@ function harness(platform = 'android') {
   }
   return {
     ...api, ...components, component, frames, timers, routes, appListeners, backListeners,
+    advance(ms){now+=ms;},
     overlays, route(value) { segments = value; }, otherOverlay(value) { externalOverlay = value; },
     ready() { const { attempt } = api.getHomeEntryState(); api.HOME_ENTRY_ASSETS.forEach((asset) => api.markHomeEntryAsset(asset, attempt)); },
     frame() { const batch = [...frames.values()]; frames.clear(); batch.forEach((fn) => fn()); },
@@ -162,8 +165,8 @@ test('opaque full-screen cover blocks touch/accessibility until ready, never sca
   assert.equal(content.props.importantForAccessibility, 'no-hide-descendants');
   assert.equal(content.props.style.flex, 1);
   assert.equal(cover.props.style.position, 'absolute'); assert.equal(cover.props.style.bottom, 0);
-  assert.equal(cover.props.style.backgroundColor, '#3D160B');
-  assert.equal(cover.props.children.type, 'BurrowLaunchScreen');
+  assert.equal(cover.props.style.backgroundColor, '#3f150b');
+  assert.equal(cover.props.children[0].type, 'BurrowLaunchScreen');
   assert.equal([...h.backListeners][0](), true);
   gate.unmount();
 });
@@ -177,8 +180,34 @@ test('defensive timeout releases the page and stale image callbacks stay harmles
   assert.equal(nodes(tree).some((n) => n.type === 'Spinner'), false);
   oldImage.props.onDisplay(); oldImage.props.onError({ error: 'late' });
   assert.equal(h.getHomeEntryState().attempt, oldAttempt);
-  assert.equal(h.getHomeEntryState().ready.length, 0);
+  assert.deepEqual(Array.from(h.getHomeEntryState().ready), ['entry-copy']);
   gate.unmount(); assert.equal(h.timers.size, 0);
+});
+
+for(const platform of ['ios','android'])test(`${platform}: modern Home releases at five seconds while network data remains pending`,()=>{
+ const h=harness(platform);h.setHomeEntryExperience('burrow');h.beginHomeEntry();
+ const gate=h.component(h.HomeEntryGate,{children:jsx('Home',{})});gate.render();
+ assert.equal(h.homeEntryTimeoutMs(),5000);
+ assert.ok([...h.timers.values()].some(timer=>timer.ms===5000));
+ h.expire(5000);gate.render();assert.equal(h.getHomeEntryState().pending,false);
+ h.ready();gate.render();h.frame();h.frame();gate.render();
+ assert.equal(h.getHomeEntryState().pending,false);
+ gate.unmount();assert.equal(h.timers.size,0);
+});
+test('modern first Home releases to bundled/local visuals even without remote readiness',()=>{
+ const h=harness('ios');h.setHomeEntryExperience('burrow');h.beginHomeEntry();
+ const gate=h.component(h.HomeEntryGate,{children:jsx('Home',{})});gate.render();
+ h.expire(h.homeEntryTimeoutMs());gate.render();
+ assert.equal(h.getHomeEntryState().pending,false);
+ assert.equal(h.getHomeEntryState().failed,true);gate.unmount();
+});
+test('onboarding, auth handoff and skin resolution share one five-second budget',()=>{
+ const h=harness('ios');h.beginHomeEntry();const gate=h.component(h.HomeEntryGate,{children:null});gate.render();
+ assert.ok([...h.timers.values()].some(timer=>timer.ms===5000));
+ h.advance(3000);h.setHomeEntryExperience('burrow');h.beginHomeEntry({target:'home',forceHomeData:true});gate.render();
+ assert.equal(h.homeEntryRemainingMs(),2000);
+ assert.ok([...h.timers.values()].some(timer=>timer.ms===2000));
+ h.advance(2000);h.expire(2000);assert.equal(h.getHomeEntryState().pending,false);gate.unmount();
 });
 
 test('background cancels timeout/reveal and resumes when active; unmount cancels queued work', () => {
@@ -197,9 +226,18 @@ test('purchased onboarding notification is deferred until after Home paint, exac
   gate.render(); h.ready(); gate.render(); h.frame(); h.frame();
   assert.equal(h.routes.length, 0);
   const tree = gate.render(); assert.equal(tree.props.children[1], null);
+  gate.render(); // overlay cleanup publishes a second render in the native app
   h.frame(); assert.deepEqual(h.routes, ['/(main)/(modals)/notification-settings']);
   gate.render(); h.frame(); h.frame(); assert.equal(h.routes.length, 1);
   gate.unmount();
+});
+
+test('launch announcement holds deferred notification settings until its overlay releases',()=>{
+ const h=harness();h.otherOverlay(true);h.beginHomeEntry();h.deferHomeEntryNotification();
+ const gate=h.component(h.HomeEntryGate,{children:jsx('Home',{})});
+ gate.render();h.ready();gate.render();h.frame();h.frame();gate.render();gate.render();h.frame();
+ assert.deepEqual(h.routes,[]);assert.equal(h.getHomeEntryState().pending,false,'Home is ready underneath announcement');
+ h.otherOverlay(false);gate.render();h.frame();assert.deepEqual(h.routes,['/(main)/(modals)/notification-settings']);gate.unmount();
 });
 
 test('late native frames after timeout cannot re-arm or navigate', () => {
@@ -224,7 +262,7 @@ test('entry is armed before auth redirects; first Home mounts before notificatio
   const onboarding = read('apps/mobile/app/(onboarding)/index.tsx');
   const finish = onboarding.slice(onboarding.indexOf('async function finish(verifiedPurchase'), onboarding.indexOf('async function onLinkProvider'));
   assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('markIntroSeen()'));
-  assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('await ensureSession()'));
+  assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('withDeadline(ensureSession()'));
   const signing = read('apps/mobile/app/(auth)/signing-in.tsx');
   assert.match(signing, /beginHomeEntry\(\{ target: 'home', forceHomeData: true \}\);[\s\S]*deferHomeEntryNotification\(\);[\s\S]*router.replace\('\/\(main\)\/\(tabs\)'\)/);
   const index = read('apps/mobile/app/index.tsx');
@@ -257,7 +295,7 @@ test('long resume queues behind an activity; Home waits for a fresh set of displ
   assert.equal(h.timers.size, 0);
   h.route(['(main)', '(tabs)']); gate.render(); tree = gate.render();
   assert.equal(tree.props.children[0].props.pointerEvents, 'none');
-  assert.equal(h.getHomeEntryState().ready.length, 0);
+  assert.deepEqual(Array.from(h.getHomeEntryState().ready), ['entry-copy']);
   assert.equal(h.overlays.size, 1);
   h.ready(); gate.render(); h.frame(); h.frame(); gate.render();
   assert.equal(h.overlays.size, 0);
@@ -295,7 +333,7 @@ test('loading cover belongs to Home only, so external routes have no invisible c
   const h = harness(); h.beginHomeEntry();
   const gate = h.component(h.HomeEntryGate, { children: jsx('Stack', {}) }); gate.render();
   assert.equal(h.overlays.size, 1);
-  h.route(['(main)', '(modals)', 'me']);
+  h.route(['(main)', 'menu']);
   const tree = gate.render();
   assert.equal(tree.props.children[1], null);
   assert.equal(tree.props.children[0].props.pointerEvents, 'auto');
@@ -305,17 +343,11 @@ test('loading cover belongs to Home only, so external routes have no invisible c
   gate.unmount();
 });
 
-test('Home observes background/top icons, final button layout, tab icons, and actual video first frame', () => {
-  const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
-  for (const asset of ['scene', 'menu', 'outfits', 'scenes']) assert.match(home, new RegExp('asset="' + asset + '"'));
-  assert.match(home, /markHomeEntryAsset\('home-layout', homeEntry.attempt\)/);
-  assert.match(home, /key=\{homeEntry.attempt\}/);
-  assert.match(home, /!homeEntry.pending && <AnnouncementGate/);
+test('current Home tracks Burrow art/layout and the current tab artwork, not the retired video', () => {
+  const home = read('apps/mobile/src/components/burrow/burrow-screen.tsx');
+  for (const asset of ['burrow-data', 'burrow-art', 'burrow-layout']) assert.ok(home.includes("markHomeEntryAsset('" + asset + "'"));
   const tabs = read('apps/mobile/src/components/main/bottom-tab-bar.tsx');
-  assert.match(tabs, /asset=\{`tab:\$\{tab.name\}`\}/);
-  assert.match(tabs, /markHomeEntryAsset\('tabs-layout', attempt\)/);
-  const video = read('apps/mobile/src/components/main/companion-video.tsx');
-  assert.match(video, /onFirstFrameRender=\{onReady\}/);
-  assert.match(video, /onDisplay=\{onReady\}/);
-  assert.doesNotMatch(video, /status === 'readyToPlay'\) onReady/);
+  assert.match(tabs, /asset=\{\`tab:\$\{name\}\`\}/);
+  assert.ok(tabs.includes("markHomeEntryAsset('tabs-layout', attempt)"));
+  assert.doesNotMatch(read('apps/mobile/app/(main)/(tabs)/index.tsx'), /CompanionVideo/);
 });

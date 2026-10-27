@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-20",
+  "status": "implemented_and_code_verified",
+  "implementation": {
+    "localAcceptance": "Camera and library use the same local acceptance path: crop/resize to JPEG, persist immutable bytes and a private document file, persist the scoped outbox, project onto Home/Plushie, then close the editor. No network response is awaited by the UI. Local disk failures retain the original recoverable crop/key.",
+    "backgroundSync": "Account/pair/owner/toy-scoped serialized outbox, immutable request keys, capped exponential retry, hourly rate-limit backoff, foreground/relaunch resume, duplicate target lock, stale callback fencing and definitive-rejection rollback. Cloud quota, permission and Moment authorities are unchanged. OS-suspended apps resume work on foreground/relaunch; continuous background execution is not claimed.",
+    "receipt": "Verified cloud receipt adopts the existing durable file without another encode/copy. Cache adoption failures cannot turn a committed upload into a generic save failure. Stale snapshots cannot replace a confirmed Doll receipt or undo its same-day target usage before an equal/newer cloud version is observed.",
+    "cloudRetention": "Existing deployed-compatible SQL keeps one current room_photos row per pair/owner/doll/toy. Replacements retire the old private path into room_photo_garbage. Doll faces are not added to frame history. Existing cleanup protects current/active references, applies the one-hour safety grace, deletes Storage objects and only then acknowledges the queue. The configured hourly cleanup means obsolete objects can remain temporarily; immediate physical deletion is not claimed.",
+    "hearts": "Squeeze and Bonk spawn two-second upward particles above the actual costume bounds/head centre, including the padded Skia coordinate space.",
+    "toySwitch": "Removed the Toy updated banner, its state/effects/styles and its delayed normal-flow removal. Toy replacement has no transient banner-induced stage resize."
+  },
+  "validation": {
+    "clientRegression": { "passed": 192, "failed": 0, "log": "/private/tmp/burrow-plushie-local-first.ODP4gW/regressions-final.log" },
+    "isolatedDatabase": { "passed": 26, "failed": 0, "log": "/private/tmp/plushie-photo-database.log" },
+    "mobileTypeCheck": "passed",
+    "productionHermesExportIOS": "passed; final-ios.log",
+    "productionHermesExportAndroid": "passed; final-android.log",
+    "changedFileWhitespace": "passed",
+    "globalWhitespace": "Unrelated pre-existing trailing whitespace in account-management.tsx:86 left untouched.",
+    "initialParallelExports": "Stopped to reduce resource contention; final exports completed with two workers each.",
+    "simulator": "not run",
+    "physicalCameraOrLibrary": "not run",
+    "fullNativeBuildOrLatencyBenchmark": "not run"
+  },
+  "delivery": {
+    "evidenceDirectory": "/private/tmp/burrow-plushie-local-first.ODP4gW",
+    "apiOrDatabaseSourceChangesForThisTask": false,
+    "productionWritesPerformed": false,
+    "installationOrOTAPublished": false,
+    "note": "Client source updated; previous worktree changes preserved. No new migration or API deployment is required by this implementation."
+  }
+}

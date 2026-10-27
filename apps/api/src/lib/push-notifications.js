@@ -1,4 +1,4 @@
-import { majorUpdateEnabled } from './app-major-update'
+import {SYSTEM_NOTIFICATION_TYPES,systemNotificationCopy} from './system-notification-copy.mjs'
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
@@ -6,53 +6,47 @@ const retryAt = (attempts) => new Date(
   Date.now() + Math.min(60, 2 ** Math.min(attempts, 6)) * 60_000,
 ).toISOString()
 
-export async function enqueuePartnerReflectNotification(supabase, userId, reflectId) {
-  const { data: pairing, error: pairingError } = await supabase
-    .from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle()
-  if (pairingError) throw pairingError
-  if (!pairing?.partner_user_id) return false
-  const { error: triggerError } = await supabase.from('marketing_paywall_triggers').upsert({
-    user_id: pairing.partner_user_id, campaign: 'partner_reflect', trigger_key: reflectId,
-  }, { onConflict: 'user_id,campaign,trigger_key', ignoreDuplicates: true })
-  if (triggerError) throw triggerError
-  const { error } = await supabase.from('notification_outbox').upsert({
-    recipient_user_id: pairing.partner_user_id,
-    event_key: `partner-reflect:${reflectId}`,
-    payload: { reflectId },
-  }, { onConflict: 'recipient_user_id,event_key', ignoreDuplicates: true })
-  if (error) throw error
-  return true
-}
-
 export async function drainPushNotificationOutbox(supabase, limit = 50) {
-  const majorUpdate = await majorUpdateEnabled(supabase)
   const now = new Date().toISOString()
   // A serverless invocation can be interrupted after claiming a row. Recover
   // stale claims so no partner update remains permanently stuck in `sending`.
   const staleLock = new Date(Date.now() - 10 * 60_000).toISOString()
-  let recovery = supabase.from('notification_outbox').update({
+  const recovery = supabase.from('notification_outbox').update({
     status: 'retry', next_attempt_at: now, locked_at: null,
     last_error: 'stale_delivery_claim_recovered',
-  }).eq('status', 'sending').lt('locked_at', staleLock)
-  if (majorUpdate) recovery = recovery.not('event_type', 'like', 'court_%')
+  }).eq('status', 'sending').lt('locked_at', staleLock).in('event_type',SYSTEM_NOTIFICATION_TYPES)
   await recovery
-  let pending = supabase.from('notification_outbox')
-    .select('*').in('status', ['pending', 'retry']).lte('next_attempt_at', now)
-  // Filter BEFORE limit so paused Court rows cannot starve partner updates.
-  if (majorUpdate) pending = pending.not('event_type', 'like', 'court_%')
+  const pending = supabase.from('notification_outbox')
+    .select('*').in('status', ['pending', 'retry']).lte('next_attempt_at', now).in('event_type',SYSTEM_NOTIFICATION_TYPES)
   const { data: rows, error } = await pending.order('created_at', { ascending: true }).limit(limit)
   if (error) throw error
   let sent = 0
   for (const row of rows || []) {
-    if (majorUpdate && String(row.event_type || '').startsWith('court_')) continue
+    if(!SYSTEM_NOTIFICATION_TYPES.includes(row.event_type))continue
     const attempts = Number(row.attempts || 0) + 1
     const { data: claimed } = await supabase.from('notification_outbox')
       .update({ status: 'sending', attempts, locked_at: now }).eq('id', row.id)
       .in('status', ['pending', 'retry']).select('id').maybeSingle()
     if (!claimed) continue
     try {
-      const { data: tokens, error: tokenError } = await supabase.from('device_push_tokens')
+      const context=await supabase.rpc('system_notification_context_v1',{p_user:row.recipient_user_id,p_type:row.event_type,p_payload:row.payload??{}})
+      if(context.error)throw context.error
+      if(row.event_type==='game_invite'&&row.payload?.nudge===true){
+        const eligible=await supabase.rpc('burrow_game_nudge_eligible_v1',{p_user:row.recipient_user_id,p_session:row.payload.sessionId})
+        if(eligible.error)throw eligible.error
+        if(!eligible.data)context.data={...context.data,allowed:false}
+      }
+      if(!context.data?.allowed||(row.expires_at&&Date.parse(row.expires_at)<=Date.now())){
+        await supabase.from('notification_outbox').update({status:'failed',last_error:'notification_no_longer_eligible',locked_at:null}).eq('id',row.id)
+        continue
+      }
+      let tokenQuery=supabase.from('device_push_tokens')
         .select('id,expo_push_token,platform').eq('user_id', row.recipient_user_id).eq('enabled', true)
+      if(!['game_ready','game_invite'].includes(row.event_type))tokenQuery=tokenQuery.gte('notification_version',2)
+      if(row.event_type==='adventure_reminder')tokenQuery=tokenQuery.eq('adventure_reminder_enabled',true)
+      if(row.event_type==='adventure_invite')tokenQuery=tokenQuery.gte('adventure_version',5)
+      if(row.event_type==='plushie_touch')tokenQuery=tokenQuery.gte('plushie_touch_version',context.data?.touchVersion===2?2:1)
+      const {data:tokens,error:tokenError}=await tokenQuery
       if (tokenError) throw tokenError
       if (!tokens?.length) {
         await supabase.from('notification_outbox').update({
@@ -63,42 +57,15 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
         }).eq('id', row.id)
         continue
       }
-      const isCourt = String(row.event_type || '').startsWith('court_')
-      const isGameReady = row.event_type === 'game_ready'
-      const courtTitle = typeof row.payload?.title === 'string' ? row.payload.title.slice(0, 80) : null
-      const courtBody = typeof row.payload?.body === 'string' ? row.payload.body.slice(0, 180) : null
+      const copy=systemNotificationCopy(row.event_type,row.payload,context.data.partnerName)
       const visibleMessages = tokens.map((token) => ({
         to: token.expo_push_token,
-        title: isCourt ? (courtTitle || 'Bunny Court') : isGameReady ? 'Game Room' : 'Burrow',
-        body: isCourt ? (courtBody || 'The court has an update for you.') : isGameReady ? 'Your results are ready to see!' : 'A little more of your person’s day is here for you.',
+        title:copy.title,body:copy.body,
         sound: 'default',
-        channelId: 'partner-updates',
-        data: isCourt
-          ? { type: row.event_type, route: 'thump', sessionId: row.payload?.sessionId }
-          : isGameReady
-            ? { type: 'game_ready', route: 'game_room', sessionId: row.payload?.sessionId }
-          : { type: 'partner_reflect', route: 'home', reflectId: row.payload?.reflectId },
+        channelId: row.event_type==='adventure_reminder'?'daily-reminders-v2':'partner-updates',
+        data:copy.data,
+        ...(row.expires_at?{ttl:Math.max(1,Math.floor((Date.parse(row.expires_at)-Date.now())/1000))}:{}),
       }))
-      // Send the widget invalidation independently. Its best-effort delivery
-      // must never reject, retry, or duplicate the existing visible alert.
-      const backgroundResponsePromise = isCourt || isGameReady ? Promise.resolve(null) : fetch(EXPO_PUSH_URL, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json', 'Content-Type': 'application/json',
-          ...(process.env.EXPO_ACCESS_TOKEN
-            ? { Authorization: `Bearer ${process.env.EXPO_ACCESS_TOKEN}` }
-            : {}),
-        },
-        body: JSON.stringify(tokens.map((token) => ({
-          to: token.expo_push_token,
-          // APNs background updates require priority 5 (`normal`); Android
-          // data messages use `high` so a sleeping device can wake promptly.
-          priority: token.platform === 'ios' ? 'normal' : 'high',
-          ttl: 300,
-          contentAvailable: true,
-          data: { type: 'partner_reflect_widget_refresh' },
-        }))),
-      }).catch(() => null)
       const response = await fetch(EXPO_PUSH_URL, {
         method: 'POST',
         headers: {
@@ -120,9 +87,6 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
           await supabase.from('device_push_tokens').update({ enabled: false }).eq('id', tokens[index].id)
         }
       }
-      // Drain the already-started background request without coupling its
-      // result to visible-notification delivery semantics.
-      await backgroundResponsePromise
       if (!delivered) throw new Error('expo_push_rejected')
       await supabase.from('notification_outbox').update({
         status: 'sent', sent_at: new Date().toISOString(), locked_at: null, last_error: null,

@@ -1,0 +1,1077 @@
+{
+  "code": "BC",
+  "name": "Biscuit",
+  "friendId": "adventure_friend_bc",
+  "waitingLines": [
+    "What time does {partner} get back? I’ll wait. I’m really good at waiting.",
+    "I’ll just keep checking the clock till {partner} gets here. Old habit."
+  ],
+  "questions": [
+    {
+      "id": "BC-V01",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit pops up through your floor wearing two watches, one on each wrist.",
+      "lines": [
+        "Hi! One's my time, one's Pip's time. What time is it there? Oh, right, here. Quiz!"
+      ],
+      "question": "What's Groundhog Day all about?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Groundhogs get the day off work",
+          "reply": [
+            "I wish! Pip says I deserve it.",
+            "The legend says if a groundhog sees its shadow, six more weeks of winter.",
+            "Every February 2. Very dramatic. Mostly inaccurate."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Everyone has to dig a hole",
+          "reply": [
+            "That would be my favorite holiday.",
+            "It's actually about the groundhog's shadow predicting winter's length.",
+            "Sees shadow, six more weeks of winter. Doesn't, early spring."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "If a groundhog sees its shadow, six more weeks of winter",
+          "reply": [
+            "Yes! That's the legend. Every February 2.",
+            "No shadow means an early spring. Shadow means more winter.",
+            "Spoiler: groundhogs are not great forecasters. We try, though."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Groundhog Day (Feb 2): shadow means six more weeks of winter per folklore.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V02",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit holds up a photo of a salmon leaping up a waterfall, and sniffles.",
+      "lines": [
+        "They go home no matter what. I relate. Pip's home is very far."
+      ],
+      "question": "How do salmon find their way back to the stream where they were born?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "By reading river signs",
+          "reply": [
+            "Ha! Cute! No signs underwater.",
+            "They mainly follow the unique smell of their home stream.",
+            "Years later, across an ocean. Still remember. Wow."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They just follow the biggest fish",
+          "reply": [
+            "Ha! Follow the leader? Not quite.",
+            "Salmon use smell to recognize their birth stream.",
+            "They likely use magnetic cues out at sea, then smell near home."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Mostly by smell",
+          "reply": [
+            "Yes! They sniff their way home!",
+            "Each stream has its own scent, and salmon remember it from when they were tiny.",
+            "Pip's hoodie smells like home to me. Same principle."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Salmon use olfactory imprinting (and likely geomagnetic cues) to return to natal streams.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V03",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit traces a long line across a map, from one pole to the other.",
+      "lines": [
+        "This bird does more long distance than me and Pip."
+      ],
+      "question": "Which bird has the longest migration of any animal?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The bald eagle",
+          "reply": [
+            "Majestic, but not the champion.",
+            "The Arctic tern wins. Pole to pole every year.",
+            "Over 40,000 miles a year. Respect."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The Arctic tern",
+          "reply": [
+            "Yes! Pole to pole!",
+            "It flies between the Arctic and Antarctic, tens of thousands of miles a year.",
+            "And I thought my flights to see Pip were long."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "The penguin",
+          "reply": [
+            "Penguins can't fly!",
+            "It's the Arctic tern. It flies pole to pole every year.",
+            "Endless summer. Endless travel."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Arctic terns migrate between Arctic and Antarctic, ~70,000 km/year.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V04",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit hugs her knees, looking at her phone. No new messages. Time zones.",
+      "lines": [
+        "Missing someone hurts. Like, actually. Science agrees."
+      ],
+      "question": "What did researchers find about the pain of feeling left out or lonely?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It activates brain areas linked to physical pain",
+          "reply": [
+            "Yes. Social pain overlaps with physical pain in the brain.",
+            "Feeling excluded lit up some of the same regions as physical hurt.",
+            "So missing Pip is basically a stubbed toe of the heart. Real."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It only affects your mood, not your brain",
+          "reply": [
+            "It goes deeper than mood.",
+            "Studies found overlap with brain areas involved in physical pain.",
+            "Being left out really hurts. Literally."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It makes you better at math",
+          "reply": [
+            "Ha! I wish. Then I'd be a genius.",
+            "It activates brain regions also involved in physical pain.",
+            "Be gentle with lonely hearts. Including yours."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Eisenberger et al. (2003): social exclusion engaged regions associated with physical pain (dACC).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V05",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit holds an orange butterfly sticker against the window.",
+      "lines": [
+        "This one makes me cry a little."
+      ],
+      "question": "How do monarch butterflies complete their long migration?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "One butterfly makes the whole round trip",
+          "reply": [
+            "Not quite!",
+            "It takes several generations to make the full round trip.",
+            "The great-grandkids finish the journey. Love that."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It takes several generations",
+          "reply": [
+            "Yes! Family relay!",
+            "The return trip is a relay across several generations.",
+            "Great-grandkids finish the journey. Legacy love."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They hitch a ride on birds",
+          "reply": [
+            "Ha! Cute. No.",
+            "The migration takes several generations to complete.",
+            "A relay race, butterfly-style."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Monarch migration spans multiple generations.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V06",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit puts her paw on her chest, feeling her heartbeat, then counts slowly.",
+      "lines": [
+        "Long-distance hearts beat slower when we're apart. Kidding."
+      ],
+      "question": "What happens to a groundhog's heartbeat during hibernation?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It slows way down",
+          "reply": [
+            "Yes! Like, way down.",
+            "From around 80 beats per minute to about 5.",
+            "Imagine sleeping through the whole winter. Pip would miss me so much."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It speeds up to stay warm",
+          "reply": [
+            "Nope, the opposite!",
+            "It drops from around 80 beats a minute to about 5.",
+            "Body temp drops too. Super deep sleep mode."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It stops completely",
+          "reply": [
+            "That would be scary! No.",
+            "It slows from around 80 to about 5 beats per minute.",
+            "Barely ticking. Energy-saving queen."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Hibernating groundhogs' heart rate drops from ~80 to ~5 bpm.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V07",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit hums a little tune, pauses, then hums the next part like a reply.",
+      "lines": [
+        "Pip and I do this on voice notes. It's our duet. Gibbons do it too!"
+      ],
+      "question": "What do many gibbon couples do every morning?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Groom each other's feet",
+          "reply": [
+            "Close in affection! Not it.",
+            "Gibbon couples sing loud, coordinated duets.",
+            "Their songs travel far through the trees. Couple goals."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hide from each other",
+          "reply": [
+            "Aww, no! The opposite!",
+            "Many gibbon pairs sing morning duets together.",
+            "The duet tells the forest: we're a team."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Sing duets together",
+          "reply": [
+            "Yes! Morning love songs!",
+            "Gibbon pairs sing coordinated duets that can be heard far through the forest.",
+            "Long-distance love language. I'm emotional."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Many gibbon species' mated pairs sing coordinated duets.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V08",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit cups her paws around her mouth and makes a low humming sound.",
+      "lines": [
+        "Long-distance calls, ocean edition!"
+      ],
+      "question": "How far can some blue whale calls travel underwater?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About one mile",
+          "reply": [
+            "Way farther!",
+            "Blue whale calls can travel hundreds of miles underwater.",
+            "Deep, low sounds go really far."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hundreds of miles",
+          "reply": [
+            "Yes! Hundreds of miles!",
+            "Low-frequency whale calls can carry hundreds of miles underwater.",
+            "The original long-distance call. No roaming fees."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Only across one pond",
+          "reply": [
+            "Ha! Whales don't live in ponds.",
+            "Their calls travel hundreds of miles underwater.",
+            "The ocean is their phone line."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Low-frequency blue whale calls can travel hundreds of km underwater.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V09",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit points at a pale flower in a photo, then checks both her watches.",
+      "lines": [
+        "This flower is only open for one day. Talk about timing."
+      ],
+      "question": "How long does a vanilla orchid flower usually stay open?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About one month",
+          "reply": [
+            "Way shorter!",
+            "Each flower opens for about a day.",
+            "Farmers hand-pollinate them fast. Vanilla is a labor of love."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About one day",
+          "reply": [
+            "Yes. Just one day!",
+            "Outside its native Mexico, it usually has to be pollinated by hand.",
+            "One-day chance. Like catching Pip when he's awake. Precious."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Forever",
+          "reply": [
+            "Aww, I wish!",
+            "Each flower usually lasts about a day.",
+            "That's why vanilla is so expensive. Precious timing."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Vanilla orchid flowers typically open for ~1 day; outside Mexico they're hand-pollinated.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V10",
+      "friendId": "adventure_friend_bc",
+      "type": "Trivia",
+      "scene": "Biscuit waves at a crow outside your window. It caws back.",
+      "lines": [
+        "That one knows me. Seriously. Crows remember faces!"
+      ],
+      "question": "What can crows remember about humans?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Faces, especially of people who treated them badly",
+          "reply": [
+            "Yes! They remember faces for years!",
+            "Crows can even teach other crows which humans to avoid.",
+            "Be nice to crows. They have a group chat about you."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only their names",
+          "reply": [
+            "Crows don't do names. They do faces.",
+            "They recognize individual human faces for years.",
+            "And share warnings with other crows. Wild."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Nothing, they forget instantly",
+          "reply": [
+            "Oh no, they remember everything!",
+            "Crows recognize individual faces and remember for years.",
+            "Their friends learn your face too. Be kind."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "American crows remember threatening human faces and transmit this socially (Marzluff et al.).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BC-V11",
+      "friendId": "adventure_friend_bc",
+      "type": "Preference",
+      "scene": "Biscuit holds her phone at arm's length, practicing her video-call smile.",
+      "lines": [
+        "Call with Pip in an hour. It's 6 a.m. for him. What time is it there? Oh. Here."
+      ],
+      "question": "Missing each other: video call, or voice note?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Video call",
+          "reply": [
+            "Video call! Seeing their face is everything.",
+            "Even when the Wi-Fi freezes them mid-sneeze."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Voice note",
+          "reply": [
+            "Voice note. Cozy, personal, replayable.",
+            "Listening to one 14 times is totally normal. I checked."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Video calls for both of you. Face-to-face people.",
+          "I bet you and {partner} have fallen asleep on a call at least once.",
+          "Pip and I do that. He snores. I keep the call on anyway."
+        ],
+        "A:B": [
+          "Voice notes for you. {partner} wants a video call.",
+          "They miss your face. Like, your actual face. That's sweet.",
+          "Pick a 'face day' each week. The rest can be voice notes."
+        ],
+        "B:A": [
+          "Video for you. {partner} prefers voice notes.",
+          "So you want their face and they want your voice on repeat.",
+          "Trade: one call for every three voice notes. Very fair. Very cute."
+        ],
+        "B:B": [
+          "Voice notes for both of you. Little audio love letters.",
+          "So you and {partner} basically have a private podcast about each other.",
+          "Save the best ones in a folder. Future you will thank you."
+        ]
+      }
+    },
+    {
+      "id": "BC-V12",
+      "friendId": "adventure_friend_bc",
+      "type": "Preference",
+      "scene": "Biscuit checks both watches, then softly hums a lullaby.",
+      "lines": [
+        "It's bedtime for Pip right now. My bedtime is in four hours."
+      ],
+      "question": "Goodnight ritual: a call, a song, or a 'sleep well' text?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A call",
+          "reply": [
+            "A call. Their voice is the best lullaby.",
+            "Even if it's 2 a.m. for one of you."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A song",
+          "reply": [
+            "A song. Romantic AND sleepy.",
+            "Pip sings off-key on purpose. I think it's on purpose."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A 'sleep well' text",
+          "reply": [
+            "A 'sleep well' text. Short, steady, sweet.",
+            "Every night, no matter what. That's devotion."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Calls for both of you. Voice-before-sleep people.",
+          "Honestly, you and {partner} definitely do the 'no, you hang up first' thing.",
+          "Never stop. It's annoying to everyone else, which is the point."
+        ],
+        "A:B": [
+          "A song for you. {partner} wants a call.",
+          "Sing it on the call. Combo achieved.",
+          "Pip would cry. Happy tears. Then fall asleep mid-tear."
+        ],
+        "A:C": [
+          "A text for you. {partner} wants a call.",
+          "They want your voice. You want your pillow. Fair.",
+          "Call on Fridays. Text the other nights. Everyone's happy."
+        ],
+        "B:A": [
+          "A call for you. {partner} would rather get a song.",
+          "So call, and halfway through, ask them to sing.",
+          "Or you sing. Badly. They'll fall asleep laughing."
+        ],
+        "B:B": [
+          "Songs for both of you. A lullaby couple.",
+          "I can picture it: you and {partner} should build a shared goodnight playlist.",
+          "Add one song each per week. In a year, it's your love story."
+        ],
+        "B:C": [
+          "A text for you. {partner} wants a song.",
+          "Text them one line of a song lyric.",
+          "Sneaky romance. They'll hum it all night."
+        ],
+        "C:A": [
+          "A call for you. {partner} likes a simple 'sleep well' text.",
+          "They text, you call. Double goodnight.",
+          "Extra love never hurt anyone. Except my phone bill."
+        ],
+        "C:B": [
+          "A song for you. {partner} prefers a quick text.",
+          "Text them one song link before bed.",
+          "Romantic, low effort, zero voice cracks. Perfect."
+        ],
+        "C:C": [
+          "Texts for both of you. Low-key and lovely.",
+          "Pretty sure you and {partner} have never once missed a 'sleep well.'",
+          "Consistency is so underrated. It's basically a love language."
+        ]
+      }
+    },
+    {
+      "id": "BC-V13",
+      "friendId": "adventure_friend_bc",
+      "type": "Preference",
+      "scene": "Biscuit tapes a box shut with an alarming amount of tape.",
+      "lines": [
+        "Care package for Pip! Eleven kinds of crackers. He's going to cry."
+      ],
+      "question": "Care package: hometown snacks, or something handmade?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Hometown snacks",
+          "reply": [
+            "Hometown snacks. A taste of home in a box.",
+            "Love you can literally eat."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Something handmade",
+          "reply": [
+            "Something handmade. Heart in a box.",
+            "Every crooked stitch says 'I miss you.'"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Snacks for both of you. A delicious couple.",
+          "Lowkey, you and {partner} probably trade snacks like rare treasure.",
+          "Add a ranking list. 'Eat this one when you miss me most.'"
+        ],
+        "A:B": [
+          "Handmade for you. {partner} wants snacks.",
+          "Knit them a little snack pouch. Then fill it.",
+          "Craft plus crunch. They'll love both, but mostly the crunch."
+        ],
+        "B:A": [
+          "Snacks for you. {partner} prefers handmade.",
+          "Bake something. Now it's a snack AND handmade.",
+          "Homemade cookies: the long-distance cheat code."
+        ],
+        "B:B": [
+          "Handmade for both of you. Crafty hearts.",
+          "I bet you and {partner} have a whole drawer of each other's creations.",
+          "Never throw any of it away. Even the lumpy ones. Especially those."
+        ]
+      }
+    },
+    {
+      "id": "BC-V14",
+      "friendId": "adventure_friend_bc",
+      "type": "Preference",
+      "scene": "Biscuit draws an X on a paper calendar. Then another. Then a heart.",
+      "lines": [
+        "Twelve days till I see Pip. Not that I'm counting. I'm counting."
+      ],
+      "question": "Time apart: count down the days, or try not to look?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Count down",
+          "reply": [
+            "Count down. Every X is a tiny party.",
+            "The calendar becomes your best friend."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Try not to look",
+          "reply": [
+            "Don't look. Time moves faster when you're not staring.",
+            "Very zen. I could never."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "A countdown couple. You both love the calendar.",
+          "You and {partner} probably text 'one less day!' every single morning.",
+          "That's the cutest kind of math."
+        ],
+        "A:B": [
+          "You don't look. {partner} counts every day.",
+          "They'll send updates. 'Nine days!' 'Eight days!'",
+          "Reply with a heart each time. That's their whole morning."
+        ],
+        "B:A": [
+          "You count down. {partner} tries not to look.",
+          "So when they ask 'how long?', you'll answer before they finish.",
+          "Be their calendar. Send a countdown sticker each day."
+        ],
+        "B:B": [
+          "You both avoid the calendar. Calm, collected.",
+          "So you and {partner} just let the days pass. Then suddenly, reunion!",
+          "Honestly, that sounds peaceful. Teach me."
+        ]
+      }
+    },
+    {
+      "id": "BC-V15",
+      "friendId": "adventure_friend_bc",
+      "type": "Preference",
+      "scene": "Biscuit backs up to your doorway and runs at a couch cushion, arms open.",
+      "lines": [
+        "Reunion practice! I'm getting good."
+      ],
+      "question": "Airport reunion: run and jump into their arms, or play it cool?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Run and jump",
+          "reply": [
+            "Run and jump! Slow motion! Strangers clap!",
+            "Movie scene. You're the main character."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Play it cool",
+          "reply": [
+            "Play it cool. Then cry in the car.",
+            "Classic. Composed outside, puddle inside."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both run and jump. Crash landing incoming.",
+          "Honestly, you and {partner} will collide in the middle of arrivals. Gloriously.",
+          "Stretch first. Romance is a contact sport."
+        ],
+        "A:B": [
+          "You play it cool. {partner} runs and jumps.",
+          "Brace yourself. They're coming in at full speed.",
+          "Catch them. Your cool act ends right there anyway."
+        ],
+        "B:A": [
+          "You run and jump. {partner} plays it cool.",
+          "They'll try to look calm. Then you'll knock them over.",
+          "Their cool act lasts about half a second. Worth it."
+        ],
+        "B:B": [
+          "You both play it cool. Until the car door closes.",
+          "I can picture it: you and {partner} nod politely, then sob in the parking lot.",
+          "Very real. Very cute. Bring tissues."
+        ]
+      }
+    },
+    {
+      "id": "BC-V16",
+      "friendId": "adventure_friend_bc",
+      "type": "Guess",
+      "scene": "Biscuit's phone buzzes: a photo of a cloud. Then a cat. Then a sandwich. No caption.",
+      "lines": [
+        "Pip sends me everything when he misses me. Even sandwiches."
+      ],
+      "question": "When your partner misses you, what do they do?",
+      "selfQuestion": "When you miss your partner, what do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Sends photos of random things",
+          "reply": [
+            "Random photos. Love in sandwich form.",
+            "Every pic secretly means 'wish you were here.'"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Goes quiet and a little mopey",
+          "reply": [
+            "Quiet and mopey. Aww, soft heart.",
+            "Missing someone is heavy. That's okay."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Random photo spam, and {partner} knew it.",
+          "They've received at least 47 pictures of clouds from you.",
+          "Each cloud is an 'I miss you.' They know. They save them."
+        ],
+        "A:B": [
+          "You go quiet. {partner} expected a flood of photos.",
+          "They're refreshing the chat waiting for a random cat pic.",
+          "Send one. Even a blurry one. It'll make their day."
+        ],
+        "B:A": [
+          "You send random photos. {partner} expected you to go quiet.",
+          "They didn't realize the sandwich pics were love letters.",
+          "Tell them. 'Every sandwich means I miss you.' Life-changing."
+        ],
+        "B:B": [
+          "Quiet and mopey, and {partner} knew it.",
+          "They notice when your texts suddenly get shorter.",
+          "Next time, send one hug emoji. It says everything."
+        ]
+      }
+    },
+    {
+      "id": "BC-V17",
+      "friendId": "adventure_friend_bc",
+      "type": "Guess",
+      "scene": "Biscuit wraps her arms around herself, eyes closed, imagining a very long hug.",
+      "lines": [
+        "First thing after being apart. I've planned mine for weeks."
+      ],
+      "question": "After time apart, what's the first thing your partner wants to do?",
+      "selfQuestion": "After time apart, what's the first thing you want to do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Hug for five full minutes",
+          "reply": [
+            "A five-minute hug. No talking. Just squeezing.",
+            "Time stops. Luggage gets forgotten."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Eat a favorite meal together",
+          "reply": [
+            "Favorite meal. Love tastes like that one dish.",
+            "Comfort food reunion. Perfect."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Nap together immediately",
+          "reply": [
+            "Nap together. Travel is exhausting.",
+            "Reunite, then recharge."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "A five-minute hug, and {partner} knew it.",
+          "They'll be waiting with open arms and zero plans to let go.",
+          "Set a timer. Then ignore the timer."
+        ],
+        "A:B": [
+          "Meal for you. {partner} guessed a hug.",
+          "They're coming in with open arms. You're coming in hungry.",
+          "Hug first, then eat. Just let the hug happen."
+        ],
+        "A:C": [
+          "Nap for you. {partner} guessed a hug.",
+          "They want five minutes of squeezing. You want five hours of sleep.",
+          "Hug while napping. Efficient love."
+        ],
+        "B:A": [
+          "Hug for you. {partner} guessed a meal.",
+          "They're thinking with their stomach. You're thinking with your arms.",
+          "Hug in the restaurant doorway. Then eat. Everyone wins."
+        ],
+        "B:B": [
+          "Favorite meal, and {partner} knew it.",
+          "They've probably already booked the table. Or the takeout.",
+          "Reunion dinner. Eat slowly. Stare a lot."
+        ],
+        "B:C": [
+          "Nap for you. {partner} guessed a meal.",
+          "They booked dinner. You booked the pillow.",
+          "Nap first, then dinner. Rested and fed. Perfect."
+        ],
+        "C:A": [
+          "Hug for you. {partner} guessed a nap.",
+          "Close! A nap is basically a horizontal hug.",
+          "Cuddle nap. Problem solved. You're welcome."
+        ],
+        "C:B": [
+          "Meal for you. {partner} guessed a nap.",
+          "Eat first, then nap. The perfect food coma.",
+          "Honestly, best reunion plan I've ever heard."
+        ],
+        "C:C": [
+          "A nap together, and {partner} knew it.",
+          "They're already fluffing the pillows. Romance.",
+          "Sleepy reunion. The most honest kind of love."
+        ]
+      }
+    },
+    {
+      "id": "BC-V18",
+      "friendId": "adventure_friend_bc",
+      "type": "Guess",
+      "scene": "Biscuit holds her phone too close to her face, then too far, then at a weird upward angle.",
+      "lines": [
+        "Pip always gets my ceiling fan in the shot."
+      ],
+      "question": "What does your partner look like on video calls?",
+      "selfQuestion": "What do you look like on video calls?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Perfect lighting, cute angle",
+          "reply": [
+            "Perfect lighting. A professional.",
+            "Ring light energy. Very glam."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Chin cam, ceiling fan in view",
+          "reply": [
+            "Chin cam. Iconic.",
+            "The ceiling fan is basically part of the relationship now."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Perfect lighting, and {partner} knew it.",
+          "You're a video call pro. They're very lucky.",
+          "Teach them your angles. Or don't. Keep the advantage."
+        ],
+        "A:B": [
+          "Chin cam for you. {partner} expected perfect lighting.",
+          "They had such high hopes. Then the fan appeared.",
+          "Wave at the fan together. It's a tradition now."
+        ],
+        "B:A": [
+          "You've got perfect lighting. {partner} expected chin cam.",
+          "They're shocked. They thought they'd see your ceiling again.",
+          "Next call, flip the camera on them. Show them the light."
+        ],
+        "B:B": [
+          "Chin cam, and {partner} knew it.",
+          "They know your ceiling fan better than your face at this point.",
+          "Love truly is blind. And looking straight up your nose."
+        ]
+      }
+    },
+    {
+      "id": "BC-V19",
+      "friendId": "adventure_friend_bc",
+      "type": "Guess",
+      "scene": "Biscuit's phone plays a little song notification. She smiles at it like it's a person.",
+      "lines": [
+        "Pip sends me songs at weird hours. Because time zones."
+      ],
+      "question": "What's your partner's 'thinking of you' move?",
+      "selfQuestion": "What's your 'thinking of you' move?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Sends a song",
+          "reply": [
+            "A song. Romantic. Every lyric is a hint.",
+            "Wake up to a love song. Best alarm."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Sends a meme",
+          "reply": [
+            "A meme. Funny love.",
+            "Laughing together from far away still counts."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Songs, and {partner} knew it.",
+          "Your shared playlist is basically one long love letter.",
+          "Keep sending them. Even the dramatic ballads."
+        ],
+        "A:B": [
+          "Memes from you. {partner} expected songs.",
+          "They're waiting for lyrics. You send a cat falling off a couch.",
+          "Send one song next time. Watch them panic, happily."
+        ],
+        "B:A": [
+          "Songs from you. {partner} expected memes.",
+          "They're ready for a joke. You hit them with feelings.",
+          "Surprise romance attack. Very effective."
+        ],
+        "B:B": [
+          "Memes, and {partner} knew it.",
+          "Their camera roll is half your humor at this point.",
+          "Laughter is love with better timing."
+        ]
+      }
+    },
+    {
+      "id": "BC-V20",
+      "friendId": "adventure_friend_bc",
+      "type": "Guess",
+      "scene": "Biscuit closes her eyes, spins in a circle, and opens them. Still in your living room.",
+      "lines": [
+        "Didn't work. Still in your living room. Teleport question!"
+      ],
+      "question": "If your partner could teleport you both anywhere once, where would they pick?",
+      "selfQuestion": "If you could teleport you both anywhere once, where would you pick?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Somewhere totally new",
+          "reply": [
+            "Somewhere new. Adventure mode.",
+            "New memories, new snacks."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Back to where you met",
+          "reply": [
+            "Where you met. Sentimental.",
+            "Full-circle romance."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Somewhere new, and {partner} knew it.",
+          "They know you're always chasing the next adventure.",
+          "Pack light. Bring snacks. Text me."
+        ],
+        "A:B": [
+          "Where you met for you. {partner} expected somewhere new.",
+          "They thought you'd want adventure. You want the beginning.",
+          "That's so sweet. Tell them why. They'll melt."
+        ],
+        "B:A": [
+          "Somewhere new for you. {partner} expected the place you met.",
+          "They thought you'd be nostalgic. You're thinking passports.",
+          "Do both. Start where you met, end somewhere new."
+        ],
+        "B:B": [
+          "Where you met, and {partner} knew it.",
+          "They know you're a sentimental soul.",
+          "Recreate the moment. Same spot. Same outfit if you dare."
+        ]
+      }
+    }
+  ]
+}

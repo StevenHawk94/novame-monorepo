@@ -1,38 +1,19 @@
-import { TAP_YOUR_DAY_QUESTIONS, type CustomTapItem, type TapYourDayChoice, type TapYourDayQuestion } from '@novame/engine';
-import { PROMPT_CATEGORIES } from './guided-catalog.g';
+import { TAP_YOUR_DAY_OPTIONAL_CHOICES, localCustomTapItem, type CustomTapItem, type TapYourDayChoice, type TapYourDayQuestion } from '@novame/engine';
 
-/** Destinations are the ten visible headings, not the spreadsheet's icon taxonomy. */
-export const CUSTOM_TAP_GROUPS = TAP_YOUR_DAY_QUESTIONS.flatMap(question =>
-  question.groups.filter(group => !!group.title).map(group => ({ title: group.title, kind: question.kind })),
-);
-
-/** The generated subcategory map has ten Main_Category parents. Parent itemIds are empty. */
-export const CUSTOM_TAP_ICON_CATEGORIES = PROMPT_CATEGORIES.filter(category => category.subcategories.length > 0)
-  .map(category => ({
-    key: category.key,
-    label: category.label,
-    itemIds: [...new Set(category.subcategories.flatMap(group => group.itemIds))],
-  }));
-
+export const CUSTOM_TAP_GROUPS = [...new Map(TAP_YOUR_DAY_OPTIONAL_CHOICES.map(choice =>
+  [choice.group, { title: choice.group, kind: choice.kind }],
+)).values()];
 export function canAddCustomTapItem(question: TapYourDayQuestion) {
-  return question.groups.some(group => !!group.title);
+  return TAP_YOUR_DAY_OPTIONAL_CHOICES.some(choice => choice.kind === question.kind);
 }
-
-export function customTapDestination(title: string) {
-  return CUSTOM_TAP_GROUPS.find(group => group.title === title);
-}
-
 export function customTapGroupsForQuestion(question: TapYourDayQuestion, items: CustomTapItem[]) {
   const rows = question.groups.map(group => ({ ...group, choices: [...group.choices] as (TapYourDayChoice & Partial<CustomTapItem>)[] }));
-  for (const item of items) {
-    const destination = customTapDestination(item.group);
-    const kind = destination?.kind ?? item.kind;
-    if (kind !== question.kind) continue;
-    // Older clients allowed arbitrary groups (including people/feelings).
-    // Keep those choices visible in the first existing group; never erase or
-    // rewrite the user's account-scoped cache just to change the picker UI.
-    const target = rows.find(group => group.title === destination?.title) ?? rows[0];
-    target?.choices.push({ ...item, kind, group: target.title });
+  const seen = new Set(rows.flatMap(group => group.choices.map(choice => choice.itemId)));
+  for (const value of items) {
+    const item = localCustomTapItem(value);
+    if (!item || item.kind !== question.kind || seen.has(item.itemId)) continue;
+    rows.find(group => group.title === item.group)?.choices.push(item);
+    seen.add(item.itemId);
   }
   return rows.filter(group => group.choices.length);
 }

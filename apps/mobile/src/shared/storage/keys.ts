@@ -1,5 +1,9 @@
-import { deleteBurrowRoomPhotos, deleteOnboardingAvatar, deleteRecordDraftAudio } from './artifacts';
+import { deleteBurrowRoomPhotos, deleteOnboardingAvatar, deleteRecordDraftAudio, deleteSurpriseDraftFiles,deleteProfileAvatars } from './artifacts';
 import { defineKey, definePrefixKey } from './registry';
+/** Confirmed visual identity + immutable onboarding selection intent; no economy. */
+export const kBunnyIdentity=defineKey('burrow_bunny_identity_v1','user');
+export const kAdventureNudges=defineKey('burrow_adventure_nudges_v1','user');
+export const kPlushieTouch=defineKey('burrow_plushie_touch_v1','user');
 
 /**
  * THE key manifest. Every MMKV key in the app, declared exactly once, with an
@@ -54,6 +58,29 @@ import { defineKey, definePrefixKey } from './registry';
 
 /** subscription.ts: STORAGE_KEY */
 export const kSubscription = defineKey('novame_subscription', 'user');
+/** Closed announcement IDs + retryable read acknowledgements, partitioned by user. */
+export const kAnnouncementReads = definePrefixKey('burrow_announcement_reads:v1:', 'user');
+export const kSurpriseDraft = defineKey('burrow_surprise_draft', 'user', { onClear: () => deleteSurpriseDraftFiles(true) });
+export const kSurpriseHistory = definePrefixKey('burrow_surprise_history:v1:', 'user');
+export const kSurpriseMedia = definePrefixKey('burrow_surprise_media:v2:', 'user');
+export const kSurpriseOutbox = defineKey('burrow_surprise_outbox_v1', 'user', { onClear: () => deleteSurpriseDraftFiles(true) });
+export const kCoinOperations = defineKey('burrow_coin_operations_v1','user');
+/** Durable purchases must follow exactly the same sign-out policy as other monetary intents. */
+export const kShopPurchases = defineKey('burrow.shop-purchases.v1','user');
+export const kQuestProgress = defineKey('burrow_quest_progress_v1','user');
+/** Gift IDs/replace intents only, partitioned again by account + pair epoch. */
+export const kShopGiftClaims = definePrefixKey('burrow_shop_gift_claims:v1:','user');
+/** First-use instructions; acknowledged separately from the paid-send draft. */
+export const kSurpriseGuideSeen = defineKey('burrow_surprise_guide_seen_v1', 'user');
+/** Completed games, isolated by account and relationship generation. */
+export const kGameHistory = definePrefixKey('burrow_game_history:v1:', 'user');
+/** Permanent check-circle progress/receipts only, never answers or prices. */
+export const kGameProgress = definePrefixKey('burrow_game_progress:v1:', 'user');
+export const kGameOverview = definePrefixKey('burrow_game_overview:v1:', 'user');
+/** Local two-round answers/outbox; partitioned again by account and pair version. */
+export const kGameLocal = defineKey('burrow_game_local_v1', 'user');
+/** Prepared visit branches, frozen local progress and durable answer outbox. */
+export const kFriendVisitLocal = defineKey('burrow_friend_visit_local_v3', 'user');
 
 /** me-stats.ts: STORAGE_KEY */
 export const kMeStats = defineKey('novame_me_stats', 'user');
@@ -69,6 +96,9 @@ export const kConnectedAccount = defineKey('burrow_connected_account', 'user');
 
 /** Store-account country for seasonal Burrow art; refreshed without blocking UI. */
 export const kBurrowStorefrontCountry = defineKey('burrow_storefront_country', 'user');
+
+/** Public, store-localized coin prices; no account balance or server gate. */
+export const kCoinStorePrices = defineKey('burrow_coin_store_prices_v1', 'device');
 
 /** Clear-only legacy Focus voice state retained for upgrade cleanup. */
 export const kFocusVoice = defineKey('burrow_focus_voice', 'user');
@@ -109,18 +139,47 @@ export const kReflectSettlement = definePrefixKey('burrow_reflect_settlement:', 
 /** Local memories and explicit Save retries. Account + pair scoped, cleared on logout. */
 export const kBurrowMemoryLocal = definePrefixKey('burrow_memory_local:v1:', 'user');
 export const kBurrowPhotoDrafts = definePrefixKey('burrow_photo_drafts:v1:', 'user');
+export const kPlushiePhotoOutbox = definePrefixKey('plushie_photo_outbox:v1:', 'user');
+export const kFramePhotoOutbox = definePrefixKey('frame_photo_outbox:v1:', 'user');
+export const kLoveNoteOutbox = definePrefixKey('love_note_outbox:v1:', 'user');
+export const kProfileAvatar = defineKey('profile_avatar:v1','user',{onClear:deleteProfileAvatars});
+export const kAccountProfile = defineKey('account_profile:v1','user');
+export const kAccountProfileEdits = defineKey('account_profile_edits:v1','user');
 export const kBurrowSnapshot = defineKey('burrow_snapshot:v1', 'user');
+export const kBurrowWallet = defineKey('burrow_wallet:v1', 'user');
+/** Read identifiers only, never partner messages or voice content. */
+export const kBurrowAttention = definePrefixKey('burrow_attention:v1:', 'user');
 export const kBurrowJournal = definePrefixKey('burrow_journal:v1:', 'user');
+export const kJournalOutbox = definePrefixKey('burrow_journal_outbox:v2:', 'user');
 export const kBurrowTextDrafts = definePrefixKey('burrow_text_drafts:v1:', 'user');
+/** Ordered, locally acknowledged Adventure Save/Start intents. */
+export const kAdventureJournalJobs = defineKey('burrow_adventure_journal_jobs_v1', 'user');
 export const kBurrowActionKeys = defineKey('burrow_action_keys:v1', 'user');
+/** Small durable room intents; wire keys survive timeouts and process death. */
+export const kBurrowRoomEdits = definePrefixKey('burrow_room_edits:v1:', 'user');
+/** Legacy shared intents stay archived; never reinterpret them as personal charges. */
+export const kPersonalRoomEdits = definePrefixKey('burrow_personal_room_edits:v2:', 'user');
+/** Pending Toy input receipts belong to the account; never survive sign-out. */
+export const kToyInputBatches = defineKey('burrow:toy-input-batches:v2', 'user');
+/** Ordered adventure receipts; clicks never grant inventory themselves. */
+export const kAdventureDelivery = defineKey('burrow_adventure_delivery:v1', 'user');
+/** Completion cadence and deduplication receipts, never inventory or rewards. */
+export const kAdventurePaywall = definePrefixKey('burrow_adventure_paywall:v1:', 'user');
 export const kBurrowMusicMuted = defineKey('burrow_music_muted:v1', 'device');
+export const kInteractionPreferences = defineKey('burrow_interaction_preferences:v1', 'device');
+export const kStorageMigrated = defineKey('burrow_storage_migrated:v1', 'device');
+/** Supabase owns these encrypted credentials, not feature cache clearing. */
+export const kAuthStorage = definePrefixKey('burrow_auth:', 'device');
 /** Persistent private frame/Toy photo paths, invalidated by photo version. */
 export const kBurrowRoomPhotoCache = defineKey('burrow_room_photo_cache:v1', 'user', { onClear: deleteBurrowRoomPhotos });
 
 /** Tap Your Day names/groups are private, UUID-scoped local preferences. */
 export const kCustomTapItems = definePrefixKey('custom-tap-items:v1:', 'user');
+/** Approved local-only optional choices. Legacy preferences remain untouched. */
+export const kLocalTapItems = definePrefixKey('local-tap-items:v4:', 'user');
 
 /** Public admin-reviewed matching rules, versioned by catalog, shared by accounts. */
+// Retired cache tombstone: keep registered for older installations, never read.
 export const kReviewedItemRules = definePrefixKey('reviewed-item-rules:', 'device');
 
 /** Clovers balance + unlocked cosmetics (cache-first). */
@@ -326,6 +385,8 @@ export const kPartnerReflectPaywallAssignment = defineKey(
  *  when onboarding reaches sign-in; read by app/index.tsx to route a
  *  session-less launch to onboarding (unseen) vs sign-in (seen). */
 export const kOnboardingIntroSeen = defineKey('novame_onboarding_intro_seen', 'device');
+/** A content-free first-Home handoff flag; survives optional account linking. */
+export const kOnboardingAnnouncementPending = defineKey('burrow_onboarding_announcement_pending', 'device');
 
 /** Ads funnel deduplication. No user content or identity is stored. */
 export const kMetaFirstLaunchLogged = defineKey('burrow_meta_first_launch_logged', 'device');
@@ -383,6 +444,10 @@ export const kReflectShareDefaults = defineKey('novame_reflect_share_defaults', 
 // Friends tab caches (2026-07-24 全局缓存优先): status + Messages feed, so
 // the tab renders instantly from the last visit while revalidating.
 export const kFriendsStatus = defineKey('novame_friends_status', 'user');
+/** Stable personal code, independent of the current relationship cache. */
+export const kPartnerInviteCode = defineKey('burrow_partner_invite_code_v1', 'user');
+/** Confirmed Release quota/progress; never grants rewards locally. */
+export const kReleaseRoomStatus = defineKey('burrow_release_status_v1', 'user');
 export const kFriendsFeed = defineKey('novame_friends_feed', 'user');
 
 // Guided Prompts (流程2) — the user's chosen reflect categories (3-20 keys).
@@ -476,6 +541,8 @@ export const kRatingPromptUserExpressed = defineKey(
 );
 /** Successful Reflect claims on this device, used only for official store-review cadence. */
 export const kRatingReflectClaimCount = defineKey('novame_rating_reflect_claim_count', 'device');
+/** Account-owned successful engagement receipts and one coalesced review opportunity. */
+export const kOfficialRatingMilestones = definePrefixKey('burrow_official_rating_milestones:v1:', 'user');
 
 /** asset-cache.ts: user-agnostic R2 Outfits/Maps runtime catalog. */
 export const kAssetManifest = defineKey('asset-manifest:cached', 'device');
@@ -499,6 +566,11 @@ export const kOutfitCatalog = defineKey('novame_outfit_catalog', 'device');
 
 /** outfits.ts: which outfit this account has equipped (mirrors kCosmetics skins). */
 export const kEquippedOutfit = defineKey('novame_equipped_outfit', 'user');
+/** Pair-bound complete touch draft and introductory acknowledgement. */
+export const kPlushieTouchDraft = defineKey('burrow_plushie_touch_draft_v1', 'user');
+/** Active-time recording, bound to actor/partner/pair/toy/photo. */
+export const kPlushieTouchRecording = defineKey('burrow_plushie_touch_recording_v1', 'user');
+export const kPlushieTouchGuide = defineKey('burrow_plushie_touch_guide_v1', 'user');
 
 /** scenes.ts: cached scene catalog from the R2 video-manifest (user-agnostic). */
 export const kSceneCatalog = defineKey('novame_scene_catalog', 'device');

@@ -1,0 +1,39 @@
+{
+  "status": "completed",
+  "migration": "20261023000264",
+  "migrationHash": "a45e85ad456be8ad41f7cd3cd41af08b",
+  "production": {
+    "readinessGuardInstalled": true,
+    "protectedUserRowsUnchanged": true,
+    "unrelatedFunctionsUnchanged": true,
+    "grantsUnchanged": true,
+    "healthStatus": 200,
+    "unauthenticatedGameStatus": 401,
+    "apiDeploymentRequired": false,
+    "adminDeployed": false,
+    "realUserSendsOrImpersonation": 0
+  },
+  "client": {
+    "invitationRequiresPartnerOwnSixAndGuessSix": true,
+    "ownEmptyDraftIsContinueNotGameFrom": true,
+    "sharedGameReads": "One GET per key/revision; 1-second adjacent callback reuse; mutation/realtime/pair invalidation requires a fresh read",
+    "identityFences": "Cached receipts and in-flight retries cannot cross account epochs",
+    "notificationPreparation": "Reuse matching prepared sessions; only fetch missing or changed models; publish ready state after UI settles",
+    "backgroundWork": "Same-pair silent bootstrap reconciliation and background Game rendering yield to touches/transitions; relationship revocation stays synchronous",
+    "displayPersistence": "Coalesced idle writes; answer and send outboxes remain synchronously durable",
+    "selectors": "Focused and retained primary pages ignore unrelated changes while preserving required display fields",
+    "optimisticRollback": "Structural sharing retains quest projection identity and WeakMap provenance for rollback and raw-cache stripping",
+    "businessRules": "No scoring, answer privacy, purchase, reward, local-day quota or enqueue-rule changes",
+    "requiresClientRelease": true,
+    "easBuildOrSubmitStarted": false
+  },
+  "verification": {
+    "testsPassed": 367,
+    "testsFailed": 0,
+    "mobileTypecheck": "passed",
+    "iosExport": "passed",
+    "iosBundle": "index-3345992972dabfb6fc430b32d3e85772.hbc",
+    "iosExportDirectory": "/private/tmp/burrow-game264-verified-ios",
+    "nativeDeviceFrameProfiling": "not performed; unit tests and export do not establish zero dropped frames"
+  }
+}

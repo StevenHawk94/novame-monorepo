@@ -1,0 +1,64 @@
+{
+  "scope": "Current working tree; no production deployment or production data mutation",
+  "approved_fixes": {
+    "burrow_icons": "All eight entrances use the supplied local artwork; stale paths and duplicate filename suffix fixed",
+    "wallet": "True safe-integer balance is retained for persistence, receipts and spending; display is 99999+ at or above 99999 and exact below it",
+    "sharing": "Default sharing retained; no privacy toggle added; paired composition screens include a neutral visibility description; historical authorization and account isolation retained",
+    "secure_storage": "Native AES-256 MMKV, key in OS Keychain/Keystore; verified resumable copy migration and asynchronous legacy session migration; no plaintext fallback on vault failure",
+    "continuous_motion": "Affection SVG/progress and watering physics render on the UI thread; feeding progress renders natively; business duration, thresholds and single-completion guards retained",
+    "accessibility": "Feed/water activation alternatives; real 48pt wallet touch bounds preserve the original visual pill, flow height and reward anchor",
+    "audio_haptics": "Persistent independent sound and haptic preferences; automatic audio respects silent mode; explicit Surprise voice playback retained",
+    "errors": "Presentation-boundary friendly errors; original codes still drive pairing, payment, entitlement and retry decisions"
+  },
+  "additional_low_risk_changes": [
+    "Love Note helper and placeholder contrast",
+    "Default typography permits 150 percent system font scaling; existing explicit layout-specific limits remain",
+    "Adventure completion grammar and Start button press feedback",
+    "Daily Plus Bonus Later dismissal without consuming the reward; next-day identity resets presentation",
+    "Android backup excludes the vault and non-restorable Keystore-linked files; ordinary backups remain enabled",
+    "Headless widget registration defers secure session access until inside its guarded task"
+  ],
+  "verification": {
+    "full_suite": { "tests": 1967, "passed": 1967, "failed": 0, "log": "/private/tmp/prerelease-fixes-final-tests.log" },
+    "subsequent_targeted_runs": [
+      { "tests": 68, "failed": 0, "log": "/private/tmp/prerelease-wallet-targets.log" },
+      { "tests": 18, "failed": 0, "log": "/private/tmp/prerelease-native-wallet-anchor-tests.log" },
+      { "tests": 78, "failed": 0, "log": "/private/tmp/prerelease-final-interactions.log" },
+      { "tests": 49, "failed": 0, "log": "/private/tmp/prerelease-sharing-notice.log" },
+      { "tests": 23, "failed": 0, "log": "/private/tmp/prerelease-upgrade-lifecycle.log" },
+      { "tests": 70, "failed": 0, "log": "/private/tmp/prerelease-secure-wallet-final.log" },
+      { "tests": 82, "failed": 0, "log": "/private/tmp/prerelease-last-clock-storage-tests.log" }
+    ],
+    "workspace_typecheck": { "tasks": 5, "passed": 5, "log": "/private/tmp/prerelease-fixes-verification-types.log" },
+    "final_mobile_typecheck": { "passed": true, "log": "/private/tmp/prerelease-final-mobile-types.log" },
+    "native_js_bundles": { "platforms": ["android", "ios"], "passed": true, "log": "/private/tmp/prerelease-final-source-bundles.log" },
+    "ios_isolated_runtime": [
+      "Capped wallet display and exact display below the cap",
+      "Native wallet anchor remains at the visible pill after width changes",
+      "Tap above the visible wallet pill triggers the expanded transparent hit target",
+      "Feed/water accessibility activation completes once",
+      "Native Hug SVG and Sent result complete normally",
+      "Backgrounding cancels unfinished watering; foreground returns with zero progress and no extra completion",
+      "Actual watering-can press held for 3.5 seconds reaches 100 percent and calls completion once; elapsed business time includes a delayed first native frame"
+    ],
+    "ios_native_build": { "status": "passed", "configuration": "Debug iphonesimulator; new SecureStore native module included", "log": "/private/tmp/prerelease-ios-final-build.log" },
+    "ios_native_secure_storage": {
+      "status": "passed",
+      "isolation": "Separately identified local QA app and Keychain service; only fake notes, flags, wallet and session data; real SecureStore/MMKV and production migration implementation",
+      "checks": [
+        "Real OS vault key creation, AES-256 MMKV migration and retained false boolean",
+        "Memory-warning dispatch after migration does not access a destroyed legacy native handle",
+        "Encrypted note and true 100500 wallet balance persist across native process termination and relaunch",
+        "Real AsyncStorage fake session migrates through the encrypted auth adapter; durable sign-out tombstone prevents session resurrection",
+        "Legacy MMKV files retired on the following native process startup",
+        "Neither dummy note marker nor wallet key appears as plaintext in encrypted MMKV or CRC files"
+      ],
+      "log": "/private/tmp/prerelease-native-events.log"
+    },
+    "limitations": [
+      "Native security dependency requires rebuilding the iOS/Android client, not only refreshing JavaScript",
+      "No current Release-device cold-start, sustained FPS, 30-minute memory or production crash-free-session measurement",
+      "No Android emulator run, store transaction or production deployment performed"
+    ]
+  }
+}

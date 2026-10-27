@@ -1,10 +1,10 @@
-# EAS resolves its ignore file from the app directory (where eas.json lives),
-# even though the uploaded workspace starts at the monorepo root.
+# Mirror the root release policy. EAS_NO_VCS builds explicitly use the repository
+# root via EAS_PROJECT_ROOT; keep this copy safe for other CLI/VCS modes too.
 
 # Dependencies and VCS metadata
 node_modules/
 .pnpm-store/
-.git/
+.git
 
 # Deployment/provider metadata is local-only and not a mobile build input.
 .vercel/
@@ -14,10 +14,20 @@ supabase/.temp/
 
 # Other applications and backend/development workspaces are not mobile build inputs.
 apps/admin/
-apps/api/
+apps/api/*
+!apps/api/src/
+!apps/api/src
+apps/api/src/*
+!apps/api/src/data/
+!apps/api/src/data
+apps/api/src/data/*
+!apps/api/src/data/burrow-game-room-v1.json
 docs/
 supabase/
 tools/
+outputs/
+.agents/
+.codex/
 
 # Build and framework outputs
 dist/
@@ -32,9 +42,11 @@ build/
 .env
 .env.local
 .env.*.local
+.env.local.*
 !.env.example
 .DS_Store
 Thumbs.db
+.~*
 .vscode/
 .idea/
 *.swp
@@ -45,10 +57,8 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Generated native projects and artifacts
-apps/mobile/ios/
-apps/mobile/android/
-ios/
-android/
+/apps/mobile/ios/
+/apps/mobile/android/
 *.ipa
 *.apk
 *.aab
@@ -69,6 +79,12 @@ video-manifest.json
 # Apple authentication keys
 *.p8
 AuthKey_*.p8
+*.p12
+*.pem
+*.key
+*.jks
+*.mobileprovision
+credentials.json
 
 # Firebase Admin / FCM V1 service-account private keys
 **/*firebase-adminsdk*.json
@@ -79,3 +95,8 @@ AuthKey_*.p8
 
 # Source-only New Lens workbook; runtime content is already generated.
 /tools/New_Lens_Content.xlsx
+
+/apps/api/.env.example
+/apps/admin/.env.example
+# Catalog authoring/publication inputs are not native runtime assets.
+/catalog/

@@ -1,6 +1,6 @@
 export const TOY_PHOTO_DAILY_LIMIT_TITLE = 'Today’s photo limit reached';
 export const TOY_PHOTO_DAILY_LIMIT_MESSAGE =
-  'You can change your toy photo once per day. Photo library and camera share this limit. Try again after your local midnight.';
+  'Join plus to enable more photos used on your plushie, or come back tomorrow;';
 
 export function roomPhotoFailureCode(failure: unknown): string | null {
   if (failure && typeof failure === 'object' && 'body' in failure) {

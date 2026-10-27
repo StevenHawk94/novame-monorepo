@@ -2,8 +2,10 @@ import { useCallback, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { FOREGROUND_AUDIO_MODE } from './foreground-audio-mode';
 import { createCompletionSoundPlayer } from './completion-sound-player';
 import { afterUiSettles } from './ui-idle';
+import { getInteractionPreferences, subscribeInteractionPreferences } from './interaction-preferences';
 
 const COMPLETION_SOUND = require('../../assets/music/reflection-finished.mp3');
 
@@ -17,18 +19,15 @@ export function useCompletionSound() {
       sound.current = null;
     };
     const prepare = () => {
-      if (sound.current || AppState.currentState !== 'active') return;
+      if (sound.current || !getInteractionPreferences().sound || AppState.currentState !== 'active') return;
       // Configure before completion, not when the chime should already be heard.
       // Configure explicitly so playback never depends on another feature's audio state.
-      void setAudioModeAsync({
-        shouldPlayInBackground: false,
-        playsInSilentMode: true,
-        interruptionMode: 'duckOthers',
-      }).catch((error) => console.warn('[completion-sound] audio mode unavailable:', error));
+      void setAudioModeAsync(FOREGROUND_AUDIO_MODE)
+        .catch((error) => console.warn('[completion-sound] audio mode unavailable:', error));
       let player: ReturnType<typeof createAudioPlayer> | undefined;
       try {
         player = createAudioPlayer(COMPLETION_SOUND, { updateInterval: 1000, keepAudioSessionActive: false });
-        sound.current = createCompletionSoundPlayer(player, () => AppState.currentState === 'active');
+        sound.current = createCompletionSoundPlayer(player, () => AppState.currentState === 'active' && getInteractionPreferences().sound);
       } catch (error) {
         try { player?.remove(); } catch { /* Already released. */ }
         console.warn('[completion-sound] audio unavailable:', error);
@@ -42,7 +41,8 @@ export function useCompletionSound() {
       if (state === 'active') cancelPrepare = afterUiSettles(prepare, { delayMs: 80 });
       else release();
     });
-    return () => { cancelPrepare(); appState.remove(); release(); };
+    const preference = subscribeInteractionPreferences(() => { if (!getInteractionPreferences().sound) release(); else prepare(); });
+    return () => { cancelPrepare(); appState.remove(); preference(); release(); };
   }, []));
   const play = useCallback((eventId?: string) => {
     if (eventId && lastEvent.current === eventId) return;

@@ -3,29 +3,37 @@ type Connection={close:()=>void|Promise<void>};
 type Dependencies={
   session:()=>Promise<Session|null>;
   connect:(session:Session,onChange:(pair:boolean)=>void,onStatus:(healthy:boolean)=>void)=>Promise<Connection>;
-  refresh:()=>Promise<boolean>;
+  refresh:(after?:number)=>Promise<boolean>;
+  now?:()=>number;
   invalidatePair:()=>void;
 };
-/** Coalesced invalidations plus bounded failure backoff. No healthy polling. */
+/** Realtime first, with one foreground-only safety read every minute. */
+export const BURROW_SYNC_INTERVAL_MS = 60_000;
 export function createBurrowSync(deps:Dependencies) {
   let active=false,generation=0,connectionGeneration=0,connection:Connection|null=null;
   const close=(value:Connection|null)=>{try{void Promise.resolve(value?.close()).catch(()=>{});}catch{}};
   let timer:ReturnType<typeof setTimeout>|undefined,reconnect:ReturnType<typeof setTimeout>|undefined;
-  let running=false,dirty=false,retry=0,connectRetry=0;
-  function request(delay=400) {
+  let periodic:ReturnType<typeof setTimeout>|undefined;
+  let running=false,dirty=false,retry=0,connectRetry=0,dirtyAfter=-Infinity;
+  function request(delay=400,after=(deps.now??Date.now)()) {
     if(!active)return;
-    dirty=true;
+    dirty=true;dirtyAfter=Math.max(dirtyAfter,after);
     if(delay===0&&timer){clearTimeout(timer);timer=undefined;}
     if(running||timer)return;
     timer=setTimeout(()=>{timer=undefined;void refresh();},delay);
   }
   async function refresh() {
     if(!active||running)return;
-    const mine=generation;running=true;dirty=false;
-    let ok=false;try{ok=await deps.refresh();}catch{}
+    clearTimeout(periodic);periodic=undefined;
+    const mine=generation,after=dirtyAfter;running=true;dirty=false;dirtyAfter=-Infinity;
+    let ok=false;try{ok=await deps.refresh(after);}catch{}
     running=false;
-    if(!active||mine!==generation){if(active&&dirty)request(0);return;}
-    if(ok){retry=0;if(dirty)request();}
+    if(!active||mine!==generation){if(active&&dirty)request(0,dirtyAfter);return;}
+    if(ok){
+      retry=0;clearTimeout(periodic);
+      periodic=setTimeout(()=>{periodic=undefined;request(0);},BURROW_SYNC_INTERVAL_MS);
+      if(dirty)request(400,dirtyAfter);
+    }
     else {dirty=true;request(Math.min(60_000,2_000*2**Math.min(retry++,5)));}
   }
   async function connect() {
@@ -53,7 +61,7 @@ export function createBurrowSync(deps:Dependencies) {
     } catch {scheduleReconnect();}
   }
   function stop() {
-    active=false;generation++;connectionGeneration++;dirty=false;clearTimeout(timer);clearTimeout(reconnect);timer=reconnect=undefined;
+    active=false;generation++;connectionGeneration++;dirty=false;dirtyAfter=-Infinity;clearTimeout(timer);clearTimeout(reconnect);clearTimeout(periodic);timer=reconnect=periodic=undefined;
     close(connection);connection=null;
   }
   return {request,stop,start(){stop();active=true;retry=connectRetry=0;request(0);void connect();}};

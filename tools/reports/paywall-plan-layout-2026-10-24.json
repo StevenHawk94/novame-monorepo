@@ -1,0 +1,17 @@
+{
+  "date":"2026-10-24",
+  "status":"implemented_verified_client_only",
+  "scope":"Shared Choose Plan presentation used by onboarding and existing paywall entrances; no payment or backend rule changes.",
+  "display":["Cream background, centered bunny and heading, two white plan cards with selected brown outline","Yearly Best Deal badge only when the same-currency annual price is lower than twelve monthly payments","Store-provided total price for two users","Per-user monthly estimate: yearly numeric price divided by 24; monthly numeric price divided by 2; currency precision rounding","Trial tag and CTA depend on actual store eligibility and duration","Disclosure follows selected plan and the same actual store display price"],
+  "priceSource":"Existing expo-iap fetchProducts(type=subs): iOS StoreKit products; Android Play Billing selected offer's final recurring phase. Not hard-coded screenshot values and not direct administrative-console scraping.",
+  "validation":{
+    "targetedTests":{"passed":70,"failed":0,"log":"/private/tmp/paywall-plan-layout-verified.log"},
+    "expandedDomainGate":{"passed":489,"failed":0,"log":"/private/tmp/paywall-plan-domain-regression.log"},
+    "mobileTypecheck":"passed",
+    "nativeVisual":"iPhone 17 Pro / iOS 26.2, isolated native Release host using actual presentation and loaded Inter fonts; yearly and monthly selected states visually inspected; selected outline, CTA and disclosure change together.",
+    "nativeFixture":"USD 39.99/year and 6.99/month, 3-day eligible trial. These are QA inputs, not a verification of the user's live store prices. Purchase/restore handlers were inert; no transaction occurred.",
+    "paymentBodies":"Existing purchase, restore, receipt processing, eligibility and offer-selection function bodies remain byte-for-byte unchanged, checked by existing golden hashes. Currency formatting was moved into one shared presentation helper without changing its formatting behavior."
+  },
+  "deployment":"No API/Admin/database deployment or App Store release performed. Client changes require the normal client delivery process.",
+  "limitations":["No real StoreKit/Play purchase or Android device visual test performed in this UI change.","Store configuration propagation and product availability remain controlled by the stores; unavailable prices still block checkout and expose retry."]
+}

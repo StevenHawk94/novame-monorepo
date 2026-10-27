@@ -99,9 +99,10 @@ test('visible Android assets jump ahead while iOS retains memory-disk warm-up', 
   assert.match(announcements, /ExpoImage\.prefetch\(uri, 'disk'\)/);
 });
 
-test('Android renderers use verified local files and keep bundled fallbacks', () => {
+test('Android renderers use verified local files without retired scene art; item fallbacks remain bundled', () => {
   const scenes = read('apps/mobile/src/lib/scenes.ts');
-  assert.match(scenes, /androidR2ImageSource\(remoteUrl\) \?\? DEFAULT_SCENE_BG/);
+  assert.match(scenes, /return remoteUrl \? androidR2ImageSource\(remoteUrl\) \?\? undefined : undefined/);
+  assert.doesNotMatch(scenes, /DEFAULT_SCENE_BG|assets\/Background/);
 
   const item = read('apps/mobile/src/components/ui/item-sprite.tsx');
   assert.match(item, /ensurePriorityR2Image\(remoteUri\)/);
@@ -188,7 +189,7 @@ test('Android permits only entry icons before first paint, then completes P0 seq
     './base-item-icons': {
       isBaseItemIconUrl: () => false,
     },
-    '@novame/engine': {},
+    '@novame/engine': { TAP_YOUR_DAY_LOCAL_CHOICES: [] },
   };
   vm.runInNewContext(code, {
     module,

@@ -7,34 +7,33 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('the offline bundle is exactly 256 valid icons and contains every fixed product icon', () => {
+test('the offline base bundle is exactly the current Tap Your Day vocabulary, without unrelated icons', () => {
   const bundle = JSON.parse(read('apps/mobile/src/lib/bundled-item-ids.json'));
   const map = read('apps/mobile/src/lib/item-images.g.ts');
   const required = new Set([
-    ...[...read('packages/engine/src/items/tap-your-day.ts').matchAll(/\['[^']+',\s*'(memory\.[^']+)'\]/g)].map((m) => m[1]),
-    ...[...read('apps/mobile/app/(onboarding)/index.tsx').matchAll(/itemId:\s*'(memory\.[^']+)'/g)].map((m) => m[1]),
-    'memory.1486_park',
+    ...require('../packages/engine/src/items/tap-your-day-local.json').flatMap(group => [...group.defaults, ...group.optional]).map(choice => choice.itemId).filter(id => id.startsWith('memory.')),
   ]);
-  assert.equal(bundle.itemIds.length, 256);
-  assert.equal(new Set(bundle.itemIds).size, 256);
-  assert.equal([...map.matchAll(/require\('\.\.\/\.\.\/assets\/items\/each\/([^']+)\.webp'\)/g)].length, 256);
+  assert.equal(required.size, 386);
+  assert.equal(bundle.itemIds.length, required.size);
+  assert.equal(new Set(bundle.itemIds).size, required.size);
+  assert.equal(bundle.targetCount, required.size);
+  assert.deepEqual([...bundle.itemIds].sort(), [...required].sort());
+  assert.equal([...map.matchAll(/require\('\.\.\/\.\.\/assets\/Tap-your-day-Icons\/([^']+)\.webp'\)/g)].length, required.size);
   const bundledSet = new Set(bundle.itemIds);
-  const runtimeFiles = fs.readdirSync(path.join(root, 'apps/mobile/assets/items/each'))
-    .filter((filename) => filename.endsWith('.webp'))
-    .map((filename) => filename.slice(0, -5));
-  assert.equal(runtimeFiles.length, 256);
+  const runtimeFiles = require('./tap-day-test-data.cjs').rows.filter(row=>row.itemId.startsWith('memory.')).map(row=>row.itemId);
+  assert.equal(runtimeFiles.length, required.size);
   assert.deepEqual(runtimeFiles.sort(), [...bundledSet].sort());
   for (const id of required) assert.ok(bundle.itemIds.includes(id), `missing fixed icon ${id}`);
   for (const id of bundle.itemIds) {
-    assert.match(map, new RegExp(`${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.webp`));
-    assert.ok(fs.statSync(path.join(root, 'apps/mobile/assets/items/each', `${id}.webp`)).size > 0);
+    assert.ok(map.includes(require('./tap-day-test-data.cjs').sourceById.get(id).asset));
+    assert.ok(fs.statSync(require('./tap-day-test-data.cjs').assetFor(id)).size > 0);
   }
 });
 
 test('the immutable R2 inventory covers every base icon with verified local hashes', () => {
-  const dictionary = require('../packages/engine/src/items/dictionary.json');
+  const dictionary = { items: require('../packages/engine/src/items/display-catalog.json') };
   const inventory = JSON.parse(read('tools/item-source/memory-items/r2-base-icons-manifest.json'));
-  assert.equal(inventory.catalogVersion, require('../packages/engine/src/items/rule-metadata.json').version);
+  assert.equal(inventory.catalogVersion, read('packages/engine/src/items/display-catalog.ts').match(/ITEM_CATALOG_VERSION = '([^']+)'/)[1]);
   assert.equal(inventory.count, 5439);
   assert.equal(inventory.entries.length, Object.keys(dictionary.items).length);
   assert.equal(new Set(inventory.entries.map((entry) => entry.itemId)).size, inventory.count);
@@ -61,7 +60,8 @@ test('remote base icons are demand-driven and visible tiles download immediately
   assert.match(sprite, /ensurePriorityR2Image\(remoteUri\)/);
   assert.match(widget, /baseItemIconUrl\(itemId\)/);
   assert.match(widget, /ensurePriorityR2Image\(src\)/);
-  assert.match(add, /<ItemSprite itemId=\{id\}/);
+  assert.match(add, /<TapDayIcon itemId=\{item.itemId\}/);
+  assert.doesNotMatch(add, /matchItems|remote-items/);
 });
 
 test('entry icons are bounded, prewarmed under the cover, and never render blank', () => {

@@ -1,0 +1,1519 @@
+{
+  "code": "FN",
+  "id": "adventure_friend_fn",
+  "name": "Fenn",
+  "gender": "he",
+  "species": "Frog",
+  "partner": "Lily (she)",
+  "emotionalState": "恋爱脑浪漫派，万物皆是 sign，爱仪式感，爱写长演讲，怕自己太 extra",
+  "speakingStyle": "夸张戏剧化，爱念诗，激动就 ribbit",
+  "catchphrase": "It's a SIGN.",
+  "art": [
+    "Frog_02_Variant1.webp",
+    "Frog_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "FN-01",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "Fenn is staring at a puddle, holding a single pebble.",
+      "lines": [
+        "Shh. Look. The puddle is shaped like a heart.",
+        "Lily and I met at the exact same kind of puddle. It's a SIGN.",
+        "I'm gonna ask her on a walk. Do you think that's too much?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Not too much. It's sweet.",
+          "reaction": [
+            "You think? Okay, I'm doing it.",
+            "I already wrote a speech. Don't tell her."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe skip the speech?",
+          "reaction": [
+            "...The speech is four pages.",
+            "Okay, three. Maybe."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Look at the puddle too.",
+          "reaction": [
+            "See?! You see it!",
+            "You're officially in the sign club."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-02",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "It's you! The one from the heart puddle!",
+        "Lily said yes to the walk. We walked. Eleven steps.",
+        "Then it rained, and I took that as a SIGN."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A sign for what?",
+          "reaction": [
+            "That we should dance in it. So we did.",
+            "I'm still wet. I've never been happier."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Eleven steps?",
+          "reaction": [
+            "Eleven steps of pure romance. Each one counted.",
+            "I'm framing the footprints."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Cheer quietly.",
+          "reaction": [
+            "Thank you. Cheering is the correct response.",
+            "I may cry. Nobody look."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-03",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": "Fenn is arranging pebbles into letters on a lily pad.",
+      "lines": [
+        "I'm writing Lily a message in pebbles.",
+        "It says 'I love you' but the 'v' keeps rolling away.",
+        "Is that a sign? That 'v' doesn't want to be said?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's just a rolling pebble.",
+          "reaction": [
+            "...Fair. Pebbles roll. It's their job.",
+            "Still. I'm going to glue the 'v'."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe it's a sign to say it out loud.",
+          "reaction": [
+            "Out loud?! Like with my mouth?!",
+            "Okay. Okay. Deep breath. Ribbit."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Hold the 'v' in place.",
+          "reaction": [
+            "Yes! Thank you! Don't let go. I'm taking a photo.",
+            "We're making history. A tiny pebble history."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-04",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Lily forgot our little anniversary. The one for our first puddle.",
+        "I said 'it's fine!' in a very high voice.",
+        "It is NOT fine. But it's also a small thing. Right?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's okay to feel sad.",
+          "reaction": [
+            "Thank you. I was pretending so hard.",
+            "I'll tell her tonight. In a calm voice. Not the high one."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Forgetting happens.",
+          "reaction": [
+            "I know. I forget things too. Her birthday socks last year.",
+            "Okay. I'll let it go. Mostly. Eighty percent."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Offer a snack.",
+          "reaction": [
+            "...A fly snack. Yes. Thank you.",
+            "Snacks and sadness. Classic combo."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-05",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Quick question. Do you and your partner have a thing? Like a song, a place, a word?",
+        "Something that's just yours."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We have a song.",
+          "reaction": [
+            "A SONG. Tell me it's cheesy. Please be cheesy.",
+            "Cheesy is the best. Cheesy is romantic."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A silly inside joke.",
+          "reaction": [
+            "Inside jokes are the best love language. They're tiny secrets.",
+            "I bet it's super dumb and perfect."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Not sure we do.",
+          "reaction": [
+            "That's okay. You could start one today.",
+            "Say a weird word. Whatever you say first. That's it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-06",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": "Fenn is wearing a tiny crown of clover and trying to look casual.",
+      "lines": [
+        "I made Lily a crown. It took nine hours.",
+        "It fell apart twice. I made it again. Out of spite and love.",
+        "She wore it to dinner. In public. In FRONT of people."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's so romantic.",
+          "reaction": [
+            "Isn't it?! I almost fainted into the soup.",
+            "Everyone clapped. It was a small clap. A kind clap."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Nine hours?",
+          "reaction": [
+            "Nine hours. Four clovers per hour. I did the math. Twice.",
+            "Worth every petal."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Applaud softly.",
+          "reaction": [
+            "Thank you. Applause accepted.",
+            "I bow to the crown. Not to myself. Mostly."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-07",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Fenn sits at the edge of the water, looking at his reflection.",
+      "lines": [
+        "Can I tell you something un-sign-like?",
+        "Sometimes I think I'm too much. Too many feelings. Too many speeches.",
+        "What if Lily gets tired of it?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Too much is how you love.",
+          "reaction": [
+            "...Oh. That's nice. I might write that down.",
+            "Maybe I'll tone it down to two pages."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does she say that?",
+          "reaction": [
+            "No. She says 'keep going.' Which is worse and better.",
+            "She blushes when I do the big stuff. I think she loves it."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit with him.",
+          "reaction": [
+            "Thank you. It's nice not being alone with my feelings.",
+            "They're loud ones. They can be shy around you."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-08",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I asked Lily if she believes in signs.",
+        "She said 'I believe in you showing up.' And then she kissed my forehead.",
+        "Is THAT a sign?! A sign about signs?!"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sign inception.",
+          "reaction": [
+            "Exactly. The sign of signs. I'm reeling.",
+            "I think she's saying: actions count. Not just puddles."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I think she's right.",
+          "reaction": [
+            "Me too. I'm gonna show up more. And still do the puddles.",
+            "Both. I want both."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and nod.",
+          "reaction": [
+            "You get it. You really get it.",
+            "I'm adding you to the sign club newsletter."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-09",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": "Fenn lays a leaf on the ground and sits down with a happy sigh.",
+      "lines": [
+        "I don't have a speech today. I just want to sit with you.",
+        "No signs. No plans. Just us, and a puddle.",
+        "...Is that weird?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Not weird at all.",
+          "reaction": [
+            "Good. I'm learning that quiet also counts.",
+            "Lily says it's my best quality. Don't tell her I told you."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Splash the puddle.",
+          "reaction": [
+            "Ahh! Splash war! You're on my team!",
+            "This is a sign. I'm not even looking. It's a SIGN."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Watch the clouds together.",
+          "reaction": [
+            "That one looks like a heart. That one looks like a sandwich.",
+            "Both are signs. Both are good."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-10",
+      "friendId": "adventure_friend_fn",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten times. I wrote it on a pebble. It's in my pocket.",
+        "Lily asked what I'm doing with all these pebbles. I said 'building a love castle.'",
+        "She said, 'Count me in.' Sign. Sign. SIGN.",
+        "Your turn. How are you and your partner doing? Honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Still learning is the best sign.",
+            "Come visit. We'll walk a puddle. Lily makes crowns."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We had a rough week, honestly.",
+          "reaction": [
+            "Rough weeks happen. Even in love castles.",
+            "Bring your partner to the next puddle. We'll start fresh."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Better since I paid attention to little things.",
+          "reaction": [
+            "YES. Little things are everything.",
+            "Okay, I'm crying. Hand me a lily pad."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P01",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Lily and I tried to watch a sunset. It was cloudy.",
+        "I said it was a sign that we should make our own sun."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Did you make a sun?",
+          "reaction": [
+            "We drew one. On a leaf. It's very yellow.",
+            "It's on our wall. It's the best sunset we ever had."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Cloudy sunsets still count.",
+          "reaction": [
+            "They do. The clouds blushed. It was lovely.",
+            "I took that as a sign. Obviously.",
+            "We stayed until the stars did the rest."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P02",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I wrote Lily a poem. It rhymes 'love' with 'dove,' 'glove,' and 'above.'",
+        "It also rhymes 'Lily' with 'silly.' Twice."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Read it to me.",
+          "reaction": [
+            "Okay. Ahem. 'Lily, you are silly, willy-nilly...'",
+            "I stopped there. It gets worse.",
+            "Please never repeat that last line. Lily framed it anyway."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What did she say?",
+          "reaction": [
+            "She said, 'Again, but softer.' So I whispered it.",
+            "She cried. A happy cry. A poem cry.",
+            "She asked for a copy. I printed twelve, just in case."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P03",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Lily gave me a pebble. Just a plain one.",
+        "I held it for an hour. Then I realized it was a sign. Of her."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Cute.",
+          "reaction": [
+            "It's not just a pebble. It's HER pebble.",
+            "I'm sleeping with it. Don't judge.",
+            "She grinned and said, 'See? Round and slightly confused.'"
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What's special about it?",
+          "reaction": [
+            "Nothing. That's the point. She picked it because it reminded her of me.",
+            "Round. Slightly confused. Perfect.",
+            "She keeps one for me too. We trade on Fridays."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P04",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We had a fight about whose turn it was to pick the lily pad.",
+        "I said 'it's a sign we need a bigger pad.' We both laughed."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Problem solved.",
+          "reaction": [
+            "A bigger pad. Obviously.",
+            "Now there's room for two. And a snack. And an argument. All good.",
+            "I measured the pad twice. Lily just stood on it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Fights can be funny.",
+          "reaction": [
+            "Sometimes. The key is to look for the funny.",
+            "If the pad sinks, we laugh. Same energy.",
+            "The new pad is lopsided. We call it 'ours.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P05",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I tried to sing Lily a serenade. A frog sings by default. It was… loud.",
+        "The neighbors clapped. Politely. Through their windows."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "A loud serenade is a good serenade.",
+          "reaction": [
+            "Thank you! Volume is love. That's my motto.",
+            "Lily said she heard it from three tunnels away. She was smiling."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did she join in?",
+          "reaction": [
+            "She did. We were awful. It was perfect.",
+            "The neighbors are now asking for an encore.",
+            "We were awful, but the lilies seemed to sway along."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P06",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I forgot to bring flowers on our date. So I handed her a leaf.",
+        "She said 'it's perfect.' I think she meant it. Her eyes were doing the thing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Leaves are romantic.",
+          "reaction": [
+            "They're green. They're free. They're honest.",
+            "She pressed it in a book. I'm so happy I'm dizzy.",
+            "Next time I'll bring a leaf and a tiny speech."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What thing?",
+          "reaction": [
+            "The shiny thing. The 'I love you' shine.",
+            "Can't explain it. Just look for it in your partner."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P07",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Lily and I decided to try silence for an hour. Together. No talking.",
+        "We lasted twelve minutes. Then I whispered 'sign.' She giggled."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Twelve minutes is great.",
+          "reaction": [
+            "It's a record. We're framing the hour glass.",
+            "Silence with Lily feels like warm water.",
+            "We're aiming for twenty minutes next time. Wish us luck."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What was the sign?",
+          "reaction": [
+            "A beetle crossing our path. It looked like it was in love.",
+            "Don't ask how I know. It had a tiny tie."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P08",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Lily said 'I love you' first today. For the first time.",
+        "I fell off my lily pad. I'm still wet. I'm still smiling."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Congrats! That's huge.",
+          "reaction": [
+            "It IS huge! The biggest sign of all!",
+            "I said it back four times. In a row. Just to be safe."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Are you okay?",
+          "reaction": [
+            "I'm fantastic. I'm a puddle of happiness.",
+            "I'll dry out in a week. Maybe.",
+            "I'll dry in a week. Lily says I'm adorable damp."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P09",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the heart puddle? It dried up.",
+        "I almost cried. Lily said 'we'll find another.' She found it. Behind the third rock."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Another heart puddle!",
+          "reaction": [
+            "It's lopsided. It's perfect. It's ours.",
+            "We named it Puddle Two. Original, I know.",
+            "We visit it on Sundays. Lily brings snacks."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Lily's the best.",
+          "reaction": [
+            "She is. She really is. I tell her every day.",
+            "Some days twice. Some days in pebbles.",
+            "Every morning I thank the universe. Sometimes the puddle too."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P10",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The pebble love castle is up to eighty-four stones.",
+        "Lily added a tiny door. I added a tiny welcome mat."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Can I visit?",
+          "reaction": [
+            "Of course! Bring your partner. The door is too small, but come anyway.",
+            "We'll squeeze. Love squeezes.",
+            "Bring pebbles. We need a roof, and roofs are hard."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's adorable.",
+          "reaction": [
+            "It's our project. Our forever project.",
+            "A castle is never finished. That's the point.",
+            "It's at eighty-four stones. Lily says ninety is the dream."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P11",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "You remember my four-page speech? I cut it down to two lines.",
+        "'I love you. Walk with me?' Lily said yes. Of course."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Short and perfect.",
+          "reaction": [
+            "I thought the long one was better. I was wrong.",
+            "Short is brave. Short means you mean it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I miss the long one.",
+          "reaction": [
+            "I'll read it to you someday. With a cape.",
+            "The cape is non-negotiable.",
+            "I'll read it on our fiftieth puddle-versary."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P12",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The clover crown is on its third version. Lily still wears it.",
+        "She says it's lucky. I say it's love. Same thing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Lucky and loved.",
+          "reaction": [
+            "Both. Always both.",
+            "I might make a matching one for you. For luck.",
+            "I'd make you one too. Daisy for luck, clover for love."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Nine hours well spent.",
+          "reaction": [
+            "Eleven now. I added a daisy. It took forever.",
+            "Lily cried. A good cry. Again.",
+            "She dried the old one. It's on our wall now."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P13",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: signs are made up, but they're fun.",
+        "Love is choosing the sign. Every day. On purpose."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's wise.",
+          "reaction": [
+            "I stole it from Lily. She says it better.",
+            "But I say it with more pebbles.",
+            "Lily's version has fewer pebbles and more wisdom."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Signs are real.",
+          "reaction": [
+            "They are to me! A hug from the universe!",
+            "Don't tell Lily I said 'made up.'",
+            "I swear the universe winks sometimes. Don't tell Lily."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P14",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: it's okay to be a little extra.",
+        "If someone loves you, they love the extra. Maybe even the extra extra."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Extra is lovely.",
+          "reaction": [
+            "Thank you! I'm the extra extra.",
+            "Lily says I'm her favorite kind of loud.",
+            "Lily says extra is my brand. I'm putting it on a pebble."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sometimes extra is tiring.",
+          "reaction": [
+            "True. I know. I'm learning when to dial it down.",
+            "Lily taps my arm. Two taps. It means 'gentle, babe.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P15",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: say the mushy thing now. Not later.",
+        "Later has a way of never arriving. Ribbit."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You're right.",
+          "reaction": [
+            "I know! I'm basically a philosopher. A damp one.",
+            "Go say a mushy thing. I'll wait.",
+            "Say it softly. Say it twice. Then eat something."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "What if it's awkward?",
+          "reaction": [
+            "Awkward is just honesty in a funny hat.",
+            "Wear the hat. Say it.",
+            "Awkward is the fastest road to something real."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P16",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "Do you and your partner have a first-date story?",
+        "I want every detail. Even the dumb ones."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It was awkward but sweet.",
+          "reaction": [
+            "Awkward but sweet is the best genre.",
+            "I'm picturing it with violins. Frog violins.",
+            "I'd love to hear every detail. Bring snacks next time."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We got lost on the way.",
+          "reaction": [
+            "Lost together is a great start.",
+            "You found each other. That's the plot.",
+            "Lost together is basically a movie."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P17",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's a sign your partner loves you? Not a big one. A tiny one.",
+        "Fenn needs tiny signs."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "They remember my coffee order.",
+          "reaction": [
+            "Remembering the order is so romantic!",
+            "My heart hurts. In a good way.",
+            "Lily does that. I save every note she writes."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "They save me the last bite.",
+          "reaction": [
+            "The last bite! The ultimate sacrifice!",
+            "I'd cry. Then eat it. Then cry again.",
+            "I'd frame the last bite. I'm that dramatic."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P18",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "If you could re-live one moment with your partner, which would it be?",
+        "I'd pick our first puddle. Obviously."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Our first trip together.",
+          "reaction": [
+            "Ooh. A first trip. I love a first trip.",
+            "Every first is a little sign.",
+            "Firsts are the loudest memories. I'd relive mine hourly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A random Tuesday.",
+          "reaction": [
+            "A random Tuesday! That's so real.",
+            "Ordinary days are the best days. I'm writing that on a pebble."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P19",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Fenn is perfectly still, looking up at a faint beam of light through the ceiling.",
+      "lines": [
+        "Do you see that? The light is hitting the pond in a perfect line.",
+        "Lily and I stood right there on our first date.",
+        "No words. No speech. I just wanted you to see it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "It's beautiful.",
+          "reaction": [
+            "It is. Thank you for seeing it with me.",
+            "Some signs are quiet. This is one.",
+            "I'll bring Lily here soon. She'll love it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Take a moment with Fenn.",
+          "reaction": [
+            "...Thank you. This is the best kind of silence.",
+            "I'll remember this one. Pebble and all.",
+            "We stood there a long time. It was enough."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "FN-P20",
+      "friendId": "adventure_friend_fn",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Fenn is holding a small box, trembling slightly.",
+      "lines": [
+        "Okay. Don't laugh. I made Lily a ring. Out of grass and one shiny bead.",
+        "I want to ask her to be mine forever. Not a big deal. Just forever.",
+        "What if she says no?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "She'll say yes.",
+          "reaction": [
+            "You think? Okay. Okay, okay, okay.",
+            "If she says yes, I'll name a puddle after you.",
+            "If she says yes, I'll cry into the pond."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You're brave.",
+          "reaction": [
+            "Brave? I'm shaking like a leaf.",
+            "But I'm going. Wish me luck. And pebbles.",
+            "Wish me luck. And please hold the bead."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_369",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G01",
+      "name": "Coral Scallop",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 369,
+      "file": "Seashells/Coral Scallop.webp",
+      "key": "burrow/adventure-gifts/v1/369-3ca9745d8102f798.webp",
+      "sha256": "3ca9745d8102f79867e70a4be9167171d1ccd1024fbfce092d8189ef436c1d02",
+      "bytes": 27316
+    },
+    {
+      "id": "adventure_gift_370",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G02",
+      "name": "Lavender Auger",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 370,
+      "file": "Seashells/Lavender Auger.webp",
+      "key": "burrow/adventure-gifts/v1/370-8a725c3a5127a619.webp",
+      "sha256": "8a725c3a5127a619f53e5cfa0f06c08c2fcc2f96ef8c9ee4c50c7381c98d1c34",
+      "bytes": 20242
+    },
+    {
+      "id": "adventure_gift_371",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G03",
+      "name": "Jade Cowrie",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 371,
+      "file": "Seashells/Jade Cowrie.webp",
+      "key": "burrow/adventure-gifts/v1/371-51cfe2292793da98.webp",
+      "sha256": "51cfe2292793da9833f98b48f41e39a8fee3fb23b6c1710a14d2fbc7fafec554",
+      "bytes": 25650
+    },
+    {
+      "id": "adventure_gift_372",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G04",
+      "name": "Peach Conch",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 372,
+      "file": "Seashells/Peach Conch.webp",
+      "key": "burrow/adventure-gifts/v1/372-dd9d8a49e31542ce.webp",
+      "sha256": "dd9d8a49e31542ce508457925ef869a5adacb9d0bc158c17ab1abc96b5123a03",
+      "bytes": 24618
+    },
+    {
+      "id": "adventure_gift_373",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G05",
+      "name": "Blue Moon",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 373,
+      "file": "Seashells/Blue Moon.webp",
+      "key": "burrow/adventure-gifts/v1/373-3aa66f82e9406205.webp",
+      "sha256": "3aa66f82e94062055a309719c8f01b247249d07c0fb9bcb0bbf064e31bf3ab11",
+      "bytes": 24732
+    },
+    {
+      "id": "adventure_gift_374",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G06",
+      "name": "Golden Cone",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 374,
+      "file": "Seashells/Golden Cone.webp",
+      "key": "burrow/adventure-gifts/v1/374-d743e4bca1e4ef39.webp",
+      "sha256": "d743e4bca1e4ef393b2f2234d0d4ba2e83e01106a4d616d03bcf408e7c22522d",
+      "bytes": 18848
+    },
+    {
+      "id": "adventure_gift_375",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G07",
+      "name": "Pink Murex",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 375,
+      "file": "Seashells/Pink Murex.webp",
+      "key": "burrow/adventure-gifts/v1/375-ff64d6ce876a5230.webp",
+      "sha256": "ff64d6ce876a5230ccec855f35a6e703ac879acf306598267ce8fcb655db8187",
+      "bytes": 25260
+    },
+    {
+      "id": "adventure_gift_376",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G08",
+      "name": "Jade Abalone",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 376,
+      "file": "Seashells/Jade Abalone.webp",
+      "key": "burrow/adventure-gifts/v1/376-34dad2c440f2db71.webp",
+      "sha256": "34dad2c440f2db71a94de302c838fa89901a796603fc44e37aa6af5e98d00401",
+      "bytes": 24768
+    },
+    {
+      "id": "adventure_gift_377",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G09",
+      "name": "Heart Cockle",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 377,
+      "file": "Seashells/Heart Cockle.webp",
+      "key": "burrow/adventure-gifts/v1/377-994283e5bcdbd63c.webp",
+      "sha256": "994283e5bcdbd63c66084915ecfb7be67409e0f592c33e88505130a1e8acf5ce",
+      "bytes": 27866
+    },
+    {
+      "id": "adventure_gift_378",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G10",
+      "name": "Purple Mussel",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 378,
+      "file": "Seashells/Purple Mussel.webp",
+      "key": "burrow/adventure-gifts/v1/378-c233ebb61b304612.webp",
+      "sha256": "c233ebb61b30461294f0cba92719c88c3ee235f5e936d76a940df1822fea66db",
+      "bytes": 22102
+    },
+    {
+      "id": "adventure_gift_379",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G11",
+      "name": "Mint Top",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 379,
+      "file": "Seashells/Mint Top.webp",
+      "key": "burrow/adventure-gifts/v1/379-6bcf74b524fbaf44.webp",
+      "sha256": "6bcf74b524fbaf44004370ba5557c836aa7457768d9b655456fcb19e6d62a87f",
+      "bytes": 22946
+    },
+    {
+      "id": "adventure_gift_380",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G12",
+      "name": "Golden Nautilus",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 380,
+      "file": "Seashells/Golden Nautilus.webp",
+      "key": "burrow/adventure-gifts/v1/380-e6cc3f68193a2ea4.webp",
+      "sha256": "e6cc3f68193a2ea4ca2a2e7fc9425e40e5b0df9bff393cf518848ba71de5fc8a",
+      "bytes": 24936
+    },
+    {
+      "id": "adventure_gift_381",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G13",
+      "name": "Pink Clam",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 381,
+      "file": "Seashells/Pink Clam.webp",
+      "key": "burrow/adventure-gifts/v1/381-2e333406c38fdb7a.webp",
+      "sha256": "2e333406c38fdb7a55d67d3a69095ec7f9de9f9aed0c292db4c01f89cc02865a",
+      "bytes": 23260
+    },
+    {
+      "id": "adventure_gift_382",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G14",
+      "name": "Blue Whelk",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 382,
+      "file": "Seashells/Blue Whelk.webp",
+      "key": "burrow/adventure-gifts/v1/382-4d0a7812cf49a882.webp",
+      "sha256": "4d0a7812cf49a882f20e5d0a07a44fe286421ec1d8d3e4e574efbba9719d7b5c",
+      "bytes": 20054
+    },
+    {
+      "id": "adventure_gift_383",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G15",
+      "name": "Golden Olive",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 383,
+      "file": "Seashells/Golden Olive.webp",
+      "key": "burrow/adventure-gifts/v1/383-c94d6d9ab60f01e5.webp",
+      "sha256": "c94d6d9ab60f01e5fae2260d3210a1ca5d25466dd9e68cc95229d95569929d16",
+      "bytes": 24670
+    },
+    {
+      "id": "adventure_gift_384",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G16",
+      "name": "Lavender Cone",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 384,
+      "file": "Seashells/Lavender Cone.webp",
+      "key": "burrow/adventure-gifts/v1/384-ef6ab4c88d7cce0d.webp",
+      "sha256": "ef6ab4c88d7cce0db562d453ac170d57366d8e98b9e3662e0363daba44722093",
+      "bytes": 23268
+    },
+    {
+      "id": "adventure_gift_385",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G17",
+      "name": "Coral Murex",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 385,
+      "file": "Seashells/Coral Murex.webp",
+      "key": "burrow/adventure-gifts/v1/385-a8eba7ebec1e2ad4.webp",
+      "sha256": "a8eba7ebec1e2ad41298acf70bad5e5b6c28ab593652a7af4c01f4fc0d6c6fd9",
+      "bytes": 29880
+    },
+    {
+      "id": "adventure_gift_386",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G18",
+      "name": "Golden Whelk",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 386,
+      "file": "Seashells/Golden Whelk.webp",
+      "key": "burrow/adventure-gifts/v1/386-9b5e868e2fff99f3.webp",
+      "sha256": "9b5e868e2fff99f3a98223182c5053a71f5a9d1ec589d3b9004377a8562aa8db",
+      "bytes": 22328
+    },
+    {
+      "id": "adventure_gift_387",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G19",
+      "name": "Cream Cowrie",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 387,
+      "file": "Seashells/Cream Cowrie.webp",
+      "key": "burrow/adventure-gifts/v1/387-adae03dfa94e8e33.webp",
+      "sha256": "adae03dfa94e8e33a0585e2c40d6797d66cea38f1ba5c95fc31bb367358a53be",
+      "bytes": 23638
+    },
+    {
+      "id": "adventure_gift_388",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G20",
+      "name": "Striped Cone",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 388,
+      "file": "Seashells/Striped Cone.webp",
+      "key": "burrow/adventure-gifts/v1/388-e8d86e9629734ca8.webp",
+      "sha256": "e8d86e9629734ca83b42b5246675160c663ad578b733ff0c8239eaf5a0ca0191",
+      "bytes": 21642
+    },
+    {
+      "id": "adventure_gift_389",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G21",
+      "name": "Amber Spiral",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 389,
+      "file": "Seashells/Amber Spiral.webp",
+      "key": "burrow/adventure-gifts/v1/389-ab00adad1bc73dc6.webp",
+      "sha256": "ab00adad1bc73dc6808144b33a6f9f65137bd5a509a75822ec0296b0db68f0a2",
+      "bytes": 25896
+    },
+    {
+      "id": "adventure_gift_390",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G22",
+      "name": "Lilac Turret",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 390,
+      "file": "Seashells/Lilac Turret.webp",
+      "key": "burrow/adventure-gifts/v1/390-f223ada51e884bd3.webp",
+      "sha256": "f223ada51e884bd33c28fa2cc80d3fb5be6169f4f24ff59674ccf9b6c28331b3",
+      "bytes": 19920
+    },
+    {
+      "id": "adventure_gift_391",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G23",
+      "name": "Ivory Auger",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 391,
+      "file": "Seashells/Ivory Auger.webp",
+      "key": "burrow/adventure-gifts/v1/391-21c16ef613a00255.webp",
+      "sha256": "21c16ef613a002558661b707af904e54d2e6883b35079da9f8f90144f8fb6084",
+      "bytes": 18362
+    },
+    {
+      "id": "adventure_gift_392",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G24",
+      "name": "Pink Spines",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 392,
+      "file": "Seashells/Pink Spines.webp",
+      "key": "burrow/adventure-gifts/v1/392-9279de35778f17c7.webp",
+      "sha256": "9279de35778f17c709e85ec53cd422198262633e6a7545a3d6c636959d577602",
+      "bytes": 37960
+    },
+    {
+      "id": "adventure_gift_393",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G25",
+      "name": "Mint Abalone",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 393,
+      "file": "Seashells/Mint Abalone.webp",
+      "key": "burrow/adventure-gifts/v1/393-e41951faf32c927e.webp",
+      "sha256": "e41951faf32c927e477955f01f1ff7cc7a0c398152a51adb9b2afe60a4e3de7c",
+      "bytes": 21818
+    },
+    {
+      "id": "adventure_gift_394",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G26",
+      "name": "Coral Fan",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 394,
+      "file": "Seashells/Coral Fan.webp",
+      "key": "burrow/adventure-gifts/v1/394-5d16b9c041d5988d.webp",
+      "sha256": "5d16b9c041d5988df820cd4151137bf3a8c9efe0d75706202352870305d4765b",
+      "bytes": 26830
+    },
+    {
+      "id": "adventure_gift_395",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G27",
+      "name": "Navy Mussel",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 395,
+      "file": "Seashells/Navy Mussel.webp",
+      "key": "burrow/adventure-gifts/v1/395-3bd18e09d90fe06c.webp",
+      "sha256": "3bd18e09d90fe06caeb76bf24b4433c1a1f21d67c9f316af46293402e43180ec",
+      "bytes": 20976
+    },
+    {
+      "id": "adventure_gift_396",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G28",
+      "name": "Ruffled Clam",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 396,
+      "file": "Seashells/Ruffled Clam.webp",
+      "key": "burrow/adventure-gifts/v1/396-4ae03e8aa3f4dd13.webp",
+      "sha256": "4ae03e8aa3f4dd137d0e03eb75b381c361d1641f21be9fad05983ae49ad47979",
+      "bytes": 25354
+    },
+    {
+      "id": "adventure_gift_397",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G29",
+      "name": "Peach Scallop",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 397,
+      "file": "Seashells/Peach Scallop.webp",
+      "key": "burrow/adventure-gifts/v1/397-f51f625d25c98639.webp",
+      "sha256": "f51f625d25c98639e2966eeb299630e9d1c50377ffdba24cf1d0ddf62fbf4394",
+      "bytes": 25656
+    },
+    {
+      "id": "adventure_gift_398",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G30",
+      "name": "Ivory Olive",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 398,
+      "file": "Seashells/Ivory Olive.webp",
+      "key": "burrow/adventure-gifts/v1/398-67342ccb4e0b0ffc.webp",
+      "sha256": "67342ccb4e0b0ffcca4a988a50e0fe346bba727cf68662889343ea3aceca33ee",
+      "bytes": 20932
+    },
+    {
+      "id": "adventure_gift_399",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G31",
+      "name": "Lilac Olive",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 399,
+      "file": "Seashells/Lilac Olive.webp",
+      "key": "burrow/adventure-gifts/v1/399-bb043669f796972e.webp",
+      "sha256": "bb043669f796972e98fb233248216f3ec4ddc014da4b4424109566c4ef6bc109",
+      "bytes": 22460
+    },
+    {
+      "id": "adventure_gift_400",
+      "friendId": "adventure_friend_fn",
+      "giftId": "FN-G32",
+      "name": "Patterned Cone",
+      "category": "Seashells",
+      "categoryCode": "C12",
+      "sourceId": 400,
+      "file": "Seashells/Patterned Cone.webp",
+      "key": "burrow/adventure-gifts/v1/400-7c360317593f8942.webp",
+      "sha256": "7c360317593f8942f06cc03a39c8aae9cabed711367331cb4d8d2860dde38785",
+      "bytes": 22220
+    }
+  ]
+}

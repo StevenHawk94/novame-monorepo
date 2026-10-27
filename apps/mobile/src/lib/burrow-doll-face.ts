@@ -1,9 +1,9 @@
 import { BURROW_ART, type BurrowArtAsset } from './burrow-art-assets';
 import { FRAME_PHOTO_BOUNDS } from './room-photo-crop';
 
-// The photo sits behind the transparent opening in each 600×600 costume.
-// These per-costume boxes only bound the photo; the artwork's own alpha is the
-// actual mask, including the hairline, ears and irregular chin.
+// These per-costume boxes position/crop the photo, not its visible silhouette.
+// Some boxes also overlap exterior gaps beside the hair/neck. Every photo or
+// placeholder underlay must use plushie-face-mask as well as the costume alpha.
 const windows = [
   [208, 141, 405, 347],
   [205, 135, 402, 350],

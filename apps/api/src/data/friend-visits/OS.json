@@ -1,0 +1,1077 @@
+{
+  "code": "OS",
+  "name": "Oswin",
+  "friendId": "adventure_friend_os",
+  "waitingLines": [
+    "Okay, hear me out. I’ll wait for {partner}. Unless that’s weird. Is it weird? I’ll wait.",
+    "I rehearsed my ‘hi {partner}’ three times. I’m ready. Just waiting now."
+  ],
+  "questions": [
+    {
+      "id": "OS-V01",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin glides in, lands on your lamp, and stares at the room for slightly too long.",
+      "lines": [
+        "Okay, hear me out. I rehearsed this quiz four times. In the mirror. At 3 a.m."
+      ],
+      "question": "About how far can an owl turn its head?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A full 360 degrees",
+          "reply": [
+            "Close, but owls aren't horror movie props.",
+            "It's about 270 degrees, thanks to extra neck vertebrae.",
+            "Still enough to see behind me. Constantly. Anxiously."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only 90 degrees",
+          "reply": [
+            "That would really limit my overthinking.",
+            "It's about 270 degrees. Owls have 14 neck vertebrae.",
+            "Humans have seven. Owls have double the neck. Double the worry."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 270 degrees",
+          "reply": [
+            "Correct. Three-quarters of a circle. Great for looking back on my mistakes.",
+            "Extra neck bones and special blood vessels make it possible.",
+            "Juno says I could look over my shoulder and still worry about what's ahead."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Owls can rotate their heads ~270°; they have 14 cervical vertebrae.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V02",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin hears a low humming in the night outside and tilts his head.",
+      "lines": [
+        "Okay, hear me out. Giraffes might be humming right now."
+      ],
+      "question": "What did researchers discover giraffes do at night?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Sing loud opera",
+          "reply": [
+            "Dramatic. Not accurate.",
+            "They hum at night, in a low tone.",
+            "The reason is still a mystery. I love a mystery."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Hum at a very low pitch",
+          "reply": [
+            "Correct. Night humming.",
+            "Researchers recorded giraffes humming at night, though no one is sure why yet.",
+            "Maybe they're overthinking too. Same, giraffe. Same."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Sleep standing on one leg",
+          "reply": [
+            "That's flamingos.",
+            "Giraffes have been recorded humming at night.",
+            "Nobody knows why. Possibly existential humming."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Baotic et al. (2015) recorded giraffes producing low-frequency hums at night.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V03",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin turns off your lights, then points at a faintly glowing log in the corner.",
+      "lines": [
+        "I brought this. It glows. I've been staring at it since midnight."
+      ],
+      "question": "What makes some rotting wood glow in the dark?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fireflies stuck inside",
+          "reply": [
+            "Poor fireflies. But no.",
+            "It's glowing fungi, called foxfire.",
+            "The glow comes from a chemical reaction in the fungus."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Glowing fungi",
+          "reply": [
+            "Correct. It's called foxfire.",
+            "Certain fungi produce a soft green bioluminescent glow.",
+            "Nature's night-light. Perfect for 3 a.m. thoughts."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Moonlight trapped in the bark",
+          "reply": [
+            "Poetic. Wrong.",
+            "Some fungi glow, a phenomenon called foxfire.",
+            "It's bioluminescence. Like fireflies, but mushrooms."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Foxfire is bioluminescence from fungi on decaying wood.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V04",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin stares at an octopus documentary on your TV, wide-eyed.",
+      "lines": [
+        "This creature has blue blood. And I thought I was dramatic."
+      ],
+      "question": "Why is an octopus's blood blue?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It uses copper, not iron, to carry oxygen",
+          "reply": [
+            "Correct. Copper-based blood.",
+            "Their blood uses hemocyanin, which contains copper and turns blue with oxygen.",
+            "Plus three hearts. Overachiever."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They drink blue water",
+          "reply": [
+            "Creative. No.",
+            "It's because their blood carries oxygen with copper.",
+            "Hemocyanin. Very fancy."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They're cold",
+          "reply": [
+            "Cold-blooded joke. Ha. No.",
+            "Copper-based hemocyanin makes their blood blue.",
+            "Three hearts, blue blood. Very aristocratic."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Octopus blood uses copper-based hemocyanin, which is blue when oxygenated.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V05",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin gazes at a pale flower by your window that just opened.",
+      "lines": [
+        "Night bloomers are my people. We open up after dark. Emotionally, too."
+      ],
+      "question": "When do moonflowers usually bloom?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "At noon",
+          "reply": [
+            "Too much sun for them. And me.",
+            "They bloom in the evening and close in the morning.",
+            "Night flowers for night creatures."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only during thunderstorms",
+          "reply": [
+            "Dramatic. Not true.",
+            "Moonflowers open in the evening.",
+            "Their pale petals glow in the moonlight. Very romantic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "At night",
+          "reply": [
+            "Correct. Fellow night owl.",
+            "Moonflowers open in the evening and close in the morning sun.",
+            "Night-blooming flowers often attract moths. My safe word. Coincidence?"
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Moonflowers (Ipomoea alba) bloom at night.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V06",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin flies across your room without a single sound. You don't even notice until he's beside you.",
+      "lines": [
+        "Sorry. Habit. Silent entrances. I forget other people have heartbeats."
+      ],
+      "question": "Why can owls fly so quietly?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They flap very slowly and politely",
+          "reply": [
+            "Polite, yes. But that's not it.",
+            "The secret is soft, fringed feathers that muffle airflow.",
+            "Engineers even study them for quieter fans."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They hold their breath while flying",
+          "reply": [
+            "I'd faint. Honestly, I'd overthink fainting.",
+            "It's the soft, fringed feathers that muffle airflow.",
+            "Nature's noise cancellation. Better than headphones."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Soft fringed feathers break up the sound",
+          "reply": [
+            "Exactly. You're quiet-smart too.",
+            "Velvety, comb-edged feathers break up the airflow noise.",
+            "Juno says I'm silent everywhere except in my own head."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Owl feathers' serrated edges and velvety surfaces reduce flight noise.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V07",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin wrinkles his beak at a photo of a giant red flower.",
+      "lines": [
+        "This flower smells like rotting meat. On purpose. Bold strategy."
+      ],
+      "question": "Why does the corpse flower smell like rotting meat?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "To scare away humans",
+          "reply": [
+            "It works on me. Not the reason.",
+            "The smell attracts carrion flies and beetles for pollination.",
+            "It's also huge. One of the largest flowers. Show-off."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "To attract flies and beetles that pollinate it",
+          "reply": [
+            "Correct. Smelly strategy.",
+            "The stench draws pollinators that normally visit dead animals.",
+            "It blooms rarely, sometimes only every several years. Dramatic and rare."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Because it's sick",
+          "reply": [
+            "Healthy. Just smelly.",
+            "It attracts pollinators like flies and beetles.",
+            "Gross, but efficient."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Amorphophallus titanum's odor attracts carrion beetles and flesh flies.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V08",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin flaps once, hovers, then lands, looking thoughtful.",
+      "lines": [
+        "I've rewritten this question six times. Seven. Seven times."
+      ],
+      "question": "Which mammals can truly fly?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Bats",
+          "reply": [
+            "Correct. The only mammals with true powered flight.",
+            "Flying squirrels just glide. Bats actually flap.",
+            "Fellow night flyer. We wave at each other."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Flying squirrels",
+          "reply": [
+            "Close, but they glide, not fly.",
+            "Bats are the only mammals with true powered flight.",
+            "Hazel would be offended. Gliding is still impressive."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Sugar gliders",
+          "reply": [
+            "They glide. Gracefully. But don't fly.",
+            "Bats are the only mammals capable of true flight.",
+            "Gliders are cool too. Just gravity-assisted."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Bats are the only mammals capable of true powered flight.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V09",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin stares at a starfish photo, deep in thought.",
+      "lines": [
+        "Okay, hear me out. This creature has no brain. And it's fine. I'm jealous."
+      ],
+      "question": "Do starfish have brains?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Yes, five tiny brains",
+          "reply": [
+            "Close in spirit. No.",
+            "Starfish have no brain, just a nerve network.",
+            "Five arms, zero brains, zero worries."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "No, they have no central brain",
+          "reply": [
+            "Correct. No brain. No overthinking.",
+            "They use a network of nerves instead.",
+            "Imagine never replaying a conversation. Never. Wow."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Yes, one giant brain",
+          "reply": [
+            "That would be ironic. No.",
+            "Starfish have no central brain.",
+            "They still do fine. Inspiring. Upsetting."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Sea stars lack a centralized brain; they have a decentralized nerve net.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V10",
+      "friendId": "adventure_friend_os",
+      "type": "Trivia",
+      "scene": "Oswin holds up a daisy, staring at its center for a long time.",
+      "lines": [
+        "This is actually hundreds of flowers. I've been thinking about this for hours."
+      ],
+      "question": "What's surprising about a daisy?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Each 'flower' is actually many tiny flowers",
+          "reply": [
+            "Correct. A flower crowd.",
+            "The center and each 'petal' are separate tiny flowers.",
+            "A whole community pretending to be one. Very relatable."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It closes when you look at it",
+          "reply": [
+            "Shy flower. Not daisies.",
+            "A daisy head is made of many tiny flowers.",
+            "Dozens to hundreds. Group project, flower edition."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It glows in the dark",
+          "reply": [
+            "That would be nice. No.",
+            "Each daisy 'flower' is actually many tiny flowers.",
+            "The center ones and the petal ones. Teamwork."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Daisies are composite flowers (capitula) of many disc and ray florets.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "OS-V11",
+      "friendId": "adventure_friend_os",
+      "type": "Preference",
+      "scene": "Oswin paces on your windowsill, mouthing words to himself.",
+      "lines": [
+        "Bear with me. I made a pros and cons list for breakfast. Toast won. Barely."
+      ],
+      "question": "Big decision: sleep on it, or decide right now?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Sleep on it",
+          "reply": [
+            "Sleep on it. Wise. Pillow-tested decisions.",
+            "Though I usually just stay awake thinking about it."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Decide right now",
+          "reply": [
+            "Decide right now? Brave. Fearless. Terrifying.",
+            "I'd need a minute. Or a week."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both sleep on it. Relief.",
+          "So {partner} and you will never rush into anything, and that's lovely.",
+          "Just don't both stay awake overthinking. One of you should actually sleep."
+        ],
+        "A:B": [
+          "You decide right now. {partner} sleeps on it.",
+          "You've already chosen. They're still thinking. Possibly forever.",
+          "Give them until morning. Then gently say 'well?'"
+        ],
+        "B:A": [
+          "You sleep on it. {partner} decides right now.",
+          "They'll have picked a couch while you're still dreaming about fabric.",
+          "Agree on a 24-hour rule. Quick enough for them, slow enough for you."
+        ],
+        "B:B": [
+          "You both decide right now. Whoa. Fearless.",
+          "Honestly, you and {partner} are quick as a hoot. I'm in awe.",
+          "Teach me. Actually, don't. I'd overthink the lesson."
+        ]
+      }
+    },
+    {
+      "id": "OS-V12",
+      "friendId": "adventure_friend_os",
+      "type": "Preference",
+      "scene": "Oswin stares at his phone. He's typed a message. Deleted it. Typed it again.",
+      "lines": [
+        "It's 2 a.m. somewhere. I've written a message. Okay, hear me out."
+      ],
+      "question": "2 a.m. thought: send the text, or save it as a draft?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Send it",
+          "reply": [
+            "Send it? Wow. Brave and honest.",
+            "2 a.m. you has courage that daytime you lacks."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Save as draft",
+          "reply": [
+            "Save as draft. Relatable. Very relatable.",
+            "Drafts are safe little feelings in a drawer."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both send it. No secrets.",
+          "Honesty at 2 a.m. from you and {partner}. Beautiful chaos.",
+          "Just make sure someone's awake to read it."
+        ],
+        "A:B": [
+          "You save it. {partner} sends it.",
+          "Their 2 a.m. texts will arrive. Your drafts will wait.",
+          "Show them one of your drafts. In daylight. It'll mean a lot."
+        ],
+        "B:A": [
+          "You send it. {partner} saves it as a draft.",
+          "They'll wake up to your 2 a.m. honesty. And have feelings.",
+          "Add 'no pressure to reply!' They'll still overthink. But less."
+        ],
+        "B:B": [
+          "You both save it as a draft. Same.",
+          "A drawer of unsent feelings for you and {partner}.",
+          "Maybe swap drafts once a year. Like a time capsule."
+        ]
+      }
+    },
+    {
+      "id": "OS-V13",
+      "friendId": "adventure_friend_os",
+      "type": "Preference",
+      "scene": "Oswin ruffles his feathers, clearly worried about something imaginary.",
+      "lines": [
+        "When I worry, I reorganize my feathers. Alphabetically. What about you two?"
+      ],
+      "question": "When you're worried: talk it out, write it out, or walk it out?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Talk it out",
+          "reply": [
+            "Talk it out. Healthy. I'm impressed.",
+            "Words untangle knots."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Write it out",
+          "reply": [
+            "Write it out. Yes. Same.",
+            "Paper listens without interrupting."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Walk it out",
+          "reply": [
+            "Walk it out. Very efficient.",
+            "Feet move, worries shrink."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both talk it out. Great teamwork.",
+          "Two voices, one solution. {partner} is your sounding board.",
+          "Juno and I talk until 4 a.m. Healthy? Mostly."
+        ],
+        "A:B": [
+          "You write it out. {partner} talks it out.",
+          "Read them your page aloud. They'll love it.",
+          "Your notebook and their voice. A team."
+        ],
+        "A:C": [
+          "You walk it out. {partner} talks it out.",
+          "Walk while they talk. Perfect pairing.",
+          "A listening walk. Very therapeutic."
+        ],
+        "B:A": [
+          "You talk it out. {partner} writes it out.",
+          "Ask them to share a page. Then talk about it.",
+          "Words on paper, words out loud. Double processing."
+        ],
+        "B:B": [
+          "You both write it out. Lovely.",
+          "I can picture it: you and {partner} could swap notebooks and feel less alone.",
+          "Journals are therapy with no appointments."
+        ],
+        "B:C": [
+          "You walk it out. {partner} writes it out.",
+          "Walk to a café. Let them write. You watch the street.",
+          "Two coping styles, one cozy afternoon."
+        ],
+        "C:A": [
+          "You talk it out. {partner} walks it out.",
+          "Walk and talk together. Two birds, one stroll.",
+          "Movement helps the words come out anyway."
+        ],
+        "C:B": [
+          "You write it out. {partner} walks it out.",
+          "Write while they walk. Then swap notes.",
+          "Or bring your notebook on the walk. Pause on a bench."
+        ],
+        "C:C": [
+          "You both walk it out. Synchronized worrying.",
+          "Pretty sure {partner} and you have a 'worry route' around the neighborhood.",
+          "Walking side by side. Very healing."
+        ]
+      }
+    },
+    {
+      "id": "OS-V14",
+      "friendId": "adventure_friend_os",
+      "type": "Preference",
+      "scene": "Oswin whispers 'moth,' then looks around, embarrassed.",
+      "lines": [
+        "That's our safe word. Juno's and mine. For arguments. It works. Weirdly well."
+      ],
+      "question": "Mid-argument pause: a silly safe word, or a calm 10-minute break?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Silly safe word",
+          "reply": [
+            "A silly safe word. Yes. Mine is 'moth.'",
+            "It makes everyone laugh and reset."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Calm 10-minute break",
+          "reply": [
+            "A calm break. Very wise.",
+            "Fresh air before hard words."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both pick a silly safe word.",
+          "Choose one with {partner}. Not 'moth.' That's taken.",
+          "Laughing mid-argument is underrated."
+        ],
+        "A:B": [
+          "Calm break for you. {partner} wants a silly safe word.",
+          "Let them say the word. Then take your ten minutes.",
+          "Their word, your break. Fair compromise."
+        ],
+        "B:A": [
+          "Safe word for you. {partner} prefers a calm break.",
+          "Say the safe word, THEN take the break.",
+          "Laugh first, breathe second."
+        ],
+        "B:B": [
+          "You both pick a calm break.",
+          "Ten minutes apart, then back to {partner} with clearer heads.",
+          "Mature. Very mature. I'm jealous."
+        ]
+      }
+    },
+    {
+      "id": "OS-V15",
+      "friendId": "adventure_friend_os",
+      "type": "Preference",
+      "scene": "Oswin yawns, then checks whether yawning was rude.",
+      "lines": [
+        "It's late. My brain is loud. Let's make it louder."
+      ],
+      "question": "Late-night mode: deep talks, or silly memes?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Deep talks",
+          "reply": [
+            "Deep talks. Oh, I'm in.",
+            "The best truths come out at midnight."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Silly memes",
+          "reply": [
+            "Silly memes. Perfect.",
+            "Laughter heals overthinking."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both love deep talks.",
+          "Stay up with {partner} and let the big questions bloom.",
+          "Like 'what are we?' and 'do fish get thirsty?' Both important."
+        ],
+        "A:B": [
+          "Memes for you. {partner} wants deep talks.",
+          "Send a meme about existentialism. Both covered.",
+          "Then answer their deep question. Just one."
+        ],
+        "B:A": [
+          "Deep talks for you. {partner} wants memes.",
+          "Start with a meme. Then sneak in a deep question.",
+          "Meme to the meaning of life pipeline."
+        ],
+        "B:B": [
+          "You both love silly memes.",
+          "Send {partner} the worst one you can find. Tonight.",
+          "Laughter at 1 a.m. is a love language."
+        ]
+      }
+    },
+    {
+      "id": "OS-V16",
+      "friendId": "adventure_friend_os",
+      "type": "Guess",
+      "scene": "Oswin squints at you, studying your face like it's a puzzle.",
+      "lines": [
+        "Hoo. Okay. I'm a certified overthinker. This is my area."
+      ],
+      "question": "What does your partner overthink the most?",
+      "selfQuestion": "What do you overthink the most?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Texts",
+          "reply": [
+            "Texts. Punctuation panic is real.",
+            "'Was that period aggressive?'"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Plans",
+          "reply": [
+            "Plans. Spreadsheets of feelings.",
+            "Plan A, B, C, D."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Something they said three days ago",
+          "reply": [
+            "Something from three days ago. That's me.",
+            "The replay machine runs all night."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Texts, and {partner} guessed it.",
+          "They know you agonize over every 'ok.' vs 'okay!'",
+          "Send them a text without editing. Just once."
+        ],
+        "A:B": [
+          "You overthink plans. {partner} guessed texts.",
+          "They see you agonize over messages. It's really the calendar.",
+          "Plan one thing. Text 'done.' Breathe."
+        ],
+        "A:C": [
+          "You replay old conversations. {partner} guessed texts.",
+          "They see the typing. They don't see the replay.",
+          "Tell them. 'I'm still thinking about Tuesday.' They'll get it."
+        ],
+        "B:A": [
+          "You overthink texts. {partner} guessed plans.",
+          "They don't see your punctuation spiral. Lucky them.",
+          "Tell them about the period panic. They'll laugh."
+        ],
+        "B:B": [
+          "Plans, and {partner} guessed it.",
+          "They know you have seventeen backup plans.",
+          "Let them pick one. Just one. Breathe."
+        ],
+        "B:C": [
+          "You replay old conversations. {partner} guessed plans.",
+          "They think you're planning. You're reliving.",
+          "Ask them about it. They probably don't even remember."
+        ],
+        "C:A": [
+          "You overthink texts. {partner} guessed old conversations.",
+          "Close. It's the texts about the old conversations.",
+          "Send 'no pressure, just overthinking.' It helps."
+        ],
+        "C:B": [
+          "You overthink plans. {partner} guessed old conversations.",
+          "Your brain is in the future. They think it's in the past.",
+          "Plan a cozy debrief. Covers both."
+        ],
+        "C:C": [
+          "Something from three days ago, and {partner} knew it.",
+          "They've caught you replaying a conversation at 2 a.m.",
+          "Tell them. They probably forgot it. In a good way."
+        ]
+      }
+    },
+    {
+      "id": "OS-V17",
+      "friendId": "adventure_friend_os",
+      "type": "Guess",
+      "scene": "Oswin glances out the window at the moon, wide awake.",
+      "lines": [
+        "Insomnia talk. I'm extremely qualified. Sadly."
+      ],
+      "question": "When your partner can't sleep, what do they do?",
+      "selfQuestion": "When you can't sleep, what do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Scroll their phone",
+          "reply": [
+            "Scroll the phone. Blue light buddies.",
+            "The glow of regrets and cat videos."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Whisper 'are you awake?'",
+          "reply": [
+            "Whisper 'are you awake?' Brave.",
+            "Hoping for company at 3 a.m."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Scrolling, and {partner} knew it.",
+          "They've seen the phone glow under the blanket.",
+          "Share a cat video. Then both try to sleep."
+        ],
+        "A:B": [
+          "You whisper 'are you awake?' {partner} thought you'd scroll.",
+          "Surprise! They didn't know you wanted company.",
+          "They'll answer next time. Probably groggy. Still sweet."
+        ],
+        "B:A": [
+          "You scroll. {partner} thought you'd whisper to them.",
+          "They're waiting for your whisper. You're watching reels.",
+          "Wake them up once. They'd like the company."
+        ],
+        "B:B": [
+          "Whispering 'are you awake?', and {partner} knew it.",
+          "They've been woken up many, many times.",
+          "They still answer. That's love."
+        ]
+      }
+    },
+    {
+      "id": "OS-V18",
+      "friendId": "adventure_friend_os",
+      "type": "Guess",
+      "scene": "Oswin dips his head shyly when you compliment his feathers.",
+      "lines": [
+        "Compliments make me weird. Please don't give me one right now. Or do. No. Yes."
+      ],
+      "question": "How does your partner react to a compliment?",
+      "selfQuestion": "How do you react to a compliment?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Says 'thank you'",
+          "reply": [
+            "Says thank you. Healthy. Mature.",
+            "Accepting kindness is a skill."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Deflects with a joke",
+          "reply": [
+            "Deflects with a joke. Relatable.",
+            "Humor shield, activated."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Thank you, and {partner} knew it.",
+          "They know you can take a compliment without combusting. Impressive.",
+          "Keep accepting love. I'm practicing. I'm at 'thanks, I guess.'"
+        ],
+        "A:B": [
+          "You deflect with a joke. {partner} expected a 'thank you.'",
+          "They're waiting for you to accept it.",
+          "Say thank you after the joke. Two-step."
+        ],
+        "B:A": [
+          "You say thank you. {partner} expected a joke.",
+          "They're ready for comedy. You just accept it.",
+          "They'll be so pleased. Accept more often."
+        ],
+        "B:B": [
+          "A joke, and {partner} knew it.",
+          "They know every compliment gets a punchline.",
+          "They still hear the blush behind the joke."
+        ]
+      }
+    },
+    {
+      "id": "OS-V19",
+      "friendId": "adventure_friend_os",
+      "type": "Guess",
+      "scene": "Oswin flaps his wings once, then freezes, as if surprised by his own movement.",
+      "lines": [
+        "Sudden plan changes. I have feelings. Several. In a spreadsheet."
+      ],
+      "question": "If plans suddenly change, how does your partner react?",
+      "selfQuestion": "If plans suddenly change, how do you react?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Rolls with it",
+          "reply": [
+            "Rolls with it. Impressive.",
+            "A bendy soul."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Needs a minute to recalibrate",
+          "reply": [
+            "Needs a minute. Same.",
+            "Brain reboot required."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Rolling with it, and {partner} knew it.",
+          "They know you're the chill one. Unbothered. A rare bird.",
+          "Teach me. Slowly. I'll take notes. Then overthink the notes."
+        ],
+        "A:B": [
+          "You need a minute. {partner} thought you'd roll with it.",
+          "They're already on Plan B. You're still processing Plan A.",
+          "Say 'one sec.' It's okay. Really."
+        ],
+        "B:A": [
+          "You roll with it. {partner} thought you'd need a minute.",
+          "They're tiptoeing around you. You're already on Plan B.",
+          "Tell them you're fine. Actually fine. Not owl-fine."
+        ],
+        "B:B": [
+          "Needing a minute, and {partner} knew it.",
+          "They know to give you a moment before Plan B.",
+          "Reboot time is self-care."
+        ]
+      }
+    },
+    {
+      "id": "OS-V20",
+      "friendId": "adventure_friend_os",
+      "type": "Guess",
+      "scene": "Oswin sits very still, then slowly turns to look at you.",
+      "lines": [
+        "Okay, hear me out. A big one. Reassurance."
+      ],
+      "question": "When your partner needs reassurance, what do they do?",
+      "selfQuestion": "When you need reassurance, what do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Asks directly",
+          "reply": [
+            "Asks directly. Brave. Clear.",
+            "No guessing games."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Drops a tiny hint",
+          "reply": [
+            "Drops a tiny hint. The owl way.",
+            "Very subtle. Very me."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Asking directly, and {partner} knew it.",
+          "They know you'll just say 'do you still like me?'",
+          "Healthy. Clear. I'm in awe."
+        ],
+        "A:B": [
+          "You drop hints. {partner} expected you to ask directly.",
+          "They're waiting for words. You're sending signals.",
+          "Make the hint bigger. Or just ask. Juno taught me that."
+        ],
+        "B:A": [
+          "You ask directly. {partner} expected hints.",
+          "They're out here decoding clues. You just say it.",
+          "Less detective work for them. They're probably relieved."
+        ],
+        "B:B": [
+          "Dropping a hint, and {partner} decoded it.",
+          "They know your 'I'm fine' means 'reassure me, please.'",
+          "Impressive translation skills."
+        ]
+      }
+    }
+  ]
+}

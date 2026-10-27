@@ -33,7 +33,7 @@ test('fallback uses explicit device region, not the language to guess a hemisphe
 
 test('four paired rows retain all eight destinations and extend with added rooms', () => {
   assert.equal(model.BURROW_SOIL_COLOR, '#572b1a');
-  assert.equal(model.BURROW_MAP_ROOMS.map(room => room.id).join(','), 'my_room,partner_room,our_room,game_room,rage_room,friends_room,memories_room,collection_room');
+  assert.equal(model.BURROW_MAP_ROOMS.map(room => room.id).join(','), 'my_room,partner_room,surprise_room,game_room,rage_room,friends_room,memories_room,collection_room');
   const layout = model.burrowMapLayout(8);
   assert.equal(layout.rooms.length, 8);
   assert.equal(layout.lights.length, 4);
@@ -49,13 +49,13 @@ test('four paired rows retain all eight destinations and extend with added rooms
     assert.equal(light.left + light.width / 2, 400);
     assert.ok(Math.abs(light.width - 90 * .7) < 1e-8);
     assert.ok(Math.abs(light.height - 120 * .7) < 1e-8);
-    assert.equal(light.top + light.height / 2, left.top + 128 - 6);
-    assert.equal(branch.top + branch.height / 2, left.top + 128);
+    assert.equal(light.top + light.height / 2, left.top + 145 - 6);
+    assert.equal(branch.top + branch.height / 2, left.top + 145);
     assert.ok(layout.height > left.top + left.height);
   }
-  assert.equal(model.burrowMapLayout(10).height - layout.height, 350);
-  assert.equal(layout.height - model.burrowMapLayout(6).height, 350);
-  assert.equal(model.burrowMapLayout(7).branches[3].width, 106, 'no dangling passage to an absent eighth room');
+  assert.equal(model.burrowMapLayout(10).height - layout.height, 370);
+  assert.equal(layout.height - model.burrowMapLayout(6).height, 370);
+  assert.equal(model.burrowMapLayout(7).branches[3].width, 121, 'no dangling passage to an absent eighth room');
   assert.equal(model.burrowMapLayout(0).trunk.height, 0);
 });
 
@@ -87,15 +87,17 @@ function storefrontHarness({ cached, locale = 'en_AU', getStorefront = async () 
     foreground: () => foreground?.('active'), changeIdentity() { epoch++; values.clear(); identity?.(); } };
 }
 
-test('storefront opens from cache immediately then refreshes silently and on foreground', async () => {
+test('storefront is frozen for a foreground visit; silent updates are applied on the next foreground', async () => {
   const d = deferred(); let calls = 0;
   const h = storefrontHarness({ cached: 'AUS', getStorefront: () => { calls++; return calls === 1 ? d.promise : Promise.resolve('NZL'); } });
   assert.equal(h.read(), 'AUS');
   d.resolve(' usa '); await flush();
-  assert.equal(h.read(), 'USA');
+  assert.equal(h.read(), 'AUS', 'a slow storefront response cannot change the visible season');
   assert.equal(h.values.get('country'), 'USA');
   h.foreground(); await flush();
-  assert.equal(h.read(), 'NZL');
+  assert.equal(h.read(), 'USA');
+  assert.equal(h.values.get('country'), 'NZL');
+  h.foreground();assert.equal(h.read(),'NZL');
   h.unmount();
 });
 
@@ -108,7 +110,8 @@ test('offline/invalid storefront falls back without a loader, and timeout permit
   const timeout = storefrontHarness({ getStorefront: () => { calls++; return calls === 1 ? new Promise(() => {}) : Promise.resolve('NZ'); } });
   assert.equal(timeout.read(), 'AU'); timeout.c.advance(5000); await flush();
   assert.equal(timeout.read(), 'AU'); timeout.foreground(); await flush();
-  assert.equal(timeout.read(), 'NZ'); timeout.unmount();
+  assert.equal(timeout.read(), 'AU');assert.equal(timeout.values.get('country'),'NZ');
+  timeout.foreground();assert.equal(timeout.read(),'NZ');timeout.unmount();
 });
 
 test('old-account in-flight result cannot overwrite the new account storefront', async () => {
@@ -117,20 +120,24 @@ test('old-account in-flight result cannot overwrite the new account storefront',
   assert.equal(h.read(), 'USA'); h.changeIdentity();
   assert.equal(h.read(), 'AU'); old.resolve('USA'); await flush();
   assert.equal(h.values.size, 0);
-  fresh.resolve('NZL'); await flush(); assert.equal(h.read(), 'NZL'); h.unmount();
+  fresh.resolve('NZL'); await flush(); assert.equal(h.read(), 'AU');assert.equal(h.values.get('country'),'NZL');
+  h.foreground();assert.equal(h.read(),'NZL');h.unmount();
 });
 
 test('map UI places labels inside pills, uses seasonal banner, and every room is tappable', () => {
   const jsx = (type, props) => ({ type, props });
-  const icons = Object.fromEntries(model.BURROW_MAP_ROOMS.filter(r => !['my_room', 'partner_room'].includes(r.id)).map(r => [r.id, r.id]));
+  const icons = Object.fromEntries(model.BURROW_MAP_ROOMS.map(r => [r.id, r.id]));
   const { BurrowMap } = load('apps/mobile/src/components/burrow/burrow-map.tsx', {
+    './plushie-touch-badge':{PlushieTouchBadge:'TouchBadge'},
+    ...require('./burrow-attention-test-mocks.cjs'),
     'react/jsx-runtime': { jsx, jsxs: jsx }, './burrow-image': { Image: 'Image' },
     'react-native': { Pressable: 'Pressable', Text: 'Text', View: 'View', StyleSheet: { create: s => s, absoluteFillObject: {} }, useWindowDimensions: () => ({ width: 400 }) },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 20 }) },
     'react-native-svg': { __esModule: true, default: 'Svg', Circle: 'Circle', Path: 'Path' },
     '@/lib/burrow-ui-assets': { BURROW_ROOM_ICONS: icons }, '@/lib/burrow-map-model': model,
+    '@/lib/bunny-variant-assets':{BUNNY_ICONS:{biscuit:'bunny-biscuit',pinky:'bunny-pinky'}},
     '@/lib/burrow-map-assets': { BURROW_MAP_ART: { room: 'room', light: 'light', banners: { 'spring-day': 'spring-day' } } },
-    '@/lib/use-burrow-storefront': { useBurrowStorefront: () => 'AU' },
+    '@/lib/use-burrow-environment': { useBurrowEnvironment: (tz, now) => model.burrowMapEnvironment(now, tz, 'AU') },
   });
   const actions = [];
   const tree = BurrowMap({ now: time(10), timeZone: 'UTC', onRoom: id => actions.push(id), visiting: true });
@@ -147,5 +154,117 @@ test('map UI places labels inside pills, uses seasonal banner, and every room is
     assert.equal(label.props.style[1].fontSize, 12);
     assert.equal(label.props.children, button.props.accessibilityLabel.replace('Open ', ''));
     assert.ok(button.props.style({ pressed: true })[1].opacity < 1);
+    const id = model.BURROW_MAP_ROOMS[buttons.indexOf(button)].id;
+    const icon = all(button).find(n => n.type === 'Image' && n.props.source === (id==='my_room'?'bunny-biscuit':id==='partner_room'?'bunny-pinky':id));
+    assert.equal(icon.props.contentFit, 'contain');
+    assert.equal(icon.props.style.width,'100%');
+    assert.equal(icon.props.style.height,'100%');
+    const door=all(button).find(n=>n.type==='Image'&&n.props.source==='room');
+    assert.equal(door.props.contentFit,'contain');assert.equal(door.props.style.width,door.props.style.height);
+    const labelBox=all(button).find(n=>n.type==='View'&&n.props.style?.some?.(s=>s?.backgroundColor==='#FFF2DF'));
+    assert.ok(labelBox,'room name is inside a real cream box, not assumed to be baked into the door');
   }
+  assert.equal(buttons[0].props.accessibilityLabel, 'Open My Room');
+  assert.equal(buttons[1].props.accessibilityLabel, 'Open Partner’s Room');
+  assert.equal(buttons[5].props.accessibilityLabel, "Open Friend's Room");
+});
+test('door ratio, label space and shadow share design coordinates without stretching the new asset',()=>{
+  const art=model.BURROW_ROOM_ART,label=model.BURROW_ROOM_LABEL,icon=model.BURROW_ROOM_ICON;
+  // Read the bundled WebP canvas too: a future replacement must not silently
+  // retain an obsolete layout ratio (the regression this test protects).
+  const webp=fs.readFileSync('apps/mobile/assets/burrow-webp/burrow-page/room.webp');
+  assert.equal(webp.toString('ascii',12,16),'VP8X');
+  const sourceWidth=1+webp.readUIntLE(24,3),sourceHeight=1+webp.readUIntLE(27,3);
+  assert.equal(sourceWidth,1024);assert.equal(sourceHeight,1024);
+  assert.equal(art.width/art.height,sourceWidth/sourceHeight);assert.equal(icon.width,icon.height);
+  assert.equal(icon.width,140*.8);
+  assert.equal(icon.left+icon.width/2,art.left+art.width/2);
+  assert.equal(icon.top+icon.height/2,art.top+art.height/2);
+  assert.equal(label.left+label.width/2,art.left+art.width/2);
+  assert.ok(label.top>art.height*.8&&label.top<art.height*.9,'label covers only the lower frame');
+  assert.ok(label.top>=art.top+art.height*856/1024+8,
+    'label clears the lowest green panel pixels with a small visible wooden gap');
+  const tabBarSource=fs.readFileSync(path.join(process.cwd(),'apps/mobile/src/components/main/bottom-tab-bar.tsx'),'utf8');
+  assert.ok(tabBarSource.includes("backgroundColor: '#FFF2DF'"),'room labels match the Home navigation cream');
+  const layout=model.burrowMapLayout(8);assert.ok(label.top+label.height<=layout.rooms[0].height);
+  assert.ok(layout.rooms[0].top+layout.rooms[0].height<layout.rooms[2].top);
+  for(const width of [320,375,390,430,800]){
+    const scale=width/800,shadow=model.burrowRoomIconShadow(scale);
+    assert.equal(shadow.shadowColor,'#000000');assert.equal(shadow.shadowOpacity,.5);
+    assert.equal(shadow.shadowRadius,1.5*scale);
+    assert.equal(shadow.shadowOffset.width,-3*scale);
+    assert.equal(shadow.shadowOffset.height,10*scale);
+    assert.ok(Math.hypot(shadow.shadowOffset.width,shadow.shadowOffset.height)<icon.width*scale*.1,
+      'contact shadow stays against the icon instead of casting far across the door');
+    assert.ok((layout.rooms[0].left+label.left+label.width)*scale<width/2);
+    for(const room of layout.rooms){
+      assert.ok((room.left+art.left)*scale>=0);
+      assert.ok((room.left+art.left+art.width)*scale<=width);
+      assert.ok(label.top+label.height<=room.height,'label remains inside the tappable room');
+    }
+    assert.equal(layout.rooms[0].left+icon.left+icon.width/2,
+      800-(layout.rooms[1].left+icon.left+icon.width/2),'doors remain symmetric about the tunnel');
+  }
+});
+test('only Burrow gains native edge rebound; quests and coin shop retain their non-bouncing scroll',()=>{
+  const {burrowPageScrollBehavior}=load('apps/mobile/src/lib/burrow-surface.ts');
+  assert.deepEqual(JSON.parse(JSON.stringify(burrowPageScrollBehavior('burrow'))),
+    {bounces:true,alwaysBounceVertical:true,overScrollMode:'always'});
+  for(const section of ['quests','carrot_shop'])assert.deepEqual(JSON.parse(JSON.stringify(burrowPageScrollBehavior(section))),
+    {bounces:false,alwaysBounceVertical:false,overScrollMode:'never'});
+  for(const section of ['adventure','game_room','friends_room'])assert.deepEqual(JSON.parse(JSON.stringify(burrowPageScrollBehavior(section))),
+    {bounces:true,alwaysBounceVertical:false,overScrollMode:'never'});
+  const source=fs.readFileSync('apps/mobile/src/components/burrow/burrow-screen.tsx','utf8');
+  assert.match(source,/<PageScrollView key=\{section\}[^\n]*?\{\.\.\.burrowPageScrollBehavior\(section\)\}/);
+  assert.match(source,/const PageScrollView=section==='burrow'\?BurrowMapScrollView:ScrollView/);
+  assert.match(source,/refreshControl=\{section==='burrow'\|\|section==='carrot_shop'\|\|section==='quests'\?undefined:/,
+    'edge rebound must not introduce map pull-to-refresh');
+});
+test('map clamps only negative top offsets on the UI thread, leaving native bottom rebound untouched',()=>{
+  const calls=[],ref={},jsx=(type,props)=>({type,props});let handlers;
+  const {BurrowMapScrollView}=load('apps/mobile/src/components/burrow/burrow-map-scroll-view.tsx',{
+    'react/jsx-runtime':{jsx,jsxs:jsx},
+    'react-native-reanimated':{__esModule:true,default:{ScrollView:'NativeAnimatedScrollView'},
+      useAnimatedRef:()=>ref,useAnimatedScrollHandler:h=>(handlers=h),
+      scrollTo:(...args)=>calls.push(args)},
+  });
+  let layouts=0;const child={room:'map'},onLayout=()=>layouts++;
+  const tree=BurrowMapScrollView({children:child,onLayout,style:{flex:1},bounces:false});
+  assert.equal(tree.type,'NativeAnimatedScrollView');assert.equal(tree.props.children,child);
+  tree.props.onLayout();assert.equal(layouts,1);
+  assert.equal(tree.props.bounces,true);assert.equal(tree.props.alwaysBounceVertical,true);
+  assert.equal(tree.props.contentInset.top,0);assert.equal(tree.props.contentInsetAdjustmentBehavior,'never');
+  assert.equal(tree.props.refreshControl,undefined);assert.equal(tree.props.scrollEventThrottle,16);
+  for(const callback of Object.values(handlers)){
+    const before=calls.length;
+    // Normal scroll, exact top, bottom and bottom overshoot must receive no command.
+    for(const y of [0,1,200,1000,1100])callback({contentOffset:{x:0,y}});
+    assert.equal(calls.length,before);
+    for(const y of [-.01,-12,-180])callback({contentOffset:{x:0,y}});
+    assert.equal(calls.length,before+3);
+    for(const call of calls.slice(before))assert.deepEqual(call,[ref,0,0,false]);
+    callback({contentOffset:{x:0,y:0}});assert.equal(calls.length,before+3,'correction cannot recurse at zero');
+  }
+  const source=fs.readFileSync('apps/mobile/src/components/burrow/burrow-map-scroll-view.tsx','utf8');
+  assert.match(source,/'worklet'/);assert.doesNotMatch(source,/useState|runOnJS|setTimeout|withSpring/);
+});
+test('map heads follow current account identity, ignore stale partners and preserve previously approved same-colour pairs',()=>{
+ const jsx=(type,props)=>({type,props}),all=t=>Array.isArray(t)?t.flatMap(all):t&&typeof t==='object'?[t,...all(t.props?.children)]:[];
+ let mine='biscuit',identity;
+ const {BurrowMap}=load('apps/mobile/src/components/burrow/burrow-map.tsx',{
+  './plushie-touch-badge':{PlushieTouchBadge:'TouchBadge'},
+  ...require('./burrow-attention-test-mocks.cjs'),'react/jsx-runtime':{jsx,jsxs:jsx},'./burrow-image':{Image:'Image'},
+  'react-native':{View:'View',Text:'Text',Pressable:'Pressable',StyleSheet:{create:v=>v},useWindowDimensions:()=>({width:390})},
+  'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:20})},
+  '@/lib/burrow-ui-assets':{BURROW_ROOM_ICONS:{}},'@/lib/burrow-map-model':model,
+  '@/lib/burrow-map-assets':{BURROW_MAP_ART:{room:'door',light:'light',banners:{'autumn-day':'banner'}}},
+  '@/lib/use-burrow-environment':{useBurrowEnvironment:()=>({banner:'autumn-day',season:'autumn',period:'day'})},
+  '@/lib/bunny-variant-assets':{BUNNY_ICONS:{biscuit:'B',pinky:'P'}},
+  '@/lib/bunny-identity':{useBunnyVariant:()=>mine,useBunnyIdentity:()=>identity},
+ });
+ const read=(partnerId='partner',pairVersion='pair')=>all(BurrowMap({onRoom(){},roomIds:['my_room','partner_room'],partnerId,pairVersion})).filter(n=>n.type==='Image'&&['B','P'].includes(n.props.source)).map(n=>n.props.source);
+ assert.deepEqual(read(),['B','P']);mine='pinky';assert.deepEqual(read(),['P','B']);
+ identity={partnerId:'partner',pairVersion:'pair',partnerVariant:'pinky'};assert.deepEqual(read(),['P','P']);
+ assert.deepEqual(read('other','new'),['P','B']);identity={partnerId:'partner',pairVersion:'old',partnerVariant:'pinky'};
+ assert.deepEqual(read(),['P','B']);assert.deepEqual(read(null,null),['P','B']);
 });

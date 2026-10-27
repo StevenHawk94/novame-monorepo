@@ -1,0 +1,1077 @@
+{
+  "code": "RU",
+  "name": "Rue",
+  "friendId": "adventure_friend_ru",
+  "waitingLines": [
+    "I’m good. ...Just waiting on {partner}. Not like I care. ...I care a little.",
+    "I’ll stick around till {partner}’s back. Got nowhere to be. ...Are you okay?"
+  ],
+  "questions": [
+    {
+      "id": "RU-V01",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue leans in your doorway, arms crossed. A tiny smile tries to escape. She stops it.",
+      "lines": [
+        "I'm good. ...Are you? Cool. Quiz. Keep up."
+      ],
+      "question": "Why do wolves howl?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Because they're sad",
+          "reply": [
+            "Not always. Sometimes it's just 'hey.'",
+            "Howls are mostly for communication and finding the pack.",
+            "Happy howls exist. I don't do them. Often."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "To communicate and find their pack",
+          "reply": [
+            "Correct. Good ears.",
+            "Howls help wolves find each other and mark territory over long distances.",
+            "Sky says my howl sounds like 'come home.' ...Whatever."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "At the moon, obviously",
+          "reply": [
+            "Movie myth. The moon's not involved.",
+            "Wolves howl to find each other and talk across distance.",
+            "We just tilt our heads up. Sound carries better."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Wolves howl to communicate, assemble the pack, and mark territory.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V02",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue looks at a photo of a snow leopard and almost smiles. Almost.",
+      "lines": [
+        "I'm good. ...This one's quiet. Like me. Respect."
+      ],
+      "question": "What can't snow leopards do, unlike lions and tigers?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Roar",
+          "reply": [
+            "Correct. No roar.",
+            "They chuff, hiss, and mew, but their throats can't make a true roar.",
+            "Quiet but deadly. Honestly? Goals."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Climb",
+          "reply": [
+            "They climb mountains for fun. Literally.",
+            "The thing they can't do is roar.",
+            "Instead they make a soft 'chuff.' Very low-key. I respect it."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Jump",
+          "reply": [
+            "They jump like it's nothing. Several times their body length.",
+            "What they can't do is roar.",
+            "Silent mountain cats. No drama. Just results."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Snow leopards cannot roar due to larynx anatomy.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V03",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue holds a mug of something warm, sipping slowly.",
+      "lines": [
+        "Sharing question. Hard for me."
+      ],
+      "question": "What do vampire bats do for roost-mates who missed a meal?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Ignore them",
+          "reply": [
+            "Nope. They help.",
+            "They share regurgitated blood with hungry roost-mates.",
+            "Bats who share get help later. Trust, but make it bats."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Teach them to hunt better",
+          "reply": [
+            "Not quite.",
+            "They share food directly, by regurgitating blood.",
+            "Friends who share, get shared with. It's a system."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Share regurgitated blood with them",
+          "reply": [
+            "Correct. Gross. Kind.",
+            "Bats share meals with roost-mates who couldn't feed, and those friends return the favor.",
+            "Relying on others to survive. ...I'm learning."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Vampire bats share regurgitated blood with roost-mates; reciprocity is observed.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V04",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue squints at a zebra photo for a long time.",
+      "lines": [
+        "I'm good. ...Trying to find two the same. Can't."
+      ],
+      "question": "What's unique about zebra stripes?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They're all identical",
+          "reply": [
+            "Nope. They just look it from far away.",
+            "Each zebra's stripe pattern is unique.",
+            "Blending in and standing out. At the same time."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They change every morning",
+          "reply": [
+            "Ha. That'd be exhausting.",
+            "Each zebra's pattern is unique and stays for life.",
+            "Some foals even recognize mom by her stripes."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Every zebra's pattern is one of a kind",
+          "reply": [
+            "Correct. Like fingerprints.",
+            "No two zebras share the exact same stripes.",
+            "Same herd, different stripes. Individuality. I like that."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Zebra stripe patterns are unique to individuals.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V05",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue looks up at a flock of birds outside, watching closely.",
+      "lines": [
+        "I'm good. ...Teamwork question. Ugh. Fine."
+      ],
+      "question": "Why do geese fly in a V formation?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Because V stands for 'victory'",
+          "reply": [
+            "Cute. Wrong.",
+            "It saves energy. Birds take turns leading.",
+            "Rotating the lead means nobody burns out."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "To save energy, taking turns at the front",
+          "reply": [
+            "Correct. Teamwork.",
+            "Birds behind ride the lead bird's air currents, and the lead role rotates.",
+            "Even the strongest one can't lead forever. ...I hate that I relate."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "To look cool in photos",
+          "reply": [
+            "They do look cool. Not the reason.",
+            "The V helps them save energy, and they swap leaders.",
+            "Teamwork wins long distances."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Geese fly in V formation for aerodynamic efficiency, rotating the lead.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V06",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue raises one eyebrow, clearly debunking something in her head.",
+      "lines": [
+        "This one annoys me. Every documentary gets it wrong."
+      ],
+      "question": "Is the 'alpha wolf' fighting for dominance how wild packs work?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "No, wild packs are families led by parents",
+          "reply": [
+            "Correct. Myth busted.",
+            "The 'alpha' idea came from captive wolves, not wild families.",
+            "Even the scientist who popularized it later corrected it. Respect."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Yes, wolves battle for the top spot",
+          "reply": [
+            "Nope. Popular myth.",
+            "That idea came from studying unrelated wolves in captivity.",
+            "In the wild, packs are just families. Parents lead. That's it."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Only on Tuesdays",
+          "reply": [
+            "Ha. ...Funny. No.",
+            "Wild packs are families led by the parents.",
+            "The alpha myth came from captive wolves."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "The 'alpha' dominance concept came from captive studies; wild packs are families (Mech later corrected it).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V07",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue shadowboxes once, very fast, then pretends she didn't.",
+      "lines": [
+        "I'm good. ...This shrimp could beat me. I've accepted it."
+      ],
+      "question": "What's special about a mantis shrimp's punch?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It's slow but very polite",
+          "reply": [
+            "Opposite. Very rude. Very fast.",
+            "Its strike is among the fastest in nature.",
+            "It can crack aquarium glass. Aquariums hate this guy."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It's one of the fastest strikes in the animal world",
+          "reply": [
+            "Correct. Absurdly fast.",
+            "Its club can smash snail shells and even crack aquarium glass.",
+            "Small. Colorful. Will fight you. My spirit animal."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "It only punches when it's sad",
+          "reply": [
+            "Ha. It punches whenever it wants.",
+            "It's one of the fastest strikes in nature.",
+            "Shells, glass, your confidence. All cracked."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Mantis shrimp strikes are among the fastest in nature and can crack aquarium glass.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V08",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue holds up a mushroom and narrows her eyes at it.",
+      "lines": [
+        "I'm good. ...Mushrooms are weird. Hear this."
+      ],
+      "question": "Genetically, mushrooms are more closely related to...?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Animals",
+          "reply": [
+            "Correct. Wild, right?",
+            "Fungi split from the animal branch later than from plants.",
+            "I'm related to a mushroom. Don't tell Sky. He'll make it a nickname."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Plants",
+          "reply": [
+            "Everyone guesses that. Wrong.",
+            "Fungi are actually closer relatives of animals than plants.",
+            "So that mushroom is technically more my cousin than a tree is. Ugh."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Rocks",
+          "reply": [
+            "Ha. No. Rocks aren't alive. Usually.",
+            "Fungi are more closely related to animals than to plants.",
+            "Mushroom, you're family now. Unfortunately."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Fungi are more closely related to animals than plants (Opisthokonta).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V09",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue laughs at something on her phone, then quickly makes her face neutral again.",
+      "lines": [
+        "I'm good. ...Saw a meme. Sky sent it. Whatever."
+      ],
+      "question": "What do studies suggest about couples who laugh together?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They take each other less seriously",
+          "reply": [
+            "Nope. The opposite, kind of.",
+            "Shared laughter is linked to feeling closer and more supported.",
+            "Laughing together is serious business. Ironically."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It makes no difference",
+          "reply": [
+            "It does. Science said so.",
+            "Couples who laugh together tend to feel closer.",
+            "Send the dumb meme. It counts."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They tend to feel closer and more supported",
+          "reply": [
+            "Correct. Shared laughter helps.",
+            "Couples who laugh together report feeling closer and more satisfied.",
+            "Sky makes me laugh. Don't tell him. He'll get cocky."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Kurtz & Algoe (2015): shared laughter associated with relationship closeness/satisfaction.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V10",
+      "friendId": "adventure_friend_ru",
+      "type": "Trivia",
+      "scene": "Rue dabs green paste on a cracker, bites it, and blinks very fast.",
+      "lines": [
+        "I'm good. ...I'm good. That was not real wasabi."
+      ],
+      "question": "Most 'wasabi' served outside Japan is actually what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Pure grated wasabi root",
+          "reply": [
+            "Rarely. Real wasabi is pricey.",
+            "Most is horseradish, mustard, and green coloring.",
+            "Real wasabi is notoriously hard to grow. Fussy plant."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Horseradish with green coloring",
+          "reply": [
+            "Correct. Imposter paste.",
+            "Real wasabi root is rare and expensive, so horseradish fills in.",
+            "Things aren't always what they say they are. Lesson."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Mashed avocado with chili",
+          "reply": [
+            "That's just spicy guacamole.",
+            "It's usually horseradish and mustard, colored green.",
+            "Trust no green paste. Ever."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Most 'wasabi' outside Japan is horseradish/mustard with coloring.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "RU-V11",
+      "friendId": "adventure_friend_ru",
+      "type": "Preference",
+      "scene": "Rue leans on your wall. She looks like she doesn't care. She cares.",
+      "lines": [
+        "Independence talk. My favorite topic. Kind of. Don't read into it."
+      ],
+      "question": "Weekends: some solo time, or always together?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Some solo time",
+          "reply": [
+            "Solo time. Same.",
+            "Space keeps me me."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Always together",
+          "reply": [
+            "Always together? Huh. That's... sweet.",
+            "Not me. But sweet."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Solo time for both of you. Good.",
+          "So you and {partner} trust each other enough to roam.",
+          "Then you come back with stories. That's the best part."
+        ],
+        "A:B": [
+          "Always together for you. {partner} wants some solo time.",
+          "They're not leaving you. They're recharging. Different thing.",
+          "Give them one solo afternoon. They'll come back softer."
+        ],
+        "B:A": [
+          "Solo time for you. {partner} wants always together.",
+          "They'll want Saturday plans. You'll want a solo hike.",
+          "Morning alone, afternoon together. Sky and I do that. It works."
+        ],
+        "B:B": [
+          "Always together for both of you. Huh. Cute.",
+          "Honestly, {partner} and you are a pack of two. Inseparable.",
+          "I'd get claustrophobic. You two make it look nice. Annoying."
+        ]
+      }
+    },
+    {
+      "id": "RU-V12",
+      "friendId": "adventure_friend_ru",
+      "type": "Preference",
+      "scene": "Rue checks her phone. Puts it away. Checks it again.",
+      "lines": [
+        "Texting rules. Sky texts too much. I like it. Don't tell him."
+      ],
+      "question": "Staying in touch: a daily text, or only when there's news?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A daily text",
+          "reply": [
+            "Daily text. Alright. I get it.",
+            "A tiny 'hey' that says 'still here.'"
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Only when there's news",
+          "reply": [
+            "Only when there's news. Same.",
+            "No need to over-text."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Daily text for both of you. Alright, cute.",
+          "I can picture it: you and {partner} send one 'you good?' a day. Minimum.",
+          "Simple. Steady. I could get used to it. Maybe."
+        ],
+        "A:B": [
+          "Only news for you. {partner} likes a daily text.",
+          "They're checking their phone. Waiting. For anything.",
+          "Send a one-word text. 'Good.' That's all. It counts."
+        ],
+        "B:A": [
+          "Daily text for you. {partner} only texts with news.",
+          "You'll send 'hey.' They'll reply in three days with 'bought a plant.'",
+          "Send yours anyway. They read them. They smile."
+        ],
+        "B:B": [
+          "Only news for both of you. Efficient.",
+          "Pretty sure you and {partner} trust the silence. Silence means all good.",
+          "Honestly? Peaceful. Respect."
+        ]
+      }
+    },
+    {
+      "id": "RU-V13",
+      "friendId": "adventure_friend_ru",
+      "type": "Preference",
+      "scene": "Rue sharpens a pencil with a pocket knife. Unbothered. Mostly.",
+      "lines": [
+        "I'm good. ...Recharging question. I have a method."
+      ],
+      "question": "To recharge: alone time, friends, or a long run?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Alone time",
+          "reply": [
+            "Alone time. Same.",
+            "Quiet is power."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Friends",
+          "reply": [
+            "Friends. Okay. Social.",
+            "A pack helps. ...Sometimes."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A long run",
+          "reply": [
+            "A long run. Obviously.",
+            "Miles fix most things."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Alone time for both of you. Respect.",
+          "Lowkey, {partner} and you probably recharge in separate rooms. Happily.",
+          "Then reunite fully charged. Efficient."
+        ],
+        "A:B": [
+          "Friends for you. {partner} needs alone time.",
+          "You'll want to go out. They'll want the couch.",
+          "Invite a friend over. Let them hide in the bedroom. Peace."
+        ],
+        "A:C": [
+          "A run for you. {partner} needs alone time.",
+          "Run solo. They rest solo. Then meet.",
+          "Best kind of together. Apart first."
+        ],
+        "B:A": [
+          "Alone time for you. {partner} needs friends.",
+          "They'll be out. You'll be in. Fine.",
+          "Meet up after. Swap stories."
+        ],
+        "B:B": [
+          "Friends for both of you. Social pack.",
+          "You and {partner} recharge with a crowd. I'd need a nap after.",
+          "But good for you. Seriously."
+        ],
+        "B:C": [
+          "A run for you. {partner} needs friends.",
+          "Run to the party. Arrive sweaty. Iconic.",
+          "Or run in the morning, friends at night."
+        ],
+        "C:A": [
+          "Alone time for you. {partner} goes for a run.",
+          "They run. You rest. Both recharging. Both quiet.",
+          "Close enough. Same energy."
+        ],
+        "C:B": [
+          "Friends for you. {partner} goes for a run.",
+          "Run with friends. Everyone wins. Mostly them.",
+          "Or meet at the finish line with snacks."
+        ],
+        "C:C": [
+          "Long runs for both of you. Respect.",
+          "So {partner} and you probably run side by side without talking.",
+          "Best kind of conversation."
+        ]
+      }
+    },
+    {
+      "id": "RU-V14",
+      "friendId": "adventure_friend_ru",
+      "type": "Preference",
+      "scene": "Rue struggles to open a jar. She doesn't ask for help. She keeps struggling.",
+      "lines": [
+        "I've got it. I've got it. Okay."
+      ],
+      "question": "When you need help: ask right away, or try alone first?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Ask right away",
+          "reply": [
+            "Ask right away. Smart. Healthy.",
+            "No shame in it. ...I'm working on that."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Try alone first",
+          "reply": [
+            "Try alone first. Same.",
+            "Proving I can. Every time."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Ask right away for both of you. Great.",
+          "Honestly, you and {partner} just say 'can you help?' Easy.",
+          "Teach me. I'm still on the jar."
+        ],
+        "A:B": [
+          "Try alone first for you. {partner} asks right away.",
+          "They'll hand you the jar. You'll want to do it yourself.",
+          "Let them help once. ...It's nice. Sky taught me."
+        ],
+        "B:A": [
+          "Ask right away for you. {partner} tries alone first.",
+          "Offer help gently. Don't grab the jar.",
+          "Let them try. Then say 'want me to?' Quietly."
+        ],
+        "B:B": [
+          "Try alone first for both of you. Same.",
+          "I can picture it: {partner} and you will struggle with the jar for ten minutes. Side by side.",
+          "Just pass it over eventually. Please."
+        ]
+      }
+    },
+    {
+      "id": "RU-V15",
+      "friendId": "adventure_friend_ru",
+      "type": "Preference",
+      "scene": "Rue unfolds a paper map, upside down, then flips it.",
+      "lines": [
+        "I know where we are. Mostly."
+      ],
+      "question": "Lost while driving: ask for directions, or figure it out yourself?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Ask for directions",
+          "reply": [
+            "Ask for directions. Efficient.",
+            "Less time lost. More time snacking."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Figure it out",
+          "reply": [
+            "Figure it out. Same.",
+            "Pride is a GPS."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Ask for directions for both of you. Smart.",
+          "Pretty sure you and {partner} will never circle the same roundabout four times.",
+          "Respect. Practical. Sky and I once drove an hour the wrong way. Proudly."
+        ],
+        "A:B": [
+          "You figure it out. {partner} asks for directions.",
+          "They'll pull over. You'll sigh.",
+          "Let them ask. Arrive on time. Pride intact. Mostly."
+        ],
+        "B:A": [
+          "You ask for directions. {partner} wants to figure it out.",
+          "They'll say 'I know where we are.' They don't.",
+          "Ask quietly. Let them think it was their idea."
+        ],
+        "B:B": [
+          "Figure it out for both of you. Stubborn duo.",
+          "Lowkey, {partner} and you will drive in circles for an hour. Together.",
+          "At least the playlist is good."
+        ]
+      }
+    },
+    {
+      "id": "RU-V16",
+      "friendId": "adventure_friend_ru",
+      "type": "Guess",
+      "scene": "Rue narrows her eyes at you, calculating something.",
+      "lines": [
+        "I'm good. ...Stress question. I don't get stressed. Much."
+      ],
+      "question": "When stressed, what does your partner do?",
+      "selfQuestion": "When you're stressed, what do you do?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Pulls away",
+          "reply": [
+            "Pulls away. Same.",
+            "Distance feels safe."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Leans in",
+          "reply": [
+            "Leans in. Huh. Okay.",
+            "Closeness helps them."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Cleans everything",
+          "reply": [
+            "Cleans everything. Scrub therapy.",
+            "Shiny counters, calm brain."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Pulling away, and {partner} knew it.",
+          "They know your silence isn't about them.",
+          "Still. Tell them once in a while. Sky likes that."
+        ],
+        "A:B": [
+          "You lean in. {partner} expected you to pull away.",
+          "They're giving you space. You want closeness.",
+          "Say it. 'Stay.' One word. Works."
+        ],
+        "A:C": [
+          "You clean everything. {partner} expected you to pull away.",
+          "They're giving you space. You're scrubbing the oven.",
+          "Let them help. Or just let them watch. It's a show."
+        ],
+        "B:A": [
+          "You pull away. {partner} expected you to lean in.",
+          "They're opening their arms. You're closing the door.",
+          "Tell them it's not about them. It's just how you process."
+        ],
+        "B:B": [
+          "Leaning in, and {partner} knew it.",
+          "They know you need closeness when things get heavy.",
+          "Lucky. That's harder than it looks."
+        ],
+        "B:C": [
+          "You clean everything. {partner} expected you to lean in.",
+          "They want a hug. You want the floors spotless.",
+          "Hug them with rubber gloves on. Compromise."
+        ],
+        "C:A": [
+          "You pull away. {partner} expected cleaning.",
+          "They're waiting for scrubbing sounds. You've gone quiet.",
+          "Say 'I need space.' They'll understand."
+        ],
+        "C:B": [
+          "You lean in. {partner} expected cleaning.",
+          "They're handing you a sponge. You want a hug.",
+          "Hug first. Clean later. Maybe never."
+        ],
+        "C:C": [
+          "Cleaning everything, and {partner} knew it.",
+          "They know a spotless kitchen means a stressful week.",
+          "Help them scrub. Or bring snacks."
+        ]
+      }
+    },
+    {
+      "id": "RU-V17",
+      "friendId": "adventure_friend_ru",
+      "type": "Guess",
+      "scene": "Rue folds her arms, watching you closely.",
+      "lines": [
+        "Funny question coming. Ironic, given who's asking."
+      ],
+      "question": "When someone asks your partner 'you okay?', what do they say?",
+      "selfQuestion": "When someone asks you 'you okay?', what do you say?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "'I'm good.' (They're not.)",
+          "reply": [
+            "'I'm good.' Classic. That's me.",
+            "Everyone's 'good.' Nobody's good."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The honest truth",
+          "reply": [
+            "The honest truth. Brave.",
+            "Rare. Respect."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "'I'm good,' and {partner} sees right through it.",
+          "They know 'I'm good' means 'ask again later.'",
+          "Sky does that. Asks twice. It works. Annoyingly."
+        ],
+        "A:B": [
+          "You're honest. {partner} expected 'I'm good.'",
+          "They were ready to decode an 'I'm good.' You just told them the truth.",
+          "That's trust. It feels weird. Then it feels really good."
+        ],
+        "B:A": [
+          "You say 'I'm good.' {partner} thought you'd be honest.",
+          "They're taking 'good' at face value. Uh oh.",
+          "Say one real thing next time. Just one."
+        ],
+        "B:B": [
+          "The honest truth, and {partner} knew it.",
+          "They know you'll just tell them. No code.",
+          "Keep that. It's rare. Trust me."
+        ]
+      }
+    },
+    {
+      "id": "RU-V18",
+      "friendId": "adventure_friend_ru",
+      "type": "Guess",
+      "scene": "Rue sneezes, then glares at you like you caused it.",
+      "lines": [
+        "I'm not sick."
+      ],
+      "question": "When your partner gets sick, how do they act?",
+      "selfQuestion": "When you get sick, how do you act?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "'I'm fine,' refuses all help",
+          "reply": [
+            "Refuses help. Same.",
+            "'I'm fine,' while sneezing."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Wants to be babied",
+          "reply": [
+            "Wants to be babied. Honest.",
+            "Soup. Blankets. Attention."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Refusing help, and {partner} knew it.",
+          "They'll leave soup by the door. Silently.",
+          "That's how you handle a lone wolf. Respect."
+        ],
+        "A:B": [
+          "You want babying. {partner} thought you'd refuse help.",
+          "They're giving you space. You want a blanket burrito.",
+          "Ask for soup. They'll be thrilled."
+        ],
+        "B:A": [
+          "You refuse help. {partner} thought you'd want babying.",
+          "They're bringing soup. You're pretending you're fine.",
+          "Take the soup. Just the soup. That's a start."
+        ],
+        "B:B": [
+          "Wanting to be babied, and {partner} knew it.",
+          "They've got the soup and the blanket ready.",
+          "Let them. It's nice. ...I think."
+        ]
+      }
+    },
+    {
+      "id": "RU-V19",
+      "friendId": "adventure_friend_ru",
+      "type": "Guess",
+      "scene": "Rue pretends to check her nails, avoiding your eyes.",
+      "lines": [
+        "I'm good. ...Missing someone question. Ugh."
+      ],
+      "question": "How does your partner say 'I missed you'?",
+      "selfQuestion": "How do you say 'I missed you'?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "A long hug",
+          "reply": [
+            "A long hug. Huh. Sweet.",
+            "Arms say it. No words needed."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Pretends they didn't",
+          "reply": [
+            "Pretends they didn't. Same.",
+            "'Oh, you were gone?'"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "A long hug, and {partner} knew it.",
+          "They know you'll squeeze them for a full minute.",
+          "...That's nice. Don't tell anyone I said that."
+        ],
+        "A:B": [
+          "You pretend you didn't miss them. {partner} expected a hug.",
+          "They're waiting with open arms. You're 'busy.'",
+          "Hug them. Just once. Then go back to pretending."
+        ],
+        "B:A": [
+          "You hug long. {partner} thought you'd play it cool.",
+          "Surprise. Softie revealed.",
+          "They'll love it. Hug them extra long next time."
+        ],
+        "B:B": [
+          "Pretending you didn't, and {partner} knew it.",
+          "They see you trying not to smile when they walk in.",
+          "You're not fooling anyone. Sky says the same about me."
+        ]
+      }
+    },
+    {
+      "id": "RU-V20",
+      "friendId": "adventure_friend_ru",
+      "type": "Guess",
+      "scene": "Rue fixes your wobbly chair leg without being asked, then shrugs.",
+      "lines": [
+        "Taking care of people. Not my thing. Obviously."
+      ],
+      "question": "How does your partner take care of you?",
+      "selfQuestion": "How do you take care of your partner?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Fixes practical stuff",
+          "reply": [
+            "Fixes stuff. Practical love.",
+            "Squeaky door? Gone. Leaky faucet? Fixed."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Shows up with food",
+          "reply": [
+            "Shows up with food. Classic.",
+            "Love is a warm meal."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Fixing things, and {partner} knew it.",
+          "They know a fixed shelf is your 'I love you.'",
+          "Same. I fix stuff for Sky. He knows what it means."
+        ],
+        "A:B": [
+          "You bring food. {partner} thought you'd fix stuff.",
+          "They're expecting a toolbox. You arrive with lasagna.",
+          "Better surprise, honestly. Way better."
+        ],
+        "B:A": [
+          "You fix stuff. {partner} thought you'd bring food.",
+          "They're waiting for soup. You're fixing the faucet.",
+          "Tell them the faucet is a love letter. Plumbing romance."
+        ],
+        "B:B": [
+          "Showing up with food, and {partner} knew it.",
+          "They know dinner on the doorstep means you care.",
+          "Food is love. No argument."
+        ]
+      }
+    }
+  ]
+}

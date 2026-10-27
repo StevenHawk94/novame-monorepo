@@ -1,5 +1,6 @@
 import ExpoModulesCore
 import WidgetKit
+import UIKit
 
 /**
  * Bridge between the RN app and the NovaMe home-screen widget.
@@ -50,6 +51,19 @@ public class WidgetSyncModule: Module {
       var outAvatar: String? = nil
       if let avatar = obj["avatar"] as? [String: Any], let src = avatar["src"] as? String {
         outAvatar = copyIn(src, as: "friend-widget/avatar")
+      }
+      if outAvatar == nil, let avatar = obj["avatar"] as? [String: Any] {
+        let initial = avatar["initial"] as? String ?? String((obj["name"] as? String ?? "?").prefix(1)).uppercased()
+        let hex = (avatar["backgroundColor"] as? String ?? "#A35C43").replacingOccurrences(of: "#", with: "")
+        let rgb = UInt32(hex, radix: 16) ?? 0xA35C43
+        let fill = UIColor(red: CGFloat((rgb >> 16) & 255)/255, green: CGFloat((rgb >> 8) & 255)/255, blue: CGFloat(rgb & 255)/255, alpha: 1)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128)).image { _ in
+          fill.setFill(); UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: 128, height: 128)).fill()
+          let attrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 56, weight: .bold), .foregroundColor: UIColor(red: 1, green: 0.976, blue: 0.941, alpha: 1)]
+          let text = initial as NSString, size = text.size(withAttributes: attrs)
+          text.draw(at: CGPoint(x: (128-size.width)/2, y: (128-size.height)/2), withAttributes: attrs)
+        }
+        if let bytes=image.pngData(), (try? bytes.write(to: container.appendingPathComponent("friend-widget/avatar"))) != nil { outAvatar="friend-widget/avatar" }
       }
 
       var outItems: [[String: Any]] = []

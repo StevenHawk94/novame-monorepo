@@ -1,6 +1,5 @@
 import { storage } from './storage';
 import { fetchMeStats } from './me-stats';
-import { prefetchAppData } from './prefetch';
 
 /**
  * Foreground refresh after a long background.
@@ -40,7 +39,8 @@ export async function refreshAllCaches(userId: string): Promise<void> {
   // cache. Each resource below applies its own TTL and singleflight policy.
   // This keeps the UI cache-first and avoids refreshing low-frequency data
   // merely because a high-frequency resource became stale.
-  prefetchAppData();
+  // Burrow SyncGate/page preparation own current room artwork. Do not warm
+  // the retired Bags/Paired sprite catalogs during a foreground refresh.
   await Promise.allSettled([fetchMeStats(userId)]);
   markRefreshedNow();
 }

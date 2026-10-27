@@ -2,18 +2,16 @@
  * Runtime item catalog.
  *
  * The bundled catalog remains the offline baseline. Admin-published additions
- * and replacements arrive as an immutable R2 overlay; matching rules and image
- * URLs switch together only after a complete manifest is cached.
+ * and replacements arrive as an immutable display-only R2 overlay. Image URLs
+ * switch together only after a complete manifest is cached.
  */
-import type { ItemDictionary } from '@novame/engine';
-import { itemRuleContext, refreshItemRules } from './item-rule-cache';
+import { ITEM_DISPLAY_CATALOG, type ItemDictionary } from '@novame/engine';
 import { getCachedRemoteItemManifest, remoteItemAssetUrl } from './item-manifest-cache';
 
 export interface RemoteItem {
   id: string;
   name: string;
   bagsCategory: string;
-  keywords?: string[];
   imageKey?: string;
   rarity?: 'common' | 'uncommon' | 'rare';
   category?: string;
@@ -25,8 +23,7 @@ export interface RemoteItem {
  * bundle. A device may still retain an older immutable R2 item manifest from a
  * previous release; allowing that overlay to win would make My Logs, Memories,
  * Paired, and the native widgets disagree with Tap Your Day. Keep only the art
- * local for this reviewed range. Remote matching rules and every other remote
- * item continue to work normally.
+ * local for this reviewed range. Every other remote item retains its existing artwork.
  */
 const BUNDLED_FEELING_ART_START = 5355;
 const BUNDLED_FEELING_ART_END = 5384;
@@ -38,16 +35,11 @@ function usesReviewedBundledFeelingArt(itemId: string): boolean {
   return number >= BUNDLED_FEELING_ART_START && number <= BUNDLED_FEELING_ART_END;
 }
 
-export function refreshRemoteItems(): Promise<boolean> {
-  return refreshItemRules();
-}
-
 export function remoteItems(): RemoteItem[] {
   return (getCachedRemoteItemManifest()?.items ?? []).map((item) => ({
     id: item.itemId,
     name: item.iconName,
     bagsCategory: item.bagsCategory ?? item.category,
-    keywords: item.keywordsMapping,
     imageKey: item.imageKey,
     rarity: item.rarity,
     category: item.category,
@@ -66,16 +58,28 @@ export function remoteImageUri(_id: string): string {
   return item ? remoteItemAssetUrl(item.imageKey, item.assetVersion) : '';
 }
 
+let displayManifest: ReturnType<typeof getCachedRemoteItemManifest> | undefined;
+let displayDictionary: ItemDictionary | undefined;
 export function mergedItemDictionary(): ItemDictionary {
-  return itemRuleContext().dictionary;
+  // Compatibility display facade for historical journals and widgets.
+  const manifest = getCachedRemoteItemManifest();
+  if (displayDictionary && manifest === displayManifest) return displayDictionary;
+  const items = manifest?.items.length ? { ...ITEM_DISPLAY_CATALOG } : ITEM_DISPLAY_CATALOG;
+  for (const entry of manifest?.items ?? []) items[entry.itemId] = {
+    displayName: entry.iconName, rarity: entry.rarity, category: entry.category,
+    bagsCategory: entry.bagsCategory, emoji: entry.emoji,
+  };
+  displayManifest = manifest;
+  displayDictionary = { items };
+  return displayDictionary;
 }
 
 export function itemDisplayName(id: string): string {
-  return itemRuleContext().dictionary.items[id]?.displayName ?? id;
+  return remoteItemDef(id)?.name ?? ITEM_DISPLAY_CATALOG[id]?.displayName ?? id;
 }
 
 export function itemBagsCategory(id: string): string | null {
-  return itemRuleContext().dictionary.items[id]?.bagsCategory ?? null;
+  return remoteItemDef(id)?.bagsCategory ?? ITEM_DISPLAY_CATALOG[id]?.bagsCategory ?? null;
 }
 
 export function remoteIdsForPromptCategory(_category: string): string[] {

@@ -3,6 +3,7 @@ import { apiClient } from './api';
 import { sessionEpoch, sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
 import { withDeadline } from './async-lifecycle';
 import type { PricingTierKey } from '@novame/core';
+import { accountProfileRevision, projectAccountProfile, subscribeAccountProfile } from './account-profile-local';
 
 /**
  * Me-page stats state management for mobile (stage 3.10.1).
@@ -31,6 +32,10 @@ import type { PricingTierKey } from '@novame/core';
  */
 
 const STORAGE_KEY = 'novame_me_stats';
+subscribeAccountProfile(() => {
+  const cached = getCachedMeStats(), owner = sessionUserId();
+  if (cached && owner) setCachedMeStats({ ...cached, displayName: projectAccountProfile({ id: owner, display_name: cached.displayName }, -1).display_name }, owner);
+});
 const ME_STATS_TTL_MS = 30 * 60 * 1000;
 const fetchesInFlight = new Map<string, Promise<CachedMeStats>>();
 let cacheRevision = 0;
@@ -178,6 +183,7 @@ export async function fetchMeStats(
   if (existing) return existing;
 
   const request = (async () => {
+    const profileRead = accountProfileRevision();
     const data = await withDeadline(apiClient.get<MeStatsResponse>(
       `/api/me-stats?userId=${encodeURIComponent(userId)}`,
     ), 15_000);
@@ -195,7 +201,7 @@ export async function fetchMeStats(
       monthlyAnalyses: data.stats.monthlyAnalyses,
       planTier: data.stats.planTier,
       planName: data.stats.planName,
-      displayName: data.profile.displayName,
+      displayName: projectAccountProfile({ id: userId, display_name: data.profile.displayName }, profileRead).display_name,
       avatarUrl: data.profile.avatarUrl,
       isDefaultAvatar: data.profile.isDefaultAvatar !== false,
       lastFetchedAtMs: Date.now(),

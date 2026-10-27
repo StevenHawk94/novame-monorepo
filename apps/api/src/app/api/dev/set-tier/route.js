@@ -22,6 +22,7 @@ export const runtime = 'edge'
  * vocabulary regularizes to free/paid with the seat model later.
  */
 export async function POST(request) {
+  if(process.env.NODE_ENV==='production'||process.env.VERCEL_ENV==='production')return NextResponse.json({error:'feature_retired'},{status:410})
   try {
     const authHeader = request.headers.get('authorization') || ''
     const token = authHeader.replace(/^Bearer\s+/i, '').trim()

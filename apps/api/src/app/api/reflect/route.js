@@ -1,9 +1,10 @@
 import { after, NextResponse } from 'next/server'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
-import { matchItems, XP_RULES, MAX_REFLECT_ITEMS, tapYourDaySelectionLimit } from '@novame/engine'
+import { XP_RULES, MAX_REFLECT_ITEMS, tapYourDaySelectionLimit } from '@novame/engine'
 import {
   REFLECT_COPY_VERSION,
   runReflectCopy,
@@ -35,7 +36,7 @@ function isoWeek(dateStr) {
  *
  * Body: { userId, promptId (1-9), body (<=5000 chars), localDate (YYYY-MM-DD) }
  *
- * Computes XP, matches memory items, and produces the paid AI copy, then hands
+ * Computes XP, saves explicitly selected memory items, and produces the paid AI copy, then hands
  * the submission to the submit_reflect RPC. Growth-dimension analysis and
  * Reflect gem crediting are intentionally absent.
  */
@@ -58,7 +59,7 @@ export async function POST(request) {
     if (!Number.isInteger(promptId) || promptId < 1 || promptId > 9) {
       return NextResponse.json({ error: 'Invalid promptId' }, { status: 400 })
     }
-    // Three entries (2026-07-23 需求): 'typing' (流程1, live-matched text),
+    // Three legacy entries: 'typing' (text only),
     // 'prompt' (流程2, my-days guided taps), 'items' (流程3, manual picks).
     // typing requires text; the tap flows require picks and may carry no text.
     const mode = rawMode === 'prompt' || rawMode === 'items' ? rawMode : 'typing'
@@ -69,20 +70,16 @@ export async function POST(request) {
     if (body.length > MAX_BODY_CHARS) {
       return NextResponse.json({ error: 'Body too long' }, { status: 400 })
     }
-    // OTA items: validation + matching run on the MERGED dictionary (bundled
-    // + R2 manifest), so no-release items are accepted and matchable.
+    // Display metadata accepts explicit legacy manual IDs and remote artwork.
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
     if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
-    const DICT = await getMergedDictionary(typeof matchingVersion?.itemsVersion === 'string'
-      ? matchingVersion.itemsVersion : '0')
-    const removedForTyping = new Set(Array.isArray(removedItemIds)
-      ? removedItemIds.filter((x) => typeof x === 'string') : [])
-    const preliminaryMatches = mode === 'typing'
-      ? matchItems(body, DICT).filter((m) => !removedForTyping.has(m.itemId)) : []
+    const DICT = mode === 'typing' ? null : await getMergedDictionary(
+      typeof matchingVersion?.itemsVersion === 'string' ? matchingVersion.itemsVersion : '0')
+    const preliminaryMatches = []
 
     // Manual picks: [{ itemId, note? }], every id must exist in the dictionary.
     // The note (≤200 chars) becomes the memory excerpt, else the display name.
@@ -121,7 +118,7 @@ export async function POST(request) {
     if (pErr || !profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
-    const isPaid = (profile.subscription_tier || 'free') !== 'free'
+    const isPaid = await effectiveHasPlus(supabase,userId)
     const hasConsent = !!profile.ai_consent_at
 
     // Shared Memories creation is Plus-only. Enforce the entitlement at the
@@ -165,7 +162,7 @@ export async function POST(request) {
       return NextResponse.json({ error: result.error, ...result }, { status: 409 })
     }
 
-    // Item matching (C8): scan the reflection for known items and record them.
+    // Record explicit manual selections only. Never scan the reflection text.
     // Additive and best-effort -- a failure here never affects the reflect,
     // which already succeeded above. Runs only on a real reflect (has an id).
     let matchedItems = []

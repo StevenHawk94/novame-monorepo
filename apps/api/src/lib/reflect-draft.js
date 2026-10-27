@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import {
-  matchItems, tapYourDaySelectionLimit, tapYourDayChoice, cleanCustomTapItem,
-  CUSTOM_TAP_SELECTION_VERSION, MAX_REFLECT_ITEMS, TAP_YOUR_DAY_VERSION, ITEM_DICTIONARY,
+  tapYourDaySelectionLimit, tapYourDayChoice, cleanCustomTapItem,
+  CUSTOM_TAP_SELECTION_VERSION, MAX_REFLECT_ITEMS, TAP_YOUR_DAY_VERSION, ITEM_DISPLAY_CATALOG,
 } from '@novame/engine'
 
-import { dictionaryForRevision } from '@/lib/item-rule-store'
+import { getMergedDictionary } from '@/lib/remote-items'
 import {
   isUsableReflectMemoryCopy,
   neutralizeReflectMemoryCopy,
@@ -47,35 +47,29 @@ export async function resolveDraftInput(supabase, input, { recordOnly = false } 
   const isTapYourDay = selectionLimit > 0 && mode === 'prompt'
   if (input.selectionVersion != null && !isTapYourDay) return { error: 'invalid_selection_version' }
 
-  // Modern Write Freely is text-only. Do not fetch the remote dictionary or
-  // infer icons from a journal; historical/shared-memory callers retain theirs.
-  if (recordOnly && mode === 'typing') return { mode, body, matches: [], removedMatches: [] }
-  // v4 resolves the same manual allowlist as mobile, before any R2/rule lookup.
-  if (isTapYourDay && input.selectionVersion === TAP_YOUR_DAY_VERSION) {
+  // Writing never infers icons, including requests from older clients.
+  if (mode === 'typing') return { mode, body, matches: [], removedMatches: [] }
+  // Current/v4 manual allowlists resolve locally, with frozen v4 meanings.
+  if (isTapYourDay && [TAP_YOUR_DAY_VERSION, 'tap-your-day-v4'].includes(input.selectionVersion)) {
     if (!Array.isArray(input.selectedItems) || !input.selectedItems.length) return { error: 'empty' }
     if (input.selectedItems.length > selectionLimit) return { error: 'too_many_items' }
     const matches = [], seen = new Set()
     for (const selected of input.selectedItems) {
-      const choice = typeof selected?.itemId === 'string' ? tapYourDayChoice(selected.itemId) : null
+      const choice = typeof selected?.itemId === 'string' ? tapYourDayChoice(selected.itemId, input.selectionVersion) : null
       if (!choice) return { error: 'invalid_selection_item' }
       if (seen.has(choice.itemId)) continue
       seen.add(choice.itemId)
       matches.push({ itemId: choice.itemId, displayName: choice.label, label: choice.label,
-        rarity: ITEM_DICTIONARY.items[choice.itemId]?.rarity || 'common', sourceExcerpt: '',
+        rarity: ITEM_DISPLAY_CATALOG[choice.itemId]?.rarity || 'common', sourceExcerpt: '',
         selectionLabel: choice.label, selectionKind: choice.kind, ...(choice.custom ? { custom: true } : {}) })
     }
     return { mode, body, matches, removedMatches: [] }
   }
-  const dictionary = await dictionaryForRevision(supabase, input.matchingVersion)
+  // Legacy manual picks retain their IDs and display metadata, not matching rules.
+  const dictionary = await getMergedDictionary(input.matchingVersion?.itemsVersion || '0')
   let matches = []
   let removedMatches = []
-  if (mode === 'typing') {
-    const removed = new Set(Array.isArray(input.removedItemIds)
-      ? input.removedItemIds.filter((value) => typeof value === 'string') : [])
-    const accepted = matchItems(body, dictionary)
-    matches = accepted.filter(match => !removed.has(match.itemId))
-    removedMatches = accepted.filter(match => removed.has(match.itemId))
-  } else {
+  {
     if (!Array.isArray(input.selectedItems) || input.selectedItems.length === 0) {
       return { error: 'empty' }
     }

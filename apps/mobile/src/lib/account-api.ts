@@ -1,5 +1,6 @@
 import { apiClient } from './api';
 import { supabase } from './supabase';
+import { accountProfileRevision, projectAccountProfile } from './account-profile-local';
 
 /**
  * Account-related mutation wrappers — Stage 3.10.2 (C1).
@@ -70,7 +71,7 @@ export function updateDefaultAvatar(
 }
 
 type AvatarUploadWire =
-  | { success: true; avatarUrl: string }
+  | { success: true; avatarUrl: string;superseded?:boolean }
   | { success?: false; error: string };
 
 type AvatarPrepareWire =
@@ -78,7 +79,7 @@ type AvatarPrepareWire =
   | { success?: false; error: string };
 
 export type AvatarUploadResult =
-  | { kind: 'success'; avatarUrl: string }
+  | { kind: 'success'; avatarUrl: string;superseded?:boolean }
   | { kind: 'error'; message: string };
 
 export async function uploadProfileAvatar(
@@ -104,10 +105,11 @@ export async function uploadProfileAvatar(
 
 export async function prepareProfileAvatarUpload(
   userId: string,
+  requestKey?:string,
 ): Promise<{ kind: 'success'; path: string; token: string } | { kind: 'error'; message: string }> {
   try {
     const data = await apiClient.post<AvatarPrepareWire>('/api/upload-avatar', {
-      action: 'prepare',
+      action: 'prepare',requestKey,
       userId,
     });
     if (data.success === true) {
@@ -130,13 +132,22 @@ export async function completeProfileAvatarUpload(
       path,
     });
     if (data.success === true) {
-      return { kind: 'success', avatarUrl: data.avatarUrl };
+      return { kind: 'success', avatarUrl: data.avatarUrl,superseded:data.superseded };
     }
     return { kind: 'error', message: (data as { error: string }).error || 'Upload failed' };
   } catch (error) {
     return { kind: 'error', message: error instanceof Error ? error.message : 'Network error' };
   }
 }
+
+export type AccountProfile={id:string;display_name:string;birthday:string|null;gender:'woman'|'man'|'non_binary'|'prefer_not_to_say'|null;has_password?:boolean};
+export async function fetchAccountProfile(){
+  const started=accountProfileRevision();
+  const result=await apiClient.get<{success:boolean;profile:AccountProfile}>('/api/update-profile');
+  if(!result.success||!result.profile)throw Error('profile_unavailable');return projectAccountProfile(result.profile,started);
+}
+export function updateAccountDetail(userId:string,fields:{birthday?:string;gender?:NonNullable<AccountProfile['gender']>}){return postUpdate({userId,...fields});}
+export function updateOwnPassword(userId:string,password:string,nonce:string){return updateAuthUser(userId,{password,nonce},'Password updated');}
 
 /** Onboarding funnel answers — fire-and-forget analytics write. */
 export function reportOnboardingChoices(
@@ -167,7 +178,7 @@ export async function requestAccountReauthentication(): Promise<UpdateResult> {
 
 async function updateAuthUser(
   userId: string,
-  attributes: { email: string; nonce: string },
+  attributes: { email?: string;password?:string; nonce: string },
   successMessage: string,
 ): Promise<UpdateResult> {
   try {
@@ -189,11 +200,20 @@ export type DeleteAccountResult =
   | { kind: 'success' }
   | { kind: 'error'; message: string };
 
-export async function deleteAccount(userId: string): Promise<DeleteAccountResult> {
+export async function prepareAccountDeletion(userId:string):Promise<{kind:'success';challengeId:string;requiresCode:boolean}|{kind:'error';message:string}>{
+  try{
+    const result=await apiClient.post<{success:boolean;challengeId:string;requiresCode:boolean}>('/api/delete-account',{userId,action:'prepare'});
+    if(!result.success||!result.challengeId)throw Error('Could not prepare account deletion.');
+    return{kind:'success',challengeId:result.challengeId,requiresCode:result.requiresCode};
+  }catch(error){return{kind:'error',message:error instanceof Error?error.message:'Could not prepare account deletion.'};}
+}
+
+export async function deleteAccount(userId: string,challengeId:string,code?:string): Promise<DeleteAccountResult> {
   try {
     type WireResponse = { success: boolean; message?: string; error?: string };
     const data = await apiClient.post<WireResponse>('/api/delete-account', {
       userId,
+      action:'delete',challengeId,code,
     });
     if (data.success) return { kind: 'success' };
     return { kind: 'error', message: data.error || 'Failed to delete account' };

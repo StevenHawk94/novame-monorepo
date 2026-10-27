@@ -4,6 +4,11 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -42,6 +47,18 @@ class WidgetSyncModule : Module() {
       val output = JSONObject(input.toString())
       input.optJSONObject("avatar")?.optString("src")?.takeIf { it.isNotBlank() }?.let {
         copySource(it, "avatar")?.let { path -> output.put("avatarFile", path) }
+      }
+      if (!output.has("avatarFile")) input.optJSONObject("avatar")?.let { avatar ->
+        val bitmap=Bitmap.createBitmap(128,128,Bitmap.Config.ARGB_8888)
+        val canvas=Canvas(bitmap)
+        val paint=Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.color=runCatching { Color.parseColor(avatar.optString("backgroundColor", "#A35C43")) }.getOrDefault(Color.rgb(163,92,67))
+        canvas.drawCircle(64f,64f,64f,paint)
+        paint.color=Color.rgb(255,249,240);paint.textSize=56f;paint.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);paint.textAlign=Paint.Align.CENTER
+        canvas.drawText(avatar.optString("initial", "?"),64f,64f-(paint.ascent()+paint.descent())/2,paint)
+        val file=File(directory,"avatar")
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG,100,it) }
+        bitmap.recycle();output.put("avatarFile",file.absolutePath)
       }
       val sourceItems = input.optJSONArray("items") ?: JSONArray()
       val outputItems = JSONArray()

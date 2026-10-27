@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { Modal, PanResponder, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
+import {AppModal as Modal} from '@/components/layout/app-modal';
 import { Image } from './burrow-image';
 import { FRAME_PHOTO_ASPECT, positionedFrameCrop, type PhotoCrop } from '@/lib/room-photo-crop';
 
@@ -16,6 +18,7 @@ export function FramePhotoCropper({ asset, onCancel, onConfirm }: {
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
+  const confirming = useRef(false);
   const [error, setError] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const geometry = positionedFrameCrop(asset.width, asset.height, previewWidth, zoom, offset.x, offset.y);
@@ -36,16 +39,17 @@ export function FramePhotoCropper({ asset, onCancel, onConfirm }: {
     },
   }), [asset.width, asset.height, previewWidth, zoom]);
   async function confirm() {
-    if (busy) return;
+    if (confirming.current) return;
+    confirming.current = true;
     setBusy(true); setError(false);
     try { await onConfirm(geometry.crop); }
-    catch { setError(true); setBusy(false); }
+    catch { confirming.current = false; setError(true); setBusy(false); }
   }
   return <Modal visible transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={() => { if (!busy) onCancel(); }}>
     <View style={styles.scrim}>
       <View style={styles.sheet}>
         <Text style={styles.title}>Crop for your frame</Text>
-        <Text style={styles.hint}>The 201:290 area below is what your photo frame will show. Drag to position your photo.</Text>
+        <Text style={styles.hint}>Drag to position your photo.</Text>
         <View style={[styles.viewport, { width: previewWidth, height: previewHeight }]} {...responder.panHandlers}>
           <Image source={{ uri: asset.uri }} contentFit="fill" style={{ position: 'absolute', width: asset.width * geometry.scale,
             height: asset.height * geometry.scale,
@@ -58,7 +62,7 @@ export function FramePhotoCropper({ asset, onCancel, onConfirm }: {
           <Pressable accessibilityRole="button" accessibilityLabel="Zoom in" onPress={() => setZoom(value => Math.min(3, Math.round((value + .2) * 10) / 10))} style={styles.zoomButton}><Text style={styles.zoomText}>+</Text></Pressable>
         </View>
         {error && <Text accessibilityRole="alert" style={styles.error}>Photo could not be saved. Please try again.</Text>}
-        <Pressable accessibilityRole="button" disabled={busy} onPress={() => void confirm()} style={[styles.save, busy && styles.disabled]}><Text style={styles.saveText}>{busy ? 'Saving…' : 'Use This Crop'}</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityState={{disabled:busy,busy}} disabled={busy} onPress={() => void confirm()} style={[styles.save, busy && styles.disabled]}><Text style={styles.saveText}>Use This Crop</Text></Pressable>
         <Pressable accessibilityRole="button" disabled={busy} onPress={onCancel} style={styles.cancel}><Text style={styles.cancelText}>Cancel</Text></Pressable>
       </View>
     </View>

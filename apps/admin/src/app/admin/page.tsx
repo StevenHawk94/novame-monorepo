@@ -6,6 +6,7 @@ import RealUsersTab from './_components/RealUsersTab';
 import MarketingTab from './_components/MarketingTab';
 import BurrowContentTab from './_components/BurrowContentTab';
 import ShopPricingTab from './_components/ShopPricingTab';
+import ShopSalesTab from './_components/ShopSalesTab';
 
 type TabId =
   | 'overview'
@@ -13,13 +14,15 @@ type TabId =
   | 'marketing'
   | 'burrow-content'
   | 'shop-pricing'
+  | 'shop-sales';
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'real-users', icon: '👥', label: 'Real Users' },
   { id: 'marketing', icon: '📣', label: 'Marketing' },
   { id: 'burrow-content', icon: '🐰', label: 'Burrow Content' },
-  { id: 'shop-pricing', icon: '🥕', label: 'Shop Pricing' },
+  { id: 'shop-pricing', icon: '🥕', label: 'Shop, Games & Surprise' },
+  { id: 'shop-sales', icon: '🛍️', label: 'Shop Sales' },
 ];
 
 /**
@@ -59,6 +62,7 @@ export default function AdminDashboard() {
       {tab === 'marketing' && <MarketingTab />}
       {tab === 'burrow-content' && <BurrowContentTab />}
       {tab === 'shop-pricing' && <ShopPricingTab />}
+      {tab === 'shop-sales' && <ShopSalesTab />}
     </>
   );
 }

@@ -5,8 +5,8 @@ const { load } = require('./lifecycle-test-utils.cjs');
 const { roomPhotoFailureCode, roomPhotoFailureMessage, TOY_PHOTO_DAILY_LIMIT_MESSAGE } =
   load('apps/mobile/src/lib/room-photo-errors.ts');
 
-test('camera and library share a clear daily Toy photo limit message', () => {
-  assert.match(TOY_PHOTO_DAILY_LIMIT_MESSAGE, /Photo library and camera share this limit/);
+test('daily Toy photo limit uses the requested Plus/tomorrow copy without changing the quota error', () => {
+  assert.equal(TOY_PHOTO_DAILY_LIMIT_MESSAGE, 'Join plus to enable more photos used on your plushie, or come back tomorrow;');
   assert.equal(roomPhotoFailureMessage({ body: { error: 'daily_limit_reached' } }, 'camera failed'),
     TOY_PHOTO_DAILY_LIMIT_MESSAGE);
   assert.equal(roomPhotoFailureCode(new Error('daily_limit_reached')), 'daily_limit_reached');

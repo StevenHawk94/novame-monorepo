@@ -6,7 +6,7 @@
  * @novame/engine, looked up by id. So the emoji swaps to sprite art by editing
  * the dictionary, with no API or client-shape change.
  */
-import { ITEM_DICTIONARY, type ItemRarity } from '@novame/engine';
+import { ITEM_DISPLAY_CATALOG, type ItemRarity } from '@novame/engine';
 import { remoteItemDef } from './remote-items';
 
 import { kBagsState, kTheirBagsState } from '../shared/storage/keys';
@@ -93,7 +93,7 @@ const itemDetailsInflight = new Map<string, Promise<CollectedItem | null>>();
 /** Join a server item with its dictionary display info. Unknown ids (dictionary
  *  edited since) fall back to a generic label so nothing crashes. */
 function decorate(w: WireItem): CollectedItem {
-  const def = ITEM_DICTIONARY.items[w.itemId];
+  const def = ITEM_DISPLAY_CATALOG[w.itemId];
   const remote = remoteItemDef(w.itemId);
   return {
     itemId: w.itemId,

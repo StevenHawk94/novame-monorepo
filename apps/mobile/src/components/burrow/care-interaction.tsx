@@ -1,14 +1,55 @@
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Circle, ClipPath, Defs, Ellipse, G, Path } from 'react-native-svg';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
+import { useFocusEffect } from 'expo-router';
+import UIAnimated, { cancelAnimation, Easing, ReduceMotion, withTiming, runOnJS, runOnUI, useAnimatedProps, useDerivedValue, useFrameCallback, useSharedValue, useReducedMotion, type SharedValue, type FrameInfo } from 'react-native-reanimated';
+import { advanceWaterMotion, createWaterMotion, WATER_HOLES } from '@/lib/care-water-motion';
+import { CareProgress } from './care-progress';
+import Svg, { Circle, ClipPath, Defs, Ellipse, G, Path, Rect } from 'react-native-svg';
+const NativeG=UIAnimated.createAnimatedComponent(G<{matrix?:number[]}>);
+const NativePath=UIAnimated.createAnimatedComponent(Path);
+function WaterStream({motion,index}:{motion:SharedValue<ReturnType<typeof createWaterMotion>>;index:number}){
+  const props=useAnimatedProps(()=>({d:motion.value.paths[index]}));
+  return <NativePath animatedProps={props} fill="#7CB0C8" opacity={(index+1)/5}/>;
+}
 import { Image } from './burrow-image';
 import type { BurrowArtAsset } from '@/lib/burrow-art-assets';
 import { haptics } from '@/lib/haptics';
+import { careLayout, CARROT_VIEWBOX, wateringCanPoint } from '@/lib/burrow-care-layout';
 
 const CARROT_BODY='M97 84 C82 152 84 260 96 348 C99 368 104 374 110 366 C126 300 148 196 162 96 C166 76 154 66 132 66 C112 66 100 72 97 84 Z';
 const BITE_COUNT=14;
 const BITE_INTERVAL=320;
 type Crumb={id:number;x:number;y:number;dx:number;dy:number;spin:number;size:number;color:string;duration:number;anim:Animated.Value};
+
+/** A gentle continuous haptic train, only while the real hold is active.
+ * Expo has no cross-platform continuous-haptics handle: short metered pulses
+ * avoid long system vibrations that cannot stop promptly when a finger lifts. */
+function useCareHoldFeedback(onInterrupt:()=>void){
+  const timer=useRef<ReturnType<typeof setInterval>|null>(null);
+  const foreground=useRef(AppState.currentState==='active');
+  const focused=useRef(false);
+  const interrupt=useRef(onInterrupt);interrupt.current=onInterrupt;
+  const stop=useCallback(()=>{if(timer.current!==null){clearInterval(timer.current);timer.current=null;}},[]);
+  useFocusEffect(useCallback(()=>{
+    focused.current=true;
+    return()=>{focused.current=false;stop();interrupt.current();};
+  },[stop]));
+  useEffect(()=>{
+    const subscription=AppState.addEventListener('change',state=>{
+      foreground.current=state==='active';
+      if(!foreground.current){stop();interrupt.current();}
+    });
+    return()=>{stop();subscription.remove();};
+  },[stop]);
+  const canStart=()=>foreground.current&&focused.current;
+  const start=()=>{
+    if(timer.current!==null||!canStart())return;
+    const pulse=()=>{void haptics.selection().catch(()=>{});};
+    pulse();timer.current=setInterval(pulse,100);
+  };
+  return {start,stop,canStart};
+}
 
 function biteClip(bite:number) {
   if (!bite) return 'M0 -80 H250 V452 H0 Z';
@@ -28,23 +69,33 @@ function biteClip(bite:number) {
   return `M0 -80 H250 V${y} ${edge.replace(/^M /,'L ')} L0 ${y} Z`;
 }
 
-export function FeedInteraction({ onComplete, complete }: { onComplete:()=>void; complete:boolean }) {
-  const {height}=useWindowDimensions();
-  const carrotHeight=Math.min(400,Math.max(230,height*.46));
-  const carrotWidth=carrotHeight*230/400;
+export function FeedInteraction({ onComplete, complete, availableHeight }: { onComplete:()=>void; complete:boolean; availableHeight?:number }) {
+  const {width,height}=useWindowDimensions();
+  const [measuredHeight,setMeasuredHeight]=useState<number|null>(null);
+  const layout=useMemo(()=>careLayout(width,measuredHeight??availableHeight??height-140),[width,measuredHeight,availableHeight,height]);
+  const {carrotHeight,carrotWidth}=layout;
   const [bite,setBite]=useState(0);
+  const progress=useSharedValue(complete?1:0),finished=useRef(complete),generationRef=useRef(0);
   const [crumbs,setCrumbs]=useState<Crumb[]>([]);
   const biteRef=useRef(0);
   const crumbId=useRef(0);
   const crumbAnimations=useRef<Animated.CompositeAnimation[]>([]);
   const alive=useRef(true);
-  const timer=useRef<ReturnType<typeof setInterval>|null>(null);
-  const stop=()=>{if(timer.current){clearInterval(timer.current);timer.current=null;}};
+  const frame=useRef<ReturnType<typeof setTimeout>|null>(null),progressRef=useRef(complete?1:0),lastFrame=useRef(0);
+  const onCompleteRef=useRef(onComplete);onCompleteRef.current=onComplete;
+  const feedback=useCareHoldFeedback(()=>stop());
+  const stop=()=>{
+    generationRef.current++;
+    if(frame.current!==null){clearTimeout(frame.current);frame.current=null;}
+    if(lastFrame.current)progressRef.current=Math.min(1,progressRef.current+Math.max(0,Date.now()-lastFrame.current)/((BITE_COUNT-1)*BITE_INTERVAL));
+    lastFrame.current=0;cancelAnimation(progress);feedback.stop();
+  };
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;stop();crumbAnimations.current.forEach(animation=>animation.stop());};},[]);
+  useEffect(()=>{if(complete){stop();finished.current=true;progressRef.current=1;progress.value=1;}},[complete]);
   const scatter=(atY:number,color='#F5841F')=>{
     const next=Array.from({length:4},()=>({
-      id:++crumbId.current,x:124/230*carrotWidth,y:atY/400*carrotHeight,
-      dx:(Math.random()-.5)*52/230*carrotWidth,dy:(70+Math.random()*70)/400*carrotHeight,
+      id:++crumbId.current,x:124/230*carrotWidth,y:(atY-CARROT_VIEWBOX.top)/CARROT_VIEWBOX.height*carrotHeight,
+      dx:(Math.random()-.5)*52/230*carrotWidth,dy:(70+Math.random()*70)/CARROT_VIEWBOX.height*carrotHeight,
       spin:(Math.random()-.5)*360,size:4+Math.random()*6,color,
       duration:520+Math.random()*240,anim:new Animated.Value(0),
     }));
@@ -58,19 +109,29 @@ export function FeedInteraction({ onComplete, complete }: { onComplete:()=>void;
       });
     });
   };
-  const chomp=()=>{
-    if(biteRef.current>=BITE_COUNT)return;
-    biteRef.current++;
-    setBite(biteRef.current);
-    scatter(372-biteRef.current/BITE_COUNT*306);
-    void haptics.light();
-    if(biteRef.current>=BITE_COUNT){scatter(60,'#3E8E41');stop();onComplete();}
+  const finish=(token:number)=>{
+    if(!alive.current||token!==generationRef.current||!feedback.canStart()||finished.current)return;
+    finished.current=true;stop();progressRef.current=1;progress.value=1;setBite(BITE_COUNT);onCompleteRef.current();
   };
-  const start=()=>{if(timer.current||complete||biteRef.current>=BITE_COUNT)return;chomp();timer.current=setInterval(chomp,BITE_INTERVAL);};
-  return <View style={styles.carePage}>
-    <Text style={styles.caption}>Press and hold the carrot. Each little bite makes it disappear.</Text>
-    <Pressable accessibilityRole="button" accessibilityLabel="Hold to feed your bunny" onPressIn={start} onPressOut={stop} style={[styles.carrotHit,{width:carrotWidth,height:carrotHeight}]}>
-      <Svg width={carrotWidth} height={carrotHeight} viewBox="0 0 230 400" style={{overflow:'visible'}}>
+  const tick=()=>{
+    frame.current=null;
+    const now=Date.now(),elapsed=Math.max(0,now-lastFrame.current);lastFrame.current=now;
+    progressRef.current=Math.min(1,progressRef.current+elapsed/((BITE_COUNT-1)*BITE_INTERVAL));
+    const nextBite=Math.floor(progressRef.current*BITE_COUNT);
+    if(nextBite>biteRef.current){biteRef.current=nextBite;setBite(nextBite);scatter(372-nextBite/BITE_COUNT*306);}
+    if(progressRef.current>=1){finish(generationRef.current);return;}
+    frame.current=setTimeout(tick,80);
+  };
+  const start=()=>{
+    if(frame.current!==null||complete||finished.current||progressRef.current>=1||!feedback.canStart())return;
+    const token=++generationRef.current;
+    feedback.start();lastFrame.current=Date.now();frame.current=setTimeout(tick,80);
+    progress.value=withTiming(1,{duration:(1-progressRef.current)*((BITE_COUNT-1)*BITE_INTERVAL),easing:Easing.linear,reduceMotion:ReduceMotion.Never},done=>{if(done)runOnJS(finish)(token);});
+  };
+  return <View style={styles.carePage} onLayout={event=>{if(event.nativeEvent.layout.height>0)setMeasuredHeight(event.nativeEvent.layout.height);}}>
+    <Text style={[styles.caption,{top:layout.hintTop}]}>Press and Hold</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Hold to feed your bunny" accessibilityActions={[{name:'activate',label:'Feed your bunny'}]} onAccessibilityAction={start} onAccessibilityTap={start} onPressIn={start} onPressOut={stop} style={[styles.carrotHit,{top:layout.carrotTop,width:carrotWidth,height:carrotHeight}]}>
+      <Svg width={carrotWidth} height={carrotHeight} viewBox={`0 ${CARROT_VIEWBOX.top} ${CARROT_VIEWBOX.width} ${CARROT_VIEWBOX.height}`}>
         <Defs><ClipPath id="bite"><Path d={biteClip(bite)}/></ClipPath><ClipPath id="carrotBody"><Path d={CARROT_BODY}/></ClipPath></Defs>
         {bite<BITE_COUNT&&<G transform="translate(131 74) scale(.78)">
           <Path d="M0 4 C-15 -24 -17 -58 -6 -78 Q1 -90 9 -77 C19 -56 12 -20 0 4 Z" fill="#557F37" transform="rotate(-46) translate(0 -4) scale(1.02 .94)"/>
@@ -92,115 +153,76 @@ export function FeedInteraction({ onComplete, complete }: { onComplete:()=>void;
           {rotate:crumb.anim.interpolate({inputRange:[0,1],outputRange:['0deg',`${crumb.spin}deg`]})},
         ]}}/>)}</View>
     </Pressable>
-    <Text accessibilityLiveRegion="polite" style={styles.progressText}>{complete?'Your bunny is fed!':`Feeding ${Math.round(bite/BITE_COUNT*100)}%`}</Text>
-    <View style={styles.track}><View style={[styles.carrotFill,{width:`${bite/BITE_COUNT*100}%`}]} /></View>
+    <View style={[styles.meter,{bottom:layout.meterBottom}]}>
+      <CareProgress progress={progress} label="Feeding" color="#F1813C"/>
+    </View>
   </View>;
 }
 
-// Matches water-plant.html: five holes on the blue watering head, each emitting
-// a separate ballistic stream. The demo's controls are tuning aids, not UI.
-const WATER_HOLES=[[-221.9,-25.6],[-217.9,-34.8],[-214,-44],[-210,-53.2],[-206.1,-62.4]] as const;
-// At 75°, the five trajectories cross the flower heads near scene x=180,
-// rather than landing left of the vase (the 32° HTML demo has no flower).
-const WATER_TUNE={duration:3,rate:12,speed:120,spread:26,gravity:900,tilt:75};
-type WaterDrop={x:number;y:number;vx:number;vy:number;r:number;a:number};
-type WaterSpark={x:number;y:number;angle:number;distance:number;r:number;age:number;life:number;gold:boolean};
-type WaterFrame={tilt:number;progress:number;paths:string[];sparks:WaterSpark[]};
-
-function canPoint(x:number,y:number,tilt:number){
-  // Same transform order as the SVG: rotate about (34, 10), then scale and
-  // translate. Emission stays welded to each hole while the can tilts.
-  const radians=tilt*Math.PI/180,c=Math.cos(radians),s=Math.sin(radians);
-  const rx=34+(x-34)*c-(y-10)*s,ry=10+(x-34)*s+(y-10)*c;
-  return {x:260+rx*.62,y:140+ry*.62};
-}
-function waterDropPath(drop:WaterDrop){
-  const speed=Math.hypot(drop.vx,drop.vy)||1,ux=drop.vx/speed,uy=drop.vy/speed;
-  const tail=drop.r*1.8+speed*.009;
-  const a={x:drop.x-uy*drop.r,y:drop.y+ux*drop.r};
-  const b={x:drop.x+uy*drop.r,y:drop.y-ux*drop.r};
-  return `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${(drop.x+ux*drop.r).toFixed(1)} ${(drop.y+uy*drop.r).toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)} L${(drop.x-ux*tail).toFixed(1)} ${(drop.y-uy*tail).toFixed(1)} Z`;
-}
-
-export function WaterInteraction({flower,onComplete,complete}:{flower?:BurrowArtAsset;onComplete:()=>void;complete:boolean}){
+export function WaterInteraction({flower,onComplete,complete,availableHeight}:{flower?:BurrowArtAsset;onComplete:()=>void;complete:boolean;availableHeight?:number}){
   const {width,height}=useWindowDimensions();
-  const sceneScale=Math.min(1,(width-32)/360,(height-220)/600);
-  const stageWidth=360*sceneScale,stageHeight=600*sceneScale;
-  const [holding,setHolding]=useState(false);
-  const [frame,setFrame]=useState<WaterFrame>({tilt:0,progress:complete?1:0,paths:['','','','',''],sparks:[]});
-  const holdingRef=useRef(false),finishedRef=useRef(complete),progressRef=useRef(complete?1:0);
-  const tiltRef=useRef(0),dropsRef=useRef<WaterDrop[]>([]),sparksRef=useRef<WaterSpark[]>([]);
-  const accumulators=useRef([0,0,0,0,0]);
-  const onCompleteRef=useRef(onComplete);
-  onCompleteRef.current=onComplete;
-  useEffect(()=>{if(complete)finishedRef.current=true;},[complete]);
-  useEffect(()=>{
-    let alive=true,handle=0,last=0,lastPaint=0,wasActive=false;
-    const tick=(now:number)=>{
-      if(!alive)return;
-      const dt=last?Math.min((now-last)/1000,.05):0;last=now;
-      if(holdingRef.current&&!finishedRef.current){
-        progressRef.current=Math.min(1,progressRef.current+dt/WATER_TUNE.duration);
-        if(progressRef.current>=1){
-          finishedRef.current=true;holdingRef.current=false;setHolding(false);
-          const origin=canPoint(-69,42,tiltRef.current);
-          sparksRef.current=Array.from({length:14},(_,i)=>({x:origin.x,y:origin.y,
-            angle:Math.PI*2*i/14+Math.random()*.4,distance:46+Math.random()*34,
-            r:2.4+Math.random()*2,age:0,life:.7+Math.random()*.3,gold:i%2===1}));
-          void haptics.success();onCompleteRef.current();
-        }
-      }
-      const target=holdingRef.current?-WATER_TUNE.tilt:0;
-      tiltRef.current+=(target-tiltRef.current)*Math.min(1,dt*11);
-      if(holdingRef.current){
-        const step=WATER_TUNE.spread/(WATER_HOLES.length-1);
-        WATER_HOLES.forEach(([hx,hy],index)=>{
-          accumulators.current[index]+=dt*WATER_TUNE.rate;
-          while(accumulators.current[index]>=1){
-            accumulators.current[index]--;
-            const point=canPoint(hx,hy,tiltRef.current);
-            const degrees=203+tiltRef.current+(index-2)*step+(Math.random()-.5)*5;
-            const radians=degrees*Math.PI/180,speed=WATER_TUNE.speed*(.85+Math.random()*.3);
-            dropsRef.current.push({x:point.x,y:point.y,vx:Math.cos(radians)*speed,
-              vy:Math.sin(radians)*speed,r:2.8+Math.random()*1.2,a:.78+Math.random()*.2});
-          }
-        });
-      }else accumulators.current.fill(0);
-      dropsRef.current=dropsRef.current.filter(drop=>{
-        drop.vy+=WATER_TUNE.gravity*dt;drop.x+=drop.vx*dt;drop.y+=drop.vy*dt;
-        return drop.y<620&&drop.x>-40&&drop.x<400;
-      }).slice(-600);
-      sparksRef.current=sparksRef.current.filter(spark=>{spark.age+=dt;return spark.age<spark.life;});
-      const active=holdingRef.current||dropsRef.current.length>0||sparksRef.current.length>0||Math.abs(tiltRef.current)>.05;
-      if(now-lastPaint>=25&&(active||wasActive)){
-        lastPaint=now;
-        const paths=['','','','',''];
-        for(const drop of dropsRef.current){
-          const fade=drop.y>420?Math.max(0,1-(drop.y-420)/180):1;
-          const visible=drop.a*fade;
-          if(visible<.08)continue;
-          const bucket=Math.min(4,Math.max(0,Math.round(visible*5)-1));
-          paths[bucket]+=waterDropPath(drop)+' ';
-        }
-        setFrame({tilt:tiltRef.current,progress:progressRef.current,paths,sparks:[...sparksRef.current]});
-        wasActive=active;
-      }
-      handle=requestAnimationFrame(tick);
-    };
-    handle=requestAnimationFrame(tick);
-    return()=>{alive=false;cancelAnimationFrame(handle);holdingRef.current=false;};
+  const [measuredHeight,setMeasuredHeight]=useState<number|null>(null);
+  const layout=useMemo(()=>careLayout(width,measuredHeight??availableHeight??height-140,flower),[width,measuredHeight,availableHeight,height,flower]);
+  const reduced=useReducedMotion(),motion=useSharedValue(createWaterMotion(complete)),running=useSharedValue(false);
+  const measured=useSharedValue(layout),generation=useSharedValue(0),idleQueued=useSharedValue(false);
+  const driverRef=useRef<ReturnType<typeof useFrameCallback>|null>(null);
+  const holdTargets=useRef(new Set<string>()),alive=useRef(true),delivered=useRef(complete);
+  const onCompleteRef=useRef(onComplete);onCompleteRef.current=onComplete;
+  const feedback=useCareHoldFeedback(()=>release(true));
+  const finish=useCallback((token:number)=>{
+    if(!alive.current||token!==generation.value||!feedback.canStart()||delivered.current)return;
+    delivered.current=true;holdTargets.current.clear();feedback.stop();onCompleteRef.current();
   },[]);
-  const start=()=>{if(finishedRef.current)return;holdingRef.current=true;setHolding(true);};
-  const release=()=>{
-    holdingRef.current=false;setHolding(false);
-    // A completed watering must be one continuous three-second hold.
-    if(!finishedRef.current)progressRef.current=0;
+  const pauseIdle=useCallback(()=>{
+    if(!holdTargets.current.size&&!motion.value.holding&&!motion.value.drops.length&&Math.abs(motion.value.tilt)<.05)driverRef.current?.setActive(false);
+  },[]);
+  const frameCallback=useCallback((frame:FrameInfo)=>{
+    'worklet';
+    if(!running.value)return;
+    if(!motion.value.holding&&!motion.value.drops.length&&Math.abs(motion.value.tilt)<.05){
+      if(!idleQueued.value){idleQueued.value=true;runOnJS(pauseIdle)();}return;
+    }
+    let done=false;
+    motion.modify(state=>{done=advanceWaterMotion(state,frame.timeSincePreviousFrame??0,measured.value,reduced,Date.now());return state;},true);
+    if(done)runOnJS(finish)(generation.value);
+  },[running,motion,idleQueued,pauseIdle,measured,reduced,finish,generation]);
+  const frameDriver=useFrameCallback(frameCallback,false);
+  driverRef.current=frameDriver;
+  useEffect(()=>{measured.value=layout;},[layout,measured]);
+  useEffect(()=>{if(complete){delivered.current=true;feedback.stop();runOnUI(()=>{'worklet';motion.modify(state=>{state.completed=true;state.holding=false;state.progress=1;return state;},true);})();}},[complete]);
+  useFocusEffect(useCallback(()=>{
+    alive.current=true;
+    const update=()=>{
+      const active=AppState.currentState==='active';
+      runOnUI((enabled:boolean)=>{'worklet';running.value=enabled;if(!enabled)generation.value++;})(active);
+      if(!active)frameDriver.setActive(false);
+    };
+    update();const sub=AppState.addEventListener('change',update);
+    return()=>{alive.current=false;frameDriver.setActive(false);sub.remove();runOnUI(()=>{'worklet';running.value=false;generation.value++;})();};
+  },[frameDriver]));
+  const progress=useDerivedValue(()=>motion.value.progress);
+  const canProps=useAnimatedProps(()=>{
+    const radians=motion.value.tilt*Math.PI/180,c=Math.cos(radians),s=Math.sin(radians);
+    return {matrix:[c,s,-s,c,34-34*c+10*s,10-34*s-10*c]};
+  });
+  const start=(target:string)=>{
+    if(delivered.current||!feedback.canStart())return;
+    holdTargets.current.add(target);feedback.start();
+    runOnUI((startedAt:number)=>{'worklet';idleQueued.value=false;if(running.value&&!motion.value.completed)motion.modify(state=>{if(!state.holding){state.holdStartedAt=startedAt;state.holdSeconds=0;}state.holding=true;return state;},true);})(Date.now());
+    frameDriver.setActive(true);
   };
-  return <View style={styles.waterPage}>
-    <View style={[styles.waterStage,{width:stageWidth,height:stageHeight}]}>
-      <Svg width="100%" height="100%" viewBox="0 0 360 600" pointerEvents="none">
-        <G transform="translate(260 140) scale(0.62)">
-          <G transform={`rotate(${frame.tilt} 34 10)`}>
+  const release=(interrupted=false)=>{
+    holdTargets.current.clear();feedback.stop();
+    runOnUI((interrupt:boolean)=>{'worklet';if(interrupt)generation.value++;motion.modify(state=>{state.holding=false;state.holdStartedAt=0;state.holdSeconds=0;if(!state.completed)state.progress=0;if(interrupt){state.drops=[];state.tilt=0;state.paths=['','','','',''];}return state;},true);})(interrupted);
+  };
+  const releaseTarget=(target:string)=>{holdTargets.current.delete(target);if(!holdTargets.current.size)release();};
+  return <View style={styles.carePage} onLayout={event=>{if(event.nativeEvent.layout.height>0)setMeasuredHeight(event.nativeEvent.layout.height);}}>
+    <Text style={[styles.caption,{top:layout.hintTop}]}>Press and Hold</Text>
+    <View style={[styles.waterStage,{top:layout.stageTop,width:layout.stageWidth,height:layout.stageHeight}]}>
+      <Svg width="100%" height="100%" viewBox={`0 0 ${layout.stageWidth} ${layout.stageHeight}`} pointerEvents="none">
+        <Defs><ClipPath id="waterLanding"><Rect x={0} y={0} width={layout.stageWidth} height={layout.waterEnd}/></ClipPath></Defs>
+        <G transform={`translate(${layout.can.x} ${layout.can.y}) scale(${layout.can.scale})`}>
+          <NativeG animatedProps={canProps}>
             <Path d="M66 -30 C138 -34 142 22 50 46" stroke="#9AC4D4" strokeWidth={15} fill="none" strokeLinecap="round"/>
             <Ellipse cx={10} cy={-62} rx={72} ry={16} rotation={11} origin="10, -62" fill="#4F7D8C"/>
             <Ellipse cx={-16} cy={54} rx={62} ry={14} rotation={11} origin="-16, 54" fill="#4F7D8C"/>
@@ -219,43 +241,33 @@ export function WaterInteraction({flower,onComplete,complete}:{flower?:BurrowArt
               <Ellipse cx={-21.9} cy={-7.1} rx={19} ry={16} rotation={288} origin="-21.9, -7.1"/>
               <Circle cx={0} cy={0} r={12.5} fill="#1E6B4F"/>
             </G>
-          </G>
+          </NativeG>
         </G>
-        {frame.paths.map((path,index)=>path?<Path key={index} d={path} fill="#7CB0C8"
-          opacity={(index+1)/5}/>:null)}
-        {frame.sparks.map((spark,index)=>{
-          const t=spark.age/spark.life,e=1-(1-t)*(1-t),opacity=t<.35?t/.35:1-(t-.35)/.65;
-          return <Circle key={index} cx={spark.x+Math.cos(spark.angle)*spark.distance*e}
-            cy={spark.y+Math.sin(spark.angle)*spark.distance*e} r={spark.r*(1-t*.6)}
-            fill={spark.gold?'#FACF3F':'#7CB0C8'} opacity={Math.max(0,opacity)}/>;
-        })}
+        <G clipPath="url(#waterLanding)">{[0,1,2,3,4].map(index=><WaterStream key={index} motion={motion} index={index}/>)}</G>
       </Svg>
-      <View pointerEvents="none" style={styles.waterFlower}>{flower?<Image source={flower.source} contentFit="contain" style={styles.flower}/>:<Text style={{fontSize:140}}>🌼</Text>}</View>
-      <Text pointerEvents="none" style={[styles.waterTip,{opacity:holding||complete?0:1}]}>Press and hold to water</Text>
-      {complete&&<Text pointerEvents="none" style={styles.waterDone}>All watered 🌿</Text>}
+      <View pointerEvents="none" style={[styles.waterFlower,{left:layout.flower.left,top:layout.flower.top,width:layout.flower.width,height:layout.flower.height}]}>{flower?<Image source={flower.source} contentFit="contain" style={[styles.flower,layout.flower.image]}/>:<Text style={{fontSize:layout.flower.height*.7}}>🌼</Text>}</View>
       <Pressable accessibilityRole="button" accessibilityLabel="Hold the watering can for three seconds"
-        onPressIn={start} onPressOut={release} style={styles.waterHit}/>
+        onAccessibilityTap={()=>start('accessible')} accessibilityActions={[{name:'activate',label:'Water the flower'}]} onAccessibilityAction={()=>start('accessible')}
+        onPressIn={()=>start('can')} onPressOut={()=>releaseTarget('can')} style={[styles.waterHit,layout.canHit]}/>
+      <Pressable accessibilityRole="button" accessibilityLabel="Hold the flower for three seconds"
+        onAccessibilityTap={()=>start('accessible')} accessibilityActions={[{name:'activate',label:'Water the flower'}]} onAccessibilityAction={()=>start('accessible')}
+        onPressIn={()=>start('flower')} onPressOut={()=>releaseTarget('flower')} style={[styles.waterHit,{left:layout.flower.left-12,top:layout.flower.top-12,width:layout.flower.width+24,height:layout.flower.height+24}]}/>
     </View>
-    <View style={styles.waterMeter}>
-      <Text accessibilityLiveRegion="polite" style={styles.progressText}>{complete?'All watered 🌿':`Watering ${Math.round(frame.progress*100)}%`}</Text>
-      <View style={styles.track}><View style={[styles.waterFill,{width:`${frame.progress*100}%`}]}/></View>
+    <View style={[styles.meter,{bottom:layout.meterBottom,gap:12}]}>
+      <CareProgress progress={progress} label="Watering" color="#5FCACA"/>
     </View>
   </View>;
 }
 
 const styles=StyleSheet.create({
-  carePage:{flex:1,alignItems:'center',justifyContent:'space-between',paddingHorizontal:28,paddingBottom:52},
-  title:{fontSize:28,fontWeight:'800',color:'#42271B',textAlign:'center'},
-  caption:{fontSize:16,color:'#6B4939',textAlign:'center',lineHeight:23},
-  carrotHit:{width:230,height:400,alignItems:'center',justifyContent:'center'},
-  progressText:{fontSize:22,fontWeight:'800',color:'#42271B',textAlign:'center'},
+  carePage:{flex:1,alignItems:'center',position:'relative'},
+  caption:{position:'absolute',left:0,right:0,fontSize:18,color:'#15110D',textAlign:'center',lineHeight:26},
+  carrotHit:{position:'absolute',alignItems:'center',justifyContent:'center'},
+  progressText:{fontSize:20,fontWeight:'800',color:'#42271B',textAlign:'center'},
+  meter:{position:'absolute',width:'100%',paddingHorizontal:28,gap:24,alignItems:'center'},
   track:{height:14,width:'84%',maxWidth:340,backgroundColor:'#E7E1D9',borderRadius:10,overflow:'hidden'},
   carrotFill:{height:'100%',backgroundColor:'#F1813C'},waterFill:{height:'100%',backgroundColor:'#5FCACA'},
-  waterPage:{flex:1,alignItems:'center',justifyContent:'space-between',paddingBottom:42,backgroundColor:'#FDF8EF'},
-  waterStage:{position:'relative',flexShrink:1},waterHit:{position:'absolute',left:'30%',top:'14%',width:'68%',height:'24%'},
-  waterTip:{position:'absolute',top:'34%',left:0,right:0,textAlign:'center',fontSize:15,fontWeight:'700',color:'#4A3226'},
-  waterDone:{position:'absolute',top:'34%',left:0,right:0,textAlign:'center',fontSize:16,fontWeight:'800',color:'#4FB3AC'},
-  waterFlower:{position:'absolute',left:'16%',bottom:'3%',width:'68%',height:'36%',alignItems:'center',justifyContent:'center'},
-  waterMeter:{width:'100%',maxWidth:360,paddingHorizontal:16,gap:10,alignItems:'center'},
-  flower:{width:'100%',height:'100%'},
+  waterStage:{position:'absolute'},waterHit:{position:'absolute'},
+  waterFlower:{position:'absolute',overflow:'hidden',alignItems:'center',justifyContent:'center'},
+  flower:{position:'absolute'},
 });

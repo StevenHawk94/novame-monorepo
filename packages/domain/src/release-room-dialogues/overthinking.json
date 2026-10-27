@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "But what if you miss something important?",
+    "replies": [
+      "I’ve thought about this enough for now.",
+      "I don’t need every answer before I begin.",
+      "One next step is enough.",
+      "You can be here. You don’t get to drive."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "You can’t stop now. There’s still too much to figure out.",
+    "replies": [
+      "I choose one thing, not everything.",
+      "I can decide with what I know.",
+      "Thinking more won’t make me safer.",
+      "My mind can rest now."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "If you let this go, you might make the wrong choice.",
+    "replies": [
+      "Maybe. I can handle imperfect choices.",
+      "I have enough information for one step.",
+      "I’m done replaying this for now.",
+      "I’ll deal with what is real, not every possibility."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I’m only trying to protect you from making a mistake.",
+    "replies": [
+      "Thank you, but I can take it from here.",
+      "I don’t need every outcome mapped out.",
+      "Let’s pause the loop together.",
+      "I choose a gentle next step."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "replay",
+    "monster": "Remember what you said earlier? Replay it again.",
+    "replies": [
+      "I’ve already replayed it enough times.",
+      "Another replay won’t change the words.",
+      "I can let that moment stay in the past.",
+      "What’s done can rest."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "worst case",
+    "monster": "Imagine the worst that could happen. Just in case.",
+    "replies": [
+      "I’ve imagined it. Now I’m choosing the present.",
+      "Worst cases are rarely the real ones.",
+      "I can’t prepare for everything.",
+      "I’ll deal with it if it actually comes."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "perfect answer",
+    "monster": "There’s a perfect answer. Keep looking.",
+    "replies": [
+      "There may not be a perfect answer.",
+      "A good-enough choice is still a good choice.",
+      "I’ll pick one and adjust later.",
+      "Perfect is a moving target."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "hidden meaning",
+    "monster": "What did they really mean by that?",
+    "replies": [
+      "I can ask instead of decode.",
+      "Not every sentence hides a secret.",
+      "I’ll take it at face value for now.",
+      "Guessing won’t get me clarity."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "more research",
+    "monster": "Read one more article. Then you’ll be sure.",
+    "replies": [
+      "More info won’t buy certainty.",
+      "I know enough to take a small step.",
+      "I’m allowed to stop researching.",
+      "The next article will say what the last one did."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "midnight spiral",
+    "monster": "Now is the perfect time to think about everything.",
+    "replies": [
+      "Midnight is a bad time to solve anything.",
+      "Tonight is for rest, not rulings.",
+      "The problem will still be here after sleep.",
+      "I can pick this up in daylight."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "control illusion",
+    "monster": "If you think hard enough, you can control how this turns out.",
+    "replies": [
+      "Thinking isn’t the same as controlling.",
+      "I can influence some things, not all.",
+      "I’ll focus on what’s actually mine to do.",
+      "Letting go of control is not giving up."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "self-blame loop",
+    "monster": "Think about what you should have done differently.",
+    "replies": [
+      "I did what I could with what I knew.",
+      "Hindsight sees more than I could then.",
+      "Learning from it once is enough.",
+      "I can be kind to my past self."
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "what-if chain",
+    "monster": "What if this leads to that, which leads to that?",
+    "replies": [
+      "Chains of “what if” are just stories.",
+      "I’ll deal with the next link when it appears.",
+      "I can only walk one step at a time.",
+      "Most of those links never form."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "decision paralysis",
+    "monster": "You can’t decide until you know every option.",
+    "replies": [
+      "Choosing with some options beats freezing.",
+      "I can pick and course-correct.",
+      "More options don’t mean better outcomes.",
+      "Deciding is a skill, not a certainty."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "urgency of thought",
+    "monster": "Solve this now. You can’t relax until you do.",
+    "replies": [
+      "I can relax with a problem still open.",
+      "Rest helps me think better.",
+      "Not everything needs solving today.",
+      "I’m allowed to leave it unfinished."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "mental rehearsal",
+    "monster": "Rehearse the conversation once more, word for word.",
+    "replies": [
+      "Real conversations never follow the script.",
+      "I’ll trust myself to find the words.",
+      "I’ve rehearsed enough.",
+      "I can speak from the heart, not a draft."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "others’ opinions",
+    "monster": "Think about what everyone will think of you.",
+    "replies": [
+      "Most people are busy with their own thoughts.",
+      "I can’t control other people’s minds.",
+      "I’ll focus on what I think.",
+      "Their opinions are not my to-do list."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "analysis as safety",
+    "monster": "If you keep analyzing, nothing bad can sneak up on you.",
+    "replies": [
+      "Analysis can’t guarantee safety.",
+      "I can be aware without being on watch.",
+      "I don’t need to guard every corner.",
+      "Trust is also a form of protection."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "silent audit",
+    "monster": "Go back through every detail. Something’s wrong.",
+    "replies": [
+      "Not finding a flaw is also an answer.",
+      "I’ve already checked. That’s enough.",
+      "I can trust the work I’ve done.",
+      "It’s okay if some details stay unchecked."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "body ignoring",
+    "monster": "Ignore how tired your body is. Keep thinking.",
+    "replies": [
+      "My body is asking for a pause.",
+      "Rest is part of good thinking.",
+      "I’ll listen to my body, too.",
+      "I can come back with fresh eyes."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "seeking certainty",
+    "monster": "You need to be 100% sure.",
+    "replies": [
+      "100% isn’t available. 70% is plenty.",
+      "Certainty is rare. Courage is common.",
+      "I can act without being sure.",
+      "I’ll go with what feels right enough."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "too many tabs",
+    "monster": "Keep every thought open. You might need them.",
+    "replies": [
+      "I can close a few tabs.",
+      "I’ll write them down and let them go.",
+      "Not every thought deserves my attention.",
+      "A quieter mind is easier to use."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "past regret",
+    "monster": "Why did you say that? Think about it again.",
+    "replies": [
+      "I’ve made peace with that moment.",
+      "It was one sentence, not my whole self.",
+      "Everyone says things they’d reword.",
+      "I can let it go without erasing it."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "future dread",
+    "monster": "You must plan for every possible future.",
+    "replies": [
+      "I can’t plan for every future.",
+      "I’ll plan the next step and trust the rest.",
+      "The future will give me information as it comes.",
+      "I’m allowed to meet it when it arrives."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "perfect wording",
+    "monster": "Rewrite that message one more time.",
+    "replies": [
+      "It’s clear enough. I’m sending it.",
+      "Good wording is enough.",
+      "No more rewrites. It’s done.",
+      "A real message beats a perfect draft."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "negativity bias",
+    "monster": "Focus on the one thing that could go wrong.",
+    "replies": [
+      "I can also see what could go right.",
+      "One risk isn’t the whole picture.",
+      "I’ll hold both sides, gently.",
+      "Not every shadow is a monster."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "decision regret",
+    "monster": "What if you choose wrong and regret it forever?",
+    "replies": [
+      "I can handle regret if it comes.",
+      "Most choices are not forever.",
+      "Regret is not the same as failure.",
+      "I’ll choose and learn along the way."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "overpreparing",
+    "monster": "You’re not prepared enough yet.",
+    "replies": [
+      "I’m prepared enough for now.",
+      "Preparation has a finish line.",
+      "I’ll learn the rest by doing.",
+      "Ready is a decision, not a feeling."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "endless questions",
+    "monster": "Ask yourself ten more questions.",
+    "replies": [
+      "I have enough questions for today.",
+      "One good question is plenty.",
+      "I don’t need to interrogate myself.",
+      "I can sit with the answers I have."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "emotional math",
+    "monster": "Add up every feeling and figure out what it means.",
+    "replies": [
+      "Feelings don’t need to be solved.",
+      "I can feel without analyzing.",
+      "Some feelings just need to be felt.",
+      "I’ll notice it and let it pass."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "mind reading",
+    "monster": "You know what they’re thinking. Think about it.",
+    "replies": [
+      "I only know my own thoughts.",
+      "Their mind isn’t mine to read.",
+      "I’ll ask if it really matters.",
+      "Guessing keeps me stuck."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "fear of missed signs",
+    "monster": "There were signs. Go find them.",
+    "replies": [
+      "I don’t need to dig up every sign.",
+      "I’ll notice what’s in front of me.",
+      "Looking back for blame won’t help.",
+      "I did notice what I could."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "holding everything",
+    "monster": "Don’t let go of any thought. It might matter.",
+    "replies": [
+      "The important ones will come back.",
+      "I can trust my mind to keep what matters.",
+      "Letting go doesn’t mean losing.",
+      "My hands are full. I’m setting some down."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "thinking vs doing",
+    "monster": "Thinking is safer than doing.",
+    "replies": [
+      "Doing teaches me what thinking can’t.",
+      "A small action beats a big loop.",
+      "I can try something and see.",
+      "Safe isn’t the same as stuck."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "fear of overlooking",
+    "monster": "A smarter person would have seen it.",
+    "replies": [
+      "Smart people miss things too.",
+      "Missing something doesn’t make me less.",
+      "I’m learning as I go.",
+      "I can be intelligent and imperfect."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "comparison thoughts",
+    "monster": "Think about how others would handle this better.",
+    "replies": [
+      "I’m handling it my way.",
+      "Others’ ways aren’t my blueprint.",
+      "I’ll use my own judgment.",
+      "My way is good enough."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "sleep stealer",
+    "monster": "Stay up and sort it all out.",
+    "replies": [
+      "Sleep will help me more than overthinking.",
+      "I’ll sort it better after rest.",
+      "My bed is for resting, not rumination.",
+      "Tomorrow-me can handle this."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "fear of simplicity",
+    "monster": "It can’t be that simple. Dig deeper.",
+    "replies": [
+      "Sometimes it really is simple.",
+      "Simple isn’t shallow.",
+      "I can accept the easy answer.",
+      "Not everything hides a twist."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "shoulds",
+    "monster": "You should have figured this out by now.",
+    "replies": [
+      "I’m figuring it out at my pace.",
+      "“Should” is not a plan.",
+      "I’m allowed to still be working on it.",
+      "I’m doing what I can today."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "waiting for clarity",
+    "monster": "Wait until it all makes sense.",
+    "replies": [
+      "Clarity often comes after action.",
+      "I can start in the fog.",
+      "I don’t need the full picture to begin.",
+      "Making sense can wait. Moving can’t."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "tiny details",
+    "monster": "What about this tiny detail nobody else notices?",
+    "replies": [
+      "Tiny details rarely decide the outcome.",
+      "I’ll let the small stuff stay small.",
+      "Nobody else is scanning at that level.",
+      "Big picture first."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "reading too much in",
+    "monster": "That pause in their reply must mean something.",
+    "replies": [
+      "A pause might just be a pause.",
+      "People get busy. That’s all.",
+      "I’ll skip the detective work.",
+      "I won’t build a story from a silence."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "being the only guard",
+    "monster": "If you stop thinking, who will watch out for you?",
+    "replies": [
+      "I can also trust myself in the moment.",
+      "I’m not the only guard in my life.",
+      "My instincts work without constant noise.",
+      "I can watch out and rest, too."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "endless planning",
+    "monster": "One more plan. Plus a backup. And a backup of the backup.",
+    "replies": [
+      "One plan and one backup is enough.",
+      "Plans change. I’ll adapt.",
+      "I’d rather start than polish.",
+      "My plan can be rough."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "thinking as proof of care",
+    "monster": "If you stop thinking about it, you don’t care enough.",
+    "replies": [
+      "I can care and still rest.",
+      "Worry isn’t love.",
+      "I show care by acting, not looping.",
+      "Caring doesn’t need a thought count."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "buried feelings",
+    "monster": "Thinking is better than feeling.",
+    "replies": [
+      "Feeling is part of knowing.",
+      "I can think and feel together.",
+      "Sometimes the answer is in the feeling.",
+      "I’ll let myself feel for a minute."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "closing loops",
+    "monster": "You can’t move on until every question is answered.",
+    "replies": [
+      "Some questions stay open. That’s okay.",
+      "I can move on with loose ends.",
+      "Closure can come from me.",
+      "An open question doesn’t block my next step."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "final push",
+    "monster": "Just one more round of thinking and you’ll have it.",
+    "replies": [
+      "I’ve done enough rounds.",
+      "The next round won’t be different.",
+      "I’m stepping out of the loop.",
+      "I’m done for now. And that’s a decision."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "tiny doubts",
+    "monster": "Are you sure that’s the right word, the right tone, the right time?",
+    "replies": [
+      "Right enough is right.",
+      "I’ll trust my instincts here.",
+      "Nobody grades my tone this hard.",
+      "I’m choosing and moving on."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "quiet mind",
+    "monster": "A quiet mind means you’re missing something.",
+    "replies": [
+      "A quiet mind means I’m resting.",
+      "Quiet can be peace, not a warning.",
+      "I can enjoy the stillness.",
+      "I’m allowed to feel calm."
+    ]
+  }
+]

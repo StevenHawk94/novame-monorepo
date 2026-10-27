@@ -7,13 +7,8 @@ import {
   type ComponentRef,
   type ReactNode,
 } from 'react';
-import {
-  Platform,
-  StyleSheet,
-  Text as NativeText,
-  TextInput as NativeTextInput,
-  useWindowDimensions,
-} from 'react-native';
+import { Platform, StyleSheet, Text as NativeText, TextInput as NativeTextInput } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 
 type TypographyScale = {
   heading: number;
@@ -92,7 +87,7 @@ export const AndroidCompactText = forwardRef<
     <NativeText
       ref={ref}
       {...props}
-      maxFontSizeMultiplier={maxFontSizeMultiplier ?? (Platform.OS === 'android' ? 1.15 : undefined)}
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? 2}
       style={[
         style,
         multiplier !== 1
@@ -119,7 +114,7 @@ export const AndroidCompactTextInput = forwardRef<
     <NativeTextInput
       ref={ref}
       {...props}
-      maxFontSizeMultiplier={maxFontSizeMultiplier ?? (Platform.OS === 'android' ? 1.15 : undefined)}
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? 2}
       style={[
         style,
         Platform.OS === 'android' && fontSize !== undefined

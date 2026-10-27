@@ -1,0 +1,124 @@
+{
+  "source": {
+    "path": "../icon-transparent.png",
+    "width": 1024,
+    "height": 1024,
+    "format": "png",
+    "alpha": true,
+    "bytes": 354901,
+    "pixelSha256": "d5386fdc9559fd91d4c8b77b056473cc3c40a04be39d0cfdb6e67b54e871f3df",
+    "sha256": "aac194a744d5ff89d0210d51259f80aa86c2724dd6f236307a3bb46b54ab0310"
+  },
+  "background": "#3f150b",
+  "channels": [
+    {
+      "channel": "App Store / iOS",
+      "path": "../icon.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "png",
+      "alpha": false,
+      "background": "#3f150b",
+      "bytes": 309740,
+      "sha256": "df283785baec090c0c431fc22bb4671e70889a7794b4ffbecc4aac6828bc799f"
+    },
+    {
+      "channel": "Google Play",
+      "path": "google-play-512.png",
+      "width": 512,
+      "height": 512,
+      "format": "png",
+      "bytes": 108939,
+      "sha256": "c9b705355f68ec33c15a62c2f01fd254facb6f0b61280bf7cd472fcfc2031771",
+      "alpha": false,
+      "background": "#3f150b"
+    },
+    {
+      "channel": "Splash source (140pt, up to 4x)",
+      "path": "splash-logo.png",
+      "width": 560,
+      "height": 560,
+      "format": "png",
+      "bytes": 145001,
+      "sha256": "5327bcc4a49719441615dc2f11ed719aa6c6db46c7552b25bf6a60dfb09a167a",
+      "alpha": true,
+      "background": "transparent artwork; fixed #3f150b surface"
+    },
+    {
+      "channel": "Web favicon",
+      "path": "favicon-32.png",
+      "width": 32,
+      "height": 32,
+      "format": "png",
+      "bytes": 1558,
+      "sha256": "23f7d94c9705a839eaffffc6bd538f6200ae034aca0bffbd4f40cbe15294f153",
+      "alpha": false,
+      "background": "#3f150b"
+    },
+    {
+      "channel": "Android adaptive foreground (108dp at 4x; 72dp artwork)",
+      "path": "android-adaptive-foreground.png",
+      "width": 432,
+      "height": 432,
+      "format": "png",
+      "bytes": 53069,
+      "sha256": "fc883a244678bd7bf22cc5e0f436e8575a7922776f5fe1ab5e10fbcc2c1e3bed",
+      "alpha": true,
+      "background": "transparent artwork; fixed #3f150b surface"
+    },
+    {
+      "channel": "Android notification (white alpha mask; OS controls surface)",
+      "path": "../notification-icon.png",
+      "width": 96,
+      "height": 96,
+      "format": "png",
+      "bytes": 390,
+      "sha256": "29f1eaa8ae2e12b4d256bd02283f70f3518b0cf806d91a8704512d957338dcc0",
+      "alpha": true,
+      "background": "transparent; system-tinted monochrome"
+    }
+  ],
+  "native": {
+    "iosIcon": "1024x1024 PNG (universal asset catalog)",
+    "iosSplash": [
+      140,
+      280,
+      420
+    ],
+    "androidLegacy": [
+      48,
+      72,
+      96,
+      144,
+      192
+    ],
+    "androidAdaptiveLayers": [
+      108,
+      162,
+      216,
+      324,
+      432
+    ],
+    "androidSplashCanvas": [
+      288,
+      432,
+      576,
+      864,
+      1152
+    ],
+    "androidFormat": "lossless WebP launcher / PNG splash",
+    "iosNotification": "system-generated from installed native AppIcon; requires a new app build",
+    "androidNotification": [
+      24,
+      36,
+      48,
+      72,
+      96
+    ],
+    "widget": "all sizes declared by targets/widget/Assets.xcassets/AppIcon.appiconset/Contents.json"
+  },
+  "standards": {
+    "apple": "https://developer.apple.com/documentation/xcode/configuring-your-app-icon",
+    "googlePlay": "https://developer.android.com/distribute/google-play/resources/icon-design-specifications"
+  }
+}

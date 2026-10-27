@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-24",
+  "status": "client_implemented_native_art_verified_not_published",
+  "authorization": "User approved the preceding repair plan: OK, 请按方案执行修复",
+  "rootCauses": [
+    "Store connection initialization awaited historical reconciliation; subscriptions and coin recovery shared a serial loop, and subscription refresh added avoidable wait.",
+    "Processed transaction dedup was incorrectly used as proof of restored entitlement, including permanently rejected ownership-conflict receipts.",
+    "Coin cancellation wrote Purchase cancelled and the UI inferred recovery controls by matching message text.",
+    "A consumable finishTransaction exception after authoritative credit entered the same catch path as an unverified payment.",
+    "Native iOS reproduction: predecode only 400.webp with prepareBurrowImage, then mount the real CarrotShop; the ImageRef path enlarges the middle art in the rectangular viewport. All bundled pack files are square; a square viewport makes cold URI and warm ImageRef geometry match."
+  ],
+  "changes": [
+    "Initialize the single store connection/listeners independently of silent receipt recovery. Recover coins and subscriptions in separate bounded lanes.",
+    "Coin-shop recovery requests coinsOnly; background subscription conflict is silent and not counted as a confirmed restoration. Active subscription conflict retains actionable account guidance.",
+    "Track coin purchase status explicitly. Cancellation clears busy/message without recovery controls; pending, unconfirmed, preflight/store failure and success remain distinct.",
+    "Publish durable coin credit immediately, protect it against observer/application and Apple finalization errors, retain StoreKit replay and original-token server idempotency.",
+    "Fence late subscription results by session epoch and scope transaction dedup to that epoch.",
+    "Use identical square art viewports on compact and regular coin-shop layouts; no global image/cache/decoder or artwork changes."
+  ],
+  "validation": {
+    "domainGate": {"passed": 526, "failed": 0, "log": "/private/tmp/burrow-coin-iap-qa.IhvSe2/domain-tests-final.log"},
+    "mobileTypecheck": {"result": "passed", "log": "/private/tmp/burrow-coin-iap-qa.IhvSe2/types-final.log"},
+    "newPaymentIsolationCases": [
+      "Store initialization resolves while a subscription verify remains unresolved; coin recovery proceeds.",
+      "Coin-only manual recovery resolves without awaiting the subscription verification gate.",
+      "Silent 409 does not refresh or publish Plus, notify mounted/late purchase surfaces, or block coin recovery.",
+      "Active subscription conflict reports once and releases the subscription lock.",
+      "Old-identity subscription verification cannot publish Plus to the next account.",
+      "Native rejection cancellation and listener cancellation release coin checkout silently and allow another SKU attempt.",
+      "Unknown post-handoff failures stay unconfirmed; late error events cannot downgrade already published success.",
+      "Committed coin credit remains successful after Apple finish failure; retry retains the original receipt credential.",
+      "Regular and compact artwork boxes remain square; recovery UI follows typed status rather than English text."
+    ],
+    "nativeArt": {
+      "device": "iPhone 17 Pro / iOS 26.2",
+      "mode": "Isolated Release native host, production/minified Hermes JS, actual CarrotShop and shared image/predecode components; payment/network are inert fixtures.",
+      "reproducedBeforeFix": true,
+      "coldAndPredecodedAfterFix": "Both visually checked; no middle-art enlargement. Pack controls remain available after inert cancellation fixture.",
+      "screenshot": "/private/tmp/burrow-coin-iap-qa.IhvSe2/coin-art-warm-fixed.png"
+    }
+  },
+  "unchanged": ["Subscription prices, eligibility and quota", "Coin amounts and real StoreKit/Play confirmation requirements", "Server receipt ownership validation and financial idempotency", "Global image cache/decoder", "Notifications, personal rooms and Plushie rendering"],
+  "limitations": ["No real Sandbox/App Store/Play financial transaction executed", "No Android native UI acceptance or fresh FPS benchmark in this turn", "Existing client-side authenticated coin-readiness preflight remains required when its short-lived warmed value is absent; removal of historical subscription waits is not a promise of zero latency under a store/network outage"],
+  "deployment": {"api": "unchanged", "database": "unchanged", "admin": "unchanged", "productionSettings": "unchanged", "appRelease": "not published"},
+  "documentation": {"path": "docs/burrow-development-standards.md", "version": "1.2", "sections": ["4.4", "8.2"]}
+}

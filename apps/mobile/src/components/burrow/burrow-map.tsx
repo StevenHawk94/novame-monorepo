@@ -1,37 +1,40 @@
 import { Image } from './burrow-image';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { BURROW_ROOM_ICONS } from '@/lib/burrow-ui-assets';
 import { BURROW_MAP_ART } from '@/lib/burrow-map-assets';
+import { BUNNY_ICONS } from '@/lib/bunny-variant-assets';
+import { useBunnyIdentity, useBunnyVariant } from '@/lib/bunny-identity';
 import {
   BURROW_BANNER_HEIGHT, BURROW_BANNER_PATH_END, BURROW_MAP_ROOMS, BURROW_MAP_WIDTH, BURROW_SOIL_COLOR,
-  BURROW_TUNNEL_COLOR, burrowMapEnvironment, burrowMapLayout, type BurrowMapRoom,
+  BURROW_TUNNEL_COLOR, burrowMapLayout, type BurrowMapRoom,
+  BURROW_ROOM_ART, BURROW_ROOM_ICON, BURROW_ROOM_LABEL, burrowRoomIconShadow,
 } from '@/lib/burrow-map-model';
-import { useBurrowStorefront } from '@/lib/use-burrow-storefront';
+import { useBurrowEnvironment } from '@/lib/use-burrow-environment';
+import { UpdateBadge } from './update-badge';
+import {PlushieTouchBadge} from './plushie-touch-badge';
 
 export type { BurrowMapRoom } from '@/lib/burrow-map-model';
 
-// The supplied folder has no individual-den icons. These two code-native
-// silhouettes match the reference without changing the supplied room artwork.
-function DenIcon({ partner, size }: { partner: boolean; size: number }) {
-  return <Svg width={size} height={size} viewBox="0 0 128 140">
-    <Path fill={partner ? '#b86d3b' : '#fffdf7'} d="M39 71C27 56 13 28 21 23C31 17 49 41 54 61C47 36 44 5 56 5C70 4 77 39 71 67C96 69 113 90 115 108C116 122 96 126 75 126L38 124C22 121 26 96 39 71Z" />
-    <Circle cx="90" cy="95" r="6" fill="#442213" />
-  </Svg>;
-}
-
-export function BurrowMap({ onRoom, visiting, now = Date.now(), timeZone, roomIds }: {
+export function BurrowMap({ onRoom, visiting, badges, now, timeZone, roomIds,partnerId=null,pairVersion=null }: {
   onRoom: (room: BurrowMapRoom) => void;
   visiting?: boolean;
+  badges?: Partial<Record<BurrowMapRoom, number>>;
   now?: number;
   timeZone?: string | null;
   roomIds?: readonly BurrowMapRoom[];
+  partnerId?: string|null;
+  pairVersion?: string|null;
 }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const country = useBurrowStorefront();
-  const environment = burrowMapEnvironment(now, timeZone ?? undefined, country);
+  const environment = useBurrowEnvironment(timeZone, now);
+  const mine=useBunnyVariant(),identity=useBunnyIdentity();
+  // Preserve fixed-colour re-pairing (including two same-colour accounts).
+  // Unknown/unpaired preview uses the other icon, never changes identity data.
+  const partner=partnerId&&identity?.partnerId===partnerId&&identity.pairVersion===pairVersion&&identity.partnerVariant
+    ?identity.partnerVariant:mine==='pinky'?'biscuit':'pinky';
   const rooms = roomIds ? roomIds.flatMap(id => BURROW_MAP_ROOMS.filter(room => room.id === id)) : BURROW_MAP_ROOMS;
   const layout = burrowMapLayout(rooms.length);
   const mapWidth = Math.min(width, BURROW_MAP_WIDTH);
@@ -55,18 +58,17 @@ export function BurrowMap({ onRoom, visiting, now = Date.now(), timeZone, roomId
     {rooms.map((room, index) => <Pressable key={room.id} accessibilityRole="button"
       accessibilityLabel={`Open ${room.title}`} onPress={() => onRoom(room.id)}
       style={({ pressed }) => [box(layout.rooms[index]), { opacity: pressed ? .75 : 1, transform: [{ scale: pressed ? .97 : 1 }] }]}>
-      <Image source={BURROW_MAP_ART.room} contentFit="fill" style={StyleSheet.absoluteFillObject} pointerEvents="none" />
-      <View pointerEvents="none" style={[box({ left: 85, top: 62, width: 144, height: 132 }), styles.center]}>
-        {room.id === 'my_room' || room.id === 'partner_room'
-          ? <DenIcon partner={room.id === 'partner_room'} size={126 * scale} />
-          : <Image source={BURROW_ROOM_ICONS[room.id]} contentFit="contain" style={{ width: 144 * scale, height: 132 * scale }} />}
+      <Image source={BURROW_MAP_ART.room} contentFit="contain" style={box(BURROW_ROOM_ART)} pointerEvents="none" />
+      <View pointerEvents="none" style={[box(BURROW_ROOM_ICON), styles.center,burrowRoomIconShadow(scale)]}>
+        <Image source={room.id==='my_room'?BUNNY_ICONS[mine]:room.id==='partner_room'?BUNNY_ICONS[partner]:BURROW_ROOM_ICONS[room.id]} contentFit="contain"
+          style={{ width:'100%',height:'100%' }} />
       </View>
-      <View pointerEvents="none" style={[box({ left: 10, top: 201, width: 293, height: 49 }), styles.center]}>
+      <View pointerEvents="none" style={[box(BURROW_ROOM_LABEL), styles.center,{backgroundColor:'#FFF2DF',borderRadius:14*scale}]}>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.75} maxFontSizeMultiplier={1.15}
           style={[styles.title, { fontSize: 24 * scale, lineHeight: 31 * scale }]}>{room.title}</Text>
       </View>
-      {room.id === 'friends_room' && visiting && <View pointerEvents="none" style={[styles.dot,
-        { right: 52 * scale, top: 54 * scale, width: 18 * scale, height: 18 * scale, borderRadius: 9 * scale }]} />}
+      {room.id==='partner_room'&&partnerId?<PlushieTouchBadge base={badges?.[room.id]??0} size={Math.max(22,48*scale)} style={{right:20*scale,top:24*scale}}/>:
+       <UpdateBadge count={badges?.[room.id] ?? (room.id === 'friends_room' && visiting ? 1 : 0)} size={Math.max(22, 48 * scale)} style={{right:20*scale,top:24*scale}} />}
     </Pressable>)}
     {layout.lights.map((light, index) => <Image key={`light-${index}`} source={BURROW_MAP_ART.light}
       contentFit="contain" pointerEvents="none" style={box(light)} />)}

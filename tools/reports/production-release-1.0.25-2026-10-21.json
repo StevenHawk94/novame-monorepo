@@ -1,0 +1,42 @@
+{
+  "version": "1.0.25",
+  "iosBuildNumber": "54",
+  "verification": {
+    "regressionTestsPassed": 220,
+    "mobileTypeCheck": "passed",
+    "apiBuild": "passed",
+    "adminBuild": "passed",
+    "easArchiveFiles": 2393,
+    "easArchiveBytes": 44003498,
+    "resolvedAssetReferences": 1600,
+    "easArchiveSourceManifestSha256": "d495076137009d660f62753de9cdf519b67a56e52bb68ee83ed71fb11d98c747",
+    "rootEasIgnoreApplied": true,
+    "secretsAndLocalBuildOutputsExcluded": true,
+    "requiredCustomNativeModulesIncluded": true
+  },
+  "vercel": {
+    "api": {
+      "deploymentId": "dpl_C1GtsQhvVj3ExXRahcwdTsaeHUhc",
+      "status": "already current; no runtime changes pending",
+      "healthStatus": 200,
+      "unauthenticatedBootstrapStatus": 401
+    },
+    "admin": {
+      "deploymentId": "dpl_DyiBop8yieCN7KCjCvPDZB7NvyQg",
+      "previousDeploymentId": "dpl_5rZDMHsLE1D79P9VsPxEyRh1yy1f",
+      "url": "https://novame-monorepo-admin-hfli6ckcc-soulsayit.vercel.app",
+      "status": "promoted; READY",
+      "verifiedSourceFiles": 875,
+      "sourceManifestSha256": "8437f111de136d367b4d364e1529c1716a1ce3c21bb86cd969007aabe63544a2",
+      "candidateLoginStatus": 200
+    }
+  },
+  "eas": {
+    "buildId": "9290a4b3-3777-45e5-9920-0398c1199de9",
+    "buildStatus": "IN_PROGRESS",
+    "submissionId": "3879d831-ecaa-4332-9943-0db4bb4a76e2",
+    "submissionStatus": "scheduled; waiting for completion"
+  },
+  "databaseMigrationsExecutedThisRelease": [],
+  "gitCommitCreated": false
+}

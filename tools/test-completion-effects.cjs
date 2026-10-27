@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const ts = require('typescript');
-const { buildDenseConfetti, buildQuestConfetti } = require('./build-reflect-confetti.cjs');
+const { buildDenseConfetti } = require('./build-reflect-confetti.cjs');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 // Drain promises across the VM/native-boundary test realms, not just one microtask.
@@ -95,19 +95,19 @@ test('audio errors do not escape into completion UI; lost end callbacks have a d
   h.sound.dispose();
 });
 test('sound hook preloads only while focused, dedupes a draft and cannot auto-resume after background', () => {
-  const h = soundHarness(), players = [], callbacks = new Set(), focus = [];
+  const h = soundHarness(), players = [], modes = [], callbacks = new Set(), focus = [];
   const appState = {
     currentState: 'active',
     addEventListener(name, fn) { assert.equal(name, 'change'); callbacks.add(fn); return { remove() { callbacks.delete(fn); } }; },
   };
   const { useCompletionSound } = load('apps/mobile/src/lib/use-completion-sound.ts', {
+    './foreground-audio-mode':load('apps/mobile/src/lib/foreground-audio-mode.ts'),
+    './interaction-preferences':{getInteractionPreferences:()=>({sound:true,haptics:true}),subscribeInteractionPreferences:()=>()=>{}},
     react: { useRef: (current) => ({ current }), useCallback: (fn) => fn },
     'react-native': { AppState: appState },
     '@react-navigation/native': { useFocusEffect: (fn) => focus.push(fn) },
     'expo-audio': { setAudioModeAsync: async (mode) => {
-      assert.equal(mode.playsInSilentMode, true);
-      assert.equal(mode.shouldPlayInBackground, false);
-      assert.equal(mode.interruptionMode, 'duckOthers');
+      modes.push(mode);
     }, createAudioPlayer(source, options) {
       assert.equal(source, 123); assert.equal(options.keepAudioSessionActive, false);
       const p = player(); players.push(p); return p;
@@ -118,6 +118,11 @@ test('sound hook preloads only while focused, dedupes a draft and cannot auto-re
   });
   const hook = useCompletionSound(); assert.equal(players.length, 0);
   const blur = focus[0](); assert.equal(players.length, 1); assert.equal(players[0].plays, 0);
+  // Assert outside the async setup callback: production intentionally catches
+  // audio errors, which also swallowed assertions inside the former mock.
+  assert.equal(modes.length,1);
+  assert.equal(modes[0].playsInSilentMode,false);assert.equal(modes[0].shouldPlayInBackground,false);
+  assert.equal(modes[0].allowsRecording,false);assert.equal(modes[0].interruptionMode,'mixWithOthers');
   hook.play('draft-1'); players[0].emit({ didJustFinish: true });
   hook.play('draft-1'); assert.equal(players[0].plays, 1);
   hook.play('draft-2'); assert.equal(players[0].plays, 2);
@@ -133,31 +138,24 @@ test('sound hook preloads only while focused, dedupes a draft and cannot auto-re
 });
 function descendants(node) { const out = [node]; ts.forEachChild(node, (child) => { out.push(...descendants(child)); }); return out; }
 function ast(file) { return ts.createSourceFile(file, read(file), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX); }
-test('sound wiring is completion-only: server-confirmed Quest reward and Reflect draft entrance', () => {
-  const quests = ast('apps/mobile/app/(main)/(tabs)/quests.tsx');
-  const applyStatus = descendants(quests).find((node) => ts.isVariableDeclaration(node) && node.name.getText(quests) === 'applyStatus');
-  const questText = applyStatus.getText(quests);
-  assert.ok(questText.indexOf('next.cloversEarned <= 0') < questText.indexOf('playCompletionSound()'));
-  assert.match(questText, /confirmCloverAward\(next\.cloversEarned\)/);
-  assert.equal((questText.match(/playCompletionSound\(\)/g) || []).length, 1);
-  const settlement = read('apps/mobile/src/components/main/reflect-settlement.tsx');
-  assert.ok(!settlement.includes('useCompletionSound'));
-  assert.match(settlement, /onPresented\(draft.draftId\)/);
-  assert.match(settlement, /presented.current === draft.draftId/);
-  for (const file of ['reflect-typing', 'reflect-guided', 'shared-memory-create']) {
-    const screen = read(`apps/mobile/app/(main)/${file}.tsx`);
-    assert.match(screen, /const \{ play: playCompletionSound \} = useCompletionSound\(\)/);
-    assert.match(screen, /onPresented=\{playCompletionSound\}/);
-    const screenAst = ast(`apps/mobile/app/(main)/${file}.tsx`);
-    const celebration = descendants(screenAst).find(node => ts.isJsxSelfClosingElement(node)
-      && node.tagName.getText(screenAst) === 'ReflectCelebration');
-    assert.ok(celebration, `${file} preloads its celebration`);
-    assert.match(celebration.getText(screenAst), /active=\{phase === 'result'\}/);
-    // A sibling sheet may appear between the KAV and the animation; only the
-    // full-screen parent matters, not their order in the source text.
-    assert.ok(ts.isJsxElement(celebration.parent));
-    assert.equal(celebration.parent.openingElement.tagName.getText(screenAst), 'View');
-  }
+test('current quest and Adventure completion retain their feedback after legacy UI retirement', () => {
+  const board=read('apps/mobile/src/components/burrow/quest-board.tsx');
+  assert.match(board, /QuestClaimConfetti/);
+  assert.match(board, /setNextCoinRewardOrigin/);
+  const tap=read('apps/mobile/app/(main)/reflect-guided.tsx');
+  assert.ok(tap.includes('queueAdventureJournal('));
+  assert.ok(tap.includes('AdventureRecordCompletion jobId={journalJobId}'));
+  assert.doesNotMatch(tap, /ReflectSettlementView|prepareReflect/);
+  const typing = read('apps/mobile/app/(main)/reflect-typing.tsx');
+  assert.match(typing, /AdventureJournalScreen as default/);
+  const journal = read('apps/mobile/src/components/burrow/adventure-journal-screen.tsx');
+  assert.match(journal, /queueAdventureJournal\(/);
+  assert.match(journal, /setJobId\(id\)/);
+  assert.match(journal, /<AdventureRecordCompletion jobId=\{jobId\}/);
+  const completed = read('apps/mobile/src/components/burrow/adventure-record-completion.tsx');
+  assert.match(completed, /<ReflectCelebration active/);
+  assert.doesNotMatch(completed, /finalizeReflect|prepareReflect|claimAdventureResult/,
+    'a slow server receipt cannot gate or replay the durable local completion ceremony');
   assert.ok(fs.statSync(path.join(root, 'apps/mobile/assets/music/reflection-finished.mp3')).size > 0);
 });
 test('single native confetti composition has exactly double the particles, with different trajectories', () => {
@@ -181,25 +179,8 @@ test('single native confetti composition has exactly double the particles, with 
     }
   }
 });
-test('Quest confetti differs only in palette and name, never paths, density, or timing', () => {
-  const reflect = JSON.parse(read('apps/mobile/assets/animations/reflect-dense.json'));
-  const quest = JSON.parse(read('apps/mobile/assets/animations/quest-dense.json'));
-  assert.deepEqual(buildQuestConfetti(reflect), quest);
-  const palettes = [];
-  function withoutPalette(composition) {
-    const copy = structuredClone(composition), colors = new Set();
-    delete copy.nm;
-    function visit(value) {
-      if (!value || typeof value !== 'object') return;
-      if (value.ty === 'fl' || value.ty === 'st') {
-        colors.add(value.c.k.slice(0, 3).map(v => Math.round(v * 255)).join(','));
-        value.c.k = [0, 0, 0, ...value.c.k.slice(3)];
-      }
-      Object.values(value).forEach(visit);
-    }
-    visit(copy); palettes.push([...colors].sort()); return copy;
-  }
-  assert.deepEqual(withoutPalette(reflect), withoutPalette(quest));
-  assert.notDeepEqual(palettes[0], palettes[1]);
-  assert.deepEqual(palettes[1], ['242,193,78', '242,160,61', '123,182,97', '107,163,214'].sort());
+test('Quest uses card-local native particles without the retired JSON asset', () => {
+  const quest=read('apps/mobile/src/components/burrow/quest-claim-confetti.tsx');
+  assert.match(quest,/length: 12/);assert.match(quest,/useSharedValue/);
+  assert.doesNotMatch(quest,/assets\/animations|Lottie/);
 });

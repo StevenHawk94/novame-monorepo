@@ -81,21 +81,6 @@ async function markReaderRecoveryRequired(supabase, writerId) {
   if (error) throw error
 }
 
-async function enqueueItemLearning(supabase, reflectId, concepts, matchedItems) {
-  if (!concepts.length) return
-  const { error } = await supabase.from('item_learning_jobs').upsert({
-    reflect_id: reflectId,
-    concepts,
-    matched_item_ids: matchedItems.map((item) => item.itemId),
-    status: 'pending',
-    attempts: 0,
-    error: null,
-    processed_at: null,
-    evidence_version: 2,
-  }, { onConflict: 'reflect_id', ignoreDuplicates: true })
-  if (error) console.warn('[reflect-analysis] item learning enqueue failed:', error.message)
-}
-
 async function recordResultUsage(supabase, { userId, feature, promptVersion, result, latencyMs, refId }) {
   try {
     await recordAIUsage(supabase, { userId, feature, promptVersion, result, latencyMs, refId })
@@ -134,7 +119,9 @@ async function analyzeClaimedJob(supabase, job) {
     })
     return { status: 'skipped' }
   }
-  if ((profile?.subscription_tier || 'free') === 'free' || !profile?.ai_consent_at || !sourceBody?.trim()) {
+  const entitlement=await supabase.rpc('burrow_has_plus_v1',{p_user:job.user_id})
+  if(entitlement.error)throw Error('entitlement_unavailable')
+  if (entitlement.data!==true || !profile?.ai_consent_at || !sourceBody?.trim()) {
     await updateJob(supabase, reflectId, {
       status: 'skipped', error: null, failure_stage: null, processed_at: new Date().toISOString(),
     })

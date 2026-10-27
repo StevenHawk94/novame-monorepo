@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "burrow-seated-bunny-v1",
+  "sourceCanvas": { "width": 1189, "height": 1323 },
+  "coordinates": "top-left origin; x increases right; y increases down; all positions in source pixels",
+  "drawOrderBottomToTop": ["tail", "earLeft", "earRight", "body", "head"],
+  "pivots": {
+    "earLeft": { "x": 452, "y": 430 },
+    "earRight": { "x": 642, "y": 420 },
+    "tail": { "x": 208, "y": 1050 }
+  },
+  "rotationSigns": { "earLeft": -1, "earRight": 1 },
+  "breathingField": {
+    "centerX": 594.5,
+    "verticalFadeStartY": 760,
+    "verticalFadeEndY": 1035,
+    "chestFadeInStartY": 710,
+    "chestFadeInEndY": 805,
+    "chestFadeOutStartY": 895,
+    "chestFadeOutEndY": 1035
+  },
+  "referenceMesh": { "columns": 100, "rows": 112 },
+  "referenceViewport": {
+    "width": 1259,
+    "height": 1448,
+    "sourceOffsetX": 35,
+    "sourceOffsetY": 90,
+    "fit": "contain with one uniform scale; center in the target layout"
+  },
+  "assetsMustPreserveFullCanvas": true
+}

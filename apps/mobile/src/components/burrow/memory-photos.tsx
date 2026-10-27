@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {AppModal as Modal} from '@/components/layout/app-modal';
 import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { registerOverlay } from '@/lib/overlay-presence';
 import { RoomPhoto, RoomPhotoEditor } from './room-photo';

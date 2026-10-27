@@ -12,16 +12,19 @@
  * Remote-first screens therefore never expose a blank bubble while art catches
  * up or when the device is offline.
  *
- * New batches: regenerate the dictionary, drop the standardized sheets in
- * assets/items/, then run tools/slice-item-images.py to refresh both the
- * per-item webps and the generated map.
+ * Runtime art is the curated Tap Your Day subset only. Run
+ * tools/build-item-icon-assets.mjs after updating the manual vocabulary.
+ * Historical-only IDs keep their display metadata and demand-driven R2 art;
+ * never copy the whole source catalog back into assets/items/.
  */
 import { memo, useEffect, useState, useSyncExternalStore } from 'react';
 import { Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
+import { decodeNativeImage } from '../../lib/native-image-decoder';
 
 import { ITEM_IMAGES } from '../../lib/item-images.g';
 import { TAP_PERSON_IMAGES } from '../../lib/tap-person-images';
+import { TAP_DAY_IMAGES } from '../../lib/tap-day-images.g';
 import { baseItemIconUrl } from '../../lib/base-item-icons';
 import { mergedItemDictionary, remoteImageUri } from '../../lib/remote-items';
 import { ensurePriorityR2Image } from '../../lib/download-queue';
@@ -60,7 +63,7 @@ export function warmItemSprites(itemIds: readonly string[]): Promise<void> {
   if (Platform.OS === 'android') return Promise.resolve();
   if (warmRequest) return warmRequest;
   const missing = [...new Set(itemIds)].filter((itemId) => {
-    const source = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+    const source = TAP_DAY_IMAGES[itemId] ?? TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
     return source != null && !warmedBundledArt.has(itemId);
   });
   if (missing.length === 0) return Promise.resolve();
@@ -72,7 +75,7 @@ export function warmItemSprites(itemIds: readonly string[]): Promise<void> {
         const source = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
         if (source == null || warmedBundledArt.has(itemId)) return;
         try {
-          const image = await Image.loadAsync(source, { maxWidth: 96, maxHeight: 96 });
+          const image = await decodeNativeImage(source, { maxWidth: 96, maxHeight: 96 });
           warmedBundledArt.set(itemId, image);
         } catch {
           // Rendering still falls back to the original bundled source.
@@ -94,11 +97,11 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
     () => getCachedRemoteItemManifest()?.version ?? '0',
     () => '0',
   );
-  const bundledArt = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
-  // Admin replacements remain authoritative. Base-catalog R2 is consulted
-  // only when this release deliberately omitted the icon from its 256-file
-  // offline bundle, so common icons never incur a request.
-  const remoteUri = remoteImageUri(itemId) || (!bundledArt ? baseItemIconUrl(itemId) : '');
+  const bundledArt = TAP_DAY_IMAGES[itemId] ?? TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+  // Approved Tap art always stays local, including on historical surfaces.
+  // Legacy-only icons retain remote replacement/read compatibility; base R2
+  // is consulted only when their art is absent from the offline bundle.
+  const remoteUri = TAP_DAY_IMAGES[itemId] ? '' : remoteImageUri(itemId) || (!bundledArt ? baseItemIconUrl(itemId) : '');
   const warmedArt = warmedBundledArt.get(itemId);
   const [remoteFile, setRemoteFile] = useState<{
     sourceUrl: string | null;

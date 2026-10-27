@@ -45,7 +45,10 @@ export async function GET(request) {
       .select('plan, plan_type, status')
       .eq('user_id', userId)
       .maybeSingle()
-    const ownsDuo = sub && sub.plan === 'plus' && sub.plan_type === 'duo' && sub.status === 'active'
+    const authority=await supabase.rpc('refresh_economic_entitlements_v1',{p_user:userId})
+    const owns=await supabase.rpc('has_own_active_plus',{p_user_id:userId})
+    if(authority.error||owns.error)throw Error('entitlement_unavailable')
+    const ownsDuo = sub && sub.plan_type === 'duo' && owns.data===true
 
     if (ownsDuo) {
       let { data: duo } = await supabase
@@ -86,7 +89,9 @@ export async function GET(request) {
       .eq('member_id', userId)
       .eq('status', 'claimed')
       .maybeSingle()
-    if (seat) {
+    const canShare=seat?await supabase.rpc('same_economic_domain_v1',{p_a:userId,p_b:seat.owner_id}):null
+    const ownerActive=seat?await supabase.rpc('has_own_active_plus',{p_user_id:seat.owner_id}):null
+    if (seat && canShare?.data===true && ownerActive?.data===true) {
       const { data: o } = await supabase
         .from('profiles').select('display_name').eq('id', seat.owner_id).maybeSingle()
       asMember = { ownerName: o?.display_name || 'Your friend' }

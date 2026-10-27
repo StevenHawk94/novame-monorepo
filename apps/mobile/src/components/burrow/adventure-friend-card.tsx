@@ -4,17 +4,18 @@ import { Image } from './burrow-image';
 import { completeFriendInteraction, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { runBurrowAction } from '@/lib/burrow-store';
 import { burrowFriendArt } from '@/lib/burrow-ui-assets';
+import { openPreparedBurrow } from '@/lib/burrow-page-entry';
 
 /** Only render the durable server snapshot; never guess a live replacement. */
-export function AdventureFriendCard({ data, busy, onComplete }: {
-  data: MajorUpdateBootstrap; busy: boolean; onComplete: (feedback: string) => void;
+export function AdventureFriendCard({ data, busy, onComplete, embedded = false }: {
+  data: MajorUpdateBootstrap; busy: boolean; onComplete: (feedback: string) => void; embedded?: boolean;
 }) {
   const adventure = data.activeAdventure;
   const metadata = data.adventureResult?.metadata;
   const content = metadata?.friendContent;
   const goToBattle = () => {
     if (!adventure || !content?.rage_monster_id) return;
-    router.push({ pathname: '/(main)/tame-enemy', params: {
+    openPreparedBurrow({ pathname: '/(main)/tame-enemy', params: {
       monsterId: content.rage_monster_id, friendAdventureId: adventure.id,
     } } as Href);
   };
@@ -37,9 +38,9 @@ export function AdventureFriendCard({ data, busy, onComplete }: {
     style={[styles.button, busy && { opacity: .5 }]} onPress={onPress}>
     <Text style={styles.buttonText}>{label}</Text>
   </Pressable>;
-  return <View style={styles.card}>
-    {burrowFriendArt(metadata?.friendSnapshot?.name)&&<Image source={burrowFriendArt(metadata?.friendSnapshot?.name)} contentFit="contain" style={{width:220,height:220,alignSelf:'center'}}/>}
-    <Text style={styles.heading}>{metadata?.friendSnapshot?.name ?? 'Your new friend'}</Text>
+  return <View style={[styles.card, embedded && styles.embedded]}>
+    {!embedded&&burrowFriendArt(metadata?.friendSnapshot?.name)&&<Image source={burrowFriendArt(metadata?.friendSnapshot?.name)} contentFit="contain" style={{width:220,height:220,alignSelf:'center'}}/>}
+    {!embedded&&<Text style={styles.heading}>{metadata?.friendSnapshot?.name ?? 'Your new friend'}</Text>}
     {!content ? <Text style={styles.copy}>This story could not be loaded. Refresh to try again; your discovery is saved.</Text> : <>
       <Text style={styles.copy}>{content.prompt}</Text>
       {content.content_type === 'insight' ? button('A little thought to keep', () => respond({ acknowledged: true }))
@@ -59,6 +60,7 @@ export function AdventureFriendCard({ data, busy, onComplete }: {
 }
 const styles = StyleSheet.create({
   card: { backgroundColor: '#FFF4E1', borderRadius: 25, padding: 22, gap: 14 },
+  embedded: { backgroundColor: 'transparent', padding: 0, borderRadius: 0 },
   heading: { color: '#553521', fontSize: 22, fontWeight: '800' },
   copy: { color: '#79563E', fontSize: 16, lineHeight: 24 },
   button: { backgroundColor: '#2F8D72', borderRadius: 20, padding: 16, minHeight: 50 },

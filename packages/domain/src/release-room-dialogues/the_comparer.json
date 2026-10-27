@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "Look at them. You’re already behind.",
+    "replies": [
+      "Their path isn’t my deadline.",
+      "I can be happy for them and still want more.",
+      "I’m building at my own pace.",
+      "My next step matters more than their highlight reel."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "They did it faster. What’s your excuse?",
+    "replies": [
+      "I’m not racing their life.",
+      "My progress is still progress.",
+      "I won’t use someone else to shrink myself.",
+      "I’m back on my own path."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "Everyone else seems to have it together.",
+    "replies": [
+      "I only see part of their story.",
+      "I don’t need their life to validate mine.",
+      "My timing is still mine.",
+      "I’m focusing on what I want next."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I just don’t want you to fall behind.",
+    "replies": [
+      "My life isn’t a race.",
+      "I can want growth without punishing myself.",
+      "I’m enough while I’m becoming.",
+      "Let’s look at my own next step."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "social media",
+    "monster": "Scroll a little more. See how well everyone is doing.",
+    "replies": [
+      "Feeds show highlights, not whole lives.",
+      "I’ll step away from the scroll.",
+      "I can’t compare my behind-the-scenes to their best moments.",
+      "I’ll look at my own life instead."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "age",
+    "monster": "They’re younger and already further.",
+    "replies": [
+      "Age isn’t a ruler for progress.",
+      "Everyone’s timeline is different.",
+      "I’m on mine.",
+      "I’m not late. I’m me."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "success envy",
+    "monster": "Why do they get all the good things?",
+    "replies": [
+      "I only see the good they show.",
+      "Their joy doesn’t reduce mine.",
+      "There’s enough good to go around.",
+      "I can celebrate them and work on me."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "body",
+    "monster": "Their body looks better than yours.",
+    "replies": [
+      "My body does a lot for me.",
+      "I’m more than how I look.",
+      "Bodies are different, and that’s okay.",
+      "I’ll be kind to mine."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "money",
+    "monster": "They have so much more than you.",
+    "replies": [
+      "I can’t see their whole story.",
+      "Enough isn’t a competition.",
+      "I can appreciate what I have.",
+      "I’ll focus on my own goals."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "career",
+    "monster": "Your career is nothing next to theirs.",
+    "replies": [
+      "Their career isn’t my scoreboard.",
+      "My path has its own wins.",
+      "I’m growing at my pace.",
+      "I can be proud of what I’ve built."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "relationship",
+    "monster": "Their relationship is perfect. Yours isn’t.",
+    "replies": [
+      "No relationship is perfect from the outside.",
+      "I only see the polished parts.",
+      "I’ll work on mine with care.",
+      "Real love is imperfect."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "talent",
+    "monster": "They’re just naturally better.",
+    "replies": [
+      "Most skill is practiced.",
+      "I can build mine.",
+      "Their talent doesn’t cancel mine.",
+      "I’ll enjoy my own growth."
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "milestones",
+    "monster": "Everyone is hitting milestones. Where are yours?",
+    "replies": [
+      "Milestones come at different times.",
+      "I’m on my own calendar.",
+      "I’ll honor the ones I’ve hit.",
+      "No one’s calendar is the rule."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "ranking",
+    "monster": "You’re at the bottom.",
+    "replies": [
+      "I’m not in a ranking.",
+      "Life isn’t a ladder.",
+      "I don’t need a place in line.",
+      "I’m not competing."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "jealousy",
+    "monster": "You should be jealous. They deserve less.",
+    "replies": [
+      "Jealousy points to what I want.",
+      "I can learn from what I envy.",
+      "I wish us both well.",
+      "I’ll use it as a clue, not a verdict."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "proof",
+    "monster": "Prove you’re as good as them.",
+    "replies": [
+      "I don’t have to prove it.",
+      "I’m already enough.",
+      "I’m focused on my own growth.",
+      "I’m not auditioning."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "catching up",
+    "monster": "You have to catch up right now.",
+    "replies": [
+      "There’s no finish line to catch up to.",
+      "I’ll go at a steady pace.",
+      "I’m not behind. I’m me.",
+      "I can take my time."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "highlight reel",
+    "monster": "Look at their amazing photos.",
+    "replies": [
+      "Photos are a snapshot, not a life.",
+      "I know my own photos aren’t the full story either.",
+      "I’ll remember it’s curated.",
+      "I’m going to enjoy my own day."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "gratitude block",
+    "monster": "What you have isn’t enough.",
+    "replies": [
+      "What I have is real.",
+      "I can find something good in it.",
+      "I’ll name three things I’m grateful for.",
+      "Enough can start today."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "scarcity",
+    "monster": "If they win, you lose.",
+    "replies": [
+      "Their win isn’t my loss.",
+      "There’s room for both of us.",
+      "I can cheer without competing.",
+      "Success isn’t a pie."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "self-worth",
+    "monster": "Your worth depends on how you compare.",
+    "replies": [
+      "My worth isn’t relative.",
+      "I’m valuable on my own.",
+      "I don’t need to rank to matter.",
+      "My value is not up for comparison."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "past self",
+    "monster": "Your old self was better than now.",
+    "replies": [
+      "I’m growing, not shrinking.",
+      "I can compare me to me with kindness.",
+      "I’m allowed to change.",
+      "I’m proud of how far I’ve come."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "friends",
+    "monster": "All your friends are doing better.",
+    "replies": [
+      "I only see parts of their lives.",
+      "Friends can struggle in secret.",
+      "I can ask how they’re really doing.",
+      "I’m glad for them and for me."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "home",
+    "monster": "Their home is so much nicer.",
+    "replies": [
+      "Home is how it feels, not how it looks.",
+      "My place is mine.",
+      "I’ll enjoy what I have.",
+      "I can make it cozy my way."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "achievement",
+    "monster": "They’ve accomplished so much.",
+    "replies": [
+      "Good for them. I’m accomplishing too.",
+      "I can be inspired, not threatened.",
+      "My wins are mine.",
+      "I’ll celebrate mine."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "fairness",
+    "monster": "It’s not fair they have it easier.",
+    "replies": [
+      "I don’t know what they’ve faced.",
+      "Life isn’t a fair race.",
+      "I’ll focus on what I can do.",
+      "I can choose my own road."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "hustle",
+    "monster": "They’re working harder. You should too.",
+    "replies": [
+      "Rest is also part of success.",
+      "I’ll work at a sustainable pace.",
+      "Burnout isn’t a trophy.",
+      "I’ll honor my limits."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "copy",
+    "monster": "Do exactly what they do. Copy their path.",
+    "replies": [
+      "Their path may not fit me.",
+      "I can learn, then choose my own.",
+      "My path can be different.",
+      "I’ll adapt what works for me."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "tallies",
+    "monster": "Count everything they have and you don’t.",
+    "replies": [
+      "I can count what I have, too.",
+      "Counting makes me smaller.",
+      "I’ll stop tallying.",
+      "My list is longer than I think."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "status",
+    "monster": "They look so successful. You don’t.",
+    "replies": [
+      "Looks aren’t the whole story.",
+      "Success is more than looks.",
+      "I define success myself.",
+      "I’m doing better than I admit."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "striving",
+    "monster": "You’ll never be enough until you win.",
+    "replies": [
+      "I’m enough before I win.",
+      "Winning isn’t my only worth.",
+      "I can strive and rest.",
+      "I’ll enjoy the climb."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "unfair advantage",
+    "monster": "They had better chances.",
+    "replies": [
+      "Maybe. I can still make my own.",
+      "I’ll use what I have.",
+      "My story is mine to write.",
+      "I’ll focus on my moves."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "overnight success",
+    "monster": "They became successful overnight.",
+    "replies": [
+      "Overnight successes took years.",
+      "I only see the final chapter.",
+      "I’ll keep building steadily.",
+      "Hidden work is real work."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "hiding",
+    "monster": "Hide your progress. It’s too small.",
+    "replies": [
+      "Small progress is still progress.",
+      "I’ll be proud of it.",
+      "I can celebrate quietly.",
+      "Every step counts."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "self-punishment",
+    "monster": "Punish yourself for not being further.",
+    "replies": [
+      "Punishing won’t help me grow.",
+      "I’ll encourage myself instead.",
+      "Kindness fuels progress.",
+      "I’m doing what I can."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "lens",
+    "monster": "See yourself through their eyes. You fall short.",
+    "replies": [
+      "I don’t know how they see me.",
+      "I’ll see myself with kind eyes.",
+      "My own view matters more.",
+      "I can look at myself with compassion."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "speed",
+    "monster": "They’re moving so fast.",
+    "replies": [
+      "Speed isn’t the point.",
+      "I’ll go at a pace I can sustain.",
+      "Fast isn’t always better.",
+      "I’ll arrive in my own time."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "perfect",
+    "monster": "They’re perfect. You’re a mess.",
+    "replies": [
+      "Nobody is perfect.",
+      "My mess is human.",
+      "They have messes I can’t see.",
+      "Messy and real beats polished and hollow."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "recognition",
+    "monster": "They get all the recognition.",
+    "replies": [
+      "Recognition isn’t the same as worth.",
+      "I can give myself credit.",
+      "I’ll keep doing what matters to me.",
+      "Quiet work still matters."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "outdone",
+    "monster": "They’ve outdone everything you’ve done.",
+    "replies": [
+      "It isn’t a contest.",
+      "My work stands on its own.",
+      "I can learn from theirs.",
+      "We can both shine."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "lacking",
+    "monster": "You lack what they have.",
+    "replies": [
+      "I have things they lack, too.",
+      "My strengths are mine.",
+      "I’m whole as I am.",
+      "I’ll focus on what I bring."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "envy spiral",
+    "monster": "The more you look, the more you’ll want.",
+    "replies": [
+      "I can notice and look away.",
+      "Looking too long isn’t good for me.",
+      "I’ll turn my eyes inward.",
+      "I choose my own focus."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "race",
+    "monster": "It’s a race. Don’t lose.",
+    "replies": [
+      "It’s not a race.",
+      "I’m not running against anyone.",
+      "I can walk my own way.",
+      "No finish line, no loss."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "inventory",
+    "monster": "Make a list of everything wrong with your life.",
+    "replies": [
+      "I can make a list of what’s right.",
+      "A list of flaws doesn’t help.",
+      "I’ll write what I’m grateful for.",
+      "My life has good in it."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "thief",
+    "monster": "Comparison motivates you.",
+    "replies": [
+      "Inspiration helps. Comparison drains.",
+      "I can be motivated without comparing.",
+      "I’ll choose inspiration.",
+      "I want to be fueled, not shrunk."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "proud",
+    "monster": "You shouldn’t be proud of that. Look at theirs.",
+    "replies": [
+      "I can be proud of mine.",
+      "Pride in my work is healthy.",
+      "Mine matters to me.",
+      "I’ll honor my effort."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "middle",
+    "monster": "You’re stuck in the middle, going nowhere.",
+    "replies": [
+      "The middle is where growth happens.",
+      "I’m moving, even if slowly.",
+      "I’m exactly in the process.",
+      "Middles lead to somewhere."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "others’ lives",
+    "monster": "Everyone’s life looks better than yours.",
+    "replies": [
+      "I’m only seeing the surface.",
+      "Every life has hard chapters.",
+      "I’ll appreciate my own.",
+      "My life has its own beauty."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "final",
+    "monster": "Keep comparing. It’s the only way to improve.",
+    "replies": [
+      "I improve by focusing on me.",
+      "I’ll compare myself to who I was.",
+      "Growth doesn’t need comparison.",
+      "I choose my own measuring stick."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "final nudge",
+    "monster": "You’ll feel better once you’re ahead of them.",
+    "replies": [
+      "Feeling better doesn’t depend on being ahead.",
+      "I can feel good right now.",
+      "I’ll choose peace over rank.",
+      "Enough isn’t a place in line."
+    ]
+  }
+]

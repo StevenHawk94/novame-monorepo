@@ -49,14 +49,14 @@ test('database v3 enforces board caps, linked Ways In and append-only History', 
   assert.doesNotMatch(migration, /delete from public\.connection_card_history/);
 });
 
-test('mobile payload exposes new sections and relative creation time', () => {
+test('legacy mobile payload remains compatible while the retired screen redirects without fetching insights', () => {
   const api = read('apps/mobile/src/lib/friends-api.ts');
   const screen = read('apps/mobile/app/(main)/(tabs)/status.tsx');
   assert.match(api, /schemaVersion: 3/);
   assert.match(api, /together_moments/);
   assert.match(api, /on_their_mind_us/);
-  assert.match(screen, /relativeInsightTime\(card\.createdAt\)/);
-  assert.match(screen, /card\.waysIn/);
+  assert.match(screen, /<Redirect href=\"\/\(main\)\/\(tabs\)\"/);
+  assert.doesNotMatch(screen, /fetchInsights|getCachedInsights|waysIn|relativeInsightTime/);
 });
 
 test('v8 migration compiles in PostgreSQL and is idempotent', {

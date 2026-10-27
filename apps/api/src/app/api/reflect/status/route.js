@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 import { verifyToken } from '@/lib/auth-guard'
 import { serviceClient } from '@/lib/reflect-draft'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
@@ -46,7 +47,7 @@ export async function GET(request) {
     if (slotError || countError || profileError || allowanceError) {
       throw slotError || countError || profileError || allowanceError
     }
-    const isPaid = (profile?.subscription_tier || 'free') !== 'free'
+    const isPaid = await effectiveHasPlus(supabase,userId)
     const byKind = Object.fromEntries(JOURNAL_KINDS.map((kind) => [kind, 'available']))
     for (const slot of slots || []) {
       if (JOURNAL_KINDS.includes(slot.journal_kind)) byKind[slot.journal_kind] = slot.status

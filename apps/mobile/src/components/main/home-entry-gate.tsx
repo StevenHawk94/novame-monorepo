@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
 import {
   AppState, BackHandler, Image as NativeImage, Platform,
-  StyleSheet, View,
+  ActivityIndicator, Pressable, Text, StyleSheet, View,
 } from 'react-native';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
 import { BurrowLaunchScreen } from './burrow-launch-screen';
@@ -10,7 +10,7 @@ import { router, useSegments } from 'expo-router';
 
 import {
   failHomeEntry, finishHomeEntry, homeEntryIsReady, homeEntryDataIsReady, markHomeEntryAsset,
-  beginHomeEntry, HOME_ENTRY_TIMEOUT_MS, isFriendsEntryRoute,
+  beginHomeEntry, homeEntryRemainingMs, isFriendsEntryRoute,
   isHomeEntryRoute, retryHomeEntry, timeoutHomeEntry, type HomeEntryAsset,
 } from '@/lib/home-entry-readiness';
 import { useHomeEntry } from '@/lib/use-home-entry';
@@ -18,9 +18,9 @@ import { hideSplashOnce } from '@/lib/splash';
 import { registerOverlay, useOverlayPresent } from '@/lib/overlay-presence';
 import { useRatingTransitionBusy } from '@/lib/rating-navigation';
 import { fetchAppConfig } from '@/lib/app-config-api';
-import { getCurrentSession } from '@/lib/auth';
-import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
 import { markAndroidP0UiReady } from '@/lib/download-queue';
+import { getBurrowSnapshot, refreshBurrow } from '@/lib/burrow-store';
+import {beginOnboardingAnnouncement} from '@/lib/onboarding-announcement-entry';
 
 const ANDROID_ENTRY_TIMEOUT_MS = 750;
 
@@ -98,9 +98,18 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
   // is deterministic JavaScript state and must settle before the cover lifts.
   const androidHomeDataReady = homeEntryDataIsReady();
   const ready = Platform.OS === 'android' ? androidHomeDataReady : homeEntryIsReady();
+  useLayoutEffect(()=>{if(atHome)beginOnboardingAnnouncement();},[atHome,entry.attempt]);
+  const entryTimeout = Platform.OS === 'android' && entry.target !== 'home'
+    ? ANDROID_ENTRY_TIMEOUT_MS : homeEntryRemainingMs();
 
   useLayoutEffect(() => {
     if (!entry.resumeRequired || otherOverlay) return;
+    // A retained complete room never needs a resume cover or forced wait.
+    if (getBurrowSnapshot().data) {
+      beginHomeEntry({ target: 'current' });
+      finishHomeEntry(entry.attempt + 1, true);
+      return;
+    }
     beginHomeEntry({
       target: atHome ? 'home' : atFriends ? 'friends' : 'current',
       forceHomeData: atHome || atFriends,
@@ -129,12 +138,9 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
     const attempt = entry.attempt;
     // Dialog/config copy is the only shared data that is deliberately checked
     // on every real entry. Existing cached UI remains underneath the cover.
-    void Promise.allSettled([
-      fetchAppConfig({ noCache: true }),
-      getCurrentSession().then((session) => (
-        session?.user?.id ? prepareUnreadAnnouncement(session.user.id) : null
-      )),
-    ]).then(() => markHomeEntryAsset('entry-copy', attempt));
+    // Announcement images and configuration refresh are not first-paint work.
+    markHomeEntryAsset('entry-copy', attempt);
+    void fetchAppConfig({ noCache: true }).catch(()=>{});
   }, [entry.pending, entry.attempt]);
 
   useEffect(() => {
@@ -161,21 +167,20 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!visible || !foreground) return;
     // Never trap an entry on slow network or a missing native display event.
-    // The cached destination is already mounted underneath, so fail open.
-    const timeoutMs = Platform.OS === 'android' && entry.target !== 'home'
-      ? ANDROID_ENTRY_TIMEOUT_MS : HOME_ENTRY_TIMEOUT_MS;
-    const timer = setTimeout(() => setAfter(timeoutHomeEntry(entry.attempt)), timeoutMs);
+    // The cached destination is already mounted underneath, so fail open at
+    // the shared five-second limit without cancelling the healthy read.
+    const timer = setTimeout(() => setAfter(timeoutHomeEntry(entry.attempt)), entryTimeout);
     return () => clearTimeout(timer);
-  }, [visible, entry.attempt, foreground]);
+  }, [visible, entry.attempt, foreground, entryTimeout]);
 
   useEffect(() => {
-    if (entry.pending || !atHome || !foreground || !after) return;
+    if (entry.pending || !atHome || !foreground || !after || otherOverlay) return;
     const frame = requestAnimationFrame(() => {
       setAfter(null);
       router.push('/(main)/(modals)/notification-settings');
     });
     return () => cancelAnimationFrame(frame);
-  }, [entry.pending, atHome, foreground, after]);
+  }, [entry.pending, atHome, foreground, after, otherOverlay]);
 
   // When no entry is pending, any authenticated destination owns the native
   // splash hand-off. Home/Paired entries hide it from the cover's own layout.
@@ -195,6 +200,11 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
       {visible ? (
         <View style={styles.cover} accessibilityViewIsModal onLayout={hideSplashOnce}>
           <BurrowLaunchScreen />
+          <View style={styles.status}>
+            {entry.failed ? <><Text style={styles.copy}>Couldn’t prepare your room. Please try again.</Text>
+              <Pressable accessibilityRole="button" onPress={()=>{retryHomeEntry();void refreshBurrow({silent:true});}} style={styles.retry}>
+                <Text style={styles.copy}>Retry</Text></Pressable></> : <ActivityIndicator color="#FFF2DF"/>}
+          </View>
         </View>
       ) : null}
     </View>
@@ -204,4 +214,7 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   cover: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 100, backgroundColor: BURROW_LAUNCH_BACKGROUND },
+  status: { position:'absolute',left:24,right:24,bottom:80,alignItems:'center',gap:16 },
+  copy: { color:'#FFF2DF',textAlign:'center',fontSize:16 },
+  retry: { paddingVertical:14,paddingHorizontal:36,borderRadius:24,backgroundColor:'#673019' },
 });

@@ -23,7 +23,7 @@ function getSupabaseAdmin() {
 
 /**
  * POST: 更新用户 profile（display_name, avatar_url, birthday）
- * Also handles: newEmail, newPassword (via Supabase admin auth API)
+ * Sensitive authentication changes are rejected; clients use user-scoped Auth.
  */
 export async function POST(request) {
   try {
@@ -32,6 +32,7 @@ export async function POST(request) {
       displayName,
       defaultAvatarId,
       birthday,
+      gender,
       newEmail,
       newPassword,
       onboardingWho,
@@ -92,8 +93,8 @@ export async function POST(request) {
     }
     
     if (displayName !== undefined) {
-      // Display names are capped consistently with both mobile entry points.
-      updateData.display_name = displayName ? displayName.slice(0, 15) : displayName
+      // Onboarding's name field allows 20 characters; never silently cut it to 15.
+      updateData.display_name = displayName ? displayName.slice(0, 20) : displayName
     }
     
     if (defaultAvatarId !== undefined) {
@@ -113,7 +114,15 @@ export async function POST(request) {
     }
 
     if (birthday !== undefined) {
-      updateData.birthday = birthday
+      if(birthday!==null&&birthday!==''&&(typeof birthday!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(birthday)||!Number.isFinite(Date.parse(birthday))
+        ||new Date(birthday).toISOString().slice(0,10)!==birthday||Date.parse(birthday)>Date.now()+86400000)
+      )
+        return Response.json({error:'Invalid date of birth'},{status:400})
+      updateData.birthday = birthday || null
+    }
+    if(gender!==undefined){
+      if(!['woman','man','non_binary','prefer_not_to_say'].includes(gender))return Response.json({error:'Invalid gender'},{status:400})
+      updateData.gender=gender
     }
 
     if (partnerName !== undefined) {
@@ -151,10 +160,11 @@ export async function POST(request) {
           .from('profiles')
           .insert({
             id: userId,
-            display_name: displayName ? displayName.slice(0, 15) : '',
+            display_name: displayName ? displayName.slice(0, 20) : '',
             avatar_url: defaultAvatarId || null,
             is_default_avatar: true,
             birthday: birthday || null,
+            ...(gender!==undefined?{gender}:{}),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
@@ -177,4 +187,15 @@ export async function POST(request) {
     console.error('Update profile error:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+export async function GET(request){
+ try {
+  const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'').trim()
+  const user=token?await verifyToken(token):null
+  if(!user)return Response.json({error:'Unauthorized'},{status:401})
+  const result=await getSupabaseAdmin().rpc('read_account_profile_v1',{p_user:user.id})
+  if(result.error||!result.data)return Response.json({error:'Profile unavailable'},{status:503})
+  return Response.json({success:true,profile:result.data},{headers:{'Cache-Control':'no-store'}})
+ }catch{return Response.json({error:'Profile unavailable'},{status:503})}
 }

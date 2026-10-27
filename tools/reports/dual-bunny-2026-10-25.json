@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-25",
+  "feature": "Permanent Biscuit/Pinky identity and cooperative Adventure v5",
+  "authorization": {
+    "pink": "#ef9ba3",
+    "firstConflict": "Authenticated invite-code enterer retains choice; only unfinalized identities can be reassigned",
+    "legacyException": "Recorded historical relationship initiator gets Biscuit, other member Pinky; explicitly approved by user",
+    "rematch": "Finalized identities remain immutable; same-colour rematches permitted",
+    "timing": "New Free solo 6h, Plus solo 3h; joining divides remaining time by 1.5, forbidden at <=600 seconds",
+    "rewards": "Personal logs, quota, encounters, rewards and wallets remain independent",
+    "production": "User explicitly approved migrations and API after verification; no App-store release, Admin deployment, announcements or force-update activation"
+  },
+  "implementation": {
+    "migrations": [273,274],
+    "capabilities": ["X-Burrow-Bunny: 1","X-Burrow-Adventure: 5"],
+    "roleAdoption": "Remote assignment staged; complete suite prepared and atomically adopted on next Home entry",
+    "assets": "19 existing outfits, static head/body colour variants and baked thumbnails; original ears/tails reused",
+    "ownerBoundary": "Home and legacy room artwork forward explicit owner through actor to shared renderer",
+    "nudge": "Durable local immutable intent; per-party one successful outbox enqueue; same-key receipt replay and send-time eligibility",
+    "rollout": "New durable v5 starts wait in background for matching authenticated server capability metadata; never fall through an old API as v1. Old persisted v4 intents retain their original protocol."
+  },
+  "tests": {
+    "domainIsolation": {"passed":607,"failed":0,"log":"/private/tmp/burrow-dual-bunny-domain-final.log"},
+    "dualAndInstantProtocol": {"passed":28,"failed":0,"log":"/private/tmp/burrow-dual-bunny-protocol.log"},
+    "realDatabase": {"passed":13,"failed":0,"log":"/private/tmp/burrow-dual-bunny-db.log","coverage":["Real migration against pre-existing pairs", "Same-colour code-enterer conflict", "Immutable rematches", "6h/3h authoritative timing", "Remaining-only join", "600/601-second cutoff", "Near-simultaneous start convergence", "Personal reward reservations and independent claims", "Duplicate claims do not mint twice", "Foreign claim rejected", "Stale relationship rejected", "Frozen upgrade timing", "Nudge receipt/outbox and delivery expiry", "Economic-domain and RPC privilege isolation"],"limitation":"PGlite serializes statements; not an independent multi-connection production PostgreSQL deadlock proof"},
+    "releaseGuard": {"passed":1,"failed":0,"log":"/private/tmp/burrow-dual-bunny-release-guard.log","coverage":"Actual PostgreSQL expression permits only the nineteen approved outfit hashes; rejects price, Plus eligibility, renderer, metadata, unrelated art and product removal"},
+    "mobileAssetReferences": {"passed":7,"failed":0,"log":"/private/tmp/burrow-dual-bunny-asset-scan.log"},
+    "mobileTypes": {"passed":true,"log":"/private/tmp/burrow-dual-bunny-types.log"},
+    "catalogCheck": {"passed":true,"release":"3e581bf854bf4e3758d2620371b0b883f97756ee26da051a4f6b145df5c76c5a"},
+    "mobileExports": {"ios":"/private/tmp/burrow-dual-bunny-export-ios-owner-final-20261025","android":"/private/tmp/burrow-dual-bunny-export-android-owner-final-20261025","note":"JavaScript/Hermes export, not a new native production binary or store submission"},
+    "native": "tools/reports/dual-bunny-native-2026-10-25.json"
+  },
+  "production": {
+    "deployed":true,
+    "api":"dpl_Av3STtJZg9ikSTLkkr8iPMrNLZgV",
+    "previousApi":"dpl_DjXdSBRozxJZXkHcEfD2bnERmNgo",
+    "domain":"https://api.soulsayit.com",
+    "verifiedAt":"2026-10-25T11:45:34.657Z",
+    "candidateFilesVerified":290,
+    "overlaidApiFiles":10,
+    "protectedTablesUnchanged":24,
+    "historicalAssignments":{"biscuit":40,"pinky":40,"finalized":true},
+    "activeCatalogUnchanged":true,
+    "catalogSupport":"Append-only client capabilities; no product publication or reserved-result reroll",
+    "adminUnchanged":true,
+    "unrelatedFunctionsAndAclUnchanged":true,
+    "newRpcClientGrants":false,
+    "unauthenticatedSmoke":{"bunnyGET":401,"bootstrapGET":401,"commandPOST":401},
+    "guardedAttempt":"First attempt rolled back on strict catalogue equality; audited difference was exactly 19 approved outfit bitmap hashes. Second transaction allowed only that precise visual field and passed all protected-data guards.",
+    "evidenceDirectory":"/private/tmp/burrow-dual-bunny-release.JZLeN5",
+    "notPublished":["Mobile App", "Admin", "Announcements", "Minimum supported app version"]
+  },
+  "cleanup":"tools/reports/bunny-asset-cleanup-2026-10-25.json",
+  "remainingReleaseAcceptance":["Physical iOS and Android Release verification", "Real paired-device notification/reconnect journey", "Do not describe limited specialist gates as every historical test or every device passing", "Cold outfit switching has measured slow frames; no every-frame-under-50ms guarantee"],
+  "rollback":"Retain new identities, parties and receipts. API rollback alone must not convert pending v5 intents to legacy starts; do not drop tables, rewrite committed rewards or auto-refund from a UI rollback. Production previous source/ACL/checksum evidence retained."
+}

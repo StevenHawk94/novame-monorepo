@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { testGameRoom } from './test-burrow-game-room-database.mjs';
+import { testGameRoomSilent } from './test-game-room-silent-database.mjs';
 import { testSoloBurrow } from './test-burrow-solo-database.mjs';
 import { seedLegacyRoomPhotos } from './test-burrow-room-photo-cleanup-database.mjs';
 import { scoreGameRoomRound } from '../apps/api/src/lib/burrow-game-room.mjs';
@@ -75,6 +76,8 @@ try {
   await db.exec(`alter table reflect_drafts add column saved_reflect_id uuid references reflects;
     alter table reflect_drafts add column created_at timestamptz default now()`);
   await testGameRoom({db,query,rpc,check});
+  await db.exec(readFileSync(resolve('supabase/migrations/20261012000223_game_room_silent_delivery.sql'),'utf8'));
+  await testGameRoomSilent({db,query,rpc,check});
   await testSoloBurrow({db,query,rpc,check});
   console.log(`Game Room and Solo Burrow PostgreSQL integration: ${assertions} assertions passed.`);
 } catch(error) {

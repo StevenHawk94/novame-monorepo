@@ -2,11 +2,31 @@ import { apiClient } from './api';
 import { Image as ExpoImage } from 'expo-image';
 import { Platform } from 'react-native';
 import { enqueueR2Image, ensurePriorityR2Image } from './download-queue';
+import {storage} from './storage';
+import {kAnnouncementReads} from '../shared/storage/keys';
+import {sessionUserId} from './session-lifecycle';
+
+function reads(userId:string):{closed:string[];pending:string[]}{
+ try{const row=JSON.parse(storage.getString(kAnnouncementReads.keyFor(userId))??'null');
+  return {closed:Array.isArray(row?.closed)?row.closed.filter((id:unknown)=>typeof id==='string'):[],pending:Array.isArray(row?.pending)?row.pending.filter((id:unknown)=>typeof id==='string'):[]};
+ }catch{return {closed:[],pending:[]};}
+}
+async function flushReads(userId:string){
+ for(const id of reads(userId).pending){
+  if(sessionUserId()!==userId)return;
+  try{await apiClient.post('/api/announcements',{userId,announcementId:id});
+   const current=reads(userId);current.pending=current.pending.filter(value=>value!==id);
+   if(sessionUserId()===userId)storage.set(kAnnouncementReads.keyFor(userId),JSON.stringify(current));
+  }catch{return;}
+ }
+}
 
 export type Announcement = {
   id: string;
   title: string;
   content: string;
+  button_text?: string | null;
+  action_url?: string | null;
   image_url?: string | null;
   type: string;
   target_users?: string;
@@ -39,11 +59,13 @@ export async function fetchUnreadAnnouncement(
   userId: string,
 ): Promise<Announcement | null> {
   try {
+    await flushReads(userId);
     const qs = new URLSearchParams({ userId });
     const data = await apiClient.get<GetResponse>(
       `/api/announcements?${qs.toString()}`,
     );
-    return data?.announcement ?? null;
+    const announcement=data?.announcement??null;
+    return announcement&&!reads(userId).closed.includes(announcement.id)?announcement:null;
   } catch {
     return null;
   }
@@ -91,6 +113,7 @@ export function prepareUnreadAnnouncement(
     // standard warm-up tier because the message is time-sensitive.
     enqueueR2Image(imageUrl, -200);
     if (!await prefetchImageBeforeDeadline(imageUrl)) return null;
+    if(sessionUserId()!==userId)return null;
     preparedByUser.set(userId, announcement);
     return announcement;
   })().finally(() => {
@@ -119,9 +142,14 @@ export async function markAnnouncementRead(
   userId: string,
   announcementId: string,
 ): Promise<void> {
-  try {
-    await apiClient.post('/api/announcements', { userId, announcementId });
-  } catch {
-    // best-effort
+  if(sessionUserId()!==userId)return;
+  try{const current=reads(userId);
+   current.closed=[...new Set([...current.closed,announcementId])].slice(-500);
+   current.pending=[...new Set([...current.pending,announcementId])].slice(-500);
+   storage.set(kAnnouncementReads.keyFor(userId),JSON.stringify(current));
+  }catch{
+   try{await apiClient.post('/api/announcements',{userId,announcementId});}catch{}
+   return;
   }
+  await flushReads(userId);
 }

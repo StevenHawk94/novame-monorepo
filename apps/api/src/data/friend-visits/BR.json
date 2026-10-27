@@ -1,0 +1,1077 @@
+{
+  "code": "BR",
+  "name": "Bruno",
+  "friendId": "adventure_friend_br",
+  "waitingLines": [
+    "Gotta give {partner} a big hug before I go. Big feelings. Big wait.",
+    "I brought {partner} some honey. I’ll wait to give it in person. I might cry."
+  ],
+  "questions": [
+    {
+      "id": "BR-V01",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno ducks through your door in a tiny knitted hat, holding a jar of honey like a trophy.",
+      "lines": [
+        "Hi hi! Clover made me this hat. I cried. Anyway, quiz! Big feelings. Big hugs."
+      ],
+      "question": "About how much does a newborn bear cub weigh?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About as much as a watermelon",
+          "reply": [
+            "Aww, that would be easier to hold! But no.",
+            "Newborn cubs weigh about a pound. Like a loaf of bread.",
+            "Such tiny beans. I'm already emotional."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About one pound",
+          "reply": [
+            "Yes!! One tiny pound!",
+            "Mama bear can be hundreds of times heavier than her newborn cub.",
+            "Clover's cubs will be that small. I'm going to hold them so gently. I'm crying."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About as much as a grown wolf",
+          "reply": [
+            "Whoa, no! That would be a huge baby!",
+            "Newborn cubs weigh about one pound.",
+            "They start tiny and blind. Then they grow, and grow, and grow."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Newborn bear cubs typically weigh around 0.5 kg (about a pound).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V02",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno squeezes you in a gentle hug and holds on. Then sniffles.",
+      "lines": [
+        "Big feelings. Big hugs. And science says hugs are good for you!"
+      ],
+      "question": "Which hormone is released during warm touch and hugs?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Adrenaline",
+          "reply": [
+            "That's the scary one! Not hugs!",
+            "Hugs and touch can boost oxytocin.",
+            "It helps people feel close and calm. Big warm feelings."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Oxytocin, often called the 'cuddle hormone'",
+          "reply": [
+            "Yes!! The cuddle hormone!",
+            "Warm touch can raise oxytocin, linked to bonding and calm.",
+            "So hugging Clover is basically medicine. I'm prescribing more."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Caffeine",
+          "reply": [
+            "Ha! That's coffee, not hugs!",
+            "Oxytocin, the 'cuddle hormone,' rises with warm touch.",
+            "Hug more. Coffee less. Kidding. Both."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Warm partner contact is associated with higher oxytocin (Grewen et al. 2005).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V03",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno balances an egg on his feet very carefully. It wobbles. He panics.",
+      "lines": [
+        "This is practice. For a reason."
+      ],
+      "question": "How do emperor penguin dads care for their egg?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They balance it on their feet for about two months",
+          "reply": [
+            "Yes!! Dad goals!",
+            "They keep the egg warm on their feet under a fold of skin.",
+            "Through freezing winter, barely eating. I'm sobbing. Clover, I'm ready."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They bury it in snow",
+          "reply": [
+            "No!! It'd freeze!",
+            "Dads balance the egg on their feet under a warm skin flap.",
+            "For about two months, in the middle of winter."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They hand it to a babysitter",
+          "reply": [
+            "Aww, no! Dad duty!",
+            "Dads keep it on their feet, under a warm fold of skin.",
+            "Huddled together through blizzards. Hero dads."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Male emperor penguins incubate eggs on their feet for ~2 months.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V04",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno hums happily while munching a cookie.",
+      "lines": [
+        "When I eat, I hum. Clover says gorillas do this too!"
+      ],
+      "question": "What do gorillas sometimes do while eating food they love?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Throw it at friends",
+          "reply": [
+            "Not the polite thing! No!",
+            "They hum and sing while eating.",
+            "Happy eating sounds. Same as me with honey."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Eat in total silence",
+          "reply": [
+            "The opposite! They're musical!",
+            "Gorillas hum and sing while eating favorite foods.",
+            "Snack symphony!"
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Hum and sing",
+          "reply": [
+            "Yes!! Snack songs!",
+            "Researchers recorded gorillas humming and 'singing' while eating.",
+            "Happy food sounds. I knew I wasn't weird."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Luef et al. (2016) documented gorillas humming/singing during feeding.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V05",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno counts on his claws. Then counts again. Then gives up.",
+      "lines": [
+        "How long do elephants wait for babies? I'll be impatient for days."
+      ],
+      "question": "How long is an elephant pregnancy?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About 9 months",
+          "reply": [
+            "That's humans! Elephants wait longer!",
+            "Elephant pregnancy lasts about 22 months.",
+            "Almost two years! I can't even wait for cookies to cool."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About 3 weeks",
+          "reply": [
+            "Way too short!",
+            "Elephants carry babies for about 22 months.",
+            "That's a long time to plan a nursery."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 22 months",
+          "reply": [
+            "Yes! Almost two years!",
+            "It's the longest pregnancy of any land mammal.",
+            "Patience is a big feeling too."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "African elephant gestation is about 22 months.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V06",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno peeks at his own paw, curious.",
+      "lines": [
+        "This one surprised me. Like, big surprise."
+      ],
+      "question": "What color is a polar bear's skin?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "White",
+          "reply": [
+            "That's what I thought too!",
+            "Polar bear skin is actually black, under that white-looking fur.",
+            "Their fur is clear, not white. Mind blown."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Black",
+          "reply": [
+            "Yes!! Black skin!",
+            "Dark skin helps soak up the sun's warmth.",
+            "Their fur is actually see-through. It just looks white. Science is wild."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Pink",
+          "reply": [
+            "Aww, cute, but no!",
+            "Polar bear skin is black underneath.",
+            "Their fur looks white but is actually hollow and clear."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Polar bears have black skin; fur hairs are translucent.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V07",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno holds up a photo of a koala, then his own paw, comparing.",
+      "lines": [
+        "These are SO similar to human fingerprints. I'm in awe."
+      ],
+      "question": "What's surprising about koala fingerprints?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "They look almost identical to human fingerprints",
+          "reply": [
+            "Yes!! Almost identical!",
+            "Even under a microscope, they're very hard to tell apart.",
+            "Imagine a koala solving a crime. Or committing one. Cute crime."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Koalas don't have fingerprints",
+          "reply": [
+            "They do! Very human-like!",
+            "Their prints look almost exactly like ours.",
+            "Nature is full of surprises."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "They glow pink",
+          "reply": [
+            "That's the flying squirrel!",
+            "Koala fingerprints are nearly identical to humans'.",
+            "Hugging trees with human-like prints. Adorable."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Koala fingerprints closely resemble human fingerprints (Henneberg et al.).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V08",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno holds up a jellybean between two claws, looking at it very tenderly.",
+      "lines": [
+        "This tiny thing is a baby. Kind of. I'm emotional."
+      ],
+      "question": "How big is a newborn kangaroo joey?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About the size of a puppy",
+          "reply": [
+            "Close! Way smaller!",
+            "A newborn joey is about the size of a jellybean.",
+            "It climbs into the pouch all on its own."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "About the size of a jellybean",
+          "reply": [
+            "Yes!! A jellybean!",
+            "A newborn joey crawls into mom's pouch and grows there for months.",
+            "Tiny and brave. I'm crying again. Big feelings."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About the size of a basketball",
+          "reply": [
+            "Whoa, no!",
+            "It's about the size of a jellybean.",
+            "It grows in the pouch for months. Nature is amazing."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Newborn kangaroo joeys are roughly jellybean-sized.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V09",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno wipes a tear looking at a jellyfish video.",
+      "lines": [
+        "This tiny jellyfish can start its life over. I'm emotional."
+      ],
+      "question": "What can the 'immortal jellyfish' do?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Turn back into a younger stage when stressed",
+          "reply": [
+            "Yes!! It can reverse its age!",
+            "When injured or stressed, it can revert to its baby polyp stage.",
+            "Starting over. Big feelings."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Live in the desert",
+          "reply": [
+            "Too dry! No!",
+            "It can revert back to a young polyp stage.",
+            "A natural do-over button."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Glow brighter as it ages",
+          "reply": [
+            "Pretty! Not it!",
+            "It can turn back into a younger form.",
+            "Life, round two. So hopeful."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Turritopsis dohrnii can revert to the polyp stage (transdifferentiation).",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V10",
+      "friendId": "adventure_friend_br",
+      "type": "Trivia",
+      "scene": "Bruno sniffs a pineapple and sighs patiently.",
+      "lines": [
+        "Pineapples take forever to grow. Like waiting for cubs. Okay, not that long."
+      ],
+      "question": "About how long does it take for a pineapple to grow?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "About 2 weeks",
+          "reply": [
+            "Way longer!",
+            "Pineapples take about 18 months to 2 years.",
+            "One fruit per plant at a time. Precious."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "They grow on trees in one day",
+          "reply": [
+            "Ha! No! Not trees, and not fast!",
+            "They grow on short plants, taking about 18 months to 2 years.",
+            "Worth the wait."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "About 18 months to 2 years",
+          "reply": [
+            "Yes!! A really long time!",
+            "Each plant usually produces just one pineapple at a time.",
+            "Patience is love. Clover says I need more."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "A pineapple typically takes ~18–24 months to mature.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "BR-V11",
+      "friendId": "adventure_friend_br",
+      "type": "Preference",
+      "scene": "Bruno opens his arms wide, then waits kindly for an answer.",
+      "lines": [
+        "Big feelings. Big hugs. But which first?"
+      ],
+      "question": "When feelings get big: hug it out, or talk it out?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Hug it out",
+          "reply": [
+            "Hug it out!! Big hugs for big feelings!",
+            "No words needed. Just warmth."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Talk it out",
+          "reply": [
+            "Talk it out. Brave and honest.",
+            "Words can make big feelings smaller."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both hug it out!! Big bear hug energy!",
+          "{partner} wraps you up, you wrap them up. No talking needed.",
+          "I'm tearing up. That's beautiful."
+        ],
+        "A:B": [
+          "Talk it out for you. {partner} wants to hug it out.",
+          "They'll come in for a squeeze. You'll want words.",
+          "Talk while hugging. Totally allowed. Very effective."
+        ],
+        "B:A": [
+          "Hug it out for you. {partner} wants to talk it out.",
+          "You'll open your arms. They'll open their mouth. Both are love.",
+          "Hug first, then talk. Best combo. Trust a bear."
+        ],
+        "B:B": [
+          "You both talk it out! Big feelings, big words.",
+          "So you and {partner} untangle things together. Out loud. Bravely.",
+          "Then hug anyway. Just for the bonus points."
+        ]
+      }
+    },
+    {
+      "id": "BR-V12",
+      "friendId": "adventure_friend_br",
+      "type": "Preference",
+      "scene": "Bruno shows you a closet stuffed with tiny socks, hats, and blankets. For cubs not born yet.",
+      "lines": [
+        "I may have overprepared. A little. A lot."
+      ],
+      "question": "Getting ready for something big: prepare everything early, or figure it out as you go?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Prepare early",
+          "reply": [
+            "Prepare early! Like me! Twelve tiny hats!",
+            "Being ready feels safe."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Figure it out as we go",
+          "reply": [
+            "Figure it out as you go. Brave!",
+            "Flexible hearts handle surprises."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Prepare-early couple! Matching checklists!",
+          "Honestly, {partner} and you probably packed for a trip three weeks ahead.",
+          "Clover would love you. I already do."
+        ],
+        "A:B": [
+          "You go with the flow. {partner} prepares early.",
+          "They'll have a list. You'll have vibes.",
+          "Let them prepare. You make it fun. Team bear."
+        ],
+        "B:A": [
+          "You prepare early. {partner} figures it out as they go.",
+          "You'll pack the bag. They'll pack the snacks. Last minute.",
+          "Balance! You're the plan. They're the fun."
+        ],
+        "B:B": [
+          "Figure-it-out couple! Chill bears!",
+          "I can picture it: you and {partner} trust you'll handle whatever comes.",
+          "Teach me. I have 47 tiny socks and no chill."
+        ]
+      }
+    },
+    {
+      "id": "BR-V13",
+      "friendId": "adventure_friend_br",
+      "type": "Preference",
+      "scene": "Bruno drizzles honey onto a spoon and hums contentedly.",
+      "lines": [
+        "Honey question. The most important question."
+      ],
+      "question": "Honey goes best on: toast, pancakes, or straight from the spoon?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Toast",
+          "reply": [
+            "Toast! Crunchy sweet perfection.",
+            "Butter, then honey. Classic."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Pancakes",
+          "reply": [
+            "Pancakes! Fluffy golden dreams.",
+            "A honey waterfall."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Straight from the spoon",
+          "reply": [
+            "Straight from the spoon! A true bear!",
+            "No middleman. Pure love."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Toast for both of you! Breakfast twins!",
+          "Pretty sure {partner} and you fight over the crust. Cute fight.",
+          "Honey toast for two. Breakfast in bed. Go."
+        ],
+        "A:B": [
+          "Pancakes for you! {partner} picks toast.",
+          "Pancake toast? Is that a thing? Make it a thing.",
+          "Honey brunch for two. Perfect."
+        ],
+        "A:C": [
+          "Straight from the spoon! {partner} prefers toast.",
+          "They're civilized. You're a bear. Respect.",
+          "Hand them toast. Keep the spoon."
+        ],
+        "B:A": [
+          "Toast for you! {partner} picks pancakes.",
+          "Crunchy versus fluffy. The great breakfast debate.",
+          "Make both and drizzle honey on everything. Even the plates. Okay, not the plates."
+        ],
+        "B:B": [
+          "Pancakes for both of you! Fluffy couple!",
+          "Lowkey, you and {partner} make a pancake tower on Sundays, don't you?",
+          "Stack them high. Pour honey everywhere."
+        ],
+        "B:C": [
+          "Spoon for you! {partner} wants pancakes.",
+          "They're making breakfast. You're eating the honey.",
+          "Save some for the pancakes. Some."
+        ],
+        "C:A": [
+          "Toast for you! {partner} eats it from the spoon.",
+          "They'll lick the spoon while you butter the toast.",
+          "Share the jar. Love is sticky."
+        ],
+        "C:B": [
+          "Pancakes for you! {partner} goes straight to the spoon.",
+          "You pour it on pancakes. They pour it in their mouth.",
+          "Both valid. Both sticky. Both love."
+        ],
+        "C:C": [
+          "Straight from the spoon! Both of you! Bear souls!",
+          "{partner} and you sneak spoonfuls at midnight. I know it.",
+          "Two spoons, one jar. True love."
+        ]
+      }
+    },
+    {
+      "id": "BR-V14",
+      "friendId": "adventure_friend_br",
+      "type": "Preference",
+      "scene": "Bruno pulls out two pictures: a fluffy puppy and a sleepy cat.",
+      "lines": [
+        "Clover and I talk about pets. A lot. Big decision."
+      ],
+      "question": "Someday pet: a dog, or a cat?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A dog",
+          "reply": [
+            "A dog! Walks, wags, and zoomies!",
+            "A best friend that greets you like it's been ten years."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A cat",
+          "reply": [
+            "A cat! Independent, cozy, majestic.",
+            "They love you on their own terms."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Dog for both of you! Zoomies forever!",
+          "So {partner} and you will walk a happy pup every morning.",
+          "Name it something silly. Like Biscuit. Sorry, Biscuit."
+        ],
+        "A:B": [
+          "Cat for you. {partner} wants a dog.",
+          "They want zoomies. You want purrs.",
+          "Both! A cat and dog cuddle pile. I'm crying."
+        ],
+        "B:A": [
+          "Dog for you. {partner} wants a cat.",
+          "One barks, one judges. The classic household.",
+          "Get both. Raise them together. They'll be best friends. Maybe."
+        ],
+        "B:B": [
+          "Cat for both of you! Purr-fect couple!",
+          "Honestly, you and {partner} will lose arguments to a cat. Every day.",
+          "Get a sunny window. Cats need sunny windows."
+        ]
+      }
+    },
+    {
+      "id": "BR-V15",
+      "friendId": "adventure_friend_br",
+      "type": "Preference",
+      "scene": "Bruno sniffles into a tissue during a commercial about puppies.",
+      "lines": [
+        "I cry at everything now. Is that normal?"
+      ],
+      "question": "Crying at movies: proudly, or secretly?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Proudly",
+          "reply": [
+            "Proudly! Like me! Tears are big feelings!",
+            "Let them flow. No shame."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Secretly",
+          "reply": [
+            "Secretly. Sneaky tear wipe.",
+            "'Something in my eye.' Classic."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Proud criers, both of you! Tissue box couple!",
+          "I can picture it: {partner} and you sob together at every sad dog movie.",
+          "That's beautiful. Truly. I'm crying about it."
+        ],
+        "A:B": [
+          "You cry secretly. {partner} cries proudly.",
+          "They're openly sobbing. You're coughing suspiciously.",
+          "Join them. It feels so good. Big feelings, big tears."
+        ],
+        "B:A": [
+          "You cry proudly. {partner} cries secretly.",
+          "You'll be sobbing. They'll be 'fixing their eyelash.'",
+          "Hand them a tissue. Don't say anything. Love."
+        ],
+        "B:B": [
+          "Secret criers, both of you!",
+          "Pretty sure you and {partner} both pretend there's dust in the air.",
+          "Next time, cry together. Honestly. It's nice."
+        ]
+      }
+    },
+    {
+      "id": "BR-V16",
+      "friendId": "adventure_friend_br",
+      "type": "Guess",
+      "scene": "Bruno gives you a questioning look, arms half open.",
+      "lines": [
+        "How do you like your hugs? This matters to me deeply."
+      ],
+      "question": "How does your partner like to be hugged?",
+      "selfQuestion": "How do you like to be hugged?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Tight bear hug",
+          "reply": [
+            "Tight bear hug! My specialty!",
+            "Squeeze that love in."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Gentle and soft",
+          "reply": [
+            "Gentle and soft. So tender.",
+            "Like holding a cloud."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Long and swaying",
+          "reply": [
+            "Long and swaying. Slow dance hug!",
+            "Rock back and forth. Forever."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Tight bear hug, and {partner} knew it!",
+          "They squeeze you like they mean it.",
+          "Professional hugger recognizes professional hugger."
+        ],
+        "A:B": [
+          "Gentle for you. {partner} guessed bear hug.",
+          "They're squeezing too hard. Lovingly too hard.",
+          "Tell them: soft like a cloud. They'll adjust."
+        ],
+        "A:C": [
+          "Long and swaying for you. {partner} guessed bear hug.",
+          "They squeeze and let go. You want to rock forever.",
+          "Hold on longer. They'll get the hint."
+        ],
+        "B:A": [
+          "Bear hug for you. {partner} guessed gentle.",
+          "They're holding back. You want the full squeeze.",
+          "Tell them: 'Squeeze harder.' Best instruction ever."
+        ],
+        "B:B": [
+          "Gentle and soft, and {partner} knew it!",
+          "They hold you like something precious. Because you are.",
+          "I'm tearing up. Of course I am."
+        ],
+        "B:C": [
+          "Long and swaying for you. {partner} guessed gentle.",
+          "They're soft but quick. You want slow.",
+          "Sway them next time. They'll love it."
+        ],
+        "C:A": [
+          "Bear hug for you. {partner} guessed long and swaying.",
+          "They're swaying. You want squeezing.",
+          "Squeeze AND sway. The ultimate hug."
+        ],
+        "C:B": [
+          "Gentle for you. {partner} guessed long and swaying.",
+          "Close! Soft and slow. Almost perfect.",
+          "Gentle sway. That's a dreamy hug."
+        ],
+        "C:C": [
+          "Long and swaying, and {partner} knew it!",
+          "They sway with you like a slow dance in the kitchen.",
+          "Hug with music. Never stop."
+        ]
+      }
+    },
+    {
+      "id": "BR-V17",
+      "friendId": "adventure_friend_br",
+      "type": "Guess",
+      "scene": "Bruno sits beside you with a soft rumble, offering a cookie.",
+      "lines": [
+        "Sad days happen. What helps?"
+      ],
+      "question": "When your partner is sad, what helps most?",
+      "selfQuestion": "When you're sad, what helps most?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "A hug, no words",
+          "reply": [
+            "A hug, no words. Just being there.",
+            "Sometimes that's everything."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Their favorite snack",
+          "reply": [
+            "Favorite snack. Comfort food heals.",
+            "Cookies fix hearts. Science. Probably."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "A wordless hug, and {partner} knew it!",
+          "They just hold you. No questions. No fixes.",
+          "That's the most loving thing. I'm crying."
+        ],
+        "A:B": [
+          "A snack helps you. {partner} guessed a hug.",
+          "They're opening their arms. You're opening the pantry.",
+          "Hug them while eating. Efficient comfort."
+        ],
+        "B:A": [
+          "A hug helps you. {partner} guessed snacks.",
+          "They're bringing cookies. You need arms.",
+          "Take the cookie. Then ask for the hug. Both work."
+        ],
+        "B:B": [
+          "Favorite snack, and {partner} knew it!",
+          "They show up with your comfort food before you even ask.",
+          "Snack love is real love."
+        ]
+      }
+    },
+    {
+      "id": "BR-V18",
+      "friendId": "adventure_friend_br",
+      "type": "Guess",
+      "scene": "Bruno opens a drawer full of tiny jars, buttons, and spoons.",
+      "lines": [
+        "My collection. Clover calls it 'the bear hoard.'"
+      ],
+      "question": "What does your partner secretly hoard?",
+      "selfQuestion": "What do you secretly hoard?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Cute mugs",
+          "reply": [
+            "Cute mugs! A cabinet full!",
+            "One for every mood."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Snacks in hidden places",
+          "reply": [
+            "Hidden snacks! A secret stash!",
+            "In coat pockets. In drawers. Everywhere."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Cute mugs, and {partner} knew it!",
+          "They've seen the overflowing cabinet.",
+          "Buy them one more. They'll pretend they don't need it."
+        ],
+        "A:B": [
+          "You hoard snacks. {partner} guessed mugs.",
+          "They don't know about the secret chocolate drawer.",
+          "Tell them. Or don't. Snack secrets are sacred."
+        ],
+        "B:A": [
+          "You hoard mugs. {partner} guessed snacks.",
+          "They're looking for food. Your cabinet is just mugs.",
+          "Hide snacks in the mugs. Two hoards, one shelf."
+        ],
+        "B:B": [
+          "Hidden snacks, and {partner} knew it!",
+          "They've found the chips behind the cereal.",
+          "Share the stash. Or find a better hiding spot."
+        ]
+      }
+    },
+    {
+      "id": "BR-V19",
+      "friendId": "adventure_friend_br",
+      "type": "Guess",
+      "scene": "Bruno practices rocking a tiny teddy bear, very carefully.",
+      "lines": [
+        "I keep imagining what kind of parent I'll be. You two?"
+      ],
+      "question": "As a parent (or pet parent), what would your partner be like?",
+      "selfQuestion": "As a parent (or pet parent), what would you be like?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "The fun one",
+          "reply": [
+            "The fun one! Pillow forts! Ice cream for dinner!",
+            "Every day is an adventure."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "The worrier who packs everything",
+          "reply": [
+            "The worrier! Snacks, band-aids, sunscreen!",
+            "Ready for anything. Like me."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "The fun one, and {partner} knew it!",
+          "They know you'll be building blanket forts every weekend.",
+          "Bring me. I'll bring honey."
+        ],
+        "A:B": [
+          "You'd be the worrier. {partner} guessed the fun one.",
+          "They imagine you jumping in puddles. You'd be holding umbrellas.",
+          "That's okay. Worry is love too. I know."
+        ],
+        "B:A": [
+          "You'd be the fun one. {partner} guessed the worrier.",
+          "They think you'd pack everything. You'd pack only fun.",
+          "They'll handle the band-aids. You handle the giggles."
+        ],
+        "B:B": [
+          "The worrier, and {partner} knew it!",
+          "They know you'll pack three backup snacks for a ten-minute walk.",
+          "Same. Clover laughs at me. Lovingly."
+        ]
+      }
+    },
+    {
+      "id": "BR-V20",
+      "friendId": "adventure_friend_br",
+      "type": "Guess",
+      "scene": "Bruno wipes a happy tear just thinking about good news.",
+      "lines": [
+        "Big news reactions! Mine involves lots of tears."
+      ],
+      "question": "When your partner gets big news, how do they react?",
+      "selfQuestion": "When you get big news, how do you react?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Happy-cries immediately",
+          "reply": [
+            "Happy-cries! Like me!",
+            "Tears of joy. The best kind."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Goes quiet, then screams",
+          "reply": [
+            "Quiet, then scream! Dramatic!",
+            "The delay is the best part."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Happy tears, and {partner} knew it!",
+          "They had the tissues ready before you even opened the letter.",
+          "Crying buddies forever."
+        ],
+        "A:B": [
+          "You go quiet then scream. {partner} expected tears.",
+          "They have tissues. You have volume.",
+          "Scream into their shoulder. Then they can cry."
+        ],
+        "B:A": [
+          "You happy-cry. {partner} expected quiet then screaming.",
+          "They're bracing for a scream. You're sobbing happily.",
+          "Both are big feelings. Both are beautiful."
+        ],
+        "B:B": [
+          "Quiet then scream, and {partner} knew it!",
+          "They watch your face freeze, then cover their ears.",
+          "Love the drama. Honestly."
+        ]
+      }
+    }
+  ]
+}

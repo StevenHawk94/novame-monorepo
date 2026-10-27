@@ -5,7 +5,8 @@
  * screen (pointerEvents none — decoration never blocks taps).
  */
 import { useEffect, useMemo } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import Animated, {
   Easing,
   useAnimatedStyle,

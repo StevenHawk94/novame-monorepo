@@ -25,12 +25,15 @@ function load(file, imports = {}) {
 }
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const { ApiError } = load('packages/api-client/src/error.ts');
-function mobileHarness(post) {
+function mobileHarness(post, lifecycle = { sessionEpoch: () => 1 }) {
   return load('apps/mobile/src/lib/reflect-api.ts', {
     '@novame/api-client': { ApiError },
     'expo-crypto': { randomUUID: () => 'same-client-key' },
     './api': { apiClient: { post } },
+    './coin-command-outbox': { submitCoinOperation: operation => post(operation.path,operation.payload) },
     './cosmetics-api': { confirmCloverAward() {} },
+    './session-lifecycle': lifecycle,
+    './coin-reward-store': { beginCoinReward: () => ({}), dailyCoinRewardKey: () => null, settleCoinReward() {}, failCoinReward() {} },
     './reflect-settlement-outbox': { beginReflectPreparation() {}, endReflectPreparation() {}, holdReflectSettlement() {} },
     '../shared/storage/keys': { kReflectShareDefaults: { name: 'share' }, kReflectState: { name: 'state' } },
     './storage': { storage: { getString: () => undefined, set() {} } },
@@ -38,11 +41,10 @@ function mobileHarness(post) {
   });
 }
 const legacyChoices = require('../packages/engine/src/items/tap-your-day-v1.json');
-const catalog = load('packages/engine/src/items/tap-your-day.ts', { './tap-your-day-v1.json': legacyChoices });
+const catalog = load('packages/engine/src/items/tap-your-day.ts', { './tap-your-day-v2.json': require('../packages/engine/src/items/tap-your-day-v2.json'), './tap-your-day-v4.json': require('../packages/engine/src/items/tap-your-day-v4.json'), './tap-your-day-local.json': require('../packages/engine/src/items/tap-your-day-local.json'), './tap-your-day-v1.json': legacyChoices });
 const customCatalog = load('packages/engine/src/items/custom-tap-items.ts');
 const personItems = load('packages/engine/src/items/tap-person-items.ts').TAP_PERSON_ITEMS;
-const rawDictionary = require('../packages/engine/src/items/dictionary.json');
-const dictionary = load('packages/engine/src/items/dictionary.ts', { './dictionary.json': rawDictionary, './tap-person-items': { TAP_PERSON_ITEMS: personItems } }).ITEM_DICTIONARY;
+const dictionary = { items: { ...require('../packages/engine/src/items/display-catalog.json'), ...require('../packages/engine/src/items/tap-your-day-display.json'), ...personItems } };
 const picks = catalog.TAP_YOUR_DAY_CHOICES.map(({ itemId }) => ({ itemId }));
 const draftInput = (body = '') => ({ mode: 'prompt', selectionVersion: catalog.TAP_YOUR_DAY_VERSION, selectedItems: picks.slice(0, catalog.MAX_TAP_YOUR_DAY_SELECTIONS), body });
 function aiHarness(result = { items: {}, bunnyText: null }) {
@@ -62,9 +64,8 @@ function aiHarness(result = { items: {}, bunnyText: null }) {
   });
   const draft = load('apps/api/src/lib/reflect-draft.js', {
     '@supabase/supabase-js': { createClient() { throw new Error('Live DB access forbidden'); } },
-    '@novame/engine': { ...catalog, ...customCatalog, matchItems: () => [{ itemId: 'memory.0002_coffee', displayName: 'Coffee', sourceExcerpt: 'Made coffee.' }] },
+    '@novame/engine': { ...catalog, ...customCatalog, ITEM_DISPLAY_CATALOG: dictionary.items, matchItems: () => [{ itemId: 'memory.0002_coffee', displayName: 'Coffee', sourceExcerpt: 'Made coffee.' }] },
     '@/lib/remote-items': { getMergedDictionary: async () => dictionary },
-    '@/lib/item-rule-store': { dictionaryForRevision: async () => dictionary },
     '@/lib/reflect-ai': ai,
     '@/lib/connection-insight-v8': load('apps/api/src/lib/connection-insight-v8.js', {
       '../data/connection-insight-v8.json': require('../apps/api/src/data/connection-insight-v8.json'),
@@ -74,6 +75,29 @@ function aiHarness(result = { items: {}, bunnyText: null }) {
   return { ai, draft, calls };
 }
 const response = { json: (body, options = {}) => ({ status: options.status || 200, body }) };
+test('prepare drops success and quota errors returned after the account epoch changes', async () => {
+  for (const fail of [false, true]) {
+    let epoch = 1;
+    const mobile = mobileHarness(async () => {
+      epoch++;
+      if (fail) throw new ApiError(409, { error: 'daily_limit_reached' });
+      return { success: true, draftId: 'old-account-draft', reflectId: 'old-record' };
+    }, { sessionEpoch: () => epoch });
+    assert.deepEqual(plain(await mobile.prepareReflect({ promptId: 9, body: 'Private day', idempotencyKey: 'retry-key' })), { ok: false, error: 'network' });
+  }
+});
+test('modern text-only journals never read the icon dictionary or run keyword matching', async () => {
+  const forbidden = () => { throw Error('Text-only record accessed legacy matching'); };
+  const draft = load('apps/api/src/lib/reflect-draft.js', {
+    '@supabase/supabase-js': {}, '@novame/engine': { ...catalog, ...customCatalog, matchItems: forbidden },
+    '@/lib/remote-items': { getMergedDictionary: forbidden }, '@/lib/reflect-ai': {},
+    '@/lib/connection-insight-v8': {},
+  });
+  const result = await draft.resolveDraftInput({}, { mode: 'typing', body: '  Did laundry and made coffee.  ' }, { recordOnly: true });
+  assert.deepEqual(plain(result), { mode: 'typing', body: 'Did laundry and made coffee.', matches: [], removedMatches: [] });
+  assert.equal((await draft.resolveDraftInput({}, { body: '' }, { recordOnly: true })).error, 'empty');
+  assert.equal((await draft.resolveDraftInput({}, { body: 'a'.repeat(5001) }, { recordOnly: true })).error, 'too_long');
+});
 const request = (body) => ({ headers: new Headers(), json: async () => body });
 function routeImports(db, draft, ai) {
   const settlement = load('apps/api/src/lib/reflect-settlement.js', {
@@ -91,6 +115,7 @@ function routeImports(db, draft, ai) {
     '@/lib/reflect-settlement': settlement,
     '@/lib/user-local-date': load('apps/api/src/lib/user-local-date.js'),
     '@/lib/app-major-update': { majorUpdateEnabled: async () => false },
+    '@/lib/burrow-reward-wallet.mjs': { withRewardWallet: async (_, __, result) => result },
     '@/lib/reflect-analysis-jobs': { enqueueReflectAnalysisJob: async () => false, processReflectAnalysisJobs: async () => {} },
     '@/lib/push-notifications': { enqueuePartnerReflectNotification: async () => false, drainPushNotificationOutbox: async () => {} },
   };
@@ -150,14 +175,12 @@ function dbHarness({ tier = 'plus', consent = true, existing = null, storedDraft
   return { db, rpcCalls, inserted: () => inserted };
 }
 
-test('all 131 choices reference registered bundled WebP art', () => {
-  assert.equal(catalog.TAP_YOUR_DAY_CHOICES.length, 131);
-  assert.equal(new Set(picks.map((pick) => pick.itemId)).size, 131);
+test('all 134 choices reference registered bundled WebP art', () => {
+  assert.equal(catalog.TAP_YOUR_DAY_CHOICES.length, 134);
+  assert.equal(new Set(picks.map((pick) => pick.itemId)).size, 134);
   for (const choice of catalog.TAP_YOUR_DAY_CHOICES) {
     assert.ok(dictionary.items[choice.itemId], choice.label);
-    const art = fs.readFileSync(choice.itemId.startsWith('tap.person.')
-      ? path.join(root, 'apps/mobile/assets/items/tap-person', choice.itemId.slice('tap.person.'.length) + '.webp')
-      : path.join(root, 'apps/mobile/assets/items/each', choice.itemId + '.webp'));
+    const art = fs.readFileSync(require('./tap-day-test-data.cjs').assetFor(choice.itemId));
     assert.equal(art.subarray(0, 4).toString(), 'RIFF');
     assert.equal(art.subarray(8, 12).toString(), 'WEBP');
   }
@@ -169,7 +192,7 @@ test('all choices survive resolution, including the 30 feelings and last two pic
     const resolved = await draft.resolveDraftInput(null, { ...draftInput('Happy Day'), selectedItems: picks.slice(i, i + catalog.MAX_TAP_YOUR_DAY_SELECTIONS) });
     assert.equal(resolved.error, undefined); matches.push(...resolved.matches);
   }
-  assert.equal(matches.length, 131);
+  assert.equal(matches.length, 134);
   assert.equal(matches.at(-1).displayName, 'Silly');
   assert.ok(matches.every((item) => item.sourceExcerpt === ''));
   assert.equal(matches.find((item) => item.itemId === 'tap.person.pets').selectionLabel, 'Pets');
@@ -233,12 +256,12 @@ test('labels are canonical, duplicate taps dedupe, an empty selection cannot sub
   assert.equal(resolved.matches[0].selectionLabel, 'At Home');
   assert.equal((await draft.resolveDraftInput(null, { ...draftInput(), selectedItems: [] })).error, 'empty');
 });
-test('unversioned guided selections use the transport ceiling; Write Freely matching is unchanged', async () => {
+test('unversioned manual selections retain IDs; Write Freely never infers icons', async () => {
   const { draft } = aiHarness();
-  assert.equal((await draft.resolveDraftInput(null, { ...draftInput(), selectedItems: picks, selectionVersion: undefined })).matches.length, 131);
+  assert.equal((await draft.resolveDraftInput(null, { ...draftInput(), selectedItems: picks, selectionVersion: undefined })).matches.length, 134);
   const typing = await draft.resolveDraftInput(null, { mode: 'typing', body: 'Made coffee.' });
-  assert.equal(typing.matches[0].sourceExcerpt, 'Made coffee.');
-  assert.equal(typing.matches[0].selectionLabel, undefined);
+  assert.deepEqual(plain(typing.matches), []);
+  assert.equal(typing.body, 'Made coffee.');
 });
 test('blank optional note never calls AI or creates fallback memories', async () => {
   const { draft, calls } = aiHarness();
@@ -330,7 +353,7 @@ test('enrichment after upgrade preserves generated items and only targets reques
   assert.equal(calls.length, 1);
   assert.deepEqual(JSON.parse(calls[0].userText).items.map((item) => item.id), [second]);
 });
-test('finalize sends all 131 memories AND sharing choices to the atomic RPC', async () => {
+test('finalize sends all 134 memories AND sharing choices to the atomic RPC', async () => {
   const { ai, draft } = aiHarness();
   const { db, rpcCalls } = dbHarness({ storedDraft: { body: '', local_date: '2026-08-27', mode: 'prompt' } });
   const route = load('apps/api/src/app/api/reflect/finalize/route.js', routeImports(db, draft, ai));
@@ -341,13 +364,13 @@ test('finalize sends all 131 memories AND sharing choices to the atomic RPC', as
   }));
   assert.equal(result.status, 200);
   const final = rpcCalls.find((call) => call.name === 'finalize_reflect_draft').args;
-  assert.equal(final.p_memories.length, 131);
-  assert.equal(final.p_visibility.length, 131);
+  assert.equal(final.p_memories.length, 134);
+  assert.equal(final.p_visibility.length, 134);
   assert.equal(final.p_visibility.at(-1).visible, false);
   assert.equal(final.p_memories.at(-1).itemId, picks.at(-1).itemId);
   assert.ok(rpcCalls.some((call) => call.name === 'broadcast_reflect_feed_change'));
 });
-test('My Logs exposes mode and selection label; editing all 131 retains last items', async () => {
+test('My Logs exposes mode and selection label; editing all 134 retains last items', async () => {
   const { ai, draft } = aiHarness();
   const matched = [{ item_id: 'tap.person.pets', match_label: 'Pets', source_excerpt: '', visible_to_paired: false, items: { display_name: 'Dog' } }];
   const { db, rpcCalls } = dbHarness({ matched });
@@ -358,12 +381,12 @@ test('My Logs exposes mode and selection label; editing all 131 retains last ite
   assert.equal(get.body.items[0].visible, false);
   const post = await route.POST(request({ userId: 'writer', reflectId: 'reflect-1', edits: picks.map(({ itemId }) => ({ itemId, text: 'Edited.' })) }));
   assert.equal(post.status, 200);
-  assert.equal(rpcCalls.find((call) => call.name === 'edit_durable_reflect_memories').args.p_edits.length, 131);
+  assert.equal(rpcCalls.find((call) => call.name === 'edit_durable_reflect_memories').args.p_edits.length, 134);
 });
 
 test('v2 has the exact requested food grouping, labels and 16 representative cuisines', () => {
-  assert.deepEqual(plain(catalog.TAP_YOUR_DAY_QUESTIONS.map(q => q.groups.reduce((n,g) => n + g.choices.length, 0))), [49,47,5,30]);
-  const groups = catalog.TAP_YOUR_DAY_QUESTIONS[1].groups;
+  assert.deepEqual(plain(require('../packages/engine/src/items/tap-your-day-v2.json').map(q => q.groups.reduce((n,g) => n + g.choices.length, 0))), [49,47,5,30]);
+  const groups = require('../packages/engine/src/items/tap-your-day-v2.json')[1].groups;
   assert.deepEqual(plain(groups.map(g=>g.title)), ['MEALS','CUISINE','SNACKS','DRINKS']);
   assert.deepEqual(plain(groups[0].choices.map(c=>c.label)), ['Breakfast','Noodles','Pizza','Pasta','Sandwich','Wrap','Burger','Taco','Dumplings','Sushi','Salad','Rice','Soup','Curry','Meat','Seafood','Vegetables','Fast Food']);
   assert.deepEqual(plain(groups[2].choices.map(c=>c.label)), ['Fruit','Snack','Pastry','Dessert']);
@@ -391,13 +414,13 @@ test('old v1 clients keep all 102 original IDs and meanings, including the retir
   assert.equal((await draft.resolveDraftInput(null,{...oldInput,selectedItems:[...oldInput.selectedItems,oldInput.selectedItems[0]]})).error,'too_many_items');
   assert.equal((await draft.resolveDraftInput(null,{...oldInput,selectedItems:[{itemId:'tap.person.pets'}]})).error,'invalid_selection_item');
 });
-test('new people are selection-only; old item definitions and keyword matching remain unchanged', () => {
-  assert.deepEqual(plain(dictionary.synonyms), rawDictionary.synonyms);
-  assert.deepEqual(plain(dictionary.exclusions), rawDictionary.exclusions);
-  for(const [id,item] of Object.entries(rawDictionary.items)) assert.deepEqual(plain(dictionary.items[id]),item);
-  assert.equal(Object.keys(dictionary.items).length, 5444);
+test('manual people and every historical display remain without matching metadata', () => {
+  assert.equal(dictionary.synonyms, undefined);
+  assert.equal(dictionary.exclusions, undefined);
+  for(const [id,item] of Object.entries(require('../packages/engine/src/items/display-catalog.json'))) assert.deepEqual(plain(dictionary.items[id]),item);
+  assert.equal(Object.keys(dictionary.items).length, 5651);
   for(const id of Object.keys(personItems)) {
-    assert.ok(!Object.values(dictionary.synonyms).includes(id));
+    assert.equal(dictionary.items[id].keywords, undefined);
     assert.equal(catalog.tapYourDayChoice(id).kind,'person');
     const migration=fs.readFileSync(path.join(root,'supabase/migrations/20260827000067_tap_person_items.sql'),'utf8');
     assert.ok(migration.includes("'"+id+"'"));
@@ -411,17 +434,13 @@ test('cuisine copy uses the selected category, not the representative dish as a 
   assert.equal(JSON.parse(calls[0].userText).items[0].name,'Chinese Food');
   assert.match(calls[0].systemInstruction,/Chinese Food.*Dim Sum/);
 });
-test('cropped people retain transparent margins, centered bounds and distinct image registrations', async () => {
+test('people use the five updated supplied images without extra cropping or scaling', async () => {
   const sharp=require(require.resolve('sharp',{paths:[path.dirname(require.resolve('next',{paths:[path.join(root,'apps/api')]}))]}));
   const imageMap=fs.readFileSync(path.join(root,'apps/mobile/src/lib/tap-person-images.ts'),'utf8');
   for(const id of Object.keys(personItems)) {
     const name=id.slice('tap.person.'.length);
-    assert.ok(imageMap.includes("'"+id+"': require('../../assets/items/tap-person/"+name+".webp')"));
-    const {data,info}=await sharp(path.join(root,'apps/mobile/assets/items/tap-person',name+'.webp')).ensureAlpha().raw().toBuffer({resolveWithObject:true});
-    assert.equal(info.width,256);assert.equal(info.height,256);
-    let left=256,right=-1,top=256,bottom=-1;
-    for(let y=0;y<256;y++)for(let x=0;x<256;x++)if(data[(y*256+x)*4+3]>0){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
-    assert.ok(left>=16 && top>=16 && right<=239 && bottom<=239, name+' has clear margins');
-    assert.ok(Math.abs((left+right)/2-127.5)<=1 && Math.abs((top+bottom)/2-127.5)<=1, name+' is centered');
+    assert.ok(imageMap.includes("'"+id+"': require('../../assets/Tap-your-day-Icons/"+name+".webp')"));
+    const info=await sharp(require('./tap-day-test-data.cjs').assetFor(id)).metadata();
+    assert.ok(info.width>0 && info.height>0);
   }
 });

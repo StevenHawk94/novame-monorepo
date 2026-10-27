@@ -6,6 +6,7 @@ import {
   fetchConnectionHistory,
   fetchInsights,
   fetchPairing,
+  invalidatePairingCache,
   getCachedConnectionHistory,
   getCachedPairing,
   notifyRemoteSharedBoxChanged,
@@ -19,7 +20,12 @@ import { supabase } from './supabase';
 import { invalidateConnectionDashboard } from './connection-analysis-cache';
 import { fetchBags } from './bags-api';
 import { getCachedSubscriptionTier } from './subscription';
-import { requestPartnerReflectPaywall } from './partner-reflect-paywall';
+import { invalidateBurrowPair } from './burrow-store';
+
+// This client no longer mounts legacy feeds/Connection dashboards. Cached
+// rollout settings must not revive those reads; core pairing stays live.
+const legacyDataEnabled = () => false;
+const legacyFeedNeeded = () => legacyDataEnabled() && listeners.size > 0;
 
 export type PairingRealtimeSnapshot = {
   pairing: PairingStatus;
@@ -103,6 +109,7 @@ async function reconcileConnection(
   expectedGeneration: number,
   options?: { knownChanged?: boolean },
 ): Promise<void> {
+  if (activeUserId !== userId || generation !== expectedGeneration || !legacyDataEnabled() || connectionListeners.size === 0) return;
   if (connectionReconcileInFlight) {
     if (options?.knownChanged) connectionReconcileQueuedChanged = true;
     return connectionReconcileInFlight;
@@ -147,6 +154,7 @@ async function reconcileConnection(
 }
 
 async function reconcileFriendships(userId: string, expectedGeneration: number): Promise<void> {
+  if (activeUserId !== userId || generation !== expectedGeneration) return;
   if (friendshipReconcileInFlight) {
     // Coalesce any number of overlapping invalidations into exactly one
     // follow-up read after the older snapshot settles.
@@ -200,6 +208,7 @@ function scheduleSingleReconnect(userId: string, expectedGeneration: number): vo
 }
 
 async function reconcile(userId: string, expectedGeneration: number): Promise<void> {
+  if (activeUserId !== userId || generation !== expectedGeneration) return;
   if (reconcileInFlight) {
     reconcileQueued = 'pairing';
     return reconcileInFlight;
@@ -214,13 +223,14 @@ async function reconcile(userId: string, expectedGeneration: number): Promise<vo
         fetchFriends({ force: true }),
       ]);
       const partnerId = pairing.paired ? pairing.partner?.userId : undefined;
-      const feed = pairing.paired ? await fetchFriendFeed(undefined, { force: true }) : [];
+      if (activeUserId !== userId || generation !== expectedGeneration) return;
+      const feed = pairing.paired && legacyFeedNeeded() ? await fetchFriendFeed(undefined, { force: true }) : [];
       if (activeUserId !== userId || generation !== expectedGeneration) return;
       publish({ pairing, friends, feed });
       // The first visible Paired/Connection caches must not wait for the
       // heavier grouped Memories endpoint. Reconcile it independently, then
       // notify the already-preloaded Memories tab once its cache is ready.
-      if (partnerId) void fetchBags('their', partnerId).then(() => {
+      if (partnerId && legacyFeedNeeded()) void fetchBags('their', partnerId).then(() => {
         if (activeUserId === userId && generation === expectedGeneration) {
           publish({ pairing, friends, feed });
         }
@@ -249,6 +259,7 @@ async function reconcile(userId: string, expectedGeneration: number): Promise<vo
 }
 
 async function reconcileReflectFeed(userId: string, expectedGeneration: number): Promise<void> {
+  if (activeUserId !== userId || generation !== expectedGeneration || !legacyFeedNeeded()) return;
   if (reconcileInFlight) {
     // A reflection invalidation is more specific than a pairing resume. Do not
     // lose it when foreground reconciliation is already in flight.
@@ -265,7 +276,7 @@ async function reconcileReflectFeed(userId: string, expectedGeneration: number):
       ]);
       if (activeUserId !== userId || generation !== expectedGeneration) return;
       publish({ pairing, friends, feed });
-      if (partnerId) void fetchBags('their', partnerId).then(() => {
+      if (partnerId && legacyFeedNeeded()) void fetchBags('their', partnerId).then(() => {
         if (activeUserId === userId && generation === expectedGeneration) {
           publish({ pairing, friends, feed });
         }
@@ -307,6 +318,7 @@ export function subscribeGoodVibeRealtime(listener: GoodVibeListener): () => voi
 
 export function subscribeConnectionRealtime(listener: ConnectionListener): () => void {
   connectionListeners.add(listener);
+  if (activeUserId) void reconcileConnection(activeUserId, generation);
   return () => connectionListeners.delete(listener);
 }
 
@@ -346,6 +358,9 @@ export async function startPairingRealtime(
     channel = supabase
       .channel(`pairing:${userId}`, { config: { private: true } })
       .on('broadcast', { event: 'pairing_changed' }, () => {
+        if (activeUserId !== userId || generation !== subscribedGeneration) return;
+        invalidateBurrowPair({retainSolo:true});
+        invalidatePairingCache();
         void reconcile(userId, subscribedGeneration);
       })
       .on('broadcast', { event: 'friendship_invited' }, () => {
@@ -358,8 +373,7 @@ export async function startPairingRealtime(
         publishGoodVibes();
       })
       .on('broadcast', { event: 'reflect_feed_changed' }, (message) => {
-        const reflectId = message.payload?.reflect_id;
-        if (typeof reflectId === 'string' && reflectId) requestPartnerReflectPaywall(reflectId);
+        if (activeUserId !== userId || generation !== subscribedGeneration || !legacyDataEnabled()) return;
         // One tiny invalidation per finalized/edited reflection. No journal or
         // memory text is carried over Realtime and no polling loop is added.
         void reconcileReflectFeed(userId, subscribedGeneration);

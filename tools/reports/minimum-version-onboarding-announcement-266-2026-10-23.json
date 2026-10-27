@@ -1,0 +1,46 @@
+{
+  "migration": 266,
+  "migrationHash": "9c15484eeac1acbc8a1b5295d71df510",
+  "production": {
+    "api": "dpl_2oRHpYxv6LAmyNfpeTYFcKHbcLHB",
+    "admin": "dpl_7hhDqtsXmGvZSQtP5kPZbQtaeoaT",
+    "verifiedAt": "2026-10-23T15:22:26.158Z",
+    "sourceAndDomainAliasesVerified": true,
+    "existingPolicyAnnouncementsAndReadReceiptsUnchangedDuringMigration": true,
+    "policyWriterPrivileges": { "anon": false, "authenticated": false, "service_role": true },
+    "forceUpdateGet": { "status": 200, "active": false },
+    "unauthenticatedAdminPage": 307,
+    "unauthenticatedAnnouncementGet": 401
+  },
+  "behavior": {
+    "admin": "Active minimum version is prefilled and remains directly editable; Save changes atomically replaces policy, preserving history. Pause remains an explicit emergency operation.",
+    "saveFailure": "Previous active policy survives transaction rollback; repeated identical saves do not create duplicate revisions.",
+    "firstOnboardingHome": "Completion arms a content-free device handoff flag. Only the first actual Home mounts the query/cover, after optional paid account linking and final identity resolution.",
+    "announcementPresentation": "Reserve overlay before first Home paint; prepare Home underneath; show ready unread announcement; acknowledge only dismissal or successful link opening.",
+    "timeoutOrFailure": "Bounded 2.5-second check; release Home and other popups; never inject late content.",
+    "duplicatePrevention": "Compatible cold-start checks consume restored first-Home flags; required updates leave flags and announcement read state untouched. Ordinary Home returns do not recheck."
+  },
+  "validation": {
+    "testsPassed": 109,
+    "testsFailed": 0,
+    "testsLog": "/private/tmp/version266-verified-tests.log",
+    "mobileTypeCheck": "passed",
+    "adminTypeCheck": "passed",
+    "apiAndAdminProductionBuilds": "passed",
+    "iosExport": "/private/tmp/burrow-launch266-ios",
+    "iosBundle": "index-7e690ba975c982c0b501057d994e22ad.hbc",
+    "androidExport": "/private/tmp/burrow-launch266-android",
+    "androidBundle": "index-9d3e3e41b938b7892ae15821741e01fc.hbc",
+    "nativeDeviceVisualQA": "not performed"
+  },
+  "release": {
+    "auditDirectory": "/private/tmp/burrow-launch266-release.yJQPZw",
+    "apiSnapshotFiles": 275,
+    "adminSnapshotFiles": 929,
+    "rootIgnoreRulesApplied": true,
+    "mobileAssetsOrCredentialsUploaded": false,
+    "publishedAnyAnnouncementOrChangedMinimumVersion": false,
+    "easBuildOrSubmission": false,
+    "firstHomeAnnouncementRequiresNextAppRelease": true
+  }
+}

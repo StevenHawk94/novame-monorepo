@@ -1,0 +1,42 @@
+{
+  "status": "completed",
+  "inspectedActivePlushies": 33,
+  "plushiesWithFaceRectangleLeak": 16,
+  "cause": "Rectangular photo/cream-placeholder underlays overlapped transparent exterior gaps beside hair and neck; not an opaque white background in the source costume",
+  "assetChanges": {
+    "imageFilesModified": 0,
+    "originalSha256Verified": 33,
+    "rgbAndAlphaPreserved": true,
+    "aiRepaintingUsed": false,
+    "normalWhiteClothingAndHighlightsPreserved": true
+  },
+  "implementation": {
+    "geometry": "Code-native paths from the enclosed transparent face component; a 2-pixel under-edge allowance may enter costume pixels but never another transparent component",
+    "native": "Existing photo/placeholder components are clipped as a whole; retain their private-file resolver, retry and cache behavior",
+    "skia": "Intersect face clipping during one-time texture composition; restore before drawing unchanged costume",
+    "surfaces": ["Home", "partner/static room", "interactive Plushie", "shop/collection portraits", "photo cropper", "photo preview"],
+    "noPerFramePixelAnalysis": true,
+    "noNewNativeDependencies": true,
+    "noApiOrDatabaseChanges": true,
+    "requiresClientRelease": true,
+    "easBuildOrSubmitStarted": false
+  },
+  "verification": {
+    "allExistingFaceOpeningPixelsRetained": true,
+    "exteriorTransparentPixelsPaintedByMask": 0,
+    "scopedTestsPassed": 177,
+    "scopedTestsFailed": 0,
+    "mobileTypecheck": "passed",
+    "iosExport": "passed",
+    "iosBundle": "index-bad88fcaa7748d45cfa2fd387ab8d4ef.hbc",
+    "nativeDeviceVisualInspection": "not performed",
+    "proof": "tools/reports/plushie-face-mask-before-after-2026-10-23.png",
+    "extendedTests": {
+      "passed": 203,
+      "failed": 4,
+      "baselineReproduction": "All four fail with this turn's photo-preview JSX changes reverted in memory; workspace never reverted",
+      "legacyExpectationMismatches": ["Frame test expects direct saveRoomPhoto requests instead of existing local-first enqueueFramePhoto", "Three Shop gift tests expect old direct gift requests/success instead of existing durable purchase queue"],
+      "baselineLog": "/private/tmp/plushie-mask-baseline-tests.log"
+    }
+  }
+}

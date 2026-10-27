@@ -1,0 +1,68 @@
+{
+  "task": "Bundled Shop artwork refresh and unified catalog production publication",
+  "date": "2026-10-22",
+  "status": "completed",
+  "supersedes": "bundled-shop-catalog-259-2026-10-22.json",
+  "catalog": {
+    "release": "0f45295dcbb5fcd27b2dc86443933206ebe6d04b5bfbcfb22f4f4fbdc51eee72",
+    "previousRelease": "5e56af3342b2327d8fa033c0845c34e2a92624b03bef686245de8b6a121730f1",
+    "legacyRelease": "d7a0c135ed640eb565b0aad9433e75e76b5f7cb4463c68b06c5ca2d26add4fff",
+    "products": 555,
+    "active": 496,
+    "retired": 59,
+    "newProducts": 43,
+    "newProductPrice": 150,
+    "newProductPlusOnly": false,
+    "dresser": {"active": 30, "retainedIds": 20, "new": 10, "newlyRetired": 3},
+    "wallpaper": {"active": 42, "retainedIds": 9, "new": 33, "newlyRetired": 25},
+    "retainedProductIdOrOrdinalChanges": 0,
+    "newlyRetiredPurchasedArtworkArchived": 28,
+    "runtimeShopImageDownloadsAdded": false
+  },
+  "friendCollectibles": {
+    "friend": "adventure_friend_dc",
+    "category": "Mushroom Domes",
+    "categoryCode": "C11",
+    "updated": 32,
+    "uploadedBytes": 881422,
+    "immutableHashUrls": true,
+    "oldRemoteObjectsRetainedForCompatibilityAndRollback": true,
+    "giftIdsOwnershipDisplayAndDialogueUnchanged": true
+  },
+  "production": {
+    "migrations": [259, 260],
+    "catalogPublished": true,
+    "api": {"id": "dpl_ATeH2QeT8AyBUNoubsymdAtj79Lk", "status": "READY", "promoted": true, "sourceFilesVerified": 275},
+    "admin": {"id": "dpl_CU8k37BbXv5yFjwkbp9yZ1AQM3P9", "status": "READY", "promoted": true, "sourceFilesVerified": 928},
+    "sourceReceiptDifferences": 0,
+    "protectedBusinessRowsUnchangedWithinEachMigrationTransaction": true,
+    "existingAdminPricesPlusTradabilityAndPriceVersionsPreserved": true,
+    "all403ExistingFunctionOidsAndGrantsRetained": true,
+    "unrelatedExistingFunctionDefinitionsUnchanged": true,
+    "newProductInitialPricesVerifiedAgainstProduction": true,
+    "rollbackCatalogRegistered": true,
+    "rollbackSqlAndOriginalFunctionBackup": "/private/tmp/burrow-shop260-release.0Vg25T"
+  },
+  "verification": {
+    "catalogUnitTests": 10,
+    "targetedRegressionTests": 48,
+    "isolatedMigration259Assertions": 29,
+    "isolatedMigration260Checks": 41,
+    "deterministicCatalogCheck": "passed",
+    "friendCollectibleByteManifestMismatchCount": 0,
+    "mobileTypecheck": "passed",
+    "apiProductionBuild": "passed",
+    "adminProductionBuild": "passed",
+    "iosExport": "passed",
+    "apiProductionHealthHttpStatus": 200,
+    "apiUnauthenticatedBootstrapHttpStatus": 401,
+    "adminLoginHttpStatusViaAuthorizedVercelProtectionBypass": 200,
+    "adminUnauthenticatedPricingHttpStatusViaAuthorizedVercelProtectionBypass": 401,
+    "realUserClaimsPurchasesOrAccountWritesPerformed": false
+  },
+  "mobileRelease": {
+    "easBuildOrSubmitPerformed": false,
+    "newShopArtworkRequiresSupportingAppBundle": true,
+    "oldOrUnknownClientReleaseUsesFrozenLegacyCapabilityList": true
+  }
+}

@@ -17,6 +17,18 @@ interface AvatarUploadJob {
 }
 
 const inFlight = new Map<string, Promise<boolean>>();
+let cancelledGeneration = 0;
+/** A later Menu crop supersedes an unfinished onboarding crop. Network work
+ * may finish, but must never publish it or recreate the retired local job. */
+export function supersedeOnboardingAvatar(userId:string):Promise<unknown>{
+  const pending=readJob();
+  if(pending&&(!pending.userId||pending.userId===userId)){
+    cancelledGeneration++;
+    storage.remove(kOnboardingAvatarUpload.name);
+    void deleteOnboardingAvatar();
+  }
+  return inFlight.get(userId)??Promise.resolve();
+}
 const RETRY_DELAYS_MS = [5_000, 15_000, 60_000, 5 * 60_000] as const;
 
 function readJob(): AvatarUploadJob | null {
@@ -74,12 +86,15 @@ export function syncProfileAvatar(
   if (running) return running;
 
   const request = (async () => {
+    const generation=cancelledGeneration;
+    const cancelled=()=>generation!==cancelledGeneration;
     try {
       let current = readJob();
       if (!current || current.userId !== userId) return true;
 
       if (!current.remotePath || !current.uploadToken) {
         const ticket = await prepareProfileAvatarUpload(userId);
+        if(cancelled())return true;
         if (ticket.kind === 'error') throw new Error(ticket.message);
         current = {
           ...current,
@@ -97,12 +112,14 @@ export function syncProfileAvatar(
       const base64 = await FileSystem.readAsStringAsync(current.localUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
+      if(cancelled())return true;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .uploadToSignedUrl(remotePath, uploadToken, decode(base64), {
           cacheControl: '31536000',
           contentType: 'image/jpeg',
         });
+      if(cancelled())return true;
       if (uploadError && !/already exists|duplicate/i.test(uploadError.message)) {
         const latest = readJob();
         if (latest?.localUri === current.localUri && latest.userId === userId) {

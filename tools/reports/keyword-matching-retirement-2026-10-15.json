@@ -1,0 +1,142 @@
+{
+  "verifiedAt": "2026-10-16T02:55:44.242Z",
+  "scope": "Retire automatic keyword matching, keep manual selection and all historical data",
+  "migration": {
+    "version": 241,
+    "applied": true,
+    "functionsDisabled": 5,
+    "functionRoleChecks": 15,
+    "tablePrivilegeChecks": 90,
+    "historicalEvidenceUnchanged": [
+      {
+        "count": 757,
+        "hash": "a6004ab2f5a8c95fb12fb01c299e3da4",
+        "name": "item_keyword_rule_events"
+      },
+      {
+        "count": 37,
+        "hash": "8af3ab2ae62d0b4b0c4cfb13429e02d9",
+        "name": "item_learning_candidates"
+      },
+      {
+        "count": 48,
+        "hash": "c66f4140a42afb7be44bf48eeacf5f3a",
+        "name": "item_learning_decisions"
+      },
+      {
+        "count": 23,
+        "hash": "63dcf4b55c43ce7bc6fb01c1db287672",
+        "name": "item_learning_jobs"
+      },
+      {
+        "count": 48,
+        "hash": "4be2efb8c758e07a830c1fe5812e5f64",
+        "name": "item_learning_occurrences"
+      },
+      {
+        "count": 1,
+        "hash": "816b1fc82cffba284a08182761225e4c",
+        "name": "item_match_removals"
+      }
+    ]
+  },
+  "preserved": {
+    "manualChoices": 187,
+    "historicalBaseIconIds": 5439,
+    "personIds": 5,
+    "reflects": 230,
+    "itemMemories": 794,
+    "baselineHashes": [
+      {
+        "file": "packages/engine/src/items/display-catalog.json",
+        "hash": "6e2dfbeaab812719508780430d16546fd91184db8720392c3f9f45b23cadea8e"
+      },
+      {
+        "file": "packages/engine/src/items/tap-your-day-local.json",
+        "hash": "0f18e038a18cbdeb3372b86a57c88e2e665898986777a4e969d9821489312ec4"
+      },
+      {
+        "file": "apps/admin/src/generated/item-atlas.json",
+        "hash": "8abb7a89db31fd3fedeb3842648e2331208d7be2833ae0aa4610eb47bb976ecf"
+      }
+    ],
+    "catalogueHash": "7fdef5bca57876467335c57c510810f2"
+  },
+  "deployments": {
+    "api": {
+      "id": "dpl_541H3m5izXetzSHLmHsdkELkZiyL",
+      "url": "https://api.soulsayit.com",
+      "state": "READY",
+      "homeRegion": "pdx1",
+      "remainingCrons": 7,
+      "itemLearningCronRemoved": true
+    },
+    "admin": {
+      "id": "dpl_CECnXDJprwWLVkfR6cTrzaMDC1fW",
+      "url": "https://novame-monorepo-admin.vercel.app",
+      "state": "READY",
+      "anonymousDashboard": "redirect to login",
+      "anonymousPricingStatus": 401
+    }
+  },
+  "validation": {
+    "repositoryTests": {
+      "passed": 1544,
+      "failed": 0
+    },
+    "engineTests": 39,
+    "domainTests": 23,
+    "databaseIntegrationAssertions": 356,
+    "typeChecks": 5,
+    "apiBuild": true,
+    "adminBuild": true,
+    "mobileProductionBundles": {
+      "ios": {
+        "bytes": 9243736,
+        "assets": 1222
+      },
+      "android": {
+        "bytes": 9300439,
+        "assets": 1225
+      },
+      "legacyMatchingAssetAbsent": true
+    },
+    "androidEmulator": "Skipped as requested",
+    "online": {
+      "checks": [
+        "authenticated unpaired Home complete for both identities, including repeated reads",
+        "stable invite codes and both private realtime subscriptions authorized",
+        "foreign identity read rejected",
+        "pair: both private pairing notifications delivered",
+        "both Home snapshots paired with the same relationship generation",
+        "repeated and overlapping paired Home reads stay in the current relationship scope",
+        "Shop altered quote rejected before debit",
+        "Game altered quote rejected before unlock/debit",
+        "Plus access remains server-checked",
+        "invalid amount and invalid receipt rejected without payment-store requests",
+        "authenticated client cannot directly execute financial service RPC",
+        "rejected requests left wallet versions, ledgers, inventories and unlocks unchanged",
+        "unpair: both private pairing notifications delivered",
+        "Unpair clears both Home and Menu pairing states",
+        "repair: both private pairing notifications delivered",
+        "re-pair creates a fresh shared generation, not the former relationship scope",
+        "authenticated old rules endpoint is retired without loading rules",
+        "manual selection saves stable IDs and canonical names; text never creates automatic icons; fabricated IDs rejected",
+        "all Home/pairing/financial routes reject unauthenticated requests"
+      ],
+      "home": {
+        "samples": 24,
+        "medianMs": 1611.5,
+        "maxMs": 4869,
+        "allUnder5Seconds": true,
+        "allInPdx1": true
+      },
+      "realUserWrites": 0,
+      "successfulPurchases": 0,
+      "storeCalls": 0,
+      "qaAccountsCreated": 2,
+      "qaAccountsAndTestRecordsRemoved": true
+    }
+  },
+  "mobileRelease": "Source and production JS bundles verified; no mobile binary or OTA deployment was requested or performed"
+}

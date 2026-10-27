@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { cleanCustomTapItem, MAX_CUSTOM_TAP_ITEMS, type CustomTapItem } from '@novame/engine';
+import { localCustomTapItem, TAP_YOUR_DAY_OPTIONAL_CHOICES, type CustomTapItem } from '@novame/engine';
 import { storage } from './storage';
 import { supabase } from './supabase';
-import { kCustomTapItems } from '../shared/storage/keys';
-import { mergedItemDictionary } from './remote-items';
+import { kCustomTapItems, kLocalTapItems } from '../shared/storage/keys';
 
-const key = kCustomTapItems.keyFor;
+const key = kLocalTapItems.keyFor;
 function read(userId: string): CustomTapItem[] {
   try {
-    const values = JSON.parse(storage.getString(key(userId)) || '[]');
-    return Array.isArray(values) ? values.map(v => cleanCustomTapItem(v, mergedItemDictionary())).filter((v): v is CustomTapItem => !!v).slice(0, MAX_CUSTOM_TAP_ITEMS) : [];
+    // Import approved optional IDs without erasing legacy names/groups.
+    const values = JSON.parse(storage.getString(key(userId)) ?? storage.getString(kCustomTapItems.keyFor(userId)) ?? '[]');
+    return Array.isArray(values) ? [...new Map(values.map(localCustomTapItem).filter((v): v is CustomTapItem => !!v).map(v => [v.itemId, v])).values()] : [];
   } catch { return []; }
 }
 
@@ -27,19 +27,21 @@ export function useCustomTapItems() {
       setOwner(id || null);
       setItems(id ? read(id) : []);
     };
-    void supabase.auth.getSession().then(({ data }) => { if (!authChanged) apply(data.session?.user.id); });
+    void supabase.auth.getSession().then(({ data }) => { if (!authChanged) apply(data.session?.user.id); }).catch(() => {
+      if (!authChanged) apply(undefined);
+    });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { authChanged = true; apply(session?.user.id); });
     return () => { active = false; data.subscription.unsubscribe(); };
   }, []);
   const save = (item: CustomTapItem) => {
     if (!owner || owner !== currentOwner.current) throw new Error('Your account is still loading. Please try again.');
-    const clean = cleanCustomTapItem(item, mergedItemDictionary());
-    if (!clean) throw new Error('Please enter a name and choose an item.');
+    const clean = localCustomTapItem(item);
+    if (!clean) throw new Error('Please choose an available activity.');
     const prior = read(owner);
-    if (prior.length >= MAX_CUSTOM_TAP_ITEMS && !prior.some(v => v.itemId === item.itemId)) {
-      throw new Error(`You can keep up to ${MAX_CUSTOM_TAP_ITEMS} custom items.`);
+    if (prior.length >= TAP_YOUR_DAY_OPTIONAL_CHOICES.length && !prior.some(v => v.itemId === item.itemId)) {
+      throw new Error('All available activities have already been added.');
     }
-    // One selection per icon: editing its name/group cannot create duplicate memories.
+    // One canonical selection per icon; repeated Add cannot create duplicates.
     const next = [...prior.filter(v => v.itemId !== clean.itemId), clean];
     storage.set(key(owner), JSON.stringify(next));
     setItems(next);

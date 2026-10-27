@@ -1,5 +1,7 @@
 import { ApiClient } from '@novame/api-client';
 import { supabase } from './supabase';
+import {BUNDLED_SHOP_RELEASE} from './generated/shop-catalog-version';
+import {sessionEpoch,sessionUserId} from './session-lifecycle';
 
 /**
  * ApiClient singleton for @novame/mobile.
@@ -25,8 +27,15 @@ if (!apiBaseUrl) {
 
 export const apiClient = new ApiClient({
   baseUrl: apiBaseUrl,
+  headers: {'X-Burrow-Catalog':BUNDLED_SHOP_RELEASE,'X-Burrow-Rooms':'personal-v2','X-Burrow-Journal':'2','X-Burrow-Economy':'1','X-Burrow-Bunny':'1','X-Burrow-Adventure':'5'},
+  getRequestContext:()=>({key:`${sessionEpoch()}:${sessionUserId()??''}`,actorId:sessionUserId()??undefined}),
   getToken: async () => {
-    const { data } = await supabase.auth.getSession();
+    const owner=sessionUserId(),epoch=sessionEpoch();
+    // getSession already refreshes expiring credentials. A failed refresh is
+    // not a signed-out session: stop here instead of sending a tokenless request.
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw new Error('auth_refresh_failed');
+    if(epoch!==sessionEpoch()||(owner&&data.session?.user.id!==owner))throw Error('session_changed');
     return data.session?.access_token ?? null;
   },
 });

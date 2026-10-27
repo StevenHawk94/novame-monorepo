@@ -70,62 +70,24 @@ test('UUID ownership is checked before upload and again after an asynchronous lo
   assert.equal(h.requests.filter(r=>r.body).length,0);assert.equal(h.disk.size,1);
 });
 
-function guideHarness() {
-  let cursor=0, focused=true, image=null, active=null, shown=0, completed=0;
-  const slots=[],effects=[],timers=new Map();let nextTimer=0;
-  const same=(a,b)=>a&&b&&a.length===b.length&&a.every((x,i)=>Object.is(x,b[i]));
-  const react={
-    useState(initial){const i=cursor++;slots[i]??={value:typeof initial==='function'?initial():initial};return [slots[i].value,v=>slots[i].value=v];},
-    useRef(current){const i=cursor++;slots[i]??={current};return slots[i];},
-    useCallback(fn,deps){const i=cursor++;if(!same(slots[i]?.deps,deps))slots[i]={deps,value:fn};return slots[i].value;},
-    useEffect(fn,deps){const i=cursor++,old=slots[i];if(same(old?.deps,deps))return;const slot=slots[i]={deps};effects.push(()=>{old?.cleanup?.();slot.cleanup=fn();});},
-  };
-  const jsx=(type,props)=>({type,props});
-  const animation=()=>({start(){},stop(){}});
-  const {FeatureGuideModal}=load('apps/mobile/src/components/main/feature-guide-modal.tsx',{
-    '@/components/ui/android-compact-typography': { AndroidCompactText: 'Text' },
-    react,'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{
-      Animated:{Value:class{constructor(v){this.v=v;}setValue(v){this.v=v;}},timing:()=>({start:()=>shown++,stop(){}}),sequence:animation,
-        parallel:()=>({start:()=>shown++,stop(){}}),View:'AnimatedView'},
-      Easing:{out:x=>x,inOut:x=>x},Image:{resolveAssetSource:()=>({uri:'bundle://guide.png'})},
-      Modal:'Modal',Pressable:'Pressable',Text:'Text',View:'View',StyleSheet:{create:x=>x,absoluteFillObject:{}},
-    },
-    'expo-image':{Image:'Image',useImage:()=>image},
-    '@/components/ui/screen-overlay':{ScreenOverlay:'Modal'},
-    'expo-router':{useFocusEffect:fn=>react.useEffect(()=>focused?fn():undefined,[fn,focused])},
-    '@/lib/icons':{ICONS:{}},'@/lib/haptics':{},
-    '@/lib/feature-guides':{shouldShowFeatureGuide:()=>!completed,completeFeatureGuide:()=>completed++},
-    '@/lib/modal-coordinator':{useActiveModalSlot:()=>active,ownsModalSlot:()=>active==='guide',requestModalSlot:()=>active='guide',releaseModalSlot:()=>active=null},
-  },{
-    setTimeout(fn){timers.set(++nextTimer,fn);return nextTimer;},clearTimeout:id=>timers.delete(id),
-  });
-  return {
-    render(){cursor=0;const tree=FeatureGuideModal({guide:'reflect'});effects.splice(0).forEach(fn=>fn());return tree;},
-    imageReady(){image={width:74,height:74};},focus(v){focused=v;},
-    shown:()=>shown,completed:()=>completed,timers,
-  };
-}
-function nodes(node){return !node||typeof node!=='object'?[]:[node,...[node.props?.children].flat(Infinity).flatMap(nodes)];}
-test('guide waits for decoded icon before presentation, never opens an invisible modal waiting for onDisplay',()=>{
-  const h=guideHarness();h.render();assert.equal(h.render().props.visible,false);assert.equal(h.shown(),0);
-  h.imageReady();h.render();h.render();let tree=h.render();
-  assert.equal(tree.props.visible,true);tree.props.onShow();assert.equal(h.shown(),1);
-  tree.props.onRequestClose();tree.props.onRequestClose();h.render();assert.equal(h.completed(),1);
-  h.focus(false);h.render();h.focus(true);h.render();assert.equal(h.render().props.visible,false);
-});
-test('leaving before dismissal releases the guide without marking it seen or leaving an overlay',()=>{
-  const h=guideHarness();h.render();assert.equal(h.render().props.visible,false);
-  h.imageReady();h.render();h.render();h.render();h.focus(false);h.render();
-  assert.equal(h.render().props.visible,false);assert.equal(h.completed(),0);assert.equal(h.timers.size,0);
-});
-test('all three flows disable native dismiss and protect both submission and settlement',()=>{
+test('durable Adventure inputs retain edge back; legacy submissions and settlement remain protected',()=>{
   const layout=fs.readFileSync(path.join(root,'apps/mobile/app/(main)/_layout.tsx'),'utf8');
-  for(const route of ['reflect-guided','reflect-typing','shared-memory-create']){
-    assert.match(layout,new RegExp('name="'+route+'"[^\n]+gestureEnabled: false'));
-    assert.match(fs.readFileSync(path.join(root,'apps/mobile/app/(main)',route+'.tsx'),'utf8'),/useReflectExitGuard\(submitting\)/);
-  }
-  const source=fs.readFileSync(path.join(root,'apps/mobile/src/components/main/reflect-settlement.tsx'),'utf8');
-  assert.match(source,/useReflectExitGuard\(!completed\)/);
-  assert.match(source,/setCompleted\(result.snapshot\)/);
-  assert.match(source,/writeSettlementCheckpoint\(draft, next\)/);
+  for(const route of ['reflect-guided','reflect-typing'])
+    assert.match(layout,new RegExp('name="'+route+'" options=\\{majorUpdate \\? MAIN_ADVENTURE_INPUT_OPTIONS[\\s\\S]*?gestureEnabled: false'));
+  const read=file=>fs.readFileSync(path.join(root,file),'utf8');
+  const edge=load('apps/mobile/src/lib/page-edge-gesture.ts',{});
+  const policy=load('apps/mobile/src/lib/main-navigation-options.ts',{'./page-edge-gesture':edge});
+  assert.equal(policy.MAIN_ADVENTURE_INPUT_OPTIONS.gestureEnabled,true);
+  assert.equal(policy.MAIN_ADVENTURE_INPUT_OPTIONS.fullScreenGestureEnabled,false);
+  assert.match(layout,/name="shared-memory-create"[^\n]+gestureEnabled: false/);
+  const retired = read('apps/mobile/app/(main)/shared-memory-create.tsx');
+  assert.match(retired, /<Redirect href=/);
+  assert.match(retired, /section: 'memories_room'/);
+  assert.doesNotMatch(retired, /matchItems|prepareReflect|useReflectExitGuard/);
+  assert.match(read('apps/mobile/app/(main)/reflect-guided.tsx'),/useReflectExitGuard\(submitting,/);
+  assert.match(read('apps/mobile/app/(main)/reflect-typing.tsx'),/AdventureJournalScreen as default/);
+  const journal=read('apps/mobile/src/components/burrow/adventure-journal-screen.tsx');
+  assert.match(journal,/keepBurrowTextDraft/);
+  assert.ok(journal.indexOf('queueAdventureJournal(')<journal.indexOf('setJobId(id)'),
+    'Save acknowledges durable storage before leaving the editable form');
 });

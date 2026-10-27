@@ -1,0 +1,77 @@
+{
+  "verifiedAt": "2026-10-19T13:34:10.133Z",
+  "status": "Migration 249 applied; final API production deployment promoted and verified",
+  "migration": {
+    "projectRef": "qleeohkhbrdvznbwgqad",
+    "version": "20261019000249",
+    "name": "game_room_ready_receipt",
+    "sourceMd5": "457b00552fa12d258d68ffdcb8068099",
+    "sourceSha256": "caf988b2d75630f2f5f5e4b5711ceee043b6290122cccb747e49b96c7c969c3c",
+    "applied": true,
+    "historyCommittedInSameTransaction": true,
+    "only249Executed": true,
+    "sourceMatchesRepository": true,
+    "oldSubmitStateAndPairFunctionsUnchanged": true,
+    "anonCanExecute": false,
+    "authenticatedCanExecute": false,
+    "serviceRoleCanExecute": true,
+    "postgrestSchemaReady": true,
+    "scope": "Add one service-only function and migration history; no customer balances, answers, rewards or historical rows changed"
+  },
+  "api": {
+    "projectId": "prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4",
+    "deploymentId": "dpl_Aj3VZam5ifbwSh62oCQuDgbpKiD9",
+    "readyState": "READY",
+    "productionDomain": "https://api.soulsayit.com",
+    "productionDomainDeploymentVerified": true,
+    "deploymentUrl": "https://novame-monorepo-lswjbrsan-soulsayit.vercel.app",
+    "sourceFilesVerified": 269,
+    "onlyRuntimeFileChanged": "apps/api/src/app/api/vnext/game-room/route.js",
+    "routeSha256": "401c03dd19824d78f3c478b7030d44bd276f7ca3ddf7a6cfb3fc675fd03fb4ee",
+    "productionLockfileRetainedSha1": "f8e4946b392815f23687329b348806711d0ba829",
+    "nativeAndSecretsExcluded": true,
+    "adminUnchanged": true,
+    "nativeOrOtaPublished": false
+  },
+  "compatibility": {
+    "oldClientWithoutGameIdRetainsLegacySubmit": true,
+    "newClientReceivesCompleteResultFromAtomicRpc": true,
+    "missingRpcOnlyFallbackCodes": ["PGRST202", "42883"],
+    "networkAndPermissionFailuresDoNotTriggerSecondWrite": true,
+    "canonicalContentMismatchReturns409": true,
+    "answerSealingPairPermissionsAndIdempotencyPreserved": true,
+    "previousProductionSourceAcceptsNewClientPayload": true,
+    "pendingClientJobsRemainRetryable": true
+  },
+  "verification": {
+    "focusedRegressionTestsPassed": 55,
+    "apiTypeCheck": "passed",
+    "vercelProductionBuild": "passed",
+    "candidateSourceHashes": "all uploaded source files match explicit API-only release snapshot",
+    "candidateAndProductionHttpChecks": {
+      "publicAppConfig": 200,
+      "unauthenticatedBootstrap": 401,
+      "unauthenticatedGameOverview": 401,
+      "unauthenticatedOldSubmitFormat": 401,
+      "unauthenticatedNewSubmitFormat": 401
+    },
+    "rpcRestChecks": {
+      "anonymous": "401 / 42501 permission denied",
+      "serviceRoleWithVerifiedNonexistentIdentity": "200 / not_paired"
+    },
+    "accountsCreated": 0,
+    "customerDataWrites": 0,
+    "liveAuthenticatedTwoAccountGame": "Pending user login; not represented by unauthenticated smoke tests",
+    "realDeviceReleasePerformance": "Pending; prior isolated Simulator measurements still contain slow frames"
+  },
+  "rollback": {
+    "knownGoodDeploymentId": "dpl_9ACMckmVWahfbSMJF2MzVniiJeqT",
+    "knownGoodDeploymentUrl": "https://novame-monorepo-ckqv7ln89-soulsayit.vercel.app",
+    "command": "vercel rollback dpl_9ACMckmVWahfbSMJF2MzVniiJeqT --yes --scope soulsayit",
+    "databasePolicy": "Keep additive migration 249 on API rollback; old API ignores the new function and still accepts new client payloads",
+    "prePromotionFailure": "Do not promote; current custom production domain stays on its previous deployment",
+    "actualProductionRollbackPerformed": false,
+    "continuousProductionMonitorCreated": false
+  },
+  "evidenceDirectory": "/private/tmp/novame-249-release-ocIzFv"
+}

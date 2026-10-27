@@ -1,63 +1,69 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import { router, useGlobalSearchParams, useSegments } from 'expo-router';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
-import { burrowClock, getBurrowSnapshot, refreshBurrow, refreshBurrowAfterCurrent, useBurrowSnapshot } from '@/lib/burrow-store';
-import { createAdventureArrival } from '@/lib/burrow-presentation';
-import { subscribeSessionIdentity } from '@/lib/session-lifecycle';
-import { hasActiveReflectSettlement } from '@/lib/reflect-settlement-outbox';
-import { useHomeEntry } from '@/lib/use-home-entry';
-import { useOverlayPresent } from '@/lib/overlay-presence';
+import { burrowClock, cacheAdventureDisplay, projectBurrowAdventureArrival, refreshBurrowAfterCurrent, useBurrowSnapshot } from '@/lib/burrow-store';
+import { fetchAdventureDisplay, settleAdventure } from '@/lib/app-major-update-api';
+import { pauseAdventureJournalJobs, resumeAdventureJournalJobs, restoreAdventureJournalProjection } from '@/lib/adventure-journal-jobs';
+import { pauseAdventureDelivery, resumeAdventureDelivery } from '@/lib/adventure-delivery';
+import { warmAdventureCompletion } from '@/lib/adventure-prefetch';
+import { sessionEpoch } from '@/lib/session-lifecycle';
 
-/** One gate in MainLayout. Never replace a journal, battle or modal route. */
+/** Refresh arrivals in the background; the Home badge is the only entry intent. */
 export function AdventureArrivalGate() {
-  const enabled = useMajorUpdateEnabled();
-  const { data, loading, error, busy, receivedAt } = useBurrowSnapshot();
-  const entry = useHomeEntry();
-  const overlay = useOverlayPresent();
-  const segments = useSegments();
-  const params = useGlobalSearchParams<{ section?: string }>();
-  const [foreground, setForeground] = useState(AppState.currentState === 'active');
-  const [resumeReady, setResumeReady] = useState(false);
-  const arrival = useRef(createAdventureArrival());
-  useEffect(() => {
-    if (!enabled) { arrival.current.reset(); return; }
-    let backgrounded = AppState.currentState !== 'active';
-    let generation = 0;
-    const resume = (afterBackground = false) => {
-      const current = ++generation;
-      setResumeReady(false);
-      arrival.current.resume(getBurrowSnapshot().data);
-      void refreshBurrowAfterCurrent(afterBackground ? { after: burrowClock() } : {}).then(() => { if (current === generation) setResumeReady(true); });
-    };
-    if (AppState.currentState === 'active') resume();
-    const app = AppState.addEventListener('change', state => {
-      setForeground(state === 'active');
-      if (state === 'background') backgrounded = true;
-      else if (state === 'active' && backgrounded) { backgrounded = false; resume(true); }
+  const enabled=useMajorUpdateEnabled();
+  const {data,receivedAt}=useBurrowSnapshot();
+  const [foreground,setForeground]=useState(AppState.currentState==='active');
+  useEffect(()=>{
+    if(!enabled)return;
+    let backgrounded=AppState.currentState!=='active';
+    if(!backgrounded)void refreshBurrowAfterCurrent();
+    const app=AppState.addEventListener('change',state=>{
+      setForeground(state==='active');
+      if(state==='background'){backgrounded=true;pauseAdventureDelivery();pauseAdventureJournalJobs();}
+      else if(state==='active'&&backgrounded){backgrounded=false;void refreshBurrowAfterCurrent({after:burrowClock()});}
     });
-    const identity = subscribeSessionIdentity(() => { generation++; setResumeReady(false); arrival.current.reset(); });
-    return () => { generation++; app.remove(); identity(); };
-  }, [enabled]);
+    return()=>app.remove();
+  },[enabled]);
   useEffect(() => {
-    if (!enabled || !foreground || !resumeReady) return;
-    arrival.current.observe(data, !loading && !error);
-    const alreadyThere = segments[segments.length - 1] === 'burrow-detail' && params.section === 'adventure';
-    const safe = segments.some(segment => segment === '(tabs)') && !entry.pending && !overlay && !busy && !loading && !error && !hasActiveReflectSettlement();
-    if (arrival.current.take(!!safe, alreadyThere)) {
-      router.push({ pathname: '/(main)/burrow-detail', params: { section: 'adventure' } });
-    }
-  }, [enabled, foreground, resumeReady, data, loading, error, busy, segments, params.section, entry.pending, overlay]);
-  // One server refresh at each deadline, not polling once a second. The
-  // refreshed result lights the button; it never creates a foreground intent.
+    if (enabled && foreground && data) { void warmAdventureCompletion(data).catch(()=>{}); void resumeAdventureDelivery();
+      restoreAdventureJournalProjection(); void resumeAdventureJournalJobs(); }
+  }, [enabled, foreground, data?.profile.id, data?.partner?.id, data?.pairVersion, data?.localDate, data?.activeAdventure?.id, data?.adventureResult?.id,
+    data?.adventureResult?.metadata?.encounterV2, data?.adventureResult?.metadata?.treasureSnapshot?.stable_id, data?.adventureResult?.metadata?.treasureCoins, data?.adventurePlan?.version]);
   useEffect(() => {
-    const adventure = data?.activeAdventure;
-    if (!enabled || !foreground || adventure?.status !== 'in_progress' || error) return;
-    const serverNow = Date.parse(data!.serverNow) + Math.max(0, burrowClock() - receivedAt);
-    const delay = Date.parse(adventure.ends_at) - serverNow;
-    if (!Number.isFinite(delay)) return;
-    const timer = setTimeout(() => { void refreshBurrow(); }, Math.max(1000, Math.min(delay + 250, 2_147_483_647)));
-    return () => clearTimeout(timer);
-  }, [enabled, foreground, data?.activeAdventure?.id, data?.activeAdventure?.status, data?.activeAdventure?.ends_at, receivedAt, error]);
+    const a = data?.activeAdventure;
+    if (!enabled || !foreground || a?.status !== 'in_progress' || a.id.startsWith('pending:')
+      || data?.adventurePlan?.adventureId === a.id || data?.adventureResult?.metadata?.encounterV2) return;
+    let live = true, timer: ReturnType<typeof setTimeout>, attempt = 0;
+    const epoch = sessionEpoch();
+    const prepare = async () => {
+      try {
+        const display = await fetchAdventureDisplay(a.id);
+        if (live && epoch === sessionEpoch()) cacheAdventureDisplay(display);
+      } catch { /* Retry only this small personal plan, not the whole catalogue. */ }
+      if (live && epoch === sessionEpoch()) timer = setTimeout(() => { void prepare(); }, Math.min(15_000, 1_000 * 2 ** Math.min(attempt++, 4)));
+    };
+    void prepare();
+    return () => { live = false; clearTimeout(timer); };
+  }, [enabled, foreground, data?.profile.id, data?.partner?.id, data?.pairVersion,
+    data?.activeAdventure?.id, data?.activeAdventure?.status, data?.adventurePlan?.adventureId, data?.adventureResult?.metadata?.encounterV2]);
+  useEffect(()=>{
+    const adventure=data?.activeAdventure;
+    if(!enabled||!foreground||adventure?.status!=='in_progress'||adventure.localStartPending||adventure.id.startsWith('pending:'))return;
+    const serverNow=Date.parse(data!.serverNow)+Math.max(0,burrowClock()-receivedAt);
+    const delay=Date.parse(adventure.ends_at)-serverNow;
+    if(!Number.isFinite(delay))return;
+    let live=true, timer:ReturnType<typeof setTimeout>;
+    const arrive=async()=>{
+      if(!live)return;
+      const epoch=sessionEpoch();
+      projectBurrowAdventureArrival(adventure.id);
+      try { await settleAdventure(adventure.id); } catch { /* Bootstrap also settles; retry silently if offline. */ }
+      if(epoch!==sessionEpoch())return;
+      await refreshBurrowAfterCurrent({silent:true,after:burrowClock()});
+      if(live)timer=setTimeout(()=>{void arrive();},2000);
+    };
+    timer=setTimeout(()=>{void arrive();},Math.max(0,Math.min(delay,2_147_483_647)));
+    return()=>{live=false;clearTimeout(timer);};
+  },[enabled,foreground,data?.activeAdventure?.id,data?.activeAdventure?.status,data?.activeAdventure?.ends_at,data?.activeAdventure?.localStartPending,receivedAt]);
   return null;
 }

@@ -1,124 +1,84 @@
+import { BackIcon } from '@/components/burrow/burrow-back-button';
 import { useMemo, useState } from 'react';
 import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { matchItems, type CustomTapItem, type TapYourDayQuestion } from '@novame/engine';
-import { CUSTOM_TAP_GROUPS, CUSTOM_TAP_ICON_CATEGORIES, customTapDestination } from '@/lib/custom-tap-catalog';
-import { mergedItemDictionary, remoteIdsForPromptCategory } from '@/lib/remote-items';
-import { ItemSprite } from '@/components/ui/item-sprite';
+import { TAP_YOUR_DAY_OPTIONAL_CHOICES, type CustomTapItem, type TapYourDayQuestion } from '@novame/engine';
+import { CUSTOM_TAP_GROUPS } from '@/lib/custom-tap-catalog';
+import { TapDayIcon } from '@/components/ui/tap-day-icon';
 import { haptics } from '@/lib/haptics';
 
-export function CustomTapItemSheet({ question, onClose, onSave }: {
-  question: TapYourDayQuestion; onClose: () => void; onSave: (item: CustomTapItem) => void;
+/** Only the approved optional activities. Search filters labels; it never matches a journal to icons. */
+export function CustomTapItemSheet({ question, addedItems = [], onClose, onSave }: {
+  question: TapYourDayQuestion; addedItems?: CustomTapItem[]; onClose: () => void; onSave: (item: CustomTapItem) => void;
 }) {
   const insets = useSafeAreaInsets();
-  const [label, setLabel] = useState('');
-  const [group, setGroup] = useState(question.groups.find(group => !!group.title)?.title || CUSTOM_TAP_GROUPS[0].title);
-  const [catalog, setCatalog] = useState<string | null>(null);
-  const [picker, setPicker] = useState<'group' | 'category' | null>(null);
-  const [itemId, setItemId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [group, setGroup] = useState<string | null>(null);
+  const [selected, setSelected] = useState<CustomTapItem | null>(null);
   const [error, setError] = useState('');
-  const matches = useMemo(() => label.trim() ? matchItems(label, mergedItemDictionary()).map(m => m.itemId) : [], [label]);
-  const browse = CUSTOM_TAP_ICON_CATEGORIES.find(category => category.key === catalog);
-  const dictionary = mergedItemDictionary();
-  const ids = browse
-    ? [...new Set([...browse.itemIds, ...remoteIdsForPromptCategory(browse.key), ...remoteIdsForPromptCategory(browse.label)])]
-    : matches;
-  const destination = customTapDestination(group);
-  const canSave = !!itemId && !!label.trim() && !!destination;
-
-  function openPicker(next: 'group' | 'category') {
-    Keyboard.dismiss();
-    void haptics.light();
-    setPicker(current => current === next ? null : next);
-  }
-  function goBack() {
-    void haptics.light();
-    if (picker) setPicker(null); else onClose();
-  }
+  const added = new Set(addedItems.map(item => item.itemId));
+  const categories = CUSTOM_TAP_GROUPS.filter(option => option.kind === question.kind);
+  const choices = useMemo(() => TAP_YOUR_DAY_OPTIONAL_CHOICES.filter(item => item.kind === question.kind
+    && (!group || item.group === group) && item.label.toLowerCase().includes(search.trim().toLowerCase())), [question.kind, group, search]);
   function save() {
-    if (!itemId || !label.trim() || !destination) return;
-    try {
-      // The chosen destination owns the question, even when adding from the other page.
-      onSave({ itemId, label: label.trim(), group: destination.title, kind: destination.kind, custom: true });
-      void haptics.light(); Keyboard.dismiss(); onClose();
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not save this item.'); }
+    if (!selected || added.has(selected.itemId)) return;
+    try { onSave(selected); void haptics.light(); Keyboard.dismiss(); onClose(); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not add this activity.'); }
   }
-  return <Modal transparent animationType="fade" onRequestClose={goBack} statusBarTranslucent navigationBarTranslucent>
+  return <Modal transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
     <View style={[s.overlay, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }]}>
-      {/* Keep sheet padding inside KAV: iOS keyboard padding must not replace the footer inset. */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={insets.top + 12} style={s.keyboardArea}>
         <View style={s.sheet}>
           <View style={s.header}>
-            <Pressable onPress={goBack} accessibilityRole="button" accessibilityLabel={picker ? 'Back to add item' : 'Close'} style={s.back}>
-              <MaterialIcons name="arrow-back" size={25} color="#50351D" />
-            </Pressable>
-            <Text style={s.title}>{picker === 'category' ? 'Choose a Category' : picker === 'group' ? 'Select Group' : 'Add to Your Day'}</Text>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" style={s.back}>
+              <BackIcon color="#50351D"/>
+            </Pressable><Text style={s.title}>Add to Your Day</Text>
           </View>
-          <View style={s.field}>
-            <View style={[s.fieldIcon, s.typingIcon]}><MaterialIcons name="edit" size={24} color="#FFF" /></View>
-            <TextInput value={label} maxLength={80} placeholder="Enter Activity" placeholderTextColor="#9B958D" style={s.input}
-              accessibilityLabel="Enter Activity"
-              onChangeText={value => { setLabel(value); setItemId(null); setCatalog(null); setPicker(null); setError(''); }} />
-          </View>
-          <Pressable style={s.field} onPress={() => openPicker('group')} accessibilityRole="button" accessibilityLabel={`Select Group: ${group}`}>
-            <View style={[s.fieldIcon, s.categoryIcon]}><MaterialIcons name="folder" size={24} color="#FFF" /></View>
-            <Text style={s.fieldLabel}>Select Group</Text>
-            <Text style={s.groupValue}>{group}</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#50351D" />
-          </Pressable>
-          {picker ? <ScrollView keyboardShouldPersistTaps="always" style={s.list} contentContainerStyle={s.pickerContent}>
-            {picker === 'group' ? CUSTOM_TAP_GROUPS.map(option =>
-              <Pressable key={option.title} style={[s.option, group === option.title && s.selected]} accessibilityRole="radio" accessibilityState={{ selected: group === option.title }} onPress={() => {
-                setGroup(option.title); setPicker(null); void haptics.light();
-              }}><Text style={s.text}>{option.title}</Text></Pressable>) : CUSTOM_TAP_ICON_CATEGORIES.map(option =>
-              <Pressable key={option.key} style={[s.option, catalog === option.key && s.selected]} accessibilityRole="radio" accessibilityState={{ selected: catalog === option.key }} onPress={() => {
-                setCatalog(option.key); setItemId(null); setPicker(null); void haptics.light();
-              }}><Text style={s.text}>{option.label}</Text></Pressable>)}
-          </ScrollView> : <>
-            <Text style={s.hint}>{browse ? 'Choose an icon for your activity.' : matches.length ? 'Choose a matching item, or browse a category.' : 'No match? Choose a category to find an icon.'}</Text>
-            <Pressable style={s.browseButton} onPress={() => openPicker('category')} accessibilityRole="button">
-              <Text style={[s.text, s.browseLabel]}>{browse?.label || 'Browse Categories'}</Text>
-              <MaterialIcons name="expand-more" size={22} color="#50351D" />
-            </Pressable>
-            <FlatList data={ids} numColumns={4} keyExtractor={id => id} keyboardShouldPersistTaps="always" initialNumToRender={24} windowSize={5}
-              style={s.list} contentContainerStyle={s.iconsContent} renderItem={({ item: id }) =>
-                <Pressable style={[s.cell, itemId === id && s.selected]} onPress={() => { Keyboard.dismiss(); setItemId(id); void haptics.light(); }} accessibilityRole="radio" accessibilityState={{ selected: itemId === id }} accessibilityLabel={dictionary.items[id]?.displayName}>
-                  <ItemSprite itemId={id} size={54} radius={10} /><Text style={s.caption}>{dictionary.items[id]?.displayName}</Text>
-                </Pressable>} />
-          </>}
+          <Text style={s.hint}>Choose an activity to keep in your daily choices.</Text>
+          <TextInput value={search} placeholder="Search activities" placeholderTextColor="#9B958D" style={s.input}
+            accessibilityLabel="Search activities" maxLength={80} onChangeText={value => { setSearch(value); setSelected(null); setError(''); }} />
+          <View><ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={s.categories}>
+            {[{ title: 'All', value: null }, ...categories.map(option => ({ title: option.title, value: option.title }))].map(option =>
+              <Pressable key={option.title} style={[s.category, group === option.value && s.selected]} accessibilityRole="radio"
+                accessibilityState={{ selected: group === option.value }} onPress={() => { setGroup(option.value); setSelected(null); setError(''); }}>
+                <Text style={s.categoryText}>{option.title}</Text>
+              </Pressable>)}
+          </ScrollView></View>
+          <FlatList data={choices} numColumns={3} keyExtractor={item => item.itemId} keyboardShouldPersistTaps="handled"
+            initialNumToRender={18} windowSize={5} style={s.list} contentContainerStyle={s.iconsContent}
+            ListEmptyComponent={<Text style={s.hint}>No activities found.</Text>}
+            renderItem={({ item }) => <Pressable disabled={added.has(item.itemId)}
+              style={[s.cell, selected?.itemId === item.itemId && s.selected, added.has(item.itemId) && s.disabled]}
+              onPress={() => { Keyboard.dismiss(); setSelected(item); setError(''); void haptics.light(); }}
+              accessibilityRole="radio" accessibilityLabel={item.label}
+              accessibilityState={{ selected: selected?.itemId === item.itemId, disabled: added.has(item.itemId) }}>
+              <TapDayIcon itemId={item.itemId} size={54} radius={10} />
+              <Text style={s.caption}>{item.label}</Text>
+              {added.has(item.itemId) && <Text style={s.added}>Added</Text>}
+            </Pressable>} />
           {!!error && <Text style={s.error}>{error}</Text>}
-          {!picker && <View style={s.footer}>
-            <Pressable disabled={!canSave} onPress={save} accessibilityRole="button" style={[s.button, !canSave && s.disabled]}><Text style={s.buttonText}>Save</Text></Pressable>
-          </View>}
+          <Pressable disabled={!selected || added.has(selected.itemId)} onPress={save} accessibilityRole="button"
+            style={[s.button, (!selected || added.has(selected.itemId)) && s.disabled]}><Text style={s.buttonText}>Add activity</Text></Pressable>
         </View>
       </KeyboardAvoidingView>
     </View>
   </Modal>;
 }
 const s = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#0008', paddingHorizontal: 12 },
-  keyboardArea: { flex: 1 },
+  overlay: { flex: 1, backgroundColor: '#0008', paddingHorizontal: 12 }, keyboardArea: { flex: 1 },
   sheet: { flex: 1, backgroundColor: '#FFF8E9', borderRadius: 26, padding: 16, gap: 12 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   back: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1, fontSize: 20, fontFamily: 'Inter_700Bold', color: '#50351D' },
-  field: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFF', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, minHeight: 62 },
-  fieldIcon: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  typingIcon: { backgroundColor: '#F2BF2F' }, categoryIcon: { backgroundColor: '#9DC63B' },
-  input: { flex: 1, minWidth: 0, paddingVertical: 8, fontSize: 16, color: '#50351D' },
-  fieldLabel: { flexShrink: 1, fontSize: 14, color: '#9B958D' },
-  groupValue: { flex: 1, fontSize: 12, lineHeight: 17, textAlign: 'right', color: '#50351D', fontFamily: 'Inter_700Bold' },
-  list: { flex: 1, minHeight: 0 }, pickerContent: { gap: 8, paddingVertical: 4 },
-  option: { backgroundColor: '#FFF', padding: 14, minHeight: 48, justifyContent: 'center', borderRadius: 14 },
-  text: { fontSize: 14, color: '#50351D', fontFamily: 'Inter_600SemiBold' },
-  hint: { fontSize: 13, lineHeight: 18, color: '#73543D' },
-  browseButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E9DCCB', padding: 12, borderRadius: 12 }, browseLabel: { flex: 1 },
-  iconsContent: { paddingVertical: 8 },
-  cell: { width: '25%', alignItems: 'center', padding: 5, gap: 5, borderRadius: 12 },
-  selected: { backgroundColor: '#FFDF72' }, caption: { fontSize: 11, textAlign: 'center', color: '#50351D' },
-  footer: { paddingTop: 4, paddingBottom: 8 },
-  button: { backgroundColor: '#50351D', padding: 16, borderRadius: 18, alignItems: 'center' }, disabled: { opacity: 0.45 },
+  hint: { fontSize: 14, lineHeight: 20, color: '#73543D' },
+  input: { padding: 14, minHeight: 48, backgroundColor: '#FFF', borderRadius: 14, fontSize: 16, color: '#50351D' },
+  categories: { gap: 8 }, category: { minHeight: 44, padding: 12, borderRadius: 14, justifyContent: 'center', backgroundColor: '#E9DCCB' },
+  categoryText: { fontSize: 12, color: '#50351D', fontFamily: 'Inter_600SemiBold' },
+  list: { flex: 1, minHeight: 0 }, iconsContent: { paddingVertical: 8 },
+  cell: { width: '33.333%', alignItems: 'center', padding: 8, gap: 5, borderRadius: 12, minHeight: 105 },
+  selected: { backgroundColor: '#FFDF72' }, caption: { fontSize: 12, textAlign: 'center', color: '#50351D' },
+  added: { fontSize: 11, color: '#73543D' }, disabled: { opacity: 0.45 },
+  button: { backgroundColor: '#50351D', padding: 16, borderRadius: 18, alignItems: 'center' },
   buttonText: { fontSize: 20, color: '#FFF', fontFamily: 'Inter_700Bold' }, error: { fontSize: 13, color: '#A43425' },
 });

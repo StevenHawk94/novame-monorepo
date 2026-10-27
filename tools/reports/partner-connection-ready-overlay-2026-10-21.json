@@ -1,0 +1,24 @@
+{
+  "scope": "Foreground recipient pairing completion without route replacement or launch cover",
+  "rootCauses": [
+    "Both existing private realtime topics cleared the entire Burrow snapshot on pair changes, including first pairing from a solo account.",
+    "The environment gate treated a temporary missing snapshot owner as a new app entry.",
+    "The connected UI was owned only by the explicit pairing route, so recipients on other pages had no success presentation."
+  ],
+  "changes": [
+    "Retain only an already-solo personal scene during pair verification. Existing-pair invalidation still clears private partner data immediately.",
+    "Use authenticated account identity during snapshot verification gaps; no new launch cover for a same-account pair change.",
+    "Present the existing connected design in a global window overlay only after authenticated bootstrap and portrait preparation, with ready initials on portrait failure.",
+    "Dismiss only the overlay, leaving the underlying route mounted. Suppress duplicate, stale-session, restored-session and inline-invite presentations."
+  ],
+  "verification": {
+    "relatedRegressionTestsPassed": 150,
+    "includesIsolatedDatabasePairAndUnpairBroadcasts": true,
+    "mobileTypeCheck": "passed",
+    "iosProductionExport": "passed",
+    "livePairedAccountDeviceTest": "not run"
+  },
+  "apiAdminChanges": false,
+  "databaseMigrationRequired": false,
+  "clientPublished": false
+}

@@ -1,0 +1,140 @@
+My Room 首次返回 / 兔子动画优先级 / 原生绘制复核
+日期：2026-10-19
+
+本轮范围
+不重写导航，不改变 UI 布局/素材/业务/通知/权限/领取和扣款流程。
+没有迁移、生产部署、客户端或 OTA 发布；不使用真实账号。
+Android 模拟器跳过，Android production bundle 仍验证。
+
+1. My Room 首次返回的错误帧
+入口实际是 Burrow Tab -> 已保留的 Home Tab，不是请求/创建 Home。
+上一轮只保持 Animated.Value 的身份，仍不足以保持 AnimatedProps 图。
+当前 RN 0.81.5 的 createAnimatedPropsMemoHook 把 object-valued props 纳入身份，
+children 的 React element 在导航 descriptor 更新时变化，即使 offset 是同一个对象，
+仍会替换 AnimatedProps。其生命周期会调用旧节点 __restoreDefaultValues()。
+原生退出到屏幕外以后，旧 transform 被恢复为 identity，存在退出层回到 x=0、
+与隐藏提交交错的错误帧窗口。这不需要连续切页，首次 My Room 返回就能触发。
+
+修复使用公开 Animated.createAnimatedComponent + forwardRef(View)，
+将最新 descriptor 通过函数传入，在普通 View 内渲染，避免把 children 对象纳入动画图身份。
+没有缓存旧 descriptor、复制 Home 截图或冻结业务数据；焦点/通知上下文保持更新。
+原位移、220ms 时长、层级、底部栏高度和触摸保护不变。
+另外移除了对 Home/Quests 常量零位移的 setValue(0)：RN Animated.Value 即使写入相同值，
+对尚未原生驱动的根节点也会 flush 属性、调度子组件更新；不应发生在导航 render 中。
+卡片也只写最终所需位置，不再在原生 handoff 时先写 width 再写 0。
+测试直接加载本机 RN 的 composite-key 实现：旧 props 不相等，新 props 相等；
+另检查函数宿主仍展示最新内容，renderScene 不泄漏给原生 View。
+隔离 Release 冷启动后实际操作 Burrow -> 首次 My Room，返回完整 Home。
+普通 UI 截图不能证明硬件每一帧，以上以依赖源码与生命周期回归共同定位，
+不把截图当作逐帧像素捕获。
+
+2. 兔子的 3,969 点更新
+保留现有 Skia 五层、装扮资源、呼吸/耳朵/尾巴曲线、4 秒周期、脚底落点与换装相位。
+未换 Shader/视频/帧动画，没有降低帧率或放大/裁剪素材。
+找到更低风险的确定性减负：变形场恒定的相邻网格行对所有相位都为相同仿射映射，
+因此可以合并；所有非恒定行及原来的 48 列均保留。
+绘制点从 3,969 -> 1,176（减少约 70.37%），每层三角形从 7,680 -> 2,208。
+不是更粗地近似呼吸曲线；合并前后 source UV 与分片仿射映射保持等价。
+全画布/边界/单元内部/峰值及中间相位的数学采样误差 <1e-9 源像素。
+固定权重预计算和尾巴单动阶段复用身体仍保留，不增加纹理缓存。
+
+另按官方建议 memoize useFrameCallback，避免每次 React 渲染重新注册 UI 回调。
+浇水的同类回调也固定身份；没有暂停浇水或改变互动进度。
+
+3. 只有兔子让路
+接入现有触摸/动作/原生 Stack/保留 Tab 优先级信号，仅命令兔子 idle clock 暂停。
+暂停保持最后姿态、网格和已解码纹理，不卸载、不重新截图、不强制变成默认姿态。
+返回/转场结束后安静 1 秒再恢复；页面及按钮本身从不等待这个定时器。
+恢复重置帧间隔起点，但不清空 seconds，不补算隐藏时间，不从头播放呼吸。
+连续操作会取消旧恢复；失焦/后台/卸载取消订阅和定时器。
+保留 Reduce Motion、away 状态及优先级过期恢复，避免丢失结束事件后永久暂停。
+爱心、confetti、金币、按压反馈、导航、倒计时和业务队列不接入这个暂停机制。
+
+4. 不可见渐变
+Home 自带不透明底色；通用 BurrowScreen 的其他全屏背景图片也覆盖了渐变。
+检查 basic-bg、friends-room-bg、adventure finish-bg、affection-send-bg 均无 alpha。
+通用根节点不再挂载看不见的渐变，只保留原有纯色兜底。
+实际可见的 Adventure 深色/按钮渐变保留，不用重新截图整页，也不删可见设计。
+静态图继续使用原来的 decoded image cache / retained artwork tree。
+
+5. 继续追查到的剩余负载
+本轮中间版 15 秒原生采样仍能看到：
+ReanimatedModuleProxy::commitUpdates -> ShadowTree::commit/mount -> ScrollView clipping traversal，
+以及实时 SVG 路径的 CoreGraphics shading。
+通用 AdventureReveal 只动画 opacity/translateY，却原先每帧参与 Fabric prop 提交。
+现改为 Native Animated 原生驱动，仍是原 10pt 位移、cubic-out、延时与 260ms 入场。
+使用同一稳定内容宿主，完成时更新可点击/可访问状态不会重新创建动画图。
+保留背景/减少动态效果时立即显现、只播放一次、取消及卸载后的迟到回调保护。
+没有为了跑分启用实验性全局原生 flag、升级渲染引擎或改写复杂结算/进度动画。
+复杂 SVG / Fabric 交互仍需结合真机确认，不宣称每个残余尖峰都属于同一个原因。
+
+研究依据
+https://docs.swmansion.com/react-native-reanimated/docs/guides/performance/
+  明确指出 UI shared-value 同步读取、逐帧 Fabric 提交成本，以及 frame callback memoization。
+https://reactnative.dev/docs/animations
+  原生驱动将动画配置交给原生执行，避免常规 JS 逐帧调度。
+https://github.com/Shopify/react-native-skia/discussions/1964
+  维护者建议减少每帧对象创建，适当复用纹理；案例只作技术方向参考，不作为本 App 的归因证据。
+https://wcandillon.github.io/react-native-skia/v2/docs/shapes/vertices/
+  网格/纹理机制。选择等价合并恒定场，而非引入新 shader 的视觉与兼容风险。
+RN 0.81.5 本地源码：src/private/animated/createAnimatedPropsMemoHook.js、createAnimatedPropsHook.js。
+
+验证与最终性能
+最终代码完成 55 个测试文件，703/703 通过，0 失败，0 跳过。
+覆盖本轮帧回调/暂停恢复/等价网格/原生 AnimatedProps，以及通知就绪、权限隔离、
+游戏结果、冒险/结算、钱包幂等/失败恢复、房间装饰、Plushie 等既有回归。
+TypeScript 无错误；git diff --check 通过。
+Android production bundle：9,628,149 bytes / 1,328 assets。
+iOS production bundle：9,570,242 bytes / 1,324 assets。
+两平台产物均检查到最终“仅对卡片写入位移”逻辑，不是修改前缓存模块。
+
+同一套约 59 秒流程：
+                              本轮修改前基线    最终代码第 1 轮    同代码第 2 轮
+窗口秒数                      59.79            58.68              58.70
+UI frame callbacks            2,218            2,771              2,865
+其中间隔 >34ms 的数量            256              149                138
+上述间隔占比                  11.54%            5.38%              4.82%
+最大 UI callback 间隔          628.5ms          426.5ms            357.3ms
+最大 JS 16ms timer 漂移        647.2ms          604.6ms            330.1ms
+捕获运行/准备错误                  0                0                  0
+
+中间版本曾测到 4.40%，不是最终交付版本，不能把它当作终版结果。
+同一终版仍有波动，且本轮基线与上一轮任务的基线不同；不能跨轮挑最好的数字拼接比较。
+这些是 callback 调度观测，不是手指松开到首像素时间，也不是硬件实际 FPS。
+不为单项修复分摊未经独立验证的速度百分比，不声称所有尖峰都已消除。
+大尖峰仍出现于首段打开及个别房间/实时绘制区间；采样有 SVG shading 和 Fabric commit，
+不足以将每一个最大值唯一归因于某一动画。不能把全部剩余波动归咎于开发环境或网络。
+
+Release 手动检查
+- 两次冷启动验证 Burrow -> 首次 My Room，返回完整 Home，没有额外 Splash/错误覆盖层。
+- 最终版在连续打开/返回、36 次 Tab 请求后，My Room 仍正常。
+- 通用入场淡入保留原顺序；没有空按钮页、捕获到的错误或崩溃。
+- 隐藏时间增加两分钟后，ongoing 首次进入的路径/角色与倒计时位置正确。
+- 实际退到系统桌面再进入，倒计时从约 7:38 继续到 7:23，路径与角色向前，没有回零。
+- 后台恢复后 Back to Home 和 My Room 均正常；QA fixture 此时在冒险中，Home 隐藏兔子是原业务规则。
+- 兔子保持最后相位、恢复前 999ms 不启动、1 秒后启动、连续操作取消旧恢复，
+  由确定性生命周期测试覆盖；不把低频 UI 截图当作毫秒级暂停/恢复测量。
+
+最终回归日志
+/private/tmp/novame-bunny-priority-complete-regression.log
+/private/tmp/novame-bunny-priority-complete-types.log
+/private/tmp/novame-bunny-priority-complete-bundles.log
+
+原始 Release 数据目录：/private/tmp/novame-navigation-release-JJ9z9e/
+events-bunny-priority-before.json
+events-bunny-priority-after.json（中间版本，不作为终版）
+events-bunny-priority-complete.json
+events-bunny-priority-complete-2.json
+events-bunny-priority-complete-2-with-resume.json
+bunny-priority-before-idle-sample.txt
+bunny-priority-after-transition-sample.txt
+before-bunny-priority.hbc / bunny-priority-complete.hbc
+
+隔离验证条件与限制
+独立 com.novame.navigationreleaseqa，真实页面/原生 Stack/保留 Tabs/Hermes -O，__DEV__=false。
+账号、网络、存储和业务 store 边界为本地隔离 fixture；外部请求与业务写入被禁止。
+约 59 秒相同流程：29 次详情打开/返回，36 次 Tab 请求；性能窗口不运行构建、测试或采样。
+UI frame callback 间隔不是屏幕逐像素呈现帧，也不等于真机硬件 FPS；不能保证所有设备零掉帧。
+导航 focus 时间不是手指松开到首像素的端到端延迟。
+原生采样在统计窗口外运行，只用于归因，不参与速度比较。
+真实双账号与目标 iPhone Release 最终验收仍待用户登录，不擅自使用真实业务记录。

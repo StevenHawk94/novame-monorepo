@@ -1,0 +1,84 @@
+{
+  "verifiedAt": "2026-10-20T04:37:42.023Z",
+  "status": "Migration 250 applied; gift API promoted to production and verified",
+  "migration": {
+    "projectRef": "qleeohkhbrdvznbwgqad",
+    "version": "20261019000250",
+    "name": "shop_gift_claim",
+    "sourceMd5": "46e844c4c1bb954d00fd2a784c4ded4f",
+    "sourceSha256": "fee458f47681003d91b9861a3a3aab2109b23a0671cb68d7af34be1b2bf3343a",
+    "applied": true,
+    "historyCommittedInSameTransaction": true,
+    "only250Executed": true,
+    "oldFunctionsBackedUpAndUnchanged": 6,
+    "legacyClaimMd5": "63b35bca1b9854e72ab04d6495ba58e3",
+    "anonCanExecute": false,
+    "authenticatedCanExecute": false,
+    "serviceRoleCanExecute": true,
+    "postgrestSchemaReady": true,
+    "scope": "One additive service-only function and migration history; no customer gifts, wallets or room rows modified"
+  },
+  "api": {
+    "projectId": "prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4",
+    "deploymentId": "dpl_CRN79WhWFPWLRov84VLooHrZpayb",
+    "deploymentUrl": "https://novame-monorepo-3bkep8fwk-soulsayit.vercel.app",
+    "readyState": "READY",
+    "productionDomain": "https://api.soulsayit.com",
+    "customDomainVerifiedViaAliasEndpoint": true,
+    "sourceFilesVerified": 270,
+    "onlyChangedRuntimeFiles": [
+      "apps/api/src/app/api/vnext/bootstrap/route.js",
+      "apps/api/src/app/api/vnext/command/route.js",
+      "apps/api/src/lib/burrow-shop-gifts.mjs"
+    ],
+    "productionLockfileRetainedSha1": "f8e4946b392815f23687329b348806711d0ba829",
+    "nativeAndSecretsExcluded": true,
+    "adminUnchanged": true,
+    "nativeOrOtaPublished": false
+  },
+  "compatibility": {
+    "oldClaimActionAndRpcUnchanged": true,
+    "bootstrapCoreAndPairPermissionFunctionsUnchanged": true,
+    "retiredGiftMetadataSeparateFromShopListings": true,
+    "newClaimAndOptionalReplacementAtomic": true,
+    "lostReceiptReplayCannotReapplyReplacement": true,
+    "missingNewRpcReturns503WithoutLegacyPartialClaim": true,
+    "oldApiRollbackInvalidActionRemainsRetryableInNewClient": true,
+    "durableGiftIntentAndWalletUnchangedOnCompatibilityFailure": true,
+    "unconfirmedGiftInventoryCannotAuthorizeZeroCostPurchase": true
+  },
+  "verification": {
+    "focusedAndCompatibilityRegressionTestsPassed": 26,
+    "apiTypeCheck": "passed",
+    "vercelProductionBuild": "passed",
+    "candidateAndProductionHttpChecks": {
+      "publicAppConfig": 200,
+      "unauthenticatedBootstrap": 401,
+      "unauthenticatedGameOverview": 401,
+      "unauthenticatedSurprise": 401,
+      "unauthenticatedLegacyGiftClaim": 401,
+      "unauthenticatedNewGiftClaim": 401
+    },
+    "rpcChecks": {
+      "anonymous": "401 / 42501 permission denied",
+      "serviceRoleWithVerifiedNonexistentIdentity": "200 / not_paired",
+      "legacyRpcWithVerifiedNonexistentIdentity": "not_paired"
+    },
+    "accountsCreated": 0,
+    "customerDataWrites": 0,
+    "authenticatedTwoAccountGiftTest": "Pending user login; not replaced by unauthenticated HTTP smoke tests",
+    "clientInteractionPerformanceChangesAppliedThisTurn": false,
+    "releasePerformanceSamplingThisTurn": false
+  },
+  "rollback": {
+    "knownGoodDeploymentId": "dpl_Aj3VZam5ifbwSh62oCQuDgbpKiD9",
+    "knownGoodDeploymentUrl": "https://novame-monorepo-lswjbrsan-soulsayit.vercel.app",
+    "command": "node /Users/nihao/.npm/_npx/69f9afb961c37556/node_modules/vercel/dist/vc.js rollback dpl_Aj3VZam5ifbwSh62oCQuDgbpKiD9 --yes --scope soulsayit --cwd /var/folders/_v/j_qgbwt96t9b2j57xdhvw13m0000gn/T/novame-api-production-release-vhFJep",
+    "databasePolicy": "Keep additive migration 250 if API is rolled back; old API ignores the new function and legacy clients retain their original claim endpoint",
+    "newClientPolicy": "A downlevel API's invalid_action leaves the same durable gift intent queued for retry; never fall back to a non-atomic partial claim",
+    "prePromotionFailure": "Do not promote; production domain remains on previous deployment",
+    "postPromotionFailure": "Roll back to the captured known-good API deployment; do not delete customer gift or inventory rows",
+    "actualProductionRollbackPerformed": false
+  },
+  "evidenceDirectory": "/private/tmp/novame-250-release-xuO3s4"
+}

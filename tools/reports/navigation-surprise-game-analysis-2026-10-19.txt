@@ -1,0 +1,99 @@
+退出后的短暂停顿、Surprise Room 与 Game Room 分析
+2026-10-19；本轮未修改客户端交互、UI 或业务代码。
+
+一、不是所有页面统一增加了“退出后等待 220ms”
+
+保留 Tab：apps/mobile/src/components/main/retained-tabs-navigator.tsx
+- 110 行：Animated.timing duration=220，原生驱动，cubic-out。
+- 193/199/205/213 行：动画未结束时，页面与底栏整体不接收触摸。
+- 112–118 行：需要 JS 收到动画完成回调，再经 setFinishedTransition 提交，
+  才重新开放触摸。原生画面已完成但 JS 繁忙时，触摸恢复可能晚于 220ms。
+- cubic-out 的尾段位移非常小，视觉上看起来已静止，但代码仍在转场期，
+  因此容易感知为“退出后又停了一小会儿”。这不是额外的固定 220ms timer。
+
+原生 Stack：apps/mobile/src/lib/main-navigation-options.ts
+- 普通 Rooms 使用 slide_from_right，走原生导航，不是上面的 220ms 实现。
+- iOS 的 slide_from_right 回落系统默认动画。不能把所有页面的
+  animationDuration 改成同一个数，就断言所有原生转场都缩短。
+  官方支持范围：
+  https://reactnavigation.org/docs/native-stack-navigator/#animationduration
+
+已排除的误判：
+- ui-work-priority.ts 的 48/140/240ms 是后台工作的安静窗口，不禁用按钮。
+- 兔子返回后 1 秒恢复只管兔子动画，不管点击。
+- use-navigation-action.ts 确有 600ms 防重，但仅 LegacyHomeScreen 使用；
+  当前 major-update 的 Burrow Home 不走它，不能把它当作本次根因。
+- 正常保留房间返回不会因 HomeEntryGate 再强制进入 Splash。
+
+建议（尚未实施）：
+1. 优先验证保留 Tab 关闭动画约 160–180ms，减少 cubic-out 近乎静止尾段。
+   这只是拟验证目标，不是已经测出的最优值。
+2. 收窄保护范围：退出层只拦截仍被它覆盖的区域，稳定露出的目标可接收
+   合法下一跳；导航动作仍串行、防重复，不能全局无条件开放造成误点。
+3. 减少完成回调附近的 JS/原生初始化工作，避免画面结束但触摸锁尚未提交。
+4. 原生默认转场单独处理；换 simple_push 虽有可调时长，但会有阴影/系统
+   行为差异，不应在要求 UI 不变时擅自替换。
+
+二、Surprise Room 有仍未处理的首屏初始化负担
+
+surprise-room-screen.tsx 的 Room 在选择相框阶段就创建：
+- useAudioPlayer 播放器，useAudioRecorder 录音器。
+- useAudioRecorderState(recorder,100)，即使未录制仍轮询原生状态。
+- 聚焦立即 acquireBurrowAudioFocus，停止背景音乐并广播状态更新。
+- Room 与 SurpriseFramePicker 均订阅/准备合成预览；同 key 有 flight
+  合并，不是必定重复合成，但不同照片/default key 仍是不同准备工作。
+- 未命中本地预览时，surprise-portrait-renderer.ts 做 Skia 合成、PNG 编码、
+  文件写入与图片解码。缓存命中会跳过合成，不能说每次都做同样重工作。
+- SurpriseFramePicker 用 ScrollView.map 一次创建全部相框入口。
+- useFocusEffect 还会在首次聚焦更新 focusVersion，带来额外渲染。
+
+本机 Expo Audio 源码验证：
+- src/ExpoAudio.ts 的 useAudioPlayer/useAudioRecorder 在挂载创建原生共享对象。
+- useAudioRecorderState 初次同步 getStatus，并启动 interval 轮询。
+- ios/AudioModule.swift 的构造器立即创建 AVAudioRecorder；此时不等于
+  已开始录音，也不等于相机或麦克风权限已弹出。
+
+预加载缺口：
+- burrow-route-modules.ts 没有 Surprise Room 的路由模块预热。
+- burrow-destination-model.ts/…preload.ts 没有普通 Surprise 首屏预挂载。
+- burrow-page-art.ts 只准备前 9 个框的图片，不等于完成音频、合成预览、
+  真实页面挂载与布局。
+- refreshSurpriseInbox 在 effect 发起，普通打开不 await 它；不是必须等待
+  这次网络请求才允许页面出现。
+- 收到 Surprise 的自动提示另有完整媒体准备链路，不等同普通制作入口。
+
+建议（尚未实施）：轻量首屏与音频工作分层；只预热素材/默认合成预览，
+录音器、轮询与播放资源按实际录制/播放阶段懒创建。避免为了“预挂载”把
+整个录音页面搬到 Home 后台，反而提前创建原生资源、打断音乐。
+保留录音权限、文件归属、发送防重、隐私与音频互斥规则。
+没有做当前版本的设备采样，不能把以上各项断言为具体多少毫秒的耗时。
+
+三、Game Room：缓存数据在，但页面可重新挂载，首屏绘制不足
+
+game-room-screen.tsx：
+- 78/94 行从 scoped cache 初始化/消费 overview，没有先清空缓存再联网。
+- 普通 Game Room 是 native stack route；从整个大厅退出会 pop，下一次
+  再进通常要重新创建大厅。进入游戏子页面时，下层大厅可仍然挂载。
+- 160–178 行：每次聚焦仍安排 refreshOverview + refreshBurrow，虽然放到
+  afterUiSettles，并不是每次打开都必须等待的加载，但会有额外同步/渲染。
+- 外层分类 FlatList initialNumToRender=2、maxToRenderPerBatch=2；
+  内层每条横向 rail 首批 4 张；图片预热也只覆盖前 2 个分类的首批卡片。
+- 上方 header/ListHeader 先创建，后续分类分批补齐，造成“先上面再下面”。
+  大屏上两个分类不足以覆盖首屏，这种配置尤其容易露出分批补绘过程。
+- AdventureStageTransition 首次挂载不执行 entering，不能把这个现象解释
+  为故意从上到下播放入场动画。
+- cache 虽定义 gameOverviewNeedsRefresh 的 TTL（活跃 30 秒、闲置 2 分钟），
+  当前大厅 focus effect 并未用它决定是否刷新，因此仍有收敛空间。
+
+建议（尚未实施）：首屏完整优先，而非一次渲染全部游戏。
+1. 按屏幕高度/分类实际高度准备足够覆盖首屏的分类、卡片及图片，首屏
+   以下继续虚拟化，保留内存和滚动表现。
+2. 大厅与答题子页面保持分层，按需复用轻量大厅，不长期保留所有题目页。
+3. 实时事件/业务完成负责失效与增量准备；TTL/前台恢复兜底，不是每次
+   点击都重复拉取。红点仍必须在内容就绪后出现。
+
+React Native 官方配置建议：首批数量应覆盖首屏；太少会有可见空白/后补。
+https://reactnative.dev/docs/optimizing-flatlist-configuration
+
+本轮执行范围：以上均为代码分析，未实施导航、Surprise 或 Game 绘制调整。
+按用户另行明确授权执行的生产动作仅为迁移 250 和收礼 API 发布。

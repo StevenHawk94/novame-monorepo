@@ -1,0 +1,61 @@
+{
+  "task": "Friends Room reward reveal, fixed actor geometry and 3-second shared coin animation",
+  "scope": "Client only; no database migration, server rule change or API deployment",
+  "behavior": {
+    "rewardTrigger": "Native entrance completion of the first post-answer reply, not answer tap, network receipt, summary or Done",
+    "rewardAmount": "Existing prepared 5/10-coin choice; authoritative server receipt still reconciles eligibility and balance",
+    "outbox": "Existing durable coin operation and visit cursor retained; reply reading and navigation never wait for network",
+    "reentryAndRetry": "No repeated credit or celebration on restored jobs, duplicate callbacks, ambiguous retries or reentry",
+    "exit": "Unseen held visual rewards are consumed silently so confirmed money is not stranded",
+    "accountAndPairFence": "Old owner callbacks ignored; unpair cleanup can release same-owner held balance without replaying animation",
+    "rejection": "Definitive refusal rolls back only the affected projection and its own celebration",
+    "actor": "Same scale, canvas coordinates and canonical dialogue-stage anchor from welcome onward; two poses share one scale",
+    "coinDurationMs": 3000,
+    "coinFlightMs": 1200,
+    "countArrivalWindowMs": [900, 1200],
+    "holdWindowMs": [1200, 2700],
+    "fadeWindowMs": [2700, 3000],
+    "lateReceipts": "Retarget count without restoring fading opacity or extending the existing flight deadline",
+    "continuousRewards": "Merge active flights; a subsequent distinct flight owns its own 3-second window without rewinding count",
+    "persistentWallet": "Remains visible; only the temporary reward wallet fades away",
+    "serialization": "Small confirmed wallet receipt cached immediately; full room serialization deferred past the longer animation",
+    "buttonsAndNavigation": "No new input lock, waiting screen or forced 3-second navigation delay"
+  },
+  "buildCleanup": {
+    "cause": "Unused prewarm export referenced missing game-room-icons/history.webp",
+    "fix": "Remove stale export and prewarm reference; update art generator and regression expectations",
+    "gameRoomUiUnchanged": "Existing Feather clock icon remains in use",
+    "gameArtworkCountVerified": 70,
+    "assetsDeleted": 0
+  },
+  "verification": {
+    "regressionTestsPassed": 258,
+    "regressionTestsFailed": 0,
+    "testedAreas": [
+      "Real visit local state, monetary outbox and wallet store integration",
+      "5/10-coin projection and first-reply-only release",
+      "Fast and delayed receipt, coin journal failure and retry",
+      "Exit, background, unpair and account switch fencing",
+      "Definitive server refusal and projection recovery",
+      "Actor geometry across all poses and compact/large screens",
+      "Native reveal completion callback, cancellation and once-only delivery",
+      "Exact 3000ms clock, fade, late corrections and continuous rewards",
+      "Adventure chest, Affection, Release Room, daily Plus bonus and notification readiness"
+    ],
+    "mobileTypecheck": "passed",
+    "iosProductionExport": "passed",
+    "androidProductionExport": "passed",
+    "gameArtRegistryCheck": "passed",
+    "diffWhitespaceCheck": "passed",
+    "apiCommandBytesMatchDeployedMigration255Release": true,
+    "simulatorOpened": false,
+    "physicalDeviceUiTest": "not performed",
+    "storeBuildOrOtaPublished": false
+  },
+  "evidence": {
+    "regressions": "/private/tmp/friend-reward-regressions-verified.log",
+    "typecheck": "/private/tmp/friend-reward-types-verified.log",
+    "ios": "/private/tmp/friend-visit-reward-ios-release.log",
+    "android": "/private/tmp/friend-visit-reward-android-release.log"
+  }
+}

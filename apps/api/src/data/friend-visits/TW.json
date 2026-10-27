@@ -1,0 +1,1110 @@
+{
+  "code": "TW",
+  "name": "Twig",
+  "friendId": "adventure_friend_tw",
+  "waitingLines": [
+    "Is {partner} coming back soon? Not that I’m waiting. I’m totally waiting. Nice weather.",
+    "Okay so I’ll just sit here quietly until {partner} gets home. Quietly. Mostly quietly."
+  ],
+  "questions": [
+    {
+      "id": "TW-V01",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig scurries in at top speed, hits your rug, slides, and pretends that was the plan.",
+      "lines": [
+        "Hi hi hi okay so I was humming earlier and it made me think of a quiz. Nice weather."
+      ],
+      "question": "Male mice do something surprising to impress a mate. What is it?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Bring her cheese",
+          "reply": [
+            "Cute, very cartoon, but no.",
+            "Male mice sing ultrasonic love songs, way too high for humans to hear.",
+            "Real-life mice are basically secret boy bands."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Sing high-pitched love songs",
+          "reply": [
+            "YES. Mice sing! Ultrasonic serenades, too high for you to hear.",
+            "Male mice sing complex songs to court females.",
+            "If Sage could hear me sing... wait no, never mind. Nice weather."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Do a little dance",
+          "reply": [
+            "Okay, I would pay to see that.",
+            "They actually sing: ultrasonic songs humans can't hear.",
+            "Tiny love ballads happening in your walls right now. You're welcome."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Male mice produce ultrasonic courtship songs.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V02",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig unrolls a list titled '36 Questions' and immediately rolls it back up.",
+      "lines": [
+        "This is research. For a friend. The friend is me."
+      ],
+      "question": "Psychologists created a set of 36 questions designed to do what?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Help strangers feel close quickly",
+          "reply": [
+            "Yes!! Strangers asking deep questions in turns!",
+            "The study found pairs felt surprisingly close afterward.",
+            "Should I ask Sage all 36? Is that too many? It's too many. Nice weather."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Test if someone is lying",
+          "reply": [
+            "No, that's a different, scarier test.",
+            "They're questions that help two people build closeness fast.",
+            "Taking turns opening up, a little more each round. So brave."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Pick the perfect pizza topping",
+          "reply": [
+            "I'd answer those instantly. Pineapple. Sorry.",
+            "It's a set designed to build closeness between strangers.",
+            "Questions get deeper slowly. Like my crush. Slowly. Deeper."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Aron et al. (1997) developed 36 questions to generate interpersonal closeness.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V03",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig touches a little potted plant and it folds its leaves shut. She gasps.",
+      "lines": [
+        "IT'S SHY. IT'S LIKE ME."
+      ],
+      "question": "Why does the 'sensitive plant' (Mimosa) fold up when touched?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "It's allergic to fingers",
+          "reply": [
+            "Haha! No.",
+            "It folds to protect itself, maybe to scare off hungry bugs.",
+            "Water rushes out of special cells, so the leaves collapse in seconds."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "It's falling asleep",
+          "reply": [
+            "Aww, nap plant. Close, but no.",
+            "It's a defense move, triggered by touch.",
+            "Water shifts in its cells, so the leaves fold in seconds."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "A quick defense reaction",
+          "reply": [
+            "Correct! A defense move!",
+            "Touch triggers water to rush out of cells, so leaves fold fast.",
+            "Same thing happens to me when Sage says hi. Instant fold."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Mimosa pudica folds leaves rapidly when touched, likely as defense.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V04",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig tilts her head left, then right, then left again, practicing something.",
+      "lines": [
+        "Purely hypothetical tilting. Unrelated to any future plans."
+      ],
+      "question": "When people kiss, which way do most tilt their heads?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "To the left",
+          "reply": [
+            "Some do! But most tilt right.",
+            "A study found about two-thirds of people tilt their heads right.",
+            "Lefties exist. They're the rebels of kissing."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Straight on, no tilt",
+          "reply": [
+            "Bonk. That's noses colliding.",
+            "Most people tilt right, about two out of three.",
+            "Straight on is how you headbutt. Romantically, maybe."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "To the right",
+          "reply": [
+            "Yes! About two out of three people tilt right!",
+            "Scientists literally watched couples kissing in public to find this out.",
+            "Okay so I should tilt right. Noted. Not for anything. Nice weather."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Güntürkün (2003) observed ~2/3 of kissing couples turn heads to the right.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V05",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig picks up a smooth pebble from your garden and holds it like treasure.",
+      "lines": [
+        "This is perfect. This is so perfect. For... no reason."
+      ],
+      "question": "What do gentoo penguins give potential mates?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Small fish",
+          "reply": [
+            "Snacks are romantic, but no.",
+            "Gentoo penguins give pebbles to their crushes.",
+            "Pebbles build their nests. It's literally a 'let's build a home' gift."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Pebbles",
+          "reply": [
+            "YES. Pebbles. I'm crying.",
+            "A good pebble helps build a nest, so it's a big deal.",
+            "Should I give Sage a pebble? Is that weird? Nice weather."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Seashells",
+          "reply": [
+            "Pretty, but no.",
+            "They give pebbles. Nest-building gifts.",
+            "A pebble from a penguin is basically a promise ring."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Gentoo penguins offer pebbles to mates during courtship.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V06",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig wraps her tail around a pen and lifts it, wobbling dramatically.",
+      "lines": [
+        "Look look look. Okay I dropped it."
+      ],
+      "question": "What can a harvest mouse do with its tail?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Grab onto grass stalks, like a fifth hand",
+          "reply": [
+            "YES. A tail that grabs things!",
+            "Harvest mice wrap their tails around stems to climb and balance.",
+            "I tried. I dropped the pen. Still proud."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Use it to send Morse code",
+          "reply": [
+            "Ha! That would solve all my texting problems.",
+            "Harvest mice use their tails to grip grass stems while climbing.",
+            "Basically a fifth hand. Very handy. Sorry. Pun."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Nothing, it's just decoration",
+          "reply": [
+            "Rude to tails everywhere.",
+            "Harvest mice can grip grass stalks with their tails.",
+            "It helps them balance way up on wobbly stems."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Harvest mice have prehensile tails.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V07",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig 'accidentally' walks past your window. Then again. Then again.",
+      "lines": [
+        "Totally random. Very random. Science says this works, actually."
+      ],
+      "question": "What's the 'mere exposure effect'?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "You get sunburned if you stay outside",
+          "reply": [
+            "That's just exposure. Mere sunburn.",
+            "It's about liking people and things more after seeing them often.",
+            "Familiar feels safe, and safe feels nice."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "We tend to like things more the more often we see them",
+          "reply": [
+            "YES. Familiarity breeds fondness!",
+            "Repeated exposure tends to make things feel more likable.",
+            "This is why I walk past Sage's café daily. It's SCIENCE."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Seeing something too much makes you hate it",
+          "reply": [
+            "Sometimes! But usually the opposite.",
+            "Repeated exposure tends to increase liking.",
+            "Up to a point. I'll keep my walk-bys to twice a day."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Zajonc's mere-exposure effect: repeated exposure increases liking.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V08",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig arranges blue buttons on your table in a perfect line.",
+      "lines": [
+        "Decorating! For a bird reason!"
+      ],
+      "question": "How does a male bowerbird try to attract a mate?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Builds and decorates a fancy display",
+          "reply": [
+            "YES. Interior design for love!",
+            "Males build bowers and decorate with colorful objects, often blue ones.",
+            "Some even arrange items by size. Main character behavior."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Sings opera",
+          "reply": [
+            "Dramatic! Not the answer!",
+            "They build and decorate fancy structures called bowers.",
+            "Shiny objects, flowers, berries. Total aesthetic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Writes a love letter",
+          "reply": [
+            "Okay, I'd faint.",
+            "They build a bower and decorate it with colorful treasures.",
+            "Blue is a favorite for some species. Taste."
+          ]
+        }
+      ],
+      "correctOption": "A",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Male bowerbirds build and decorate bowers to attract females.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V09",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig waves her arms and wiggles, doing a strange little dance.",
+      "lines": [
+        "This is how spiders flirt. I've been practicing. Don't watch."
+      ],
+      "question": "How do male peacock spiders try to impress a mate?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Bring her a fly with a bow on it",
+          "reply": [
+            "Cute! Not real!",
+            "They lift a colorful flap on their abdomen and dance.",
+            "Tiny, colorful, bold. Everything I'm not."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Spin a heart-shaped web",
+          "reply": [
+            "Omg that would be adorable. No.",
+            "They show off a colorful flap and do a little dance.",
+            "Some are smaller than a grain of rice. Big moves, tiny body."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Raise a colorful flap and dance",
+          "reply": [
+            "YES!! A tiny rainbow dance!",
+            "They lift a bright, colorful fan and wave their legs in a dance.",
+            "If I danced for Sage, would he... no. Nice weather."
+          ]
+        }
+      ],
+      "correctOption": "C",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Male peacock spiders (Maratus) display colorful abdominal flaps and dance.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V10",
+      "friendId": "adventure_friend_tw",
+      "type": "Trivia",
+      "scene": "Twig turns to face the window, then turns to face you, then back again.",
+      "lines": [
+        "I'm following the sun. And you. And the sun."
+      ],
+      "question": "What do young sunflowers do during the day?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Stand completely still",
+          "reply": [
+            "Nope! They move!",
+            "Young sunflowers turn to follow the sun across the sky.",
+            "Then they reset overnight. Like a crush reset."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Follow the sun across the sky",
+          "reply": [
+            "Correct! Sun-tracking babies!",
+            "Young sunflowers turn east to west, then reset overnight.",
+            "Grown-up flowers mostly face east. Committed. Respect."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Close up like a book",
+          "reply": [
+            "Aww, no.",
+            "Young sunflowers follow the sun all day.",
+            "Then they reset at night to face east again."
+          ]
+        }
+      ],
+      "correctOption": "B",
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 5,
+      "factBasis": "Young sunflowers track the sun (heliotropism); mature heads mostly face east.",
+      "coupleReplies": {}
+    },
+    {
+      "id": "TW-V11",
+      "friendId": "adventure_friend_tw",
+      "type": "Preference",
+      "scene": "Twig fans herself with a napkin. Her cheeks are very pink.",
+      "lines": [
+        "Hypothetically, if someone, anyone, wanted to confess... Nice weather. Anyway."
+      ],
+      "question": "Confessing a crush: in person, or by text?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "In person",
+          "reply": [
+            "In person?? With your actual face?? Legend.",
+            "I'd make eye contact for one second and then evaporate."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "By text",
+          "reply": [
+            "By text. Safe. Editable. Smart.",
+            "You can rewrite it 40 times and nobody has to know. Not that I do that."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "In person for both of you. A courage couple.",
+          "So you and {partner} looked each other in the eye and SAID it?",
+          "Okay I need a full replay. Slow motion. Please."
+        ],
+        "A:B": [
+          "By text for you. {partner} wants it in person.",
+          "They want eye contact. You want the backspace key.",
+          "Text it, then show up with snacks. Best of both. Stealing this."
+        ],
+        "B:A": [
+          "In person for you. {partner} would rather text it.",
+          "So you'd say it out loud, and they'd reply later with 'same' and a heart?",
+          "Honestly? That's my dream scenario. Writing it down."
+        ],
+        "B:B": [
+          "By text for both of you. Typing champions.",
+          "I bet you and {partner} both stared at 'typing...' for ten full minutes.",
+          "That's my plan too. I have 14 drafts. It's fine."
+        ]
+      }
+    },
+    {
+      "id": "TW-V12",
+      "friendId": "adventure_friend_tw",
+      "type": "Preference",
+      "scene": "Twig peeks around your door like she just happened to be passing by. For the third time.",
+      "lines": [
+        "Total coincidence that I'm here. Total."
+      ],
+      "question": "Making the first move: ask them out directly, or 'accidentally' keep running into them?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Ask directly",
+          "reply": [
+            "Directly?! A hero walks among us.",
+            "No plan B, no hiding behind plants. Wow."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "'Accidentally' run into them",
+          "reply": [
+            "Strategic run-ins. My entire life strategy.",
+            "I know Sage's coffee schedule. For... unrelated reasons."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both go direct. No games. Very healthy. Very scary.",
+          "Neither you nor {partner} would survive my method.",
+          "Can one of you write me a script? Bullet points are fine."
+        ],
+        "A:B": [
+          "You'd plan the run-ins. {partner} would just ask.",
+          "You'd be hiding behind a plant while they walk up and say hi.",
+          "Let them do it. Accept graciously. Pretend you weren't hiding."
+        ],
+        "B:A": [
+          "You'd ask directly. {partner} would rather 'run into' you.",
+          "So while they're memorizing your schedule, you just say 'coffee?'",
+          "Efficient. Brutal. Romantic. I'm taking notes."
+        ],
+        "B:B": [
+          "Strategic run-ins for both of you. Masterminds.",
+          "Honestly, you and {partner} 'bumped into' each other for how many months?",
+          "I see you. I am you. Nice weather."
+        ]
+      }
+    },
+    {
+      "id": "TW-V13",
+      "friendId": "adventure_friend_tw",
+      "type": "Preference",
+      "scene": "Twig clutches a tiny notebook full of crossed-out lines.",
+      "lines": [
+        "Okay hypothetical gift for a hypothetical crush. Help. Fast."
+      ],
+      "question": "The perfect 'I like you' gift?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "A playlist",
+          "reply": [
+            "A playlist. Every song is a secret clue.",
+            "Track seven says what you can't. Track eight says it louder."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "A handwritten note",
+          "reply": [
+            "A handwritten note?! So brave.",
+            "Your handwriting is basically your heart, but in ink."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Their favorite snack",
+          "reply": [
+            "Their favorite snack. Sneaky and smart.",
+            "It says 'I pay attention to you.' Without saying it."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Playlist for both of you. Music nerds in love.",
+          "I can picture it: you and {partner} speak entirely in song lyrics.",
+          "Please tell me there's a shared playlist with a cheesy name."
+        ],
+        "A:B": [
+          "Note for you. {partner} would rather get a playlist.",
+          "So they'd want feelings in song form, and you'd want them in ink.",
+          "Write the lyrics of their favorite song by hand. Combo achieved."
+        ],
+        "A:C": [
+          "Snacks for you. {partner} prefers a playlist.",
+          "Snacks and songs. That's a whole date honestly.",
+          "Picnic, headphones, done. I'm so jealous."
+        ],
+        "B:A": [
+          "Playlist for you. {partner} would rather get a note.",
+          "Easy fix: write one line for every song.",
+          "Track list with tiny love notes. I'm sweating. That's so good."
+        ],
+        "B:B": [
+          "Handwritten notes for both of you. My heart.",
+          "I bet you and {partner} keep each other's notes in a box somewhere.",
+          "Don't answer. Just let me imagine it. Thank you."
+        ],
+        "B:C": [
+          "Snacks for you. {partner} wants a handwritten note.",
+          "Write 'I like you' on the snack bag in marker.",
+          "Low effort, high impact. I'm writing this down. Wait. For no one."
+        ],
+        "C:A": [
+          "Playlist for you. {partner} wants their favorite snack.",
+          "Make a playlist called 'songs to eat chips to.'",
+          "Gift both. Watch them crunch and smile."
+        ],
+        "C:B": [
+          "Note for you. {partner} wants snacks.",
+          "Tape the note to their favorite snack. Romance AND protein.",
+          "They'll read it mid-bite. Perfect timing."
+        ],
+        "C:C": [
+          "Favorite snack for both of you. Practical lovers.",
+          "Pretty sure you and {partner} show affection by knowing each other's chip flavor.",
+          "That's real intimacy. Don't let anyone tell you otherwise."
+        ]
+      }
+    },
+    {
+      "id": "TW-V14",
+      "friendId": "adventure_friend_tw",
+      "type": "Preference",
+      "scene": "Twig's phone buzzes. Her group chat is named 'SAGE WATCH 2026'. She flips the phone over.",
+      "lines": [
+        "That's a book club. A plant book club."
+      ],
+      "question": "Back when you had a crush: did you tell your friends everything, or keep it secret?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "Told everyone",
+          "reply": [
+            "Told everyone. Group chat had a whole investigation.",
+            "Screenshots, timelines, astrology charts. The works."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Kept it secret",
+          "reply": [
+            "Kept it secret. Mysterious. Unbothered.",
+            "How?? I can't even keep a secret from my reflection."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You both told everyone. Your friends knew before you two did.",
+          "Somewhere there's a group chat about you and {partner} with 400 unread messages.",
+          "Honestly, your friends deserve credit at the wedding."
+        ],
+        "A:B": [
+          "You kept it secret. {partner} told literally everyone.",
+          "Their group chat has screenshots of you. Analyzed. Color-coded.",
+          "Ask to see it. Brace yourself. It's going to be adorable."
+        ],
+        "B:A": [
+          "You told everyone. {partner} kept it secret.",
+          "Your friends knew everything. Their friends knew nothing.",
+          "Ask their friends now. Watch them find out on replay."
+        ],
+        "B:B": [
+          "You both kept it secret. Ninja crushes.",
+          "Nobody knew? Not even one friend? You and {partner} are spies.",
+          "Teach me your ways. My face tells everyone everything."
+        ]
+      }
+    },
+    {
+      "id": "TW-V15",
+      "friendId": "adventure_friend_tw",
+      "type": "Preference",
+      "scene": "Twig stares out your window. Fidgets. Stares again.",
+      "lines": [
+        "...Nice weather. Sorry, that's my default."
+      ],
+      "question": "Nervous small talk go-to: the weather, or random fun facts?",
+      "selfQuestion": null,
+      "choices": [
+        {
+          "id": "A",
+          "label": "The weather",
+          "reply": [
+            "The weather. Iconic. My people.",
+            "'Nice weather' has gotten me through every awkward moment ever."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Random fun facts",
+          "reply": [
+            "Fun facts. Weird, cute, memorable.",
+            "Nothing breaks tension like 'did you know otters hold hands?'"
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Weather talk for both of you. My kind of couple.",
+          "Lowkey, you and {partner} probably bonded over a suspicious cloud.",
+          "Sunny with a chance of love. Sorry. I had to."
+        ],
+        "A:B": [
+          "Fun facts for you. {partner} defaults to weather.",
+          "You're over here talking wombats. They're commenting on humidity.",
+          "Somehow it works. Two nervous systems, one love story."
+        ],
+        "B:A": [
+          "Weather for you. {partner} panics in fun facts.",
+          "They say 'snails can sleep for three years,' you say 'cloudy today.'",
+          "That's a nervous duet. Honestly charming."
+        ],
+        "B:B": [
+          "Fun facts for both of you. Nerd romance.",
+          "I bet you and {partner} flirted entirely through trivia.",
+          "Octopuses have three hearts. Imagine having three hearts for someone."
+        ]
+      }
+    },
+    {
+      "id": "TW-V16",
+      "friendId": "adventure_friend_tw",
+      "type": "Guess",
+      "scene": "Twig giggles way too loud at nothing, then slaps a paw over her mouth.",
+      "lines": [
+        "Nervous laugh. Ignore it."
+      ],
+      "question": "Back when your partner had a crush on you, what gave it away?",
+      "selfQuestion": "Back when you had a crush on your partner, what gave it away?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Laughing at every single joke",
+          "reply": [
+            "Laughing at every joke. Even the bad ones. Especially the bad ones.",
+            "That's not humor. That's love."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "'Accidentally' showing up everywhere",
+          "reply": [
+            "'Accidentally' everywhere. Coincidence? I think not.",
+            "Respect. That takes logistics."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Staring, then panicking",
+          "reply": [
+            "Staring, then panicking. That's my whole situation.",
+            "Eye contact, then full-body chaos."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You laughed at every joke, and {partner} clocked it.",
+          "They knew their jokes weren't that funny. They noticed.",
+          "Laughing at bad puns is a love language. I said what I said."
+        ],
+        "A:B": [
+          "You showed up everywhere. {partner} thought it was the laughing.",
+          "They have no idea you planned those 'random' meetings.",
+          "Tell them. Watch them replay every coincidence. Iconic."
+        ],
+        "A:C": [
+          "Staring then panicking for you. {partner} thought it was the laughing.",
+          "They missed the staring? How? You were probably so loud about it.",
+          "Tell them about the panicked looking-away. They'll melt."
+        ],
+        "B:A": [
+          "You laughed at everything. {partner} thought it was your 'coincidences.'",
+          "So they noticed your schedule but not your fake laughing? Lucky.",
+          "Confess the laughing now. They'll be so smug."
+        ],
+        "B:B": [
+          "You kept 'accidentally' showing up, and {partner} knew all along.",
+          "Your coincidences had a suspiciously good schedule.",
+          "And they still let you think it was smooth. That's love."
+        ],
+        "B:C": [
+          "Staring then panicking for you. {partner} remembers you always 'being around.'",
+          "They noticed you nearby, but not you looking at them.",
+          "Next date: stare, panic, then tell them. Full circle."
+        ],
+        "C:A": [
+          "You laughed at everything. {partner} noticed the staring instead.",
+          "So you were laughing AND staring. Double obvious.",
+          "Honestly you were not subtle at all. I love that for you."
+        ],
+        "C:B": [
+          "You showed up everywhere. {partner} remembers the staring.",
+          "So they caught your eyes but missed your master plan.",
+          "Secret mission: still classified. Nice weather."
+        ],
+        "C:C": [
+          "Staring then panicking, and {partner} caught every single one.",
+          "They watched you look away so fast you almost fell.",
+          "Reassuring, honestly. If you two made it, maybe I can too."
+        ]
+      }
+    },
+    {
+      "id": "TW-V17",
+      "friendId": "adventure_friend_tw",
+      "type": "Guess",
+      "scene": "Twig spins once, slips on your rug, and grabs the table to stay up.",
+      "lines": [
+        "I'm a terrible dancer. That was a preview."
+      ],
+      "question": "If your partner had to slow-dance in public, what would happen?",
+      "selfQuestion": "If you had to slow-dance in public, what would happen?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Total smooth operator",
+          "reply": [
+            "Smooth operator? Movie scene unlocked.",
+            "Spin, dip, the crowd applauds, I faint."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Steps on toes, laughs it off",
+          "reply": [
+            "Steps on toes, laughs it off. The cutest version.",
+            "Honestly better than smooth. More real."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You're smooth, and {partner} already knew.",
+          "They've seen the kitchen twirls. They know your secret talent.",
+          "Next party, you lead. They hold on and look impressed."
+        ],
+        "A:B": [
+          "You'd step on toes. {partner} imagined you gliding.",
+          "Their expectations: ballroom. Reality: bumper cars.",
+          "Laugh through it. Somehow it'll be even more romantic."
+        ],
+        "B:A": [
+          "You'd be smooth. {partner} expected stepped-on toes.",
+          "They underestimated you. Surprise twirl incoming.",
+          "Dip them dramatically. Watch their face. Report back to me."
+        ],
+        "B:B": [
+          "Toes get stepped on, and {partner} already knew.",
+          "They've accepted their feet are a sacrifice for love.",
+          "Laugh-dancing is the best dancing. Ask anyone. Ask me."
+        ]
+      }
+    },
+    {
+      "id": "TW-V18",
+      "friendId": "adventure_friend_tw",
+      "type": "Guess",
+      "scene": "Twig scrolls way up in an old chat, then locks her phone very fast.",
+      "lines": [
+        "I wasn't rereading anything. Phones just scroll by themselves."
+      ],
+      "question": "Does your partner reread old texts from your early dating days?",
+      "selfQuestion": "Do you reread old texts from your early dating days?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Yes, all the time",
+          "reply": [
+            "Yes, all the time. Sentimental queen behavior.",
+            "There's probably a screenshot folder labeled with a heart."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Never, that's chaos",
+          "reply": [
+            "Never. Lives in the present. So healthy.",
+            "Teach me. I've reread one 'haha' from Sage 90 times."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You reread them all the time, and {partner} knew.",
+          "They've caught you smiling at your phone at 1 a.m. They know.",
+          "Read your favorite out loud. Watch them cringe and melt."
+        ],
+        "A:B": [
+          "You never reread them. {partner} imagined you scrolling and smiling.",
+          "They think you're more sentimental than you are. Cute.",
+          "Try it once. You'll cringe. You'll smile. Worth it."
+        ],
+        "B:A": [
+          "You reread them. {partner} thought you never would.",
+          "Secret softie exposed. Your sentimental side has been found.",
+          "Send them a screenshot from the very first week. Chaos and love."
+        ],
+        "B:B": [
+          "Never, and {partner} knew it.",
+          "They know you live in the now. Very zen. Very not me.",
+          "Maybe they're secretly the one with the screenshot folder."
+        ]
+      }
+    },
+    {
+      "id": "TW-V19",
+      "friendId": "adventure_friend_tw",
+      "type": "Guess",
+      "scene": "Twig scribbles in her notebook, crosses it out, scribbles more, crosses that out too.",
+      "lines": [
+        "I'm writing a poem. For a cloud. A specific cloud."
+      ],
+      "question": "If your partner wrote you a love poem, what would it be like?",
+      "selfQuestion": "If you wrote your partner a love poem, what would it be like?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Deep and dramatic",
+          "reply": [
+            "Deep and dramatic. Tissue warning.",
+            "Moonlight, longing, seven stanzas."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Funny and full of rhymes",
+          "reply": [
+            "Funny with rhymes. Love that.",
+            "'You're my honey, you're so funny.' Classic."
+          ]
+        },
+        {
+          "id": "C",
+          "label": "Three words long",
+          "reply": [
+            "Three words long. Efficient poet.",
+            "Short, sharp, devastating."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "Deep and dramatic, and {partner} expected nothing less.",
+          "They already know you'd write three pages about their eyebrows.",
+          "Frame it. Read it on every anniversary."
+        ],
+        "A:B": [
+          "Funny rhymes for you. {partner} expected drama.",
+          "They're ready to cry. You hand them a limerick.",
+          "Honestly, laughing is romantic too. Ask any comedian's partner."
+        ],
+        "A:C": [
+          "Three words for you. {partner} expected drama.",
+          "They were ready for an epic. You drop three words and leave.",
+          "Mic drop. Legendary poet energy."
+        ],
+        "B:A": [
+          "Deep and dramatic for you. {partner} expected silly rhymes.",
+          "They're ready to giggle. You hand them seven stanzas of feelings.",
+          "They'll be crying by stanza two. Bring tissues."
+        ],
+        "B:B": [
+          "Funny rhymes, and {partner} called it.",
+          "They're already bracing for 'roses are red, you're my bread.'",
+          "Honestly, rhyme-based love is underrated."
+        ],
+        "B:C": [
+          "Three words for you. {partner} expected funny rhymes.",
+          "They wanted 'moon' and 'June.' You gave them pure sincerity.",
+          "Somehow that's even more devastating. In a good way."
+        ],
+        "C:A": [
+          "Deep and dramatic for you. {partner} expected three words.",
+          "They think you're short and sweet. Surprise, you're a novelist.",
+          "Make the last line just three words. Twist ending."
+        ],
+        "C:B": [
+          "Funny rhymes for you. {partner} expected three words.",
+          "They're expecting a short line. You bring a whole rap.",
+          "Bonus content. They'll memorize it."
+        ],
+        "C:C": [
+          "Three words, and {partner} knew it.",
+          "They know you'd say everything in a single line.",
+          "And it would hit harder than any epic poem. Unfair."
+        ]
+      }
+    },
+    {
+      "id": "TW-V20",
+      "friendId": "adventure_friend_tw",
+      "type": "Guess",
+      "scene": "Twig closes her eyes and puckers, then opens them, horrified that you saw.",
+      "lines": [
+        "I was stretching my face. Face yoga. It's a thing!"
+      ],
+      "question": "How would your partner react to a surprise kiss?",
+      "selfQuestion": "How would you react to a surprise kiss?",
+      "choices": [
+        {
+          "id": "A",
+          "label": "Melts instantly",
+          "reply": [
+            "Melts instantly. A puddle. A soft puddle.",
+            "Knees gone. Brain gone. Smile stays."
+          ]
+        },
+        {
+          "id": "B",
+          "label": "Acts shocked, then kisses back",
+          "reply": [
+            "Fake shock, then kisses back. Main character move.",
+            "Dramatic gasp, then romance."
+          ]
+        }
+      ],
+      "correctOption": null,
+      "coinsIfCorrect": 10,
+      "coinsIfWrong": 10,
+      "factBasis": null,
+      "coupleReplies": {
+        "A:A": [
+          "You'd melt instantly, and {partner} knew.",
+          "They know you're a marshmallow pretending to be a person.",
+          "Surprise them back sometime. Turnabout is cute."
+        ],
+        "A:B": [
+          "You'd act shocked first. {partner} expected you to melt.",
+          "They'll think they messed up. Then you kiss back. Twist.",
+          "Don't leave them hanging too long. Three seconds max."
+        ],
+        "B:A": [
+          "You'd melt. {partner} expected fake shock first.",
+          "They're ready for drama. You just turn into soup.",
+          "That's even better. Seriously. Nice weather."
+        ],
+        "B:B": [
+          "Fake shock then kiss back, and {partner} knew.",
+          "They're expecting the gasp. They secretly live for it.",
+          "The drama is part of the charm. Never stop."
+        ]
+      }
+    }
+  ]
+}

@@ -53,116 +53,73 @@ function text(tree) {
   return text(tree?.props?.children || '');
 }
 const engine = load('packages/engine/src/items/tap-your-day.ts', {
-  './tap-your-day-v1.json': JSON.parse(read('packages/engine/src/items/tap-your-day-v1.json')),
+  './tap-your-day-v2.json': require('../packages/engine/src/items/tap-your-day-v2.json'), './tap-your-day-v4.json': require('../packages/engine/src/items/tap-your-day-v4.json'), './tap-your-day-local.json': require('../packages/engine/src/items/tap-your-day-local.json'), './tap-your-day-v1.json': JSON.parse(read('packages/engine/src/items/tap-your-day-v1.json')),
 });
 const rawCatalog = load('apps/mobile/src/lib/guided-catalog.g.ts');
 const catalog = load('apps/mobile/src/lib/custom-tap-catalog.ts', { '@novame/engine': engine, './guided-catalog.g': rawCatalog });
 const [activity, food, people, feeling] = engine.TAP_YOUR_DAY_QUESTIONS;
 
-test('destinations are exactly six activity + four food headings; people/feelings cannot add', () => {
-  assert.equal(catalog.CUSTOM_TAP_GROUPS.length, 10);
-  assert.equal(catalog.CUSTOM_TAP_GROUPS.filter(group => group.kind === 'activity').length, 6);
-  assert.equal(catalog.CUSTOM_TAP_GROUPS.filter(group => group.kind === 'food').length, 4);
+test('only approved optional groups are addable; people and feelings stay fixed', () => {
+  assert.equal(catalog.CUSTOM_TAP_GROUPS.length, 12);
+  assert.equal(catalog.CUSTOM_TAP_GROUPS.filter(group => group.kind === 'activity').length, 8);
   assert.deepEqual(plain(engine.TAP_YOUR_DAY_QUESTIONS.map(catalog.canAddCustomTapItem)), [true, true, false, false]);
-  assert.equal(catalog.customTapDestination('Fruit'), undefined);
-  assert.equal(catalog.customTapDestination('DRINKS').kind, 'food');
+  assert.deepEqual(plain(catalog.CUSTOM_TAP_GROUPS.filter(group => group.kind === 'food').map(group => group.title)), ['MEALS', 'CUISINE', 'SNACKS', 'DRINKS']);
 });
-test('browser has ten Main_Category choices, each containing the union of its secondary categories', () => {
-  assert.equal(catalog.CUSTOM_TAP_ICON_CATEGORIES.length, 10);
-  const dictionary = JSON.parse(read('packages/engine/src/items/dictionary.json'));
-  for (const category of catalog.CUSTOM_TAP_ICON_CATEGORIES) {
-    const parent = rawCatalog.PROMPT_CATEGORIES.find(value => value.key === category.key);
-    assert.equal(category.label, parent.label);
-    assert.ok(category.itemIds.length > 0);
-    assert.deepEqual(plain(category.itemIds), [...new Set(parent.subcategories.flatMap(group => group.itemIds))]);
-    assert.ok(category.itemIds.every(id => dictionary.items[id]), category.label);
-  }
-});
-test('custom destinations are visible on the correct question; old groups remain accessible without cache mutation', () => {
-  const items = [
-    { itemId: 'a', label: 'Custom tea', kind: 'activity', group: 'DRINKS', custom: true },
-    { itemId: 'b', label: 'Old category', kind: 'food', group: 'Fruit', custom: true },
-    { itemId: 'c', label: 'An old friend', kind: 'person', group: 'My Items', custom: true },
-    { itemId: 'd', label: 'Old feeling', kind: 'feeling', group: 'My Items', custom: true },
-  ];
+test('optional IDs have canonical destinations, retired choices are hidden without mutating legacy preferences', () => {
+  const pick = engine.TAP_YOUR_DAY_OPTIONAL_CHOICES.find(x => x.group === 'CUISINE');
+  const items = [{ ...pick, label: 'Old custom name', kind: 'activity', group: 'DAILY RHYTHM' },
+    { itemId: 'retired-charger', label: 'Charger', kind: 'food', group: 'MEALS', custom: true }, pick];
   const before = JSON.stringify(items);
-  for (const question of [activity, food, people, feeling]) {
-    const rows = catalog.customTapGroupsForQuestion(question, items);
-    assert.deepEqual(plain(rows.map(group => group.title)), plain(question.groups.map(group => group.title)));
-    assert.equal(rows.flatMap(group => group.choices).filter(choice => !choice.custom).length,
-      question.groups.flatMap(group => group.choices).length);
-  }
   const rows = catalog.customTapGroupsForQuestion(food, items);
-  assert.equal(rows.find(group => group.title === 'DRINKS').choices.find(choice => choice.itemId === 'a').kind, 'food');
-  assert.equal(rows[0].choices.find(choice => choice.itemId === 'b').label, 'Old category');
+  assert.equal(rows.find(group => group.title === 'CUISINE').choices.length, 1);
+  assert.equal(rows.find(group => group.title === 'CUISINE').choices[0].label, pick.label);
+  assert.equal(catalog.customTapGroupsForQuestion(activity, items).flatMap(g => g.choices).filter(x => x.custom).length, 0);
   assert.equal(JSON.stringify(items), before);
-  assert.equal(catalog.customTapGroupsForQuestion(activity, items).flatMap(group => group.choices).filter(choice => choice.custom).length, 0);
+  assert.equal(rows.flatMap(g => g.choices).some(x => x.itemId === 'retired-charger'), false);
 });
-
-function sheetHarness() {
-  const hooks = reactHarness(), saved = [];
-  let closed = 0;
-  const components = Object.fromEntries(['FlatList', 'KeyboardAvoidingView', 'Modal', 'Pressable', 'ScrollView', 'Text', 'TextInput', 'View'].map(name => [name, name]));
+function sheetHarness(question = activity, addedItems = []) {
+  const hooks = reactHarness(), saved = []; let closed = 0;
+  const components = Object.fromEntries(['FlatList', 'KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', 'TextInput', 'View'].map(name => [name, name]));
   const { CustomTapItemSheet } = load('apps/mobile/src/components/main/custom-tap-item-sheet.tsx', {
-    react: hooks.react,
-    '@/components/ui/screen-overlay': { ScreenOverlay: 'Modal' },
+    "@/components/burrow/burrow-back-button":{BackIcon:'BackIcon',BurrowBackButton:'BackButton'},
+    react: hooks.react, '@/components/ui/screen-overlay': { ScreenOverlay: 'Modal' },
     'react-native': { ...components, Keyboard: { dismiss() {} }, Platform: { OS: 'ios' }, StyleSheet: { create: s => s } },
     '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 47, bottom: 34 }) },
-    '@novame/engine': { ITEM_DICTIONARY: { items: { coffee: { displayName: 'Coffee' } } }, matchItems: value => value === 'coffee' ? [{ itemId: 'coffee' }] : [] },
-    '@/lib/custom-tap-catalog': catalog,
-    '@/lib/remote-items': {
-      mergedItemDictionary: () => ({ items: { coffee: { displayName: 'Coffee' } } }),
-      remoteIdsForPromptCategory: () => [],
-    },
-    '@/components/ui/item-sprite': { ItemSprite: 'ItemSprite' }, '@/lib/haptics': { haptics: { light() {} } },
+    '@novame/engine': engine, '@/lib/custom-tap-catalog': catalog,
+    '@/components/ui/tap-day-icon': { TapDayIcon: 'TapDayIcon' }, '@/lib/haptics': { haptics: { light() {} } },
   });
   let tree;
-  const render = () => tree = hooks.render(() => CustomTapItemSheet({ question: activity, onClose: () => closed++, onSave: item => saved.push(item) }));
+  const render = () => tree = hooks.render(() => CustomTapItemSheet({ question, addedItems, onClose: () => closed++, onSave: item => saved.push(item) }));
   const find = predicate => nodes(tree).find(predicate);
   const button = label => find(node => node.type === 'Pressable' && text(node) === label);
-  render();
-  return { render, find, button, saved, closed: () => closed, nodes: () => nodes(tree) };
+  render(); return { render, find, button, saved, closed: () => closed };
 }
-test('sheet keeps icon selection separate from the ten destination groups and saves into the chosen question', () => {
+test('offline Add browses approved activities, filters labels and saves the canonical selection', () => {
   const sheet = sheetHarness();
-  assert.equal(sheet.button('Save').props.disabled, true);
-  sheet.find(node => node.type === 'TextInput').props.onChangeText('coffee'); sheet.render();
-  let list = sheet.find(node => node.type === 'FlatList');
-  assert.deepEqual(plain(list.props.data), ['coffee']);
-  list.props.renderItem({ item: 'coffee' }).props.onPress(); sheet.render();
-  sheet.find(node => node.props.accessibilityLabel === 'Select Group: DAILY RHYTHM').props.onPress(); sheet.render();
-  assert.equal(sheet.nodes().filter(node => node.type === 'Pressable' && node.props.accessibilityRole === 'radio').length, 10);
-  sheet.button('DRINKS').props.onPress(); sheet.render();
-  assert.deepEqual(plain(sheet.find(node => node.type === 'FlatList').props.data), ['coffee']);
-  assert.equal(sheet.button('Save').props.disabled, false);
-  sheet.button('Save').props.onPress();
-  assert.deepEqual(plain(sheet.saved), [{ itemId: 'coffee', label: 'coffee', group: 'DRINKS', kind: 'food', custom: true }]);
-  assert.equal(sheet.closed(), 1);
+  assert.equal(sheet.button('Add activity').props.disabled, true);
+  assert.equal(sheet.find(n => n.type === 'FlatList').props.data.length, 175);
+  sheet.button('HOME & CARE').props.onPress(); sheet.render();
+  assert.equal(sheet.find(n => n.type === 'FlatList').props.data.length, 19);
+  sheet.find(n => n.type === 'TextInput').props.onChangeText('drying'); sheet.render();
+  let list = sheet.find(n => n.type === 'FlatList'); assert.equal(list.props.data.length, 1);
+  const selected = list.props.data[0]; list.props.renderItem({ item: selected }).props.onPress(); sheet.render();
+  sheet.button('Add activity').props.onPress(); assert.deepEqual(plain(sheet.saved), [plain(selected)]); assert.equal(sheet.closed(), 1);
+  sheet.find(n => n.type === 'TextInput').props.onChangeText('charger'); sheet.render();
+  assert.equal(sheet.find(n => n.type === 'FlatList').props.data.length, 0);
 });
-test('no-match browser uses main categories without changing the destination; footer padding is inside KAV', () => {
-  const sheet = sheetHarness();
-  sheet.find(node => node.type === 'TextInput').props.onChangeText('Custom activity'); sheet.render();
-  sheet.button('Browse Categories').props.onPress(); sheet.render();
-  assert.equal(sheet.nodes().filter(node => node.type === 'Pressable' && node.props.accessibilityRole === 'radio').length, 10);
-  const category = catalog.CUSTOM_TAP_ICON_CATEGORIES[0];
-  sheet.button(category.label).props.onPress(); sheet.render();
-  const list = sheet.find(node => node.type === 'FlatList');
-  assert.deepEqual(plain(list.props.data), plain(category.itemIds));
-  assert.ok(sheet.find(node => node.props.accessibilityLabel === 'Select Group: DAILY RHYTHM'));
-  const kav = sheet.find(node => node.type === 'KeyboardAvoidingView');
-  assert.equal(kav.props.keyboardVerticalOffset, 59);
-  assert.equal(kav.props.style.padding, undefined);
-  assert.equal(kav.props.children.props.style.padding, 16);
-  const footer = sheet.find(node => node.type === 'View' && node.props.style?.paddingBottom === 8);
-  assert.ok(nodes(footer).some(node => node.type === 'Pressable' && text(node) === 'Save'));
-  assert.ok(sheet.nodes().some(node => node.props.name === 'edit'));
-  assert.ok(sheet.nodes().some(node => node.props.name === 'folder'));
+test('food Add only has takeout and cuisine options, and already-added icons cannot be duplicated', () => {
+  const cuisine = engine.TAP_YOUR_DAY_OPTIONAL_CHOICES.find(x => x.group === 'CUISINE');
+  const sheet = sheetHarness(food, [cuisine]);
+  const list = sheet.find(n => n.type === 'FlatList'); assert.equal(list.props.data.length, 82);
+  assert.equal(list.props.renderItem({ item: cuisine }).props.disabled, true);
+  assert.equal(sheet.button('HOME & CARE'), undefined);
 });
 
-test('Home uses the shared bounded action guard, not an entry lock dependent on async fetching', () => {
+test('Home directly mounts retained Burrow, not the retired async entry lock', () => {
   const source = read('apps/mobile/app/(main)/(tabs)/index.tsx');
-  assert.match(source, /const navigate = useNavigationAction\(\)/);
+  assert.match(source, /<BurrowScreen section="home"/);
+  assert.doesNotMatch(source, /useNavigationAction|LegacyHomeScreen/);
   assert.ok(!source.includes('openingEntryRef'));
   assert.ok(!source.includes('InteractionManager'));
 });
@@ -222,33 +179,64 @@ test('entry scroll gate, sideways gestures and native closing cannot accidentall
   assert.equal(swipe.calls.length, 0);
   swipe.cleanup();
 });
-test('only Thump/Reflect entries use native cards; input and companion modal protections stay unchanged', () => {
+test('Menu/settings and current Adventure inputs retain edge back; old aliases have no transition', () => {
+  const edge=load('apps/mobile/src/lib/page-edge-gesture.ts');
+  const policy=load('apps/mobile/src/lib/main-navigation-options.ts',{'./page-edge-gesture':edge});
   const { default: MainLayout } = load('apps/mobile/app/(main)/_layout.tsx', {
+    '@/components/burrow/burrow-toast-host':{BurrowToastHost:'BurrowToastHost'},
+    '@/lib/profile-avatar-local':{syncLocalProfileAvatar(){},onProfileAvatarCommitted:()=>()=>{}},
+    '@/lib/session-lifecycle':{sessionUserId:()=>null},
+    '@/lib/me-stats':{},'@/lib/burrow-store':{},
+    '@/lib/account-profile-local':{syncAccountProfile(){}},
+    '@/lib/burrow-destination-model':{burrowDestinationId:()=>null},
     '@/lib/avatar-upload-queue': { syncProfileAvatar() {} },
     '@/components/burrow/burrow-music': { BurrowMusicGate: 'BurrowMusicGate' },
     '@/components/burrow/adventure-arrival-gate': { AdventureArrivalGate: 'AdventureArrivalGate' },
+    '@/components/burrow/surprise-arrival-gate': { SurpriseArrivalGate: 'SurpriseArrivalGate' },
     '@/components/burrow/burrow-sync-gate': { BurrowSyncGate: 'BurrowSyncGate' },
+    '@/components/burrow/game-sync-gate': { GameSyncGate: 'GameSyncGate' },
+    '@/components/burrow/burrow-page-entry-overlay': { BurrowPageEntryOverlay: 'BurrowPageEntryOverlay' },
+    '@/components/main/partner-connection-gate': { PartnerConnectionGate: 'PartnerConnectionGate' },
+    '@/lib/main-navigation-options': policy,
+    '@/lib/use-major-update': { useMajorUpdateEnabled: () => true },
     react: { useEffect() {} },
     'react-native': { Platform: { OS: 'ios' }, AppState: { addEventListener: () => ({ remove() {} }) } },
     'expo-router': { Stack: { Screen: 'StackScreen' } },
     '@/lib/rating-navigation': { ratingNavigationListeners: {} },
     '@/components/rating/official-rating-gate': { OfficialRatingGate: 'OfficialRatingGate' },
     '@/components/main/home-entry-gate': { HomeEntryGate: 'HomeEntryGate' },
+    '@/components/burrow/burrow-environment-gate': { BurrowEnvironmentGate: 'BurrowEnvironmentGate' },
     '@/lib/use-reflect-settlement-recovery': { useReflectSettlementRecovery() {} },
     '@/components/ui/android-compact-typography': { AndroidCompactTypographyProvider: 'TypographyProvider' },
     '@/lib/auth': { getCurrentSession: async () => null },
     '@/lib/onboarding': { syncOnboardingCompanion: async () => ({ ok: true }) },
   });
-  const screens = Object.fromEntries(nodes(MainLayout()).filter(node => node.type === 'StackScreen').map(node => [node.props.name, node.props.options]));
+  const screens = Object.fromEntries(nodes(MainLayout()).filter(node => node.type === 'StackScreen').map(node => [node.props.name, { ...policy.MAIN_CARD_OPTIONS, ...node.props.options }]));
   for (const name of ['thump', 'reflect']) {
     assert.equal(screens[name].presentation, 'card');
-    assert.equal(screens[name].animation, 'slide_from_bottom');
+    assert.equal(screens[name].animation, name === 'thump' ? 'none' : 'slide_from_bottom');
     assert.equal(screens[name].animationDuration, 250);
     assert.equal(screens[name].gestureEnabled, false, 'only guarded swipe recognizer may start a close');
   }
-  for (const name of ['reflect-typing', 'reflect-guided', 'shared-memory-create']) {
-    assert.equal(screens[name].presentation, 'fullScreenModal');
-    assert.equal(screens[name].gestureEnabled, false);
+  for (const name of ['reflect-typing', 'reflect-guided']) {
+    assert.equal(screens[name].presentation, 'card');
+    assert.equal(screens[name].gestureEnabled, true);
   }
-  assert.equal(screens['companion-sheet'].presentation, 'transparentModal');
+  assert.equal(screens['shared-memory-create'].gestureEnabled,false);
+  assert.equal(screens['companion-sheet'].animation, 'none');
+  assert.equal(screens['companion-sheet'].gestureEnabled,false);
+  assert.equal(screens.menu.presentation, 'card');
+  assert.equal(screens.menu.animation, 'slide_from_right');
+  assert.equal(screens.menu.gestureEnabled, true);
+  assert.equal(screens.menu.gestureDirection, 'horizontal');
+  assert.equal(screens.menu.fullScreenGestureEnabled, false, 'long menu scrolling must not be intercepted by a full-screen swipe');
+  assert.equal(screens.menu.gestureResponseDistance.end, 24);
+  assert.equal(screens.menu.animationMatchesGesture, true);
+  assert.equal(screens['(modals)'].presentation, 'card', 'settings share the global hierarchical edge-back policy');
+  const menuRoute=read('apps/mobile/app/(main)/menu.tsx');
+  assert.match(menuRoute,/export \{ default \} from '\.\/\(modals\)\/me'/);
+  for(const file of ['apps/mobile/src/components/burrow/burrow-screen.tsx']){
+    const source=read(file);assert.match(source,/'\/\(main\)\/menu'/);
+    assert.doesNotMatch(source,/'\/\(main\)\/\(modals\)\/me'/);
+  }
 });

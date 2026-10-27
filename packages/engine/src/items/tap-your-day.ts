@@ -1,9 +1,10 @@
 import legacyChoices from './tap-your-day-v1.json';
 import legacyQuestions from './tap-your-day-v2.json';
 import localGroups from './tap-your-day-local.json';
+import v4Groups from './tap-your-day-v4.json';
 
-/** v4 is the approved, local-only activity vocabulary; older versions are frozen. */
-export const TAP_YOUR_DAY_VERSION = 'tap-your-day-v4';
+/** v5 is the 391-icon workbook; older versions retain their original meanings. */
+export const TAP_YOUR_DAY_VERSION = 'tap-your-day-v5';
 export const MAX_TAP_YOUR_DAY_SELECTIONS = 30;
 export const MAX_REFLECT_ITEMS = 6000;
 export type TapYourDayKind = 'activity' | 'food' | 'person' | 'feeling';
@@ -26,16 +27,21 @@ export const TAP_YOUR_DAY_OPTIONAL_CHOICES = localGroups.flatMap(group =>
 );
 export const TAP_YOUR_DAY_LOCAL_CHOICES = [...TAP_YOUR_DAY_CHOICES, ...TAP_YOUR_DAY_OPTIONAL_CHOICES];
 const choicesById = new Map(TAP_YOUR_DAY_LOCAL_CHOICES.map(choice => [choice.itemId, choice]));
+const v4ById = new Map(v4Groups.flatMap(group => [
+  ...group.defaults.map(choice => ({ ...choice, kind: group.kind as TapYourDayKind })),
+  ...group.optional.map(choice => ({ ...choice, kind: group.kind as TapYourDayKind, group: group.title, custom: true as const })),
+]).map(choice => [choice.itemId, choice]));
 const legacyV2ById = new Map(legacyQuestions.flatMap(question => question.groups.flatMap(group =>
   group.choices.map(choice => [choice.itemId, { ...choice, kind: question.kind }] as const),
 )));
 const legacyById = new Map(legacyChoices.map(choice => [choice.itemId, choice]));
 export function tapYourDaySelectionLimit(version: unknown) {
-  return typeof version === 'string' && [TAP_YOUR_DAY_VERSION, 'tap-your-day-v3', 'tap-your-day-v2', 'tap-your-day-v1'].includes(version)
+  return typeof version === 'string' && [TAP_YOUR_DAY_VERSION, 'tap-your-day-v4', 'tap-your-day-v3', 'tap-your-day-v2', 'tap-your-day-v1'].includes(version)
     ? MAX_TAP_YOUR_DAY_SELECTIONS : 0;
 }
 export function tapYourDayChoice(itemId: string, version: string = TAP_YOUR_DAY_VERSION) {
   if (version === TAP_YOUR_DAY_VERSION) return choicesById.get(itemId);
+  if (version === 'tap-your-day-v4') return v4ById.get(itemId);
   if (version === 'tap-your-day-v2' || version === 'tap-your-day-v3') return legacyV2ById.get(itemId);
   if (version === 'tap-your-day-v1') return legacyById.get(itemId);
   return undefined;

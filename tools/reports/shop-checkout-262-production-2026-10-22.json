@@ -1,0 +1,53 @@
+{
+  "task": "Shop checkout repair and retired-placement compatibility removal",
+  "status": "completed",
+  "verifiedAt": "2026-10-23T05:18:25.080Z",
+  "rootCause": "Invisible legacy decor/shelf_decor defaults were included in full-room checkout and rejected by the unified catalog capability gate before any debit.",
+  "changes": [
+    "Legacy full-room API removes only obsolete invisible slots before capability validation.",
+    "New scoped delta checkout atomically purchases and places changed slots without overwriting the partner's other changes.",
+    "Immutable receipts prevent repeated debit and re-equipping an old design after lost responses.",
+    "Client durable purchase acceptance immediately reserves coins, projects self inventory and acknowledges the purchase.",
+    "Ambiguous failures retry the same intent; definitive rejection clears only its projection after durable journal cleanup.",
+    "Pending gift/purchase placement and newly purchased Plushie photo uploads wait for their entitlement receipt in the background.",
+    "Retired products are no longer offered for placement or supplemented into the active catalog; historical records remain intact."
+  ],
+  "production": {
+    "migration": 262,
+    "apiDeployment": "dpl_6DVBo2C5HNfnuKaszoQwt5ueARZJ",
+    "domain": "https://api.soulsayit.com",
+    "readyAndPromoted": true,
+    "apiChangedSourceFiles": [
+      "apps/api/src/app/api/vnext/command/route.js",
+      "apps/api/src/lib/shop-catalog-release.mjs"
+    ],
+    "uploadedSourceFilesVerified": 275,
+    "adminUnchanged": true,
+    "mobileAssetsAndEnvironmentFilesExcluded": true,
+    "protectedUserRowsUnchangedInsideMigrationTransaction": true,
+    "existingFunctionOidsGrantsAndUnrelatedDefinitionsPreserved": true,
+    "newPurchaseFunctionsServiceRoleOnly": true,
+    "realUserTestPurchases": 0,
+    "accountsCreatedOrImpersonated": 0,
+    "healthStatus": 200,
+    "unauthenticatedPurchaseStatus": 401
+  },
+  "verification": {
+    "coreRegressionTests": 155,
+    "photoAndWalletRegressionTests": 56,
+    "photoTestsOverlapCoreSuite": true,
+    "isolatedPostgresqlAssertions": 30,
+    "assetReferenceTests": 7,
+    "apiProductionBuild": "passed",
+    "mobileTypecheck": "passed",
+    "iosExport": "passed",
+    "iosBundle": "index-7758ae9662c6207327ca71daf3de2505.hbc",
+    "iosExportDirectory": "/private/tmp/burrow-shop262-ios-verified"
+  },
+  "handoff": {
+    "clientChangesRequireNewAppBinary": true,
+    "easBuildOrAppleSubmissionRequestedThisRound": false,
+    "easBuildOrAppleSubmissionStarted": false,
+    "releaseBackupsAndSourceReceipts": "/private/tmp/burrow-shop262-release.iC95Gl"
+  }
+}

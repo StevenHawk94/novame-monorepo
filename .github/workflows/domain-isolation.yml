@@ -1,0 +1,27 @@
+name: Domain isolation contracts
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:domain-isolation
+      - run: pnpm --dir apps/mobile exec tsc --noEmit
+      - name: Install pinned isolated PostgreSQL engine
+        run: npm install --prefix "$RUNNER_TEMP/burrow-test-db" --no-save --ignore-scripts @electric-sql/pglite@0.5.10
+      - name: Verify owner-only room transactions without production access
+        run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" pnpm test:personal-rooms:db
+      - name: Verify payments, economic isolation and deletion without production access
+        run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" pnpm test:security:db

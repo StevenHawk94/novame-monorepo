@@ -23,22 +23,6 @@ test('missing native end callbacks recover instead of leaving a permanent tap or
   assert.equal(n.api.isNavigationTransitionBusy(),false,'normal completion has no timeout wait');
   assert.equal(n.time.timers.size,0);
 });
-test('Home duplicate-tap guard releases on focus and timeout; errors and pending prompts cannot strand it', () => {
-  const h=hooks(), n=navigation();let focus;
-  const overlays=load(lib+'overlay-presence.ts',{react:{useSyncExternalStore(){}}});
-  const {useNavigationAction}=load(lib+'use-navigation-action.ts',{
-    react:h.react,'expo-router':{useFocusEffect(fn){focus=fn;}},'./rating-navigation':n.api,'./overlay-presence':overlays,
-  },n.time.globals);
-  const act=h.render(useNavigationAction);let calls=0;
-  const blur=focus();act(()=>calls++);act(()=>calls++);assert.equal(calls,1);
-  blur();act(()=>calls++);assert.equal(calls,1);
-  focus();n.api.markNavigationTransitionPending('removed-reflect');
-  act(()=>calls++);assert.equal(calls,2,'pending paywall intent does not lock user actions');
-  n.time.advance(600);assert.throws(()=>act(()=>{throw Error('rejected push');}));
-  act(()=>calls++);assert.equal(calls,3);
-  n.time.advance(600);const release=overlays.registerOverlay({});act(()=>calls++);assert.equal(calls,3);
-  release();act(()=>calls++);assert.equal(calls,4,'overlay cleanup is immediate');
-});
 test('nested overlay ownership releases independently and auto prompts never preempt visible user sheets', () => {
   const time=clock(), overlays=load(lib+'overlay-presence.ts',{react:{useSyncExternalStore(){}}});
   const n=navigation(time);
@@ -66,7 +50,7 @@ test('ScreenOverlay has no hidden native exit fade and unregisters on hide/unmou
     let tree=render(true);assert.equal(overlays.isOverlayPresent(),true);
     assert.equal(tree.type,platform==='ios'?'WindowOverlay':'Modal');
     if(platform==='android') assert.equal(tree.props.animationType,'none');
-    const show=platform==='ios'?tree.props.children.props.onLayout:tree.props.onShow;
+    const show=platform==='ios'?tree.props.children.props.children.props.onLayout:tree.props.onShow;
     show();show();assert.equal(shown,1);
     const releaseNested=overlays.registerOverlay({});render(false);assert.equal(overlays.isOverlayPresent(),true);
     releaseNested();assert.equal(overlays.isOverlayPresent(),false);
@@ -80,70 +64,10 @@ test('same UUID auth recovery does not reset ownership; switching or signing out
   assert.equal(session.observeSessionIdentity('A'),true);assert.equal(session.sessionEpoch(),epoch);
   session.observeSessionIdentity('B');session.observeSessionIdentity(null);assert.equal(changes,3);
 });
-test('screen operations cannot navigate after blur, cancellation or an account change; newer work is not released by old results', () => {
-  const h=hooks(), time=clock(), session=load(lib+'session-lifecycle.ts');let focus;
-  let beforeRemove;
-  const async=load(lib+'async-lifecycle.ts',{},time.globals);
-  session.observeSessionIdentity('A');
-  const {useScreenOperation}=load(lib+'use-screen-operation.ts',{
-    react:h.react,'expo-router':{useFocusEffect(fn){focus=fn;},useNavigation:()=>({addListener(event,fn){assert.equal(event,'beforeRemove');beforeRemove=fn;return()=>{};}})},'./async-lifecycle':async,'./session-lifecycle':session,
-  });
-  const operation=h.render(useScreenOperation);assert.equal(operation.begin(),null);
-  let blur=focus(), first=operation.begin();assert.equal(operation.begin(),null);
-  blur();assert.equal(first.isCurrent(),false);focus();const next=operation.begin();first.finish();
-  assert.equal(operation.begin(),null,'old completion cannot unlock newer work');
-  session.observeSessionIdentity('B');assert.equal(next.isCurrent(),false);
-  operation.invalidate();const last=operation.begin();assert.equal(last.isCurrent(),true);
-  beforeRemove();assert.equal(last.isCurrent(),false);assert.equal(operation.begin(),null);
-});
 test('UI deadlines recover a hung operation without cancelling background durable work or leaking timers', async () => {
   const time=clock(), async=load(lib+'async-lifecycle.ts',{},time.globals), work=deferred();
   const bounded=async.withDeadline(work.promise,50);
   const rejected=assert.rejects(bounded,/timed out/);time.advance(50);await rejected;
   work.resolve('saved later');await flush();assert.equal(time.timers.size,0);
   assert.equal(await async.withDeadline(Promise.resolve('ready'),50),'ready');await flush();assert.equal(time.timers.size,0);
-});
-
-function questHarness() {
-  const time=clock(), disk=new Map(), session=load(lib+'session-lifecycle.ts');session.observeSessionIdentity('A');
-  let owner='A', getSession=async()=>({data:{session:owner?{user:{id:owner}}:null}}), get=async()=>({success:true,active:true});
-  const reads=[];
-  const api=load(lib+'quests-api.ts',{
-    '@novame/api-client':{ApiError:class extends Error{}},
-    '../shared/storage/keys':{kQuestStatus:{name:'status'},kQuestCustomGeneration:{name:'custom'}},
-    './api':{apiClient:{get(url){reads.push(url);return get(url);},post:async()=>({success:true})}},
-    './storage':{storage:{getString:key=>disk.get(key),set:(key,value)=>disk.set(key,value),remove:key=>disk.delete(key)}},
-    './supabase':{supabase:{auth:{getSession:()=>getSession()}}},
-    './async-lifecycle':load(lib+'async-lifecycle.ts',{},time.globals),'./session-lifecycle':session,
-  },time.globals);
-  return {api,time,disk,reads,session,setGet:fn=>get=fn,setSession:fn=>getSession=fn,setOwner(id){owner=id;session.observeSessionIdentity(id);disk.clear();}};
-}
-test('Quest status can load after an initial anonymous-session miss and retains the existing cache TTL', async () => {
-  const h=questHarness();h.setOwner(null);assert.equal((await h.api.fetchQuestStatus()).active,false);
-  h.setOwner('A');assert.equal((await h.api.fetchQuestStatus()).active,true);assert.equal(h.reads.length,1);
-  await h.api.fetchQuestStatus();assert.equal(h.reads.length,1,'fresh status is cache-first');
-  h.time.advance(15*60*1000+1);await h.api.fetchQuestStatus();assert.equal(h.reads.length,2);
-});
-test('forced Quest refresh coalesces into one followup and never self-awaits', async () => {
-  const h=questHarness(), response=deferred();let calls=0;
-  h.setGet(()=>++calls===1?response.promise:Promise.resolve({success:true,active:false}));
-  const first=h.api.fetchQuestStatus();await flush();
-  const forced=h.api.fetchQuestStatus({force:true});assert.equal(forced,h.api.fetchQuestStatus({force:true}));
-  response.resolve({success:true,active:true});await first;assert.equal((await forced).active,false);assert.equal(calls,2);
-});
-test('late Quest reads cannot overwrite mutation-confirmed cache or a different UUID', async () => {
-  const h=questHarness(), stale=deferred();h.setGet(()=>stale.promise);
-  const request=h.api.fetchQuestStatus();await flush();h.api.cacheQuestStatus({active:false});
-  stale.resolve({success:true,active:true});assert.equal((await request).active,false);
-  const old=deferred();h.setGet(()=>old.promise);const oldUser=h.api.fetchQuestStatus({force:true});await flush();
-  h.setOwner('B');old.resolve({success:true,active:true});await oldUser;assert.equal(h.disk.size,0);
-  h.setGet(async()=>({success:true,active:true}));await h.api.fetchQuestStatus();assert.match(h.reads.at(-1),/userId=B/);
-});
-test('hung session/status requests release Quest inflight state so a later attempt can recover', async () => {
-  const h=questHarness(), session=deferred();h.setSession(()=>session.promise);
-  const request=h.api.fetchQuestStatus();h.time.advance(15000);await request;
-  h.setSession(async()=>({data:{session:{user:{id:'A'}}}}));await h.api.fetchQuestStatus();assert.equal(h.reads.length,1);
-  const hung=deferred();h.setGet(()=>hung.promise);const refresh=h.api.fetchQuestStatus({force:true});await flush();
-  h.time.advance(15000);await refresh;h.setGet(async()=>({success:true,active:false}));
-  assert.equal((await h.api.fetchQuestStatus({force:true})).active,false);
 });

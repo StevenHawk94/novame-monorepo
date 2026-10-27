@@ -1,0 +1,19 @@
+{
+  "rootCause": "Menu overrode default avatar colors locally while Affection, Game and Moments used the shared palette. Affection also omitted the default-avatar flag.",
+  "changes": [
+    "Move the existing initiator-yellow/partner-brown convention into the shared avatar identity model and subscribe retained avatars to changes.",
+    "Hydrate role colors from existing scoped pairing cache and pairing-status events; add no per-avatar network requests.",
+    "Remove Menu-only color overrides and pass the profile default-avatar flag through Affection.",
+    "Retain uploaded-photo priority, local profile-photo cache, failed-image initial fallback and deterministic distinct colors when initiator metadata is unavailable.",
+    "Use yellow circles for all six Game result question numbers, leaving the intro rule numbers unchanged."
+  ],
+  "verification": {
+    "relatedTestsPassed": 223,
+    "mobileTypeCheck": "passed",
+    "iosProductionExport": "passed",
+    "nativePairedDeviceTesting": "not run"
+  },
+  "apiAdminChanges": false,
+  "migrationRequired": false,
+  "clientPublished": false
+}

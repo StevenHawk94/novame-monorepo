@@ -1,0 +1,40 @@
+{
+  "request": "Revise Memories, game, Plushie, monster and Affection copy; show sent gifts and Surprises in Moments",
+  "implemented": {
+    "memories": "[actor] answered a question in memories room",
+    "games": "You and [partner] played [real game title]; lightweight lookup matches all 70 current game titles",
+    "plushie": "You squished [partner]'s plushie N times / [partner] squished your plushie N times; one uses 1 time",
+    "monsters": "[actor] tamed \"[monster name]\"; names match the current eight-monster Release Room catalogue",
+    "affection": "gratitude: thank you; miss_you: “miss you”; spicy: [actor] sent [recipient] some heat 🔥",
+    "gift": "[actor] sent [recipient] a gift 🎁 · [Product Type]-[Product Name], including Wallpaper-Green Sage. New records snapshot public product category/title; older events resolve catalogue names when available. Missing historical metadata never exposes internal IDs or invents product names.",
+    "surprise": "[actor] sent [recipient] a surprise. A first sent_at transition inserts one event in the existing paid-completion transaction; prepare/upload/open/receipt retries do not create another event.",
+    "notificationReadiness": "Both event types enter the existing server attention metadata, client classification, scoped Moments cache hydration and notification-readiness pipeline. The existing moment_events broadcast wakes both users without adding another notification system.",
+    "historicalSurprises": "No mass backfill or retroactive notifications: the new trigger records successful sends after migration 251 is installed.",
+    "unchanged": "Prices, quotas, delivery, claim behavior, purchase receipts, relation authorization, Adventure journal content and fixed Tap Your Day ordering"
+  },
+  "verification": {
+    "clientAndNotificationTests": { "passed": 64, "failed": 0, "log": "/private/tmp/burrow-moments-copy-regression.txt" },
+    "extendedGiftSurpriseAndNavigationTests": { "passed": 107, "failed": 0, "log": "/private/tmp/burrow-moments-extended-regression.txt" },
+    "isolatedPostgresTests": { "passed": 22, "failed": 0, "log": "/private/tmp/burrow-moments-migration251.txt" },
+    "totalPassed": 193,
+    "databaseCoverage": [
+      "First committed Surprise send creates exactly one pair/version-scoped Moment",
+      "Prepare, incomplete media, repeat completion, open and receipt recovery do not duplicate Moments or spending",
+      "Moment insertion failure rolls back Surprise sent state and spending together",
+      "Gift label snapshot survives rename and duplicate insert retries",
+      "Migration repeatability, trigger-function privilege restrictions, existing gift claim/replace atomicity and Surprise history isolation"
+    ],
+    "mobileTypeScript": "passed",
+    "productionBabel": "3 touched runtime files passed",
+    "simulatorOrPhysicalDeviceRun": false,
+    "productionDatabaseConnected": false
+  },
+  "release": {
+    "migration": "supabase/migrations/20261020000251_moments_gifts_and_surprises.sql",
+    "apiDeploymentRequired": true,
+    "clientUpdateRequired": true,
+    "productionMigrationExecuted": true,
+    "vercelDeployed": true,
+    "productionReleaseReport": "tools/reports/moments-251-production-2026-10-20.json"
+  }
+}

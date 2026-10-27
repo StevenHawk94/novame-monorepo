@@ -1,0 +1,41 @@
+{
+  "scope": "Eleven remaining client polish requests, including the user's fixed category/icon ordering choice",
+  "changes": {
+    "1": "Full bunny/flower Home and partner-room taps use one non-blocking white-on-translucent-black toast. It sits above Home tabs, replaces the previous message, and expires two seconds after the latest tap. Navigation and identity changes clear it.",
+    "2": "Onboarding paywall completion immediately paints the shared Splash while existing consent, authentication, setup writes, bootstrap and artwork preparation continue. Duplicate completion is locked; failures restore a retryable flow. Successful navigation does not briefly repaint the paywall.",
+    "3": "Plushie heart particles live approximately two seconds and keep rising. Bounded pools, reduced-motion behavior and the existing UI-thread clock remain unchanged.",
+    "4": "Empty Game, Memories and Surprise history entries stay in the current room and use the shared toast. Metadata is warmed/coalesced, unknown cold state is verified, and read errors are not mislabeled as empty. Same-game history is keyed by round/session ID, retaining independent win/loss records.",
+    "5": "Game and Memories use the same Feather clock as Surprise. Memories and Surprise history are native stack entries; Game history and the shared native history-card policy retain edge-only right-swipe back. Active editing/saving guards remain.",
+    "6": "Collection Items heading uses the Shop category name. Starter/Default outfit is excluded from Collection entries/counts. Owned item entry retains ownedOnly, ownerId and itemId, with existing inventory-filtered Decorate and checkout validation.",
+    "7": "Collection Gifts uses the shared Home gift library, with 15 categories and locked empty categories. Category details retain owned-item selection, Place on bookshelves, server confirmation and safe return to Collection.",
+    "8": "Decorate's top-right Done label is Replace.",
+    "9": "Plushie creation, photo source and daily-limit copy updated as requested. Existing Free/Plus daily quota enforcement remains unchanged.",
+    "10": "Frame crop hint is Drag to position your photo. The title and actual crop geometry remain unchanged.",
+    "11": "Moments normalizes record selections to the picker's fixed question/category/icon order for all 391 current icons. Optional icons follow defaults within their category; historical/unknown IDs remain at a deterministic tail. The original record arrays, saved labels and permissions are not changed. This removes differences between unordered Bootstrap items and item-ID-sorted history responses."
+  },
+  "verification": {
+    "relatedRegressionTests": { "passed": 353, "failed": 0, "skipped": 0, "log": "/private/tmp/burrow-polish-regression-complete.txt" },
+    "mobileTypeScript": "pnpm --filter @novame/mobile type-check passed",
+    "productionBabel": "21 changed source files compiled with the configured Expo preset and Worklets plugin in production mode",
+    "diffWhitespace": "passed",
+    "coverage": [
+      "Toast replacement, expiry, tab positioning, touch passthrough and navigation/session cleanup",
+      "Immediate paywall-to-Splash handoff, duplicate-close exclusion and failed-setup recovery",
+      "Two-second rising hearts, existing worklet gestures and Plushie lifecycle/photo flow",
+      "Empty/populated history, cold metadata reads, coalescing, same-game three-round scoring, pair/account isolation and native navigation policy",
+      "Collection Default exclusion, owned-only inventory options, shared 15-category Gifts, locked categories and shelf placement",
+      "Optimistic room edit queue, purchase deduplication, failure restoration and retry boundaries",
+      "Full Moments bodies and icon/name pairs, stable catalogue order, historical IDs and immutable saved content",
+      "Existing notification content-readiness, preparation, cache-race and page-entry regressions"
+    ],
+    "simulatorOrPhysicalDeviceRun": false,
+    "deviceLimitation": "Visual layout, gesture feel and native-device performance have not been remeasured in this turn."
+  },
+  "release": {
+    "clientOnly": true,
+    "apiChanged": false,
+    "databaseMigrationRequired": false,
+    "vercelDeploymentRequired": false,
+    "appOrOtaPublished": false
+  }
+}

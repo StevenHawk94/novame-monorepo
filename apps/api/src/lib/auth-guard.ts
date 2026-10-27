@@ -11,8 +11,8 @@
  * local verification cannot see revocation. A token that Supabase has since
  * invalidated -- user deleted, banned, signed out -- stays valid here until it
  * expires on its own, up to its natural TTL (~1h). getUser() would have caught
- * that immediately. For read routes this is a non-issue; for delete-account it
- * is an informed risk, not an oversight (see the note there).
+ * that immediately. Destructive operations use verifySensitiveSession below,
+ * including an online identity check and active auth.sessions binding.
  *
  * Availability: if the JWKS endpoint is unreachable, jwtVerify throws and every
  * verify returns null -> 401, exactly as a failed getUser() did. But the JWKS
@@ -41,11 +41,28 @@ const JWKS = createRemoteJWKSet(
  * change one line, not their checks -- or null on any failure.
  */
 export async function verifyToken(token: string | null | undefined): Promise<{ id: string } | null> {
+  const payload = await verifyAccessClaims(token)
+  return payload ? {id:payload.sub!} : null
+}
+
+export async function verifyAccessClaims(token: string | null | undefined) {
   if (!token) return null
   try {
-    const { payload } = await jwtVerify(token, JWKS, { algorithms: ['ES256'] })
-    return payload.sub ? { id: payload.sub } : null
+    const { payload } = await jwtVerify(token, JWKS, { algorithms: ['ES256'],
+      issuer:`${SUPABASE_URL}/auth/v1`, audience:'authenticated' })
+    return payload.sub && /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(payload.sub) && payload.role==='authenticated' ? payload : null
   } catch {
     return null
   }
+}
+
+export async function verifySensitiveSession(request: Request, db: any) {
+  const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'').trim()
+  const claims=await verifyAccessClaims(token)
+  if(!claims || typeof claims.session_id!=='string')return null
+  const {data,error}=await db.auth.getUser(token)
+  if(error || !data?.user || data.user.id!==claims.sub)return null
+  const active=await db.rpc('security_session_active_v1',{p_user:claims.sub,p_session:claims.session_id})
+  if(active.error)throw Object.assign(Error('session_check_unavailable'),{status:503})
+  return active.data===true ? {user:data.user,sessionId:claims.session_id,claims} : null
 }

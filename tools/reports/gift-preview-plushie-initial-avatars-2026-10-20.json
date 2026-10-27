@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-20",
+  "status": "implemented_and_code_verified",
+  "changes": {
+    "giftLibrary": "Home and Collection category detail share separate Preview (brown) and Replace (yellow) actions. Replace retains the existing shelf selection/confirmation API path.",
+    "giftPreview": "Dedicated Decorate card displays only this user's owned adventure gifts across categories; initial carousel position follows the selected gift. Switching items changes a local shelf draft only. Cancel never saves; successful Replace confirms the retained Home shelf path and releases back protection before returning. In-use gifts cannot be redundantly replaced.",
+    "camera": "Plushie capture defaults to front, supports front/back flip, mirrors only the front camera, and rejects stale camera callbacks/capture while switching. Capture/upload locks prevent duplicate requests and unsafe switching.",
+    "crop": "Photo library opens directly without system rectangle editing, followed by the current costume's actual transparent opening. Drag, pinch and zoom buttons share the exact saved square crop geometry. Crop completion uploads directly without an extra confirmation sheet. Failed uploads recover the original persistent request/key.",
+    "avatars": "No bundled default portraits are loaded. Genuine uploaded photos are preserved. Missing/legacy/failed photos use a native first-letter avatar with stable colors and deterministic pair collision resolution, consistent across devices. Shared Room, Moments, Menu, account, onboarding and legacy social surfaces use the same component. Native widgets generate the matching initial image. Legacy profile default IDs remain recognized for API compatibility without a data migration."
+  },
+  "validation": {
+    "mobileTypeCheck": "passed",
+    "targetedRegressionTests": { "passed": 151, "failed": 0 },
+    "legacyAvatarServerCompatibilityChecks": "passed",
+    "pairColorChecks": "4950 unique pairs, both viewer orientations",
+    "swiftSyntax": "passed for WidgetSyncModule.swift and widget/index.swift",
+    "productionHermesExportIOS": "passed",
+    "productionHermesExportAndroid": "passed",
+    "whitespaceCheck": "passed",
+    "physicalCameraTest": "not run",
+    "simulatorTest": "not run",
+    "fullNativeBuild": "not run",
+    "webExport": "not in scope; optional all-platform invocation attempted Expo dependency metadata fetch and failed under restricted network; explicit iOS and Android exports succeeded"
+  },
+  "safety": {
+    "unownedOrPartnerOnlyGiftsExcludedFromPreview": true,
+    "previewDoesNotSave": true,
+    "duplicateSubmissionGuard": true,
+    "lateAccountOrPairResponsesIgnored": true,
+    "photoQuotaAndServerValidationPreserved": true,
+    "uploadedProfilePhotosNotDeleted": true,
+    "apiOrDatabaseChangesRequired": false,
+    "productionWritesPerformed": false
+  },
+  "delivery": "Client source completed. No installation package or OTA published. Rebuild the native client for the widget initial-image bridge changes; camera hardware behavior still requires a real-device check.",
+  "evidenceDirectory": "/private/tmp/burrow-gift-plush-avatar.wvsrTx"
+}

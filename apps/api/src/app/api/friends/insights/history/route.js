@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import {effectiveHasPlus} from '@/lib/store-entitlement'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { publicConnectionCard } from '@/lib/connection-card'
@@ -80,7 +81,7 @@ export async function GET(request) {
       supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle(),
     ])
     if (viewerError || pairingError) throw viewerError || pairingError
-    if ((viewer?.subscription_tier || 'free') === 'free') {
+    if (!await effectiveHasPlus(supabase,userId)) {
       return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     }
     if (!pairing?.partner_user_id) {

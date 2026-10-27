@@ -32,6 +32,10 @@ export type ApiClientConfig = {
   baseUrl: string
   /** Async token getter. Return null if no auth header should be sent. */
   getToken?: () => Promise<string | null>
+  /** Stable identity generation, not the rotating token. Optional for public/admin clients. */
+  getRequestContext?: () => { key: string; actorId?: string }
+  /** Build-time capabilities, never an authentication/authorization grant. */
+  headers?: Record<string,string>
 }
 
 export type RequestOptions = {
@@ -44,10 +48,14 @@ export type RequestOptions = {
 export class ApiClient {
   private readonly baseUrl: string
   private readonly getToken?: () => Promise<string | null>
+  private readonly getRequestContext?: ApiClientConfig['getRequestContext']
+  private readonly headers: Record<string,string>
 
   constructor(config: ApiClientConfig) {
     this.baseUrl = config.baseUrl
     this.getToken = config.getToken
+    this.getRequestContext = config.getRequestContext
+    this.headers = { ...config.headers }
   }
 
   /**
@@ -60,8 +68,14 @@ export class ApiClient {
     body?: unknown,
     options?: RequestOptions,
   ): Promise<T> {
+    const context = this.getRequestContext?.()
+    const assertCurrent = () => {
+      const latest = this.getRequestContext?.()
+      if (context && (!latest || latest.key !== context.key || latest.actorId !== context.actorId)) throw new Error('session_changed')
+      if (options?.signal?.aborted) throw new Error('request_aborted')
+    }
     const url = this.baseUrl + path
-    const headers: Record<string, string> = { ...(options?.headers ?? {}) }
+    const headers: Record<string, string> = { ...this.headers, ...(options?.headers ?? {}) }
 
     let requestBody: BodyInit | undefined
     if (body !== undefined && body !== null) {
@@ -80,6 +94,8 @@ export class ApiClient {
         headers['Authorization'] = `Bearer ${token}`
       }
     }
+    assertCurrent()
+    if (context?.actorId) headers['X-Burrow-Actor'] = context.actorId
 
     let res: Response
     try {
@@ -100,6 +116,7 @@ export class ApiClient {
     // Parse body — try JSON, fall back to text. Ignore parse failures on
     // empty bodies (some 204 responses).
     const rawText = await res.text()
+    assertCurrent()
     let parsedBody: unknown = rawText
     if (rawText.length > 0) {
       try {

@@ -1,0 +1,2839 @@
+{
+  "schema": 1,
+  "identities": {
+    "burrow_art_cabinets_03": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_04": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_05": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_cabinets_06": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_07": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_08": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_09": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_10": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_11": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_12": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_13": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_14": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_15": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_16": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_cabinets_17": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_18": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_cabinets_19": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_20": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_21": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_22": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_cabinets_23": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "placeholder_storage_02": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "storage_burrow_01": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "burrow_art_couple_dolls_03": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_04": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_05": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_06": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_07": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_08": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_09": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_10": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_11": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_12": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_13": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_14": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_15": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_16": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_17": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_18": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_19": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_20": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_21": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_22": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_23": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_24": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_25": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_26": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_27": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_28": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_29": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_30": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_31": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_32": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_couple_dolls_33": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "placeholder_couple_dolls_01": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "placeholder_couple_dolls_02": {
+      "category": "couple_dolls",
+      "type": "decor",
+      "slot": "couple_doll"
+    },
+    "burrow_art_cushions_03": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_04": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_05": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_06": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_07": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_08": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_09": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_10": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_11": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_12": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_13": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_14": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_15": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_16": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_17": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_18": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_19": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_20": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_21": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_22": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_23": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_24": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_25": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_26": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_27": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_28": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_29": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_30": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_31": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_32": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_33": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_34": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_35": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_cushions_36": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "cushion_moss_01": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "placeholder_cushions_02": {
+      "category": "cushions",
+      "type": "decor",
+      "slot": "cushion"
+    },
+    "burrow_art_dresser_plants_01": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_art_dresser_plants_02": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_art_dresser_plants_03": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_art_dresser_plants_04": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_art_dresser_plants_05": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_art_dresser_plants_06": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_art_dresser_plants_07": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_art_dresser_plants_08": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant",
+      "legacyMissingArt": true
+    },
+    "burrow_kettle_01_01": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_02": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_03": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_04": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_05": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_06": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_07": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_08": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_09": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_10": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_11": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_12": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_13": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_14": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_01_15": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_01": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_02": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_05": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_06": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_08": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_09": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_10": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_11": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_12": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_13": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_14": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_15": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_02_16": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_01": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_02": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_03": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_04": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_06": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_07": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_08": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_09": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_10": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_11": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_12": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_13": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_14": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_15": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_kettle_03_16": {
+      "category": "dresser_plants",
+      "type": "decor",
+      "slot": "dresser_plant"
+    },
+    "burrow_art_frames_03": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "burrow_art_frames_04": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "burrow_art_frames_05": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "burrow_art_frames_06": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "burrow_art_frames_07": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "burrow_art_frames_08": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "burrow_art_frames_09": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "burrow_art_frames_10": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "placeholder_frames_01": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "placeholder_frames_02": {
+      "category": "frames",
+      "type": "decor",
+      "slot": "frame"
+    },
+    "game:after_dark_01": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_02": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_03": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_04": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_05": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_06": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_07": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_08": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_09": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:after_dark_10": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_01": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_02": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_03": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_04": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_05": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_06": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_07": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_08": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_09": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:daily_quirks_10": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_01": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_02": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_03": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_04": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_05": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_06": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_07": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_08": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_09": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:love_language_10": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_01": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_02": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_03": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_04": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_05": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_06": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_07": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_08": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_09": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:mind_mood_10": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_01": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_02": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_03": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_04": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_05": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_06": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_07": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_08": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_09": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:our_story_10": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_01": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_02": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_03": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_04": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_05": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_06": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_07": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_08": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_09": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:taste_buds_10": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_01": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_02": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_03": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_04": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_05": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_06": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_07": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_08": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_09": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "game:what_if_10": {
+      "category": "games",
+      "type": "game",
+      "slot": null
+    },
+    "burrow_art_ladders_01": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "burrow_art_ladders_02": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "burrow_art_ladders_03": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "burrow_art_ladders_04": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "burrow_art_ladders_05": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "burrow_art_ladders_06": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "burrow_art_ladders_07": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "burrow_art_ladders_08": {
+      "category": "ladders",
+      "type": "decor",
+      "slot": "ladder"
+    },
+    "adventure_fossil_lamp_01": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp",
+      "legacyMissingArt": true
+    },
+    "burrow_art_lamps_03": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_04": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_05": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_06": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_07": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_08": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_09": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_10": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_11": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_12": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_13": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_14": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_15": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_16": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_17": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_18": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_19": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_20": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_21": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_22": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_23": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_24": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_lamps_25": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "friend_visit_lamp_1": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp",
+      "legacyMissingArt": true
+    },
+    "friend_visit_lamp_2": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp",
+      "legacyMissingArt": true
+    },
+    "friend_visit_lamp_3": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp",
+      "legacyMissingArt": true
+    },
+    "lamp_acorn_01": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "placeholder_lamps_02": {
+      "category": "lamps",
+      "type": "decor",
+      "slot": "lamp"
+    },
+    "burrow_art_light_strings_01": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_light_strings_02": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_light_strings_03": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_light_strings_04": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_light_strings_05": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_light_strings_06": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_light_strings_07": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_light_strings_08": {
+      "category": "light_strings",
+      "type": "decor",
+      "slot": "light_string"
+    },
+    "burrow_art_music_players_03": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "burrow_art_music_players_04": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "burrow_art_music_players_05": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "burrow_art_music_players_06": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "burrow_art_music_players_07": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "burrow_art_music_players_08": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "placeholder_music_players_01": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "placeholder_music_players_02": {
+      "category": "music_players",
+      "type": "decor",
+      "slot": "music_player"
+    },
+    "burrow_outfit_01_red_gingham": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_02_denim_overalls": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_04_bowtie_vest": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_05_green_cardigan": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_06_blue_halfzip": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_07_halloween_cardigan": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_08_blue_gift_cardigan": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_09_beige_cardigan": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_10_blue_floral_romper": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_11_christmas_sweater": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_12_wave_shirt": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_13_black_sweater_vest": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_14_pumpkin_sweater": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_15_reindeer_sweater": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_16_green_stripe_polo": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_17_red_jacket_cargo": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_18_teal_puffer": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_19_brown_vest": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_outfit_default": {
+      "category": "outfits",
+      "type": "outfit",
+      "slot": "outfit"
+    },
+    "burrow_art_rugs_03": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_04": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_05": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_06": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_07": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_08": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_09": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_10": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_11": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_12": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_13": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_14": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_15": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_16": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_17": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_18": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_19": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_20": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_21": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_22": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_23": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_24": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_25": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_26": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_27": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_28": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_29": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_30": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_31": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_32": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_33": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_34": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_35": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_36": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_37": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_38": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_39": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_40": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_rugs_41": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "placeholder_rugs_02": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "rug_leaf_01": {
+      "category": "rugs",
+      "type": "decor",
+      "slot": "rug"
+    },
+    "burrow_art_shelves_01": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "burrow_art_shelves_02": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "burrow_art_shelves_03": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "burrow_art_shelves_04": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "burrow_art_shelves_05": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "burrow_art_shelves_06": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "burrow_art_shelves_07": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "burrow_art_shelves_08": {
+      "category": "shelves",
+      "type": "decor",
+      "slot": "shelf"
+    },
+    "surprise:alarm_clock": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:autumn_pumpkin": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:bat": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:birthday": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:birthday_balloons": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:birthday_cake": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:champagne": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:christmas_elf": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:christmas_ornament": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:christmas_stocking": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:christmas_wreath": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:coffee_mug": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:cuddle_time": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:dinner_date": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:easter": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:feel_better": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:four_leaf_clover": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:fried_egg": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:game_controller": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:ghost": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:gingerbread_man": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:gold_trophy": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:good_morning": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:good_night": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:halloween": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:heart": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:ice_cream": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:kiss_you": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:lollipop": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:love_polaroid": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:movie_night": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:new_year": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:nightcap": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:olive_branch": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:party_hat": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:pizza": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:popcorn": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:proud_of_you": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:pumpkin": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:rainbow": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:santa": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:snow_globe": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:snowman": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:spicy_mood": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:sweet_dreams": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:thank_you": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:valentine": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:welcome_home": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "surprise:white_flag": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:witch_cauldron": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:wrapped_gift": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null
+    },
+    "surprise:you_got_this": {
+      "category": "surprises",
+      "type": "surprise",
+      "slot": null,
+      "legacyMissingArt": true
+    },
+    "burrow_art_tables_03": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_04": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_05": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_06": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_07": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_08": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_09": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_10": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_11": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_12": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_13": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_14": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_15": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_16": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_17": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_18": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_19": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_20": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_21": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_22": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_23": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_tables_24": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "placeholder_tables_02": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "table_stump_01": {
+      "category": "tables",
+      "type": "decor",
+      "slot": "table"
+    },
+    "burrow_art_vases_03": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_04": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_05": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_06": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_07": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_08": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_09": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_10": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_11": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_12": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_13": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_14": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_15": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_vases_16": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "friend_visit_vase_1": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase",
+      "legacyMissingArt": true
+    },
+    "friend_visit_vase_2": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase",
+      "legacyMissingArt": true
+    },
+    "friend_visit_vase_3": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase",
+      "legacyMissingArt": true
+    },
+    "placeholder_plants_02": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "plant_daisy_01": {
+      "category": "vases",
+      "type": "decor",
+      "slot": "vase"
+    },
+    "burrow_art_wallpapers_01": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_02": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_03": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_04": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_05": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_06": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_07": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_08": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_09": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_10": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_11": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_12": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_13": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_14": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_15": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_16": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_17": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_18": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_19": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_20": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_21": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_22": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_23": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_24": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_25": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_26": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_27": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_28": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_29": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_30": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_31": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_32": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "burrow_art_wallpapers_33": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "burrow_art_wallpapers_34": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper",
+      "retiredArtRemoved": true
+    },
+    "window_frame_cross_dark_wood": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_cross_green": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_cross_light_wood": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_cross_navy": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_cross_orange": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_cross_pink": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_cross_purple": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_cross_white": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_dark_wood": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_green": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_light_wood": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_navy": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_orange": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_pink": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_purple": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_curtain_white": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_clouds": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_flowers": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_gingham": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_hearts": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_polka_dots": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_rainbow": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_stars": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_pattern_waves": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_theme_christmas": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_theme_gingerbread": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_theme_halloween": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_theme_mushroom": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_theme_snowman": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_theme_sunflower": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_theme_sweetheart": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_dark_wood": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_green": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_light_wood": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_navy": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_orange": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_pink": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_purple": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "window_frame_valance_white": {
+      "category": "windows",
+      "type": "decor",
+      "slot": "window"
+    },
+    "shop:cabinets:094231da-7fba-44cc-9bf0-5747c6668a66": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:1f5120fa-05ea-404c-9206-d4deb16d9cd3": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:1f5be4aa-50f7-4ab8-8f22-ba68736e0905": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:33e03146-0450-4904-a6b1-76db0f19c069": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:3a3157eb-d439-4ee8-9eeb-5627d7e17da0": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:793367e5-49e9-4812-b7ac-bd664373124f": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:82ede10b-ecd5-475b-9e5c-c881a1f95b91": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:94ff0cb9-413e-41f6-8396-c51ee276916e": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:b642741b-0a26-4b58-b54b-8abcd53105a1": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:cabinets:fb2ef8b4-49ec-4ad1-b43c-efecdcee26d1": {
+      "category": "cabinets",
+      "type": "decor",
+      "slot": "cabinet"
+    },
+    "shop:wallpapers:011a2d4e-53fe-496b-8796-f43933f91378": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:0222fe85-da0c-473b-9d0d-cfa02340c088": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:083da4bb-d654-4c70-b342-87f2241aab8d": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:0a148d2c-6473-45e4-9a41-8acdf1e6cf11": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:1390445f-71fd-4af5-bb67-4f0c01b02f7f": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:1758757c-be22-409b-8da5-9ec15b8f81fe": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:22d365bb-9604-48b8-af7b-0cf34fe18209": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:23da520c-7023-4671-ab29-b4a827ec0106": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:2ac0b985-608f-4464-9444-b3e7908c65a3": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:2e6c44ba-a4ea-4dc8-921f-ac9fec6a710d": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:306a5323-a49c-47c0-879e-fc297afdec2a": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:316b2195-2c6c-481d-b723-5cd2b02075df": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:337cdc38-8dd7-4d06-8881-ee0c7ea32f2d": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:3bd23eac-eb57-4503-a2f8-efb01080e769": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:43844820-49d6-4d05-811f-efd0925499e5": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:5cb36112-d88e-4a62-8b0b-0703c7dcac3c": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:714c21f6-6bde-4874-8cf4-3b1d5beeecb4": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:778f385a-9e4d-49f7-965d-d6567f3cb1f5": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:81b7c9ec-b381-469b-84b7-1e01f5842dd0": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:8d2dbd71-c625-4882-881f-39f2afad829e": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:8dc317f3-d264-4fc4-9904-e76938e75dfa": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:91f0a286-d440-413a-9e5f-e4b98df25262": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:9207d75b-4b60-4764-aa23-0a15c85b2fee": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:9c5e861a-e647-4c91-9751-4c02f7763281": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:a002003d-044a-49e1-8168-774ebb58a78e": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:a796f020-ef34-4329-b65c-02d2257a2173": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:aaea9242-8560-441d-9a2a-f728e3e83517": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:ab56ca83-f6f1-4fc5-9fed-88581a83ecc2": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:afad25a1-839c-492b-85c6-02df712bfa4c": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:b59c9cd7-7b2d-4469-a2ad-0140ebfe5a6b": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:c83083d4-32af-4798-8770-c607c61053a2": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:de601bea-7c2c-4478-99e5-9f157217c58f": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    },
+    "shop:wallpapers:eb1f1fc9-c74d-4093-b54d-1369563087da": {
+      "category": "wallpapers",
+      "type": "decor",
+      "slot": "wallpaper"
+    }
+  }
+}

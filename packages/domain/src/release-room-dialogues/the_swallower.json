@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "If you disappoint them, they might not like you.",
+    "replies": [
+      "Their feelings are not mine to manage.",
+      "A kind no is still kind.",
+      "I can care without abandoning myself.",
+      "The right people can handle my boundaries."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "Say yes. Keeping everyone happy is safer.",
+    "replies": [
+      "I can say no and still be kind.",
+      "I’m not here to earn permission.",
+      "My needs belong in the room too.",
+      "I choose honesty over approval."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "They’ll think you’re selfish.",
+    "replies": [
+      "They may not like my answer, and I can cope.",
+      "My boundary is not an attack.",
+      "I can be caring without overgiving.",
+      "I’m not responsible for everyone’s comfort."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I’m helping you avoid conflict.",
+    "replies": [
+      "I can survive someone being disappointed.",
+      "Being honest can still be loving.",
+      "I can protect my energy too.",
+      "I’m allowed to choose myself here."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "guilt",
+    "monster": "You’ll feel terrible if you say no.",
+    "replies": [
+      "Guilt isn’t proof I did something wrong.",
+      "I can feel uneasy and still hold my ground.",
+      "A hard feeling will pass. Resentment lingers.",
+      "I’m willing to sit with a little discomfort."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "smallness",
+    "monster": "It’s just one tiny favor. Don’t make it a big deal.",
+    "replies": [
+      "Small yeses add up to a tired me.",
+      "Tiny favors still count as my time.",
+      "I can decline small things too.",
+      "My energy is worth protecting, even in little ways."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "fear of rejection",
+    "monster": "If you stop being useful, they’ll leave.",
+    "replies": [
+      "I’m worth keeping even when I’m not useful.",
+      "Real love doesn’t need me to perform.",
+      "I am more than what I do for others.",
+      "People who stay for me will stay."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "mind reading",
+    "monster": "You can tell they’re upset with you.",
+    "replies": [
+      "I can’t read minds, and I won’t guess the worst.",
+      "I’ll ask instead of assume.",
+      "Their mood is not my emergency.",
+      "I don’t have to fix feelings nobody told me about."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "urgency",
+    "monster": "Answer now! Don’t keep them waiting.",
+    "replies": [
+      "I can say, “Let me get back to you.”",
+      "A pause is allowed.",
+      "I don’t owe an instant yes.",
+      "Time to think is part of caring well."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "flattery",
+    "monster": "You’re so reliable. Everyone depends on you.",
+    "replies": [
+      "I can be reliable and still say no.",
+      "Being needed isn’t the same as being loved.",
+      "I’m allowed to rely on others too.",
+      "I’d rather be honest than indispensable."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "comparison",
+    "monster": "A good friend would always say yes.",
+    "replies": [
+      "A good friend can also say no.",
+      "Good friends respect my limits.",
+      "Kindness doesn’t require self-erasure.",
+      "I’m a good friend, even with boundaries."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "peace-keeping",
+    "monster": "Just let it go. Peace matters most.",
+    "replies": [
+      "Peace built on silence isn’t peace.",
+      "I can keep calm and still speak up.",
+      "A small honest talk can prevent a big blowup.",
+      "I want real peace, not fake quiet."
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "overexplaining",
+    "monster": "You need a really good excuse, or they’ll be mad.",
+    "replies": [
+      "“No” doesn’t need a long reason.",
+      "I don’t have to justify my limits.",
+      "A simple answer is enough.",
+      "I can stop apologizing for having needs."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "selfless ideal",
+    "monster": "Good people put themselves last.",
+    "replies": [
+      "Good people also refill their own cup.",
+      "Putting myself last isn’t a virtue.",
+      "I can be kind and still be on my own list.",
+      "Caring includes caring for me."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "avoiding conflict",
+    "monster": "What if they get angry?",
+    "replies": [
+      "Anger is theirs to handle.",
+      "I can stay steady while someone is upset.",
+      "I’ve survived hard moments before.",
+      "Disagreement doesn’t end a relationship."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "approval hunger",
+    "monster": "You need them to say you did well.",
+    "replies": [
+      "My worth doesn’t wait on applause.",
+      "I can approve of myself first.",
+      "I know what I did was enough.",
+      "Praise is nice. It isn’t oxygen."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "scorekeeping",
+    "monster": "After everything they’ve done for you, how can you refuse?",
+    "replies": [
+      "Gratitude doesn’t mean I owe my yes.",
+      "I can be thankful and still decline.",
+      "Love isn’t a debt I pay in favors.",
+      "I can honor the past and protect my present."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "hiding feelings",
+    "monster": "Smile. Nobody wants to hear what you really think.",
+    "replies": [
+      "My real thoughts deserve a voice.",
+      "I can share gently and still be honest.",
+      "Hiding costs me more than speaking.",
+      "The people who care want the real me."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "fear of burden",
+    "monster": "Don’t ask for help. You’ll be a burden.",
+    "replies": [
+      "Asking for help is not being a burden.",
+      "People often like helping.",
+      "I help others, so I can receive too.",
+      "Needing support is human."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "peer pressure",
+    "monster": "Everyone else is going along with it.",
+    "replies": [
+      "I can disagree even when I’m the only one.",
+      "Going along isn’t the same as agreeing.",
+      "My yes should mean something.",
+      "I don’t need a crowd to back me up."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "shrinking",
+    "monster": "Take up less space. Don’t make waves.",
+    "replies": [
+      "I’m allowed to take up space.",
+      "Waves can be gentle and necessary.",
+      "My voice isn’t too much.",
+      "I won’t shrink to be comfortable."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "overgiving",
+    "monster": "Give a little more. You can rest later.",
+    "replies": [
+      "Later has been a long time coming.",
+      "I can rest now.",
+      "Giving more from empty helps nobody.",
+      "I’ll give what I actually have."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "secret resentment",
+    "monster": "Say yes now. Complain about it quietly later.",
+    "replies": [
+      "I’d rather say the truth than stew in silence.",
+      "Resentment is a sign I need a boundary.",
+      "I’ll skip the quiet grudge.",
+      "An honest no beats a bitter yes."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "future fear",
+    "monster": "If you say no today, they’ll never ask you again.",
+    "replies": [
+      "That might be okay.",
+      "Healthy relationships survive a no.",
+      "I want to be asked because I’m wanted.",
+      "Being asked less is sometimes a relief."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "perfect helper",
+    "monster": "Do it perfectly or don’t bother. They’re counting on you.",
+    "replies": [
+      "Good enough is a real option.",
+      "I can help imperfectly and still help.",
+      "Nobody is counting on perfection but me.",
+      "I’m allowed to do my part, not all of it."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "name-calling",
+    "monster": "Saying no makes you difficult.",
+    "replies": [
+      "Having limits isn’t being difficult.",
+      "I can be easygoing and still have edges.",
+      "“Difficult” is just a label for a boundary someone dislikes.",
+      "I’d rather be clear than convenient."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "avoidance of silence",
+    "monster": "Fill the silence. Agree with something.",
+    "replies": [
+      "Silence is allowed.",
+      "I don’t have to smooth every pause.",
+      "I can listen without agreeing.",
+      "A quiet moment won’t hurt me."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "chameleon",
+    "monster": "Be whoever they want you to be.",
+    "replies": [
+      "I’d rather be known than liked for a mask.",
+      "I can adapt without disappearing.",
+      "The real me is worth showing up.",
+      "I’m not a role I play for others."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "worry about tone",
+    "monster": "What if your no sounds harsh?",
+    "replies": [
+      "I can be clear and warm together.",
+      "Honest doesn’t mean harsh.",
+      "I’ll choose kind words, not no words.",
+      "I can say it softly and still mean it."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "busy badge",
+    "monster": "Being busy for everyone proves you’re valuable.",
+    "replies": [
+      "My value isn’t measured in favors.",
+      "A full calendar isn’t a full life.",
+      "I’m valuable on a quiet day too.",
+      "Busy for others can mean absent for me."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "emotional caretaker",
+    "monster": "If they’re sad, it’s your job to cheer them up.",
+    "replies": [
+      "I can care without carrying their mood.",
+      "Being present is enough.",
+      "Their feelings can be theirs.",
+      "I can offer support, not rescue."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "last-minute yes",
+    "monster": "It’s too late to back out now.",
+    "replies": [
+      "It’s never too late to be honest.",
+      "I can change my answer, kindly.",
+      "A late no still beats a resentful yes.",
+      "I’m allowed to revisit what I agreed to."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "fear of being replaced",
+    "monster": "Someone else will take your place if you stop.",
+    "replies": [
+      "Then I wasn’t held for me.",
+      "I’m not a spot to be filled.",
+      "I’m more than a role.",
+      "The right people will make space for the real me."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "minimizing needs",
+    "monster": "Your needs are small. Theirs are bigger.",
+    "replies": [
+      "Needs aren’t a competition.",
+      "My needs are valid, big or small.",
+      "Both of us can matter.",
+      "I won’t rank myself last by default."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "fear of anger",
+    "monster": "If they raise their voice, you’ll freeze.",
+    "replies": [
+      "I can take a breath and speak slowly.",
+      "I’m allowed to leave a heated moment.",
+      "Raised voices don’t decide my answer.",
+      "I can stay grounded when others are loud."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "good-girl script",
+    "monster": "Be nice. Always be nice.",
+    "replies": [
+      "Nice isn’t the same as honest.",
+      "I can be kind and say what’s true.",
+      "Being nice all the time is exhausting.",
+      "I want to be real, then kind."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "praise trap",
+    "monster": "They said thank you last time. Do it again.",
+    "replies": [
+      "Thanks is nice. It isn’t a contract.",
+      "I can choose again each time.",
+      "I don’t have to repeat what drained me.",
+      "A past yes isn’t a forever yes."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "social math",
+    "monster": "You owe them, and they’ll remember if you say no.",
+    "replies": [
+      "Healthy people don’t keep score like that.",
+      "I’m not in debt for being cared about.",
+      "If they hold a grudge, that says something about them.",
+      "I can pay kindness back in my own way."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "fear of loneliness",
+    "monster": "If you push back, you’ll end up alone.",
+    "replies": [
+      "Honest ties are stronger ties.",
+      "I’d rather be alone than unseen.",
+      "I can trust the good ones to stay.",
+      "Speaking up draws the right people closer."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "shame",
+    "monster": "Only selfish people say no.",
+    "replies": [
+      "Saying no is not a character flaw.",
+      "I can care deeply and still decline.",
+      "Selfish is taking without giving. That’s not me.",
+      "I’m allowed to be generous on my terms."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "rehearsed apology",
+    "monster": "Start with a big sorry so they won’t be upset.",
+    "replies": [
+      "I don’t need to apologize for a boundary.",
+      "“Thank you for asking” works better.",
+      "I can be gentle without groveling.",
+      "Sorry is for mistakes, not for needs."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "lowering the bar",
+    "monster": "It’s fine. You don’t really mind.",
+    "replies": [
+      "I do mind, and that’s okay to say.",
+      "I’m allowed to admit it bothers me.",
+      "Ignoring my “no” won’t make it vanish.",
+      "I’ll listen to my own signals first."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "emergency framing",
+    "monster": "If you don’t help, everything will fall apart.",
+    "replies": [
+      "Things rarely fall apart because of one no.",
+      "It isn’t all on me.",
+      "Others can step up, too.",
+      "I’m not the only safety net."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "being liked",
+    "monster": "You have to be liked to be safe.",
+    "replies": [
+      "I can be safe without being universally liked.",
+      "Not everyone has to approve of me.",
+      "Being respected matters more than being liked.",
+      "I can handle someone’s mixed feelings."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "delayed self-care",
+    "monster": "Do it for them first. Take care of yourself after.",
+    "replies": [
+      "Self-care is not a reward I earn after.",
+      "I’m taking care of myself now.",
+      "“After” never seems to arrive.",
+      "I can give to myself and others in turn."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "fear of the awkward",
+    "monster": "Saying no will make things awkward.",
+    "replies": [
+      "Awkward moments pass quickly.",
+      "A little awkward beats a lot of resentful.",
+      "I can say it plainly and move on.",
+      "Awkward isn’t dangerous."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "gentle jail",
+    "monster": "You’re just being generous. Why stop?",
+    "replies": [
+      "Generosity should feel like a choice.",
+      "I give best when I choose to.",
+      "If I can’t say no, it’s not really a gift.",
+      "I can be generous and still have limits."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "inner critic mask",
+    "monster": "You’re only a good person if they’re happy.",
+    "replies": [
+      "My goodness doesn’t depend on their mood.",
+      "I can be a good person and let others be unhappy.",
+      "Their happiness isn’t my report card.",
+      "I measure my values by my own honesty."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "boundary doubt",
+    "monster": "Who are you to set boundaries?",
+    "replies": [
+      "I’m someone with needs worth honoring.",
+      "Everyone gets to set limits.",
+      "Boundaries are a form of respect.",
+      "I don’t need a title to protect myself."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "final",
+    "monster": "Just say yes one more time. Then you’ll stop.",
+    "replies": [
+      "“One more time” never ends.",
+      "I’m stopping now, kindly.",
+      "My no starts today.",
+      "I’d rather start the change than promise it."
+    ]
+  }
+]

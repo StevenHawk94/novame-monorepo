@@ -11,7 +11,7 @@
  * successful sync so a returning user doesn't re-send it.
  */
 import { apiClient } from './api';
-import { kOnboardingIntroSeen, kOnboardingState } from '../shared/storage/keys';
+import { kOnboardingIntroSeen, kOnboardingState,kOnboardingAnnouncementPending } from '../shared/storage/keys';
 import { storage } from './storage';
 
 const companionSyncs = new Map<string, Promise<boolean>>();
@@ -61,6 +61,8 @@ function readState(): OnboardingState {
 
 /** Mark the intro as seen on this device (survives sign-out). */
 export function markIntroSeen(): void {
+  // Arm only the first successful completion, not later retries/restores.
+  if(!hasSeenIntro())storage.set(kOnboardingAnnouncementPending.name,'true');
   storage.set(kOnboardingIntroSeen.name, 'true');
 }
 

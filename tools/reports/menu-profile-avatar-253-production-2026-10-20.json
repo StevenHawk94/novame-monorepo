@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-20",
+  "status": "complete",
+  "scope": {
+    "menu": "Centered self/partner avatars and names; self photo chooser; initiator yellow initial; direct Paywall; Redeem Code below Get More Coins",
+    "account": "Grouped name, birthday, gender, email, authenticated password/sign-in methods and two-confirmation deletion; existing palette retained",
+    "avatar": "Local-first durable crop, silent background upload/retry, latest-intent fencing, superseded onboarding cancellation, durable current-image cache and queued old-image cleanup"
+  },
+  "deployment": {
+    "productionId": "dpl_sskQNK3f4dpV5C2cBEppGq5atGxt",
+    "url": "https://novame-monorepo-l63ukl450-soulsayit.vercel.app",
+    "domain": "https://api.soulsayit.com",
+    "readyState": "READY",
+    "verifiedAt": "2026-10-21T04:26:15.967Z",
+    "adminUnchanged": true,
+    "sourceFilesVerified": 271,
+    "changedFiles": [
+      "apps/api/src/app/api/cron/avatar-cleanup/route.js",
+      "apps/api/src/app/api/friends/pair/route.js",
+      "apps/api/src/app/api/update-profile/route.js",
+      "apps/api/src/app/api/upload-avatar/route.js",
+      "apps/api/vercel.json"
+    ],
+    "productionLockfilePreserved": true,
+    "environmentNamesVerified": ["CRON_SECRET", "SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SUPABASE_URL"]
+  },
+  "migration": {
+    "version": "20261020000253",
+    "exactSourceVerified": true,
+    "existingProfileRowsUnchanged": true,
+    "preflightProfiles": 427,
+    "protectedBusinessFunctionsUnchanged": 386,
+    "privateRlsTables": 2,
+    "serviceOnlyFunctionsVerified": 4,
+    "transactionalApplyAndHistoryRegistration": true
+  },
+  "compatibilityAndRecovery": {
+    "legacyBase64AndSignedUploadClientsSupported": true,
+    "existingPairingAndEntitlementRulesUnchanged": true,
+    "gameAndNotificationRulesUnchanged": true,
+    "emailAndPasswordUseUserScopedAuthWithNonce": true,
+    "passwordPresenceReadServerSideOnly": true,
+    "accountDeletionStillRequiresTwoConfirmations": true,
+    "oldAvatarCleanupGraceHours": 1,
+    "cronScheduleUtc": "50 * * * *",
+    "productionCronRegistrationVerified": true,
+    "abandonedUploadMinimumAgeHours": 24,
+    "currentAndLivePendingImagesExcludedFromCleanup": true,
+    "retirementTombstonesPreventLateCallbacksRestoringDeletedImages": true,
+    "cleanupFailureRetriesWithoutAcknowledgingDeletion": true
+  },
+  "validation": {
+    "regressions": {"passed": 196, "failed": 0, "log": "/private/tmp/menu-profile-complete-regressions.log"},
+    "finalMigrationIsolation": {"passed": 10, "failed": 0, "log": "/private/tmp/menu-profile-migration-final.log"},
+    "mobileTypeCheck": "passed",
+    "apiProductionBuild": "passed",
+    "vercelProductionBuild": "passed",
+    "iosProductionHermesExport": "/private/tmp/burrow-menu-profile253-verified-ios",
+    "androidProductionHermesExport": "/private/tmp/burrow-menu-profile253-verified-android",
+    "candidateHttpChecks": 8,
+    "productionHttpChecks": 8,
+    "productionAccountsCreated": 0,
+    "productionUserContentWrites": 0,
+    "simulator": "not run",
+    "physicalCameraAndAppStoreRedemption": "not run",
+    "signedInCrossAccountPhotoTest": "not run",
+    "productionStorageDeletionManuallyTriggered": false
+  },
+  "rollback": {
+    "previousApiDeployment": "dpl_CjVh9iTvtjyzcNkBa79MJUcputCP",
+    "previousApiUrl": "https://novame-monorepo-3gzp378gh-soulsayit.vercel.app",
+    "strategy": "Revert API deployment if necessary. Keep additive migration 253 and its queue/tombstones; do not drop columns or restore old avatar rows. Previous deployment has no avatar-cleanup cron. Retain pending local work for retry after recovery.",
+    "executed": false
+  },
+  "clientDelivery": "Client source completed and production bundles verified; no mobile installation build or OTA was published.",
+  "evidenceDirectory": "/private/tmp/burrow-avatar253-release.gzqBgq"
+}

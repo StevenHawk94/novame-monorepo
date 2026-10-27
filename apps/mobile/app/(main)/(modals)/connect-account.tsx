@@ -1,16 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView,
-  StyleSheet, Text, TextInput, View,
+  ActivityIndicator, Pressable,
+  StyleSheet, Text, TextInput,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePreventRemove } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
 
 import { appAlert } from '@/components/ui/app-dialog';
 import { haptics } from '@/lib/haptics';
-import { GridBackground } from '@/components/ui/grid-background';
+import { ConnectAccountView } from '@/components/auth/connect-account-view';
 import { supabase } from '@/lib/supabase';
 import { storage } from '@/lib/storage';
 import { kConnectedAccount } from '@/shared/storage/keys';
@@ -29,9 +27,8 @@ import {
  * once the account is already connected it shows a confirmation state.
  */
 export default function ConnectAccountScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const params = useLocalSearchParams<{ after?: string; source?: string; authError?: string }>();
+  const params = useLocalSearchParams<{ source?: string; authError?: string }>();
   const handledAuthError = useRef<string | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -53,15 +50,10 @@ export default function ConnectAccountScreen() {
     // then navigate on the next task so React has committed the new state.
     setExitApproved(true);
     setTimeout(() => {
-      if (params.after === 'notification-settings') {
-        void haptics.pageOpen();
-        router.replace('/(main)/(modals)/notification-settings' as never);
-      } else {
-        void haptics.pageClose();
-        router.back();
-      }
+      void haptics.pageClose();
+      router.back();
     }, 0);
-  }, [params.after, router]);
+  }, [router]);
 
   const confirmClose = useCallback(() => {
     appAlert(
@@ -86,9 +78,6 @@ export default function ConnectAccountScreen() {
     void haptics.pageOpen();
     router.replace({
       pathname: '/(auth)/signing-in',
-      params: params.after === 'notification-settings'
-        ? { after: 'notification-settings' }
-        : {},
     } as never);
   };
 
@@ -190,135 +179,33 @@ export default function ConnectAccountScreen() {
     }
   }
 
-  return (
-    <View style={styles.root}>
-      <GridBackground />
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoider}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            styles.inner,
-            { paddingTop: insets.top + 14, paddingBottom: Math.max(insets.bottom, 24) },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-          showsVerticalScrollIndicator={false}
-        >
-          <Pressable onPress={() => router.back()} style={styles.closeCircle} hitSlop={10}>
-            <MaterialIcons name="close" size={22} color="#FFFFFF" />
-          </Pressable>
-
-          <View style={styles.center}>
-          <Text style={styles.h1}>Connect Your Account</Text>
-          {connectedAs ? (
-            <>
-              <Text style={styles.body}>
-                You&apos;re connected as {connectedAs}.{'\n'}Your memories are safe.
-              </Text>
-              <MaterialIcons name="check-circle" size={54} color="#7BB661" style={{ marginTop: 26, alignSelf: 'center' }} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.body}>
-                To keep your data safe, we recommend you connect an account for Burrow.
-              </Text>
-              <View style={{ height: 30 }} />
-              {Platform.OS === 'ios' && (
-                <Pressable
-                  onPress={() => void onProvider('apple')}
-                  disabled={busy}
-                  style={[styles.authBtn, busy && { opacity: 0.6 }]}
-                >
-                  <Text style={styles.authBtnText}>{' Sign in with Apple'}</Text>
-                </Pressable>
-              )}
-              <Pressable
-                onPress={() => void onProvider('google')}
-                disabled={busy}
-                style={[styles.authBtn, busy && { opacity: 0.6 }]}
-              >
-                <Text style={styles.authBtnText}>{'G  Continue with Google'}</Text>
-              </Pressable>
-              {emailPhase === 'enter' ? (
-                <>
-                  <TextInput
-                    style={styles.emailInput}
-                    placeholder="you@example.com"
-                    placeholderTextColor="#B7A88F"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                  />
-                  <Pressable
-                    onPress={() => void onEmail()}
-                    disabled={busy || !email.includes('@')}
-                    style={[styles.cta, { opacity: !email.includes('@') || busy ? 0.5 : 1 }]}
-                  >
-                    {busy ? <ActivityIndicator color="#FFFFFF" /> : (
-                      <Text style={styles.ctaText}>Connect with Email</Text>
-                    )}
-                  </Pressable>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.codeHint}>
-                    We sent a 6-digit code to {email.trim()}. Enter it below.
-                  </Text>
-                  <TextInput
-                    style={[styles.emailInput, styles.codeInput]}
-                    placeholder="123456"
-                    placeholderTextColor="#B7A88F"
-                    value={code}
-                    onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
-                    keyboardType="number-pad"
-                    autoFocus
-                    maxLength={6}
-                  />
-                  <Pressable
-                    onPress={() => void onVerifyCode()}
-                    disabled={busy || code.length !== 6}
-                    style={[styles.cta, { opacity: code.length !== 6 || busy ? 0.5 : 1 }]}
-                  >
-                    {busy ? <ActivityIndicator color="#FFFFFF" /> : (
-                      <Text style={styles.ctaText}>Verify Code</Text>
-                    )}
-                  </Pressable>
-                  <Pressable onPress={() => { void haptics.pageOpen(); setEmailPhase('enter'); setCode(''); }} hitSlop={8}>
-                    <Text style={styles.backLink}>Use a different email</Text>
-                  </Pressable>
-                </>
-              )}
-            </>
-          )}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
-  );
+  return <ConnectAccountView onClose={() => router.back()} busy={busy} connectedAs={connectedAs}
+    onProvider={provider => { void onProvider(provider); }}>
+    {emailPhase === 'enter' ? <>
+      <TextInput accessibilityLabel="Email address" style={styles.emailInput} placeholder="you@example.com"
+        placeholderTextColor="#B7A88F" value={email} onChangeText={setEmail} autoCapitalize="none"
+        keyboardType="email-address" autoComplete="email" autoFocus returnKeyType="done" onSubmitEditing={() => void onEmail()}/>
+      <Pressable accessibilityRole="button" onPress={() => void onEmail()} disabled={busy || !email.includes('@')}
+        style={[styles.cta, { opacity: !email.includes('@') || busy ? .5 : 1 }]}>
+        {busy ? <ActivityIndicator color="#FFFFFF"/> : <Text style={styles.ctaText}>Connect with Email</Text>}
+      </Pressable>
+    </> : <>
+      <Text style={styles.codeHint}>We sent a 6-digit code to {email.trim()}. Enter it below.</Text>
+      <TextInput accessibilityLabel="Email verification code" style={[styles.emailInput, styles.codeInput]} placeholder="123456"
+        placeholderTextColor="#B7A88F" value={code} onChangeText={t => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+        keyboardType="number-pad" textContentType="oneTimeCode" autoFocus maxLength={6}/>
+      <Pressable accessibilityRole="button" onPress={() => void onVerifyCode()} disabled={busy || code.length !== 6}
+        style={[styles.cta, { opacity: code.length !== 6 || busy ? .5 : 1 }]}>
+        {busy ? <ActivityIndicator color="#FFFFFF"/> : <Text style={styles.ctaText}>Verify Code</Text>}
+      </Pressable>
+      <Pressable onPress={() => { void haptics.pageOpen(); setEmailPhase('enter'); setCode(''); }} hitSlop={8}>
+        <Text style={styles.backLink}>Use a different email</Text>
+      </Pressable>
+    </>}
+  </ConnectAccountView>;
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8E2C1' },
-  keyboardAvoider: { flex: 1 },
-  inner: { flexGrow: 1, paddingHorizontal: 24 },
-  closeCircle: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: '#5C3A24',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  center: { flex: 1, justifyContent: 'center', paddingBottom: 70 },
-  h1: { fontSize: 27, lineHeight: 36, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', textAlign: 'center' },
-  body: {
-    fontSize: 16, lineHeight: 24, fontFamily: 'Inter_500Medium', color: '#3A2E1A',
-    textAlign: 'center', marginTop: 14,
-  },
-  authBtn: {
-    backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 17,
-    alignItems: 'center', marginBottom: 14,
-  },
-  authBtnText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#161311' },
   emailInput: {
     backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 17, paddingHorizontal: 18,
     fontSize: 17, fontFamily: 'Inter_600SemiBold', color: '#2A2118',

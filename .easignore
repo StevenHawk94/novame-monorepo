@@ -13,10 +13,21 @@ supabase/.temp/
 
 # Other applications and backend/development workspaces are not mobile build inputs.
 apps/admin/
-apps/api/
+apps/api/*
+!apps/api/src/
+!apps/api/src
+apps/api/src/*
+!apps/api/src/data/
+!apps/api/src/data
+apps/api/src/data/*
+!apps/api/src/data/burrow-game-room-v1.json
 docs/
 supabase/
 tools/
+/catalog/
+outputs/
+.agents/
+.codex/
 
 # Build outputs
 dist/
@@ -30,11 +41,13 @@ build/
 .env
 .env.local
 .env.*.local
+.env.local.*
 !.env.example
 
 # OS
 .DS_Store
 Thumbs.db
+.~*
 
 # IDE
 .vscode/
@@ -82,6 +95,12 @@ video-manifest.json
 # Apple authentication keys
 *.p8
 AuthKey_*.p8
+*.p12
+*.pem
+*.key
+*.jks
+*.mobileprovision
+credentials.json
 
 # Firebase Admin / FCM V1 service-account private keys
 **/*firebase-adminsdk*.json
@@ -102,3 +121,7 @@ __pycache__/
 
 # Source-only New Lens workbook; runtime content is already generated.
 /tools/New_Lens_Content.xlsx
+
+# Only the explicitly allowed bundled game data is needed from the backend.
+/apps/api/.env.example
+/apps/admin/.env.example

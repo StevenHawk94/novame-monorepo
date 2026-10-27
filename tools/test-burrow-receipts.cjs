@@ -47,6 +47,8 @@ test('Game Room answer response carries post-command state without remote questi
   const route = load('apps/api/src/app/api/vnext/game-room/route.js', {
     'next/server': { NextResponse: { json: (body, options) => ({ body, ...options }) } },
     '@/data/burrow-game-room-v1.json': catalog, '@/lib/burrow-game-room.mjs': load('apps/api/src/lib/burrow-game-room.mjs'),
+    '@/lib/burrow-game-history.mjs': {},
+    '@/lib/push-notifications':{},
     '@/lib/app-major-update': { authenticatedUserId: async () => id, commandStatus: code => code ? 409 : 200,
       majorUpdateEnabled: async () => true, appMajorUpdateServiceClient: () => ({ rpc: async (name, args) => {
         calls.push({ name, args }); return { data: name === 'burrow_game_answer_v1' ? { applied: true }

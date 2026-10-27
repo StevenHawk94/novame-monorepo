@@ -1,0 +1,602 @@
+[
+  {
+    "id": "r01",
+    "number": 1,
+    "angle": "original",
+    "monster": "No one would really understand anyway.",
+    "replies": [
+      "I don’t have to carry this alone.",
+      "One small reach-out is enough.",
+      "Being quiet doesn’t mean I’m invisible.",
+      "I deserve connection, even when it feels hard."
+    ]
+  },
+  {
+    "id": "r02",
+    "number": 2,
+    "angle": "challenge",
+    "monster": "Don’t reach out. You’ll only bother them.",
+    "replies": [
+      "I’m allowed to take up space.",
+      "One message is not too much.",
+      "I don’t have to feel ready to connect.",
+      "I choose closeness over hiding."
+    ]
+  },
+  {
+    "id": "r03",
+    "number": 3,
+    "angle": "permission",
+    "monster": "They probably don’t want to hear from you.",
+    "replies": [
+      "I don’t know that for sure.",
+      "I can send something simple.",
+      "Connection can start small.",
+      "I deserve to be heard too."
+    ]
+  },
+  {
+    "id": "r04",
+    "number": 4,
+    "angle": "protective",
+    "monster": "I’m keeping you from being hurt again.",
+    "replies": [
+      "Connection can be careful and real.",
+      "I can reach out in a small way.",
+      "Not everyone will hurt me.",
+      "I don’t have to hide alone."
+    ]
+  },
+  {
+    "id": "r05",
+    "number": 5,
+    "angle": "too much",
+    "monster": "You’re too much for people.",
+    "replies": [
+      "I’m just enough for the right people.",
+      "My feelings aren’t too much.",
+      "I can be myself and be loved.",
+      "Some people will welcome all of me."
+    ]
+  },
+  {
+    "id": "r06",
+    "number": 6,
+    "angle": "not enough",
+    "monster": "You’re not interesting enough to talk to.",
+    "replies": [
+      "I have plenty to share.",
+      "People like real, not impressive.",
+      "I’m worth listening to.",
+      "I’m allowed to just show up."
+    ]
+  },
+  {
+    "id": "r07",
+    "number": 7,
+    "angle": "burden",
+    "monster": "You’ll be a burden to them.",
+    "replies": [
+      "Caring for each other isn’t a burden.",
+      "I’d welcome their reaching out to me.",
+      "People often feel honored to help.",
+      "I can let someone in."
+    ]
+  },
+  {
+    "id": "r08",
+    "number": 8,
+    "angle": "busy",
+    "monster": "Everyone is busy. Don’t interrupt.",
+    "replies": [
+      "People make time for the ones they care about.",
+      "A short message is easy to reply to.",
+      "I can send and let them answer when they can.",
+      "Being busy doesn’t mean unavailable."
+    ]
+  },
+  {
+    "id": "r09",
+    "number": 9,
+    "angle": "rejection",
+    "monster": "What if they ignore you?",
+    "replies": [
+      "I can handle a slow reply.",
+      "Silence isn’t always rejection.",
+      "I’d rather try than wonder.",
+      "I can try someone else, too."
+    ]
+  },
+  {
+    "id": "r10",
+    "number": 10,
+    "angle": "safe alone",
+    "monster": "Alone is safer.",
+    "replies": [
+      "Safe isn’t the same as nourishing.",
+      "I can be safe and connected.",
+      "Alone can be a rest, not a hiding place.",
+      "I’m allowed to want company."
+    ]
+  },
+  {
+    "id": "r11",
+    "number": 11,
+    "angle": "shame",
+    "monster": "You’d be embarrassed to say how you feel.",
+    "replies": [
+      "Saying it can set me free.",
+      "Honest feelings aren’t embarrassing.",
+      "I can share a little at a time.",
+      "I deserve to be known."
+    ]
+  },
+  {
+    "id": "r12",
+    "number": 12,
+    "angle": "energy",
+    "monster": "You’re too tired to see anyone.",
+    "replies": [
+      "A tiny hello needs little energy.",
+      "I can connect in small ways.",
+      "A text is enough.",
+      "A short chat might help."
+    ]
+  },
+  {
+    "id": "r13",
+    "number": 13,
+    "angle": "old hurts",
+    "monster": "Remember how they hurt you before?",
+    "replies": [
+      "Not everyone is them.",
+      "I can be careful and still open.",
+      "I’ve grown since then.",
+      "I can choose safe people."
+    ]
+  },
+  {
+    "id": "r14",
+    "number": 14,
+    "angle": "pride",
+    "monster": "Don’t ask for help. Handle it alone.",
+    "replies": [
+      "Asking for help is strength.",
+      "I don’t have to do it all myself.",
+      "People help each other.",
+      "I’m allowed to lean."
+    ]
+  },
+  {
+    "id": "r15",
+    "number": 15,
+    "angle": "comparison",
+    "monster": "Everyone else has so many friends.",
+    "replies": [
+      "One real friend is plenty.",
+      "I only see their surface.",
+      "Many people feel lonely.",
+      "I can build slowly."
+    ]
+  },
+  {
+    "id": "r16",
+    "number": 16,
+    "angle": "invisible",
+    "monster": "No one would notice if you disappeared.",
+    "replies": [
+      "I matter, even when it’s quiet.",
+      "People care in ways I don’t always see.",
+      "I’ll reach out and find out.",
+      "Someone would notice."
+    ]
+  },
+  {
+    "id": "r17",
+    "number": 17,
+    "angle": "misunderstood",
+    "monster": "They’ll misunderstand you.",
+    "replies": [
+      "I can explain a little at a time.",
+      "Even a partial understanding helps.",
+      "I’ll choose people who listen.",
+      "I can try again if it goes wrong."
+    ]
+  },
+  {
+    "id": "r18",
+    "number": 18,
+    "angle": "stay in",
+    "monster": "Stay home. It’s easier.",
+    "replies": [
+      "Easy isn’t always good for me.",
+      "I can step out a little.",
+      "A short outing can help.",
+      "I’ll take one small step toward people."
+    ]
+  },
+  {
+    "id": "r19",
+    "number": 19,
+    "angle": "pretending",
+    "monster": "Pretend you’re fine. Don’t let anyone see.",
+    "replies": [
+      "I can be honest with one person.",
+      "Pretending is heavy.",
+      "I’d like to be seen as I am.",
+      "I’ll let a little truth out."
+    ]
+  },
+  {
+    "id": "r20",
+    "number": 20,
+    "angle": "timing",
+    "monster": "Wait until you’re in a better place to reach out.",
+    "replies": [
+      "I can reach out from where I am.",
+      "I don’t have to be fixed first.",
+      "People can meet me as I am.",
+      "Now is a fine time."
+    ]
+  },
+  {
+    "id": "r21",
+    "number": 21,
+    "angle": "silent",
+    "monster": "Just keep it all inside.",
+    "replies": [
+      "I can let a little out.",
+      "Holding it in is heavy.",
+      "Words can lighten the load.",
+      "I’ll share one small thing."
+    ]
+  },
+  {
+    "id": "r22",
+    "number": 22,
+    "angle": "fear of judgment",
+    "monster": "They’ll think less of you.",
+    "replies": [
+      "Real friends don’t.",
+      "I can trust the kind ones.",
+      "Being honest builds trust.",
+      "I’d rather be known than admired."
+    ]
+  },
+  {
+    "id": "r23",
+    "number": 23,
+    "angle": "past messages",
+    "monster": "You never get a reply anyway.",
+    "replies": [
+      "I can try again.",
+      "Some people will reply. I can find them.",
+      "Not everyone will, and that’s not about me.",
+      "I’ll keep my door open."
+    ]
+  },
+  {
+    "id": "r24",
+    "number": 24,
+    "angle": "worth",
+    "monster": "You don’t deserve company.",
+    "replies": [
+      "I deserve connection.",
+      "Everyone deserves company.",
+      "I’m worthy of care.",
+      "My presence matters."
+    ]
+  },
+  {
+    "id": "r25",
+    "number": 25,
+    "angle": "new people",
+    "monster": "Meeting new people is exhausting. Skip it.",
+    "replies": [
+      "I can meet one person for a short time.",
+      "I can go at my pace.",
+      "A small hello is enough.",
+      "New connections can be gentle."
+    ]
+  },
+  {
+    "id": "r26",
+    "number": 26,
+    "angle": "alone time",
+    "monster": "You like being alone. Stay there.",
+    "replies": [
+      "I can enjoy alone time and connection.",
+      "Both can be true.",
+      "Too much alone can feel heavy.",
+      "I’ll balance the two."
+    ]
+  },
+  {
+    "id": "r27",
+    "number": 27,
+    "angle": "no one cares",
+    "monster": "No one cares how you’re doing.",
+    "replies": [
+      "Someone probably does.",
+      "I can test it with one message.",
+      "Care can be quiet.",
+      "I can care for myself while I find out."
+    ]
+  },
+  {
+    "id": "r28",
+    "number": 28,
+    "angle": "anxiety",
+    "monster": "Calling someone is too scary.",
+    "replies": [
+      "A text is a gentler way.",
+      "I can start small.",
+      "Scary isn’t impossible.",
+      "I’ll try one short message."
+    ]
+  },
+  {
+    "id": "r29",
+    "number": 29,
+    "angle": "fear of awkward",
+    "monster": "It’ll be awkward.",
+    "replies": [
+      "Awkward is okay and temporary.",
+      "Most people are kind about it.",
+      "A little awkward is worth connection.",
+      "I’ll laugh about it later."
+    ]
+  },
+  {
+    "id": "r30",
+    "number": 30,
+    "angle": "too late",
+    "monster": "It’s too late to reconnect.",
+    "replies": [
+      "It’s never too late for a hello.",
+      "People often welcome it.",
+      "I can send a simple note.",
+      "Old friends can be new again."
+    ]
+  },
+  {
+    "id": "r31",
+    "number": 31,
+    "angle": "self-reliance",
+    "monster": "You don’t need anyone.",
+    "replies": [
+      "I can be strong and still need people.",
+      "Needing people is human.",
+      "Connection makes me stronger.",
+      "I’m allowed to want others."
+    ]
+  },
+  {
+    "id": "r32",
+    "number": 32,
+    "angle": "pride in silence",
+    "monster": "Don’t be the first to reach out.",
+    "replies": [
+      "I can be the one who starts.",
+      "Someone has to go first.",
+      "Reaching out is brave.",
+      "I’d be glad if they did, so I will."
+    ]
+  },
+  {
+    "id": "r33",
+    "number": 33,
+    "angle": "labels",
+    "monster": "You’re just a loner.",
+    "replies": [
+      "I’m not a label.",
+      "I can enjoy people, too.",
+      "I can change what I need.",
+      "I’m more than “loner”."
+    ]
+  },
+  {
+    "id": "r34",
+    "number": 34,
+    "angle": "effort",
+    "monster": "Connection takes too much effort.",
+    "replies": [
+      "A little effort goes a long way.",
+      "I’ll invest in one relationship.",
+      "The effort can feel good.",
+      "I can keep it simple."
+    ]
+  },
+  {
+    "id": "r35",
+    "number": 35,
+    "angle": "trust",
+    "monster": "You can’t trust anyone.",
+    "replies": [
+      "I can trust a little at a time.",
+      "Some people are trustworthy.",
+      "I’ll go slowly.",
+      "I can watch for kindness."
+    ]
+  },
+  {
+    "id": "r36",
+    "number": 36,
+    "angle": "others’ lives",
+    "monster": "They have their own lives. You’re not part of them.",
+    "replies": [
+      "I can be part of a life.",
+      "People make room for people they like.",
+      "I’ll invite, or be invited.",
+      "I belong somewhere."
+    ]
+  },
+  {
+    "id": "r37",
+    "number": 37,
+    "angle": "hiding feelings",
+    "monster": "Don’t tell anyone you’re struggling.",
+    "replies": [
+      "Telling can bring relief.",
+      "Struggling isn’t shameful.",
+      "I can ask for support.",
+      "I’ll tell one safe person."
+    ]
+  },
+  {
+    "id": "r38",
+    "number": 38,
+    "angle": "fear of closeness",
+    "monster": "Closeness leads to pain.",
+    "replies": [
+      "It also leads to joy.",
+      "I can take it slowly.",
+      "I’ll set my own pace.",
+      "Closeness can heal."
+    ]
+  },
+  {
+    "id": "r39",
+    "number": 39,
+    "angle": "one chance",
+    "monster": "If it goes badly, you’ll never try again.",
+    "replies": [
+      "I can try again any time.",
+      "One awkward try isn’t the end.",
+      "I’ll be gentle with myself.",
+      "I can learn from it."
+    ]
+  },
+  {
+    "id": "r40",
+    "number": 40,
+    "angle": "cancelling",
+    "monster": "Cancel the plans. You’ll be fine alone.",
+    "replies": [
+      "I can go for a short while.",
+      "I might feel better after.",
+      "I can leave early if I need to.",
+      "I’ll keep my plan, gently."
+    ]
+  },
+  {
+    "id": "r41",
+    "number": 41,
+    "angle": "empty room",
+    "monster": "The room is empty. It’s always empty.",
+    "replies": [
+      "I can invite someone into it.",
+      "Rooms can fill again.",
+      "I’ll open the door a little.",
+      "A message can change the room."
+    ]
+  },
+  {
+    "id": "r42",
+    "number": 42,
+    "angle": "self-sufficient",
+    "monster": "You’re better off on your own.",
+    "replies": [
+      "I’m okay alone, and better with a few people.",
+      "I can have both.",
+      "I’m allowed to want a friend.",
+      "I’ll try a bit of company."
+    ]
+  },
+  {
+    "id": "r43",
+    "number": 43,
+    "angle": "ghosts",
+    "monster": "People just disappear anyway.",
+    "replies": [
+      "Some stay. I can find them.",
+      "I’ll keep reaching for the ones who stay.",
+      "I can be someone who stays.",
+      "I’ll hold onto the good ones."
+    ]
+  },
+  {
+    "id": "r44",
+    "number": 44,
+    "angle": "small talk",
+    "monster": "You don’t know what to say.",
+    "replies": [
+      "“Hi, thinking of you” is enough.",
+      "I can start with something simple.",
+      "I don’t need the perfect words.",
+      "A hello is a gift."
+    ]
+  },
+  {
+    "id": "r45",
+    "number": 45,
+    "angle": "others’ needs",
+    "monster": "They need you less than you need them.",
+    "replies": [
+      "Connection goes both ways.",
+      "I bring something, too.",
+      "I’m not just a taker.",
+      "We can both give and receive."
+    ]
+  },
+  {
+    "id": "r46",
+    "number": 46,
+    "angle": "mask",
+    "monster": "They only like the version you show.",
+    "replies": [
+      "I can show a little more.",
+      "Real me deserves a place.",
+      "I’ll let one person see.",
+      "I want to be known, not just liked."
+    ]
+  },
+  {
+    "id": "r47",
+    "number": 47,
+    "angle": "what’s the point",
+    "monster": "What’s the point of connecting?",
+    "replies": [
+      "Connection makes life warmer.",
+      "It reminds me I’m not alone.",
+      "It’s worth a small try.",
+      "The point is to feel less alone."
+    ]
+  },
+  {
+    "id": "r48",
+    "number": 48,
+    "angle": "waiting",
+    "monster": "Wait for them to reach out first.",
+    "replies": [
+      "I can reach out first.",
+      "Waiting can last a long time.",
+      "A first step is mine to take.",
+      "I’ll send the first hello."
+    ]
+  },
+  {
+    "id": "r49",
+    "number": 49,
+    "angle": "final",
+    "monster": "Just stay in your shell. It’s fine.",
+    "replies": [
+      "I can peek out a little.",
+      "My shell can have a window.",
+      "I’m ready for a small step out.",
+      "I’ll open up, one inch at a time."
+    ]
+  },
+  {
+    "id": "r50",
+    "number": 50,
+    "angle": "one small risk",
+    "monster": "You’ve been fine on your own. Why risk it?",
+    "replies": [
+      "Fine isn’t the same as full.",
+      "A small risk can be worth it.",
+      "I want more than fine.",
+      "I’ll risk a little warmth."
+    ]
+  }
+]

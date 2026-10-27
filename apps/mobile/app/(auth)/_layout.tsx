@@ -8,6 +8,8 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        animation: 'none',
+        gestureEnabled: false,
         // Auth screens sit on the splash beige -- override the root Stack's brown
         // so there's no dark-purple flash on the auth path.
         contentStyle: { backgroundColor: '#F8E2C1' },

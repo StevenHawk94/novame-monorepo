@@ -1,0 +1,205 @@
+{
+  "date": "2026-10-20",
+  "status": "complete",
+  "scope": {
+    "client": [
+      "Decorate equipped draft: disabled In use; another owned draft: enabled Replace",
+      "Shared 24pt native bold title for six Rooms; Friend's Room naming",
+      "Collection Room title, removed subtitle/binder dots, consistent 20pt/50pt headings, Friends met in adventure, received gift count"
+    ],
+    "gifts": "Hazel C15 Mystery Seeds -> Vinyl, 32 artwork/name replacements"
+  },
+  "deployment": {
+    "productionId": "dpl_CjVh9iTvtjyzcNkBa79MJUcputCP",
+    "readyState": "READY",
+    "domain": "https://api.soulsayit.com",
+    "customDomainVerified": true,
+    "adminUnchanged": true,
+    "verifiedAt": "2026-10-20T13:46:14.890Z"
+  },
+  "candidate": {
+    "id": "dpl_CjVh9iTvtjyzcNkBa79MJUcputCP",
+    "url": "novame-monorepo-3gzp378gh-soulsayit.vercel.app",
+    "readyState": "READY",
+    "changedFiles": [
+      "apps/api/src/data/adventure-friends/HZ.json"
+    ],
+    "verifiedFiles": 270
+  },
+  "migration": {
+    "version": "20261020000252",
+    "catalogRows": 32,
+    "plansUpdated": 3,
+    "resultsUpdated": 3,
+    "inventoryUnchanged": true,
+    "bookshelfPlacementUnchanged": true,
+    "claimStatesUnchanged": true,
+    "rewardIdsUnchanged": true,
+    "functionsUnchanged": true,
+    "sourceVerified": true
+  },
+  "manifestScope": {
+    "characterAndDialoguesUnchanged": true,
+    "stableGiftIdentityFieldsPreserved": true,
+    "gifts": 32
+  },
+  "assets": {
+    "count": 32,
+    "bytes": 819872,
+    "format": "600x600 WebP",
+    "upload": {
+      "verified": 32,
+      "uploaded": 32,
+      "bytes": 819872
+    },
+    "publicCdnSha256AllPassed": true,
+    "oldObjectsRetained": true
+  },
+  "validation": {
+    "uiRegressions": {
+      "passed": 149,
+      "failed": 0
+    },
+    "sharedTypography": {
+      "passed": 1,
+      "platforms": [
+        "ios",
+        "android"
+      ]
+    },
+    "isolatedMigrationTests": {
+      "passed": 2,
+      "rollbackAndReplay": true
+    },
+    "adventurePostgresIntegration": {
+      "journeys": 483,
+      "assertions": 9097
+    },
+    "mobileTypeCheck": "passed",
+    "apiTypeCheck": "passed",
+    "apiLocalBuild": "passed",
+    "vercelProductionBuild": "passed",
+    "candidateHttp": {
+      "origin": "https://novame-monorepo-3gzp378gh-soulsayit.vercel.app",
+      "passed": true,
+      "checks": [
+        {
+          "route": "/api/app-config",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "route": "/api/vnext/bootstrap?friendVisits=2",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/history?kind=moments",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/game-room?mode=overview",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/surprise",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/surprise",
+          "method": "POST",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/command",
+          "method": "POST",
+          "variant": "claim_gift",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/command",
+          "method": "POST",
+          "variant": "claim_shop_gift",
+          "status": 401
+        }
+      ],
+      "accountsCreated": 0,
+      "customerDataWrites": 0
+    },
+    "productionHttp": {
+      "origin": "https://api.soulsayit.com",
+      "passed": true,
+      "checks": [
+        {
+          "route": "/api/app-config",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "route": "/api/vnext/bootstrap?friendVisits=2",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/history?kind=moments",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/game-room?mode=overview",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/surprise",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/surprise",
+          "method": "POST",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/command",
+          "method": "POST",
+          "variant": "claim_gift",
+          "status": 401
+        },
+        {
+          "route": "/api/vnext/command",
+          "method": "POST",
+          "variant": "claim_shop_gift",
+          "status": 401
+        }
+      ],
+      "accountsCreated": 0,
+      "customerDataWrites": 0
+    },
+    "simulator": "not run",
+    "crossAccountSignedInTest": "not run"
+  },
+  "compatibility": {
+    "stableIdsPreserved": true,
+    "inventoryAndUnlocksUnchanged": true,
+    "bookshelfPlacementUnchanged": true,
+    "claimStatesUnchanged": true,
+    "dialoguesUnchanged": true,
+    "businessFunctionsUnchanged": true,
+    "previousClientsKeepSameSchema": true
+  },
+  "rollback": {
+    "previousApiDeployment": "dpl_9cvzPsdt1d5v7FaT1VaLv65zKK9y",
+    "databasePresentationRollback": "/private/tmp/novame-vinyl252-release.ZasbWg/emergency-rollback.sql",
+    "backup": "/private/tmp/novame-vinyl252-release.ZasbWg/database-preflight.json",
+    "executed": false
+  },
+  "clientDelivery": "Client source changes completed; no mobile native build or OTA was published in this task.",
+  "notes": [
+    "Only the approved HZ 32 assets were uploaded. Full-library dry-run detects a separate pre-existing local hash mismatch at adventure_gift_337 (Mushroom Domes/Toadstool Dome.webp); no unrelated category files or production catalog rows were changed."
+  ],
+  "evidenceDirectory": "/private/tmp/novame-vinyl252-release.ZasbWg"
+}

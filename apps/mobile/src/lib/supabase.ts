@@ -1,13 +1,12 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authStorage } from './auth-storage';
 
 /**
  * Supabase client singleton for @novame/mobile.
  *
- * Auth storage: AsyncStorage (D6 decision A — simplest, no encryption).
- * Migration path: replace storage adapter without touching call sites
- * if encryption becomes required.
+ * Auth storage: encrypted MMKV with an OS-managed Keychain/Keystore key.
+ * Old AsyncStorage sessions migrate without requiring another login.
  *
  * Required side effect: react-native-url-polyfill must load before
  * createClient — Supabase v2 uses URL APIs not present in Hermes.
@@ -25,7 +24,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

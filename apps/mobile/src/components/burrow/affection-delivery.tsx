@@ -1,35 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Animated, AppState, Easing, StyleSheet, Text, View } from 'react-native';
+import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { Image } from './burrow-image';
 import Svg, { Line, Path } from 'react-native-svg';
 import type { AffectionType } from '@novame/domain';
-import { getProfileDefaultAvatar, isDefaultAvatarId } from '@/lib/avatar';
+import {UserAvatar} from '@/components/ui/user-avatar';
 import { AFFECTION_COPY } from './affection-gesture';
 
-type Person = { id: string; display_name: string | null; avatar_url: string | null };
+type Person = { id: string; display_name: string | null; avatar_url: string | null; is_default_avatar?:boolean|null };
 export type DeliveryPhase = 'ready' | 'sending' | 'sent';
+export const AFFECTION_TRANSIT_MS = 1850;
+const transitClock=()=>typeof performance!=='undefined'?performance.now():Date.now();
 
-function Avatar({ person, fallback, size }: { person: Person | null; fallback: string; size: number }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [person?.avatar_url]);
+function Avatar({ person, fallback, size,otherUserId }: { person: Person | null; fallback: string; size: number;otherUserId?:string }) {
   return <View style={[styles.person, { width: size + 13 }]}>
     <View style={[styles.avatarShell, { width: size, height: size, borderRadius: size / 2 }]}>
-      <Image
-        source={person?.avatar_url && !isDefaultAvatarId(person.avatar_url) && !failed
-          ? { uri: person.avatar_url }
-          : getProfileDefaultAvatar(person?.avatar_url, person?.id)}
-        contentFit="cover"
-        style={styles.avatar}
-        onError={() => setFailed(true)}
-      />
+      <UserAvatar userId={person?.id} name={person?.display_name} avatarUrl={person?.avatar_url} isDefaultAvatar={person?.is_default_avatar} otherUserId={otherUserId} size={size-8}/>
     </View>
     <Text style={styles.name} numberOfLines={1}>{person?.display_name ?? fallback}</Text>
   </View>;
 }
 
 /** The path stays empty at rest; one heart exists only during delivery. */
-export function AffectionDelivery({ sender, recipient, type, phase, onTransitEnd }: {
+export function AffectionDelivery({ sender, recipient, type, phase, deliveryId, onTransitEnd }: {
   sender: Person; recipient: Person | null; type: AffectionType; phase: DeliveryPhase;
+  deliveryId?: string;
   onTransitEnd?: () => void;
 }) {
   const { width } = useWindowDimensions();
@@ -38,6 +33,7 @@ export function AffectionDelivery({ sender, recipient, type, phase, onTransitEnd
   const [reduced, setReduced] = useState(false);
   const travel = useRef(new Animated.Value(0)).current;
   const ended = useRef(onTransitEnd); ended.current = onTransitEnd;
+  const transit = useRef<{id:string;startedAt:number;ended:boolean}|null>(null);
   useEffect(() => {
     let live = true;
     void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (live) setReduced(value); });
@@ -46,20 +42,37 @@ export function AffectionDelivery({ sender, recipient, type, phase, onTransitEnd
   }, []);
   useEffect(() => {
     travel.stopAnimation(); travel.setValue(0);
-    if (phase !== 'sending') return;
-    if (reduced) { ended.current?.(); return; }
+    if (phase !== 'sending') { if(phase==='ready')transit.current=null; return; }
+    const id=deliveryId??type;
+    if(transit.current?.id!==id)transit.current={id,startedAt:transitClock(),ended:false};
+    const current=transit.current;
+    let live=true;
+    const complete=()=>{
+      if(!live||current.ended||transit.current!==current||AppState.currentState!=='active')return;
+      current.ended=true;travel.stopAnimation();travel.setValue(1);ended.current?.();
+    };
+    if(current.ended){travel.setValue(1);return;}
+    const remaining=Math.max(0,AFFECTION_TRANSIT_MS-(transitClock()-current.startedAt));
+    if(reduced||remaining===0){complete();}
+    else travel.setValue(1-remaining/AFFECTION_TRANSIT_MS);
     const animation = Animated.timing(travel, {
-      toValue: 1, duration: 1850, easing: Easing.bezier(.34, .04, .57, 1), useNativeDriver: true,
+      toValue: 1, duration: remaining, easing: Easing.bezier(.34, .04, .57, 1), useNativeDriver: true,
     });
-    animation.start(({ finished }) => { if (finished) ended.current?.(); });
-    return () => animation.stop();
-  }, [phase, reduced, travel]);
+    if(!current.ended)animation.start(({ finished }) => { if (finished) complete(); });
+    // An interrupted native animation must not strand the screen. This only
+    // completes presentation; it never manufactures a server/coin receipt.
+    const fallback=setTimeout(complete,remaining+200);
+    const subscription=AppState.addEventListener('change',state=>{
+      if(state==='active'&&(reduced||transitClock()-current.startedAt>=AFFECTION_TRANSIT_MS))complete();
+    });
+    return () => {live=false;clearTimeout(fallback);subscription.remove();animation.stop();};
+  }, [phase, deliveryId, type, reduced, travel]);
   const status = phase === 'ready' ? 'Ready to send' : phase === 'sending'
     ? `Your ${AFFECTION_COPY[type].label} is on its way` : `${AFFECTION_COPY[type].label} sent`;
   return <View style={styles.panel}>
     <Text style={styles.caption}>Across the distance</Text>
     <View style={styles.row}>
-      <Avatar person={sender} fallback="You" size={avatarSize}/>
+      <Avatar person={sender} otherUserId={recipient?.id} fallback="You" size={avatarSize}/>
       <View style={styles.trail} onLayout={event => setTrailWidth(event.nativeEvent.layout.width)}
         accessible accessibilityLabel={phase === 'sending' ? 'Affection travelling to your person' : 'A path between you and your person'}>
         <Svg width="100%" height={70} viewBox={`0 0 ${trailWidth} 70`} pointerEvents="none">
@@ -76,7 +89,7 @@ export function AffectionDelivery({ sender, recipient, type, phase, onTransitEnd
           ],
         }]}>♥</Animated.Text>}
       </View>
-      <Avatar person={recipient} fallback="Your person" size={avatarSize}/>
+      <Avatar person={recipient} otherUserId={sender.id} fallback="Your person" size={avatarSize}/>
     </View>
     <View style={styles.statusPill}><Text style={styles.status}>{status}</Text></View>
   </View>;

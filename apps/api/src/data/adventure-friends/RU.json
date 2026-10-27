@@ -1,0 +1,1523 @@
+{
+  "code": "RU",
+  "id": "adventure_friend_ru",
+  "name": "Rue",
+  "gender": "she",
+  "species": "Wolf",
+  "partner": "Sky (he)",
+  "emotionalState": "独立型，嘴上说不需要，慢慢学会依赖和被照顾",
+  "speakingStyle": "简短冷静，嘴硬，爱说 I'm good.",
+  "catchphrase": "I'm good. ...Are you?",
+  "art": [
+    "Wolf_02_Variant1.webp",
+    "Wolf_03_Variant2.webp"
+  ],
+  "dialogues": [
+    {
+      "id": "RU-01",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 1,
+      "familiarity": "Stranger",
+      "type": "Statement",
+      "scene": "Rue is leaning against the wall, arms crossed, pretending not to wait for someone.",
+      "lines": [
+        "I'm good. Just standing here. On my own.",
+        "Sky is late. Which is fine. I don't need to be walked home.",
+        "...I did save him a spot, though."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "You waited for them.",
+          "reaction": [
+            "Don't say it like that.",
+            "...Yeah. I did."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Want some company?",
+          "reaction": [
+            "I'm good. ...Okay, a little.",
+            "Stay till Sky shows up. No big deal."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Say nothing and sit nearby.",
+          "reaction": [
+            "Hm. Okay.",
+            "This is nice. Don't tell anyone."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-02",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 2,
+      "familiarity": "Familiar Face",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Oh. You again. I'm good.",
+        "Sky was late because he got me soup. From across the tunnels. Uninvited.",
+        "I told him I didn't need soup. I ate all of it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Sounds like love.",
+          "reaction": [
+            "It's... a lot of soup. But yeah.",
+            "Don't tell him I said it was good."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You didn't need soup?",
+          "reaction": [
+            "Right. Technically I didn't. I wanted it.",
+            "Wanting is different from needing. I'm learning."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Grin quietly.",
+          "reaction": [
+            "Stop. I can see you grinning.",
+            "Okay, fine. It was the best soup."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-03",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 3,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": "Rue is sharpening a stick with no particular purpose.",
+      "lines": [
+        "I've always done things alone. It's a wolf thing.",
+        "Sky keeps offering to help. I keep saying 'I'm good.'",
+        "He stopped offering last week. That felt weird."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Did you miss the offers?",
+          "reaction": [
+            "...A little. Which is dumb. I said no.",
+            "I think I wanted to be asked anyway."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Maybe say yes sometime?",
+          "reaction": [
+            "Yes. Out loud. With my mouth.",
+            "I can try. Small ones first."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Hand her a smoother stick.",
+          "reaction": [
+            "Hm. Thanks. That's better.",
+            "See? Help isn't terrible."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-04",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 4,
+      "familiarity": "Acquaintance",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "Sky asked me to come to a dinner. With his family.",
+        "I said 'I'm good.' He said 'I know. I want you there anyway.'",
+        "Why did that hit so hard?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Because he wants you there.",
+          "reaction": [
+            "...Yeah. Wants. Not needs.",
+            "Wanting is easier to accept. Somehow."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "You should go.",
+          "reaction": [
+            "I'm going. I bought a nice leaf. For the table.",
+            "Don't laugh. It's a very nice leaf."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Tell her it sounds nice.",
+          "reaction": [
+            "It does. It sounds really nice.",
+            "Okay. I'm going to say yes."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-05",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 5,
+      "familiarity": "Friend",
+      "type": "Ask",
+      "scene": null,
+      "lines": [
+        "Quick question. Do you and your partner ever not need each other?",
+        "Like, doing separate things? Is that okay?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Yes, we do our own things.",
+          "reaction": [
+            "Good. That's what I thought. Separate is healthy.",
+            "I just want to be sure I'm allowed to like it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We mostly do things together.",
+          "reaction": [
+            "Together. Hm. That sounds nice, but loud.",
+            "I'd need a lot of quiet breaks."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "It depends on the day.",
+          "reaction": [
+            "Depends. Okay. That feels honest.",
+            "Some days I want him. Some days I want a tree."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-06",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 6,
+      "familiarity": "Friend",
+      "type": "Statement",
+      "scene": "Rue is holding two mugs, one half-empty, and glancing at the door.",
+      "lines": [
+        "Sky left his mug here. I washed it. Don't know why.",
+        "Then I realized I know exactly why.",
+        "I... like having his stuff around. Is that weird?"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Not weird at all.",
+          "reaction": [
+            "Good. I thought it'd make me soft.",
+            "I'm soft. A little. Secretly."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's sweet.",
+          "reaction": [
+            "Stop. Don't say sweet. Say... 'fine.'",
+            "Okay. It's sweet. I'm allowed one."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Take a sip from his mug.",
+          "reaction": [
+            "Hey. That's Sky's. ...Eh, go ahead.",
+            "He wouldn't mind. He's generous like that."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-07",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 7,
+      "familiarity": "Close Friend",
+      "type": "Confide",
+      "scene": "Rue crosses her arms, then drops them. It seems important.",
+      "lines": [
+        "Can I tell you something? Don't make it a thing.",
+        "I grew up on my own. Nobody checked on me. Ever.",
+        "Sky checks on me. Every day. I don't know where to put it."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Maybe put it somewhere warm.",
+          "reaction": [
+            "...Somewhere warm. Okay. I can try.",
+            "I think my chest is warm. It's just very unused."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Does he know that?",
+          "reaction": [
+            "He knows I'm not great at it. He says, 'We'll practice.'",
+            "I like that. Practice."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit beside Rue.",
+          "reaction": [
+            "Thanks. No fixing. Just sitting.",
+            "I think I can say it out loud now."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-08",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 8,
+      "familiarity": "Close Friend",
+      "type": "Statement",
+      "scene": null,
+      "lines": [
+        "I told Sky I needed him. Out loud. At the picnic.",
+        "He dropped his sandwich. A full dropped sandwich.",
+        "Then he said, 'Say it again.' So I did."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's huge.",
+          "reaction": [
+            "It was a big, scary, small sentence.",
+            "Four words. 'I need you, Sky.' I'm still shaking."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sandwich down?",
+          "reaction": [
+            "Sandwich down. Heart up. Ants happy.",
+            "It was the best picnic of my life."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Smile and clap quietly.",
+          "reaction": [
+            "Don't. I'll cry. A wolf crying is bad for my brand.",
+            "...Okay, clap a little."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-09",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 9,
+      "familiarity": "Best Friend",
+      "type": "Companion",
+      "scene": "Rue pats the ground beside her without looking at you.",
+      "lines": [
+        "Sky's out late. I'm not worried. I'm just... awake.",
+        "Stay a minute. We don't need to talk.",
+        "Company without conversation is the best kind."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Of course.",
+          "reaction": [
+            "Thanks. I'm good. But better with you here.",
+            "Don't read into that."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Look at the stars with her.",
+          "reaction": [
+            "Those are the same ones he's looking at, probably.",
+            "It makes me feel closer. Don't tell him."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Sit in silence.",
+          "reaction": [
+            "Perfect. This is my love language.",
+            "I'm calm. For once."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-10",
+      "friendId": "adventure_friend_ru",
+      "phase": "Intro",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Milestone",
+      "scene": null,
+      "lines": [
+        "Ten times. I kept track. In my head. Not on a wall. Don't laugh.",
+        "Sky said I've been smiling more. I said I haven't. He didn't believe me.",
+        "You help. I think. Thanks.",
+        "Your turn. How are you and your partner doing? Honest."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We're good. Still learning.",
+          "reaction": [
+            "Learning is the whole job, I think.",
+            "Come by. Sky cooks. I pretend I'm not hungry."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "We had a rough week, honestly.",
+          "reaction": [
+            "Rough weeks happen. I'm sorry.",
+            "Say it out loud to them. I know it's hard. I'm learning too."
+          ]
+        },
+        {
+          "id": "c",
+          "label": "Better since I let them help.",
+          "reaction": [
+            "Letting them help. Huh. That's the thing.",
+            "Look at us. Two growing wolves."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P01",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 1,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sky built me a little chair by the window. Without asking.",
+        "I said I didn't need it. I sat in it for six hours."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Six hours?!",
+          "reaction": [
+            "Five and a half. I got up for water.",
+            "It's the best chair I've ever sat in.",
+            "He saw me in it and smirked. I let him."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Aww.",
+          "reaction": [
+            "Don't say aww. Say... 'adequate.'",
+            "It's the most adequate chair ever.",
+            "I'll deny this later. Remember that I said it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P02",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 2,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I asked Sky for help carrying a rock. A big one.",
+        "He carried it. I walked beside him. It was kind of nice."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Teamwork!",
+          "reaction": [
+            "Yeah. I carried the snacks. It was balanced.",
+            "We didn't need the rock. We just wanted the walk."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Good for you.",
+          "reaction": [
+            "Thanks. It took me an hour to ask.",
+            "The rock is on our porch now. It's a nice rock."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P03",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 3,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sky got sick for two days. I made him soup. First time ever.",
+        "It tasted like leaves. He ate every drop."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Leaf soup love.",
+          "reaction": [
+            "That's what he called it. 'Leaf soup love.'",
+            "He's still teasing me. I'm still blushing.",
+            "I'm not saying I liked the nickname. I'm saying I'm keeping it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Did he get better?",
+          "reaction": [
+            "Yes. Thanks to the soup, he says. I think it was the nap.",
+            "But I'll take the credit."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P04",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 4,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "We had a big argument about space. I said 'I need to be alone.' He said 'Okay.'",
+        "Then he stayed two feet away. All night. Quietly. That helped."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Two feet is respectful.",
+          "reaction": [
+            "Exactly. Close, but not crowding.",
+            "I came back and put my head on his shoulder.",
+            "That night I closed the gap myself. No words."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sounds healthy.",
+          "reaction": [
+            "I think so. We're learning how to need and not need.",
+            "Both can exist.",
+            "We said goodnight at the same time. It was funny."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P05",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 5,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sky's mother hugged me. Out of nowhere. For a full minute.",
+        "I froze. Then I hugged back. Awkwardly."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Hugging is hard.",
+          "reaction": [
+            "It really is. But it felt... like belonging.",
+            "I might do it again. Slowly.",
+            "She hugged me again. I hugged back faster. Progress."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's sweet.",
+          "reaction": [
+            "It was. I cried in the bushes after.",
+            "Sky found me. He didn't say a thing.",
+            "Sky only said, 'You okay?' I said, 'I'm good.' He knew."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P06",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 6,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I wrote Sky a note and left it in his boot. Three words: 'Proud of you.'",
+        "He found it at work. He called me. He couldn't talk. Just breathing."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That's beautiful.",
+          "reaction": [
+            "I know. I didn't expect it to matter that much.",
+            "Words are strong. I'm learning.",
+            "I wrote it with my best pencil. The boot smelled terrible."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Short and perfect.",
+          "reaction": [
+            "Short is my specialty.",
+            "Sky says short is better. Fewer words to doubt.",
+            "I might do it again. Different words, same boot."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P07",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 7,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "I accidentally said 'we' instead of 'I' three times today.",
+        "'We should go.' 'We're out of bread.' 'We're okay.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "We!",
+          "reaction": [
+            "I know! The little word! It slipped out.",
+            "It feels nice. Better than I thought.",
+            "Sky noticed too. He grinned and didn't say a word."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Getting comfy.",
+          "reaction": [
+            "Yeah. A wolf in a pair. Who knew.",
+            "Not a pack. Just two.",
+            "We're a pair. A mismatched, slightly clumsy pair."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P08",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 8,
+      "familiarity": "Old Friend",
+      "type": "Update",
+      "scene": null,
+      "lines": [
+        "Sky and I went on our first trip. Just us. A day. Three tunnels away.",
+        "I packed light. He packed everything. We balanced out."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Perfect combo.",
+          "reaction": [
+            "He brought a spare sweater for me. I needed it.",
+            "I won't say that to him. I'll just wear it."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Sounds adventurous.",
+          "reaction": [
+            "It was. We got lost for twenty minutes. We laughed.",
+            "That's what I remember most.",
+            "We took no photos. We just stored it all in our heads."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P09",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 9,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The nice leaf? He pressed it. It's on our wall now.",
+        "He said it was the best thing anyone's brought to dinner."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "That leaf!",
+          "reaction": [
+            "Yeah. A very nice leaf.",
+            "Never underestimate a leaf.",
+            "Sky's mother wants to frame it, but he refused."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "That's so sweet.",
+          "reaction": [
+            "Stop. Okay. It is. It's very sweet.",
+            "I'm learning to say that out loud.",
+            "He heard me say it. His ears went pink."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P10",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 10,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "I still think about the sandwich. The dropped one.",
+        "Sky wrote 'Say it again' on a rock. Keeps it by the bed."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Aww.",
+          "reaction": [
+            "I told you not to say aww. ...Thanks.",
+            "It's a good rock.",
+            "He tucked the rock under the pillow. Weird. Perfect."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "He means it.",
+          "reaction": [
+            "He does. Every day. I'm getting used to it.",
+            "Slowly. Very slowly.",
+            "I let him say it. I don't even flinch now."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P11",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 11,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "Remember the mug? We have matching ones now.",
+        "Mine says 'I'm good.' His says 'I'm also good.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Perfect set.",
+          "reaction": [
+            "They look great together. Like a joke only we get.",
+            "Sky laughs every morning.",
+            "He puts hot cocoa in mine. I pretend not to notice."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Cute.",
+          "reaction": [
+            "Okay, it's cute. A small amount.",
+            "I'm at peace with it.",
+            "Okay, very cute. Don't tell anyone I said so."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P12",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 12,
+      "familiarity": "Old Friend",
+      "type": "Callback",
+      "scene": null,
+      "lines": [
+        "The stick I was sharpening? It's now our walking stick.",
+        "He carved our initials. Mine's a little crooked."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Crooked is charming.",
+          "reaction": [
+            "It is. I like crooked. It's honest.",
+            "Sky says he did it on purpose. He didn't.",
+            "He pretended to complain. Then he used it for a week."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "A walking stick for two?",
+          "reaction": [
+            "For two. We take turns. It's a rule.",
+            "He gets the downhill. I get the up.",
+            "On the long hills, we both lean on it."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P13",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 13,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: you can love being alone and love someone too.",
+        "Not either-or. Both. Different dinners."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Totally.",
+          "reaction": [
+            "I thought it was wrong. It's not.",
+            "I'm good. And I'm his. Both.",
+            "Alone-time is a gift we give each other."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Doesn't that clash?",
+          "reaction": [
+            "Sometimes. But we figure it out.",
+            "Clash, then cuddle.",
+            "A little. But clash is just a fancy word for 'talk.'"
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P14",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 14,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: asking for help is tougher than helping.",
+        "Anyone can lift a rock. Try saying 'I can't.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "So true.",
+          "reaction": [
+            "Right? It's the bravest sentence.",
+            "I say it now. Three times a week.",
+            "I still pretend it's not hard. Sky pretends too."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I'm bad at it too.",
+          "reaction": [
+            "Welcome. We'll practice together.",
+            "Try: 'Can you hold this?' Easy start.",
+            "We'll practice with small stones. Then boulders."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P15",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 15,
+      "familiarity": "Old Friend",
+      "type": "HotTake",
+      "scene": null,
+      "lines": [
+        "Hot take: grand gestures are fine, but small check-ins win.",
+        "A text. A look. 'You good?' 'I'm good.' 'Me too.'"
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Check-ins are everything.",
+          "reaction": [
+            "Right? Tiny, steady, real.",
+            "Sky does it every hour. I love it. Quietly.",
+            "He texts a leaf emoji. I reply with a rock."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I like grand gestures.",
+          "reaction": [
+            "Those are fun. They just don't last without the small ones.",
+            "Do both. Like me, eventually.",
+            "Grand gestures are shiny. Small ones are the glue."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P16",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 16,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's something you do alone that your partner doesn't mind?",
+        "I'm collecting examples. For my sanity."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Long walks.",
+          "reaction": [
+            "Long walks. Same. Solo walks are therapy.",
+            "Sky waits at the end with water.",
+            "He brings water. I bring silence. Perfect trade."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Reading in silence.",
+          "reaction": [
+            "Reading. Quiet. Perfect. Do you share bits?",
+            "I read Sky one line sometimes. He loves it.",
+            "He reads two pages. I read one line. We meet in the middle."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P17",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 17,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "How do you ask for help? Without feeling small?",
+        "Mine comes out like a growl."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "I just say it plainly.",
+          "reaction": [
+            "Plainly. Okay. 'Can you help me?' Not bad.",
+            "A growl with manners.",
+            "Try it. A growl with manners goes a long way."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I use a joke first.",
+          "reaction": [
+            "A joke first. That's smart. Soften the landing.",
+            "I'll try. 'I'm good. Mostly. Help?'",
+            "Softened landings help. A joke and a hug, usually."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P18",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 18,
+      "familiarity": "Old Friend",
+      "type": "AskBack",
+      "scene": null,
+      "lines": [
+        "What's the best thing about being half of a pair?",
+        "I want to hear a nice answer."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Someone to share the quiet.",
+          "reaction": [
+            "Share the quiet. Oh. That's exactly it.",
+            "I'm using that line. Don't sue me.",
+            "It's the one thing I wasn't expecting. It's the best."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Someone to laugh with.",
+          "reaction": [
+            "Laughter. Yes. Sky snorts. It's the best.",
+            "I'd trade ten rocks for that snort.",
+            "His laugh is a bark. It never gets old."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P19",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 19,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Rue stands at the entrance, the wind pushing her fur. She smiles, unguarded.",
+      "lines": [
+        "I'm good. Actually good. For the first time in a long while.",
+        "I don't have a big reason. Just a lot of small ones.",
+        "Sky, soup, a chair. You."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Small reasons count.",
+          "reaction": [
+            "They're the only reasons that stay.",
+            "I'm going to remember today. Without a rock.",
+            "Thank you for staying. I didn't think I'd say that."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "I'm glad you're good.",
+          "reaction": [
+            "Me too. Thanks for asking. You did, in your own way.",
+            "Stay a minute. The wind's nice.",
+            "Sit. The wind has something to tell us."
+          ]
+        }
+      ],
+      "outro": null
+    },
+    {
+      "id": "RU-P20",
+      "friendId": "adventure_friend_ru",
+      "phase": "Pool",
+      "seq": 20,
+      "familiarity": "Old Friend",
+      "type": "Rare",
+      "scene": "Rue is holding a small, folded note, staring at it as if it might bite.",
+      "lines": [
+        "Sky left me a note this morning. I haven't read it.",
+        "What if it's sweet? I'll melt. What if it's nothing? I'll sulk.",
+        "Read it with me? Don't look at the words. Just stay."
+      ],
+      "choices": [
+        {
+          "id": "a",
+          "label": "Of course.",
+          "reaction": [
+            "...'Rue. You're never too much. I'm here. Always. Sky.'",
+            "...Okay. I'm not crying. The wind is.",
+            "Sky's handwriting always looks like it's smiling."
+          ]
+        },
+        {
+          "id": "b",
+          "label": "Wait until you're ready.",
+          "reaction": [
+            "Ready. Hm. Never. But maybe now.",
+            "Thanks for the pause.",
+            "I'll open it tonight, with him beside me."
+          ]
+        }
+      ],
+      "outro": null
+    }
+  ],
+  "gifts": [
+    {
+      "id": "adventure_gift_305",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G01",
+      "name": "Car Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 305,
+      "file": "Vehicle Models/Car Model.webp",
+      "key": "burrow/adventure-gifts/v1/305-746994a9c1315f88.webp",
+      "sha256": "746994a9c1315f88006d460996375875813b5f5e8f49864ef1cdf20b15f52477",
+      "bytes": 32916
+    },
+    {
+      "id": "adventure_gift_306",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G02",
+      "name": "Motorbike Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 306,
+      "file": "Vehicle Models/Motorbike Model.webp",
+      "key": "burrow/adventure-gifts/v1/306-e415f45c4eaf6e2d.webp",
+      "sha256": "e415f45c4eaf6e2d628eb5335ef7d4b246f861ed21f7c55db595bd654f81064c",
+      "bytes": 40504
+    },
+    {
+      "id": "adventure_gift_307",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G03",
+      "name": "Sailboat Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 307,
+      "file": "Vehicle Models/Sailboat Model.webp",
+      "key": "burrow/adventure-gifts/v1/307-138b79b6d6966df2.webp",
+      "sha256": "138b79b6d6966df2db4a2ca5e75962a3a17833809e6b9b259bfe5dd09b9bfaf9",
+      "bytes": 42404
+    },
+    {
+      "id": "adventure_gift_308",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G04",
+      "name": "Airplane Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 308,
+      "file": "Vehicle Models/Airplane Model.webp",
+      "key": "burrow/adventure-gifts/v1/308-541b5559f848aa10.webp",
+      "sha256": "541b5559f848aa10c9eb16160ebcea4458314b3de1b3869de9b33d660b2b8746",
+      "bytes": 42212
+    },
+    {
+      "id": "adventure_gift_309",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G05",
+      "name": "Camper Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 309,
+      "file": "Vehicle Models/Camper Model.webp",
+      "key": "burrow/adventure-gifts/v1/309-1e7c34b149debc4e.webp",
+      "sha256": "1e7c34b149debc4edfef74daa9f765475ff7a3b1c51d64e76b9325b3d885d918",
+      "bytes": 33276
+    },
+    {
+      "id": "adventure_gift_310",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G06",
+      "name": "Scooter Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 310,
+      "file": "Vehicle Models/Scooter Model.webp",
+      "key": "burrow/adventure-gifts/v1/310-4313afb6f8168578.webp",
+      "sha256": "4313afb6f8168578ae7e85be21ec78d1435a7f9f94e24c27275b9eba962a41a7",
+      "bytes": 33034
+    },
+    {
+      "id": "adventure_gift_311",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G07",
+      "name": "Tugboat Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 311,
+      "file": "Vehicle Models/Tugboat Model.webp",
+      "key": "burrow/adventure-gifts/v1/311-3fb670bb67c5698c.webp",
+      "sha256": "3fb670bb67c5698c5d4c763c51252c98bdba2545b550273bcecd91a40459c7b7",
+      "bytes": 30220
+    },
+    {
+      "id": "adventure_gift_312",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G08",
+      "name": "Helicopter Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 312,
+      "file": "Vehicle Models/Helicopter Model.webp",
+      "key": "burrow/adventure-gifts/v1/312-ea27fd06a44030e2.webp",
+      "sha256": "ea27fd06a44030e262d173b6320ff806a11e8715105499c2ea395f0dfff56465",
+      "bytes": 44842
+    },
+    {
+      "id": "adventure_gift_313",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G09",
+      "name": "Train Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 313,
+      "file": "Vehicle Models/Train Model.webp",
+      "key": "burrow/adventure-gifts/v1/313-6a44780856d494ef.webp",
+      "sha256": "6a44780856d494ef736cc1ec94798443525d526ffe6ebd6defa97f3a83e33e92",
+      "bytes": 40682
+    },
+    {
+      "id": "adventure_gift_314",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G10",
+      "name": "Bus Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 314,
+      "file": "Vehicle Models/Bus Model.webp",
+      "key": "burrow/adventure-gifts/v1/314-e716c171fd4f9e57.webp",
+      "sha256": "e716c171fd4f9e575ddbb04d7d9f8694f69bc828790af55ef5aefa5ad4d299e0",
+      "bytes": 33850
+    },
+    {
+      "id": "adventure_gift_315",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G11",
+      "name": "Submarine Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 315,
+      "file": "Vehicle Models/Submarine Model.webp",
+      "key": "burrow/adventure-gifts/v1/315-48fff49e853a552d.webp",
+      "sha256": "48fff49e853a552defc0de455018a8c7a04905124ee0bf9579b5d86363df3211",
+      "bytes": 38632
+    },
+    {
+      "id": "adventure_gift_316",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G12",
+      "name": "Balloon Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 316,
+      "file": "Vehicle Models/Balloon Model.webp",
+      "key": "burrow/adventure-gifts/v1/316-53c61c2adfa02c3d.webp",
+      "sha256": "53c61c2adfa02c3dbd21279d0cd3584ec3fbca9c618b93333094e5109f16ee1c",
+      "bytes": 26238
+    },
+    {
+      "id": "adventure_gift_317",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G13",
+      "name": "Tractor Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 317,
+      "file": "Vehicle Models/Tractor Model.webp",
+      "key": "burrow/adventure-gifts/v1/317-24c485b7134c9e56.webp",
+      "sha256": "24c485b7134c9e5617ce697897492d82e59cdb84af2a45c89fe61d62dda91fba",
+      "bytes": 34270
+    },
+    {
+      "id": "adventure_gift_318",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G14",
+      "name": "Racecar Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 318,
+      "file": "Vehicle Models/Racecar Model.webp",
+      "key": "burrow/adventure-gifts/v1/318-33e61d0b06a04cd0.webp",
+      "sha256": "33e61d0b06a04cd05c344303a0f02ddad4d064245b957a392518f5bc53f56a12",
+      "bytes": 32596
+    },
+    {
+      "id": "adventure_gift_319",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G15",
+      "name": "Rocket Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 319,
+      "file": "Vehicle Models/Rocket Model.webp",
+      "key": "burrow/adventure-gifts/v1/319-3b25cb7296913b57.webp",
+      "sha256": "3b25cb7296913b57c8a53f08630beb25fe08149ecc5c680b7b9b2a796d726762",
+      "bytes": 24708
+    },
+    {
+      "id": "adventure_gift_320",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G16",
+      "name": "Seaplane Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 320,
+      "file": "Vehicle Models/Seaplane Model.webp",
+      "key": "burrow/adventure-gifts/v1/320-0514221974600969.webp",
+      "sha256": "05142219746009698b9fb452ff0a9a7ea862b638267f6937598c2aaa9856d906",
+      "bytes": 49036
+    },
+    {
+      "id": "adventure_gift_321",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G17",
+      "name": "Pickup Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 321,
+      "file": "Vehicle Models/Pickup Model.webp",
+      "key": "burrow/adventure-gifts/v1/321-6a1f3b392aae77b3.webp",
+      "sha256": "6a1f3b392aae77b301bdad9e7fe38ce2440d5b3b6cba3ffe053cf930cdf3f5fb",
+      "bytes": 28890
+    },
+    {
+      "id": "adventure_gift_322",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G18",
+      "name": "Firetruck Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 322,
+      "file": "Vehicle Models/Firetruck Model.webp",
+      "key": "burrow/adventure-gifts/v1/322-44d5a36a7b2012b2.webp",
+      "sha256": "44d5a36a7b2012b2f9da5907b166a64dc93de45b7125e0489934b09dc66463ee",
+      "bytes": 41854
+    },
+    {
+      "id": "adventure_gift_323",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G19",
+      "name": "Taxi Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 323,
+      "file": "Vehicle Models/Taxi Model.webp",
+      "key": "burrow/adventure-gifts/v1/323-d6ba68de3c50cd63.webp",
+      "sha256": "d6ba68de3c50cd63a72d99354c1c7f99e5194d1576cb3388c6f2cd7e5e4cce6c",
+      "bytes": 30806
+    },
+    {
+      "id": "adventure_gift_324",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G20",
+      "name": "Jeep Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 324,
+      "file": "Vehicle Models/Jeep Model.webp",
+      "key": "burrow/adventure-gifts/v1/324-66cd856ca9f9ae25.webp",
+      "sha256": "66cd856ca9f9ae25b2880f55f9acab05e260423e950a0a12bf613bd2e0839a5f",
+      "bytes": 37540
+    },
+    {
+      "id": "adventure_gift_325",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G21",
+      "name": "Bicycle Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 325,
+      "file": "Vehicle Models/Bicycle Model.webp",
+      "key": "burrow/adventure-gifts/v1/325-9da8db375737b34e.webp",
+      "sha256": "9da8db375737b34e42479d3582aaed8032a9cee4fc183c532e96a99de389f53a",
+      "bytes": 63930
+    },
+    {
+      "id": "adventure_gift_326",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G22",
+      "name": "Sidecar Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 326,
+      "file": "Vehicle Models/Sidecar Model.webp",
+      "key": "burrow/adventure-gifts/v1/326-acaf8b2dbce38013.webp",
+      "sha256": "acaf8b2dbce38013ea5c8f5058854a31b7feffcaa6ca1221b2feebf4434aa680",
+      "bytes": 35520
+    },
+    {
+      "id": "adventure_gift_327",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G23",
+      "name": "Snowmobile Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 327,
+      "file": "Vehicle Models/Snowmobile Model.webp",
+      "key": "burrow/adventure-gifts/v1/327-cf8b006f3b081aab.webp",
+      "sha256": "cf8b006f3b081aabf951b02910af1cf986bcb729993cfed827659117e26f8c99",
+      "bytes": 29940
+    },
+    {
+      "id": "adventure_gift_328",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G24",
+      "name": "Excavator Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 328,
+      "file": "Vehicle Models/Excavator Model.webp",
+      "key": "burrow/adventure-gifts/v1/328-2cc3bb1445a617d9.webp",
+      "sha256": "2cc3bb1445a617d956a4278da353819649d2ca5cc8e8f9ec539304ef6eec872d",
+      "bytes": 34470
+    },
+    {
+      "id": "adventure_gift_329",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G25",
+      "name": "Yacht Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 329,
+      "file": "Vehicle Models/Yacht Model.webp",
+      "key": "burrow/adventure-gifts/v1/329-066eb1d09170bc16.webp",
+      "sha256": "066eb1d09170bc16dad23abcd7865d4e5d5044627fe9f154983e0ecd9f06c45a",
+      "bytes": 31902
+    },
+    {
+      "id": "adventure_gift_330",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G26",
+      "name": "Steamboat Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 330,
+      "file": "Vehicle Models/Steamboat Model.webp",
+      "key": "burrow/adventure-gifts/v1/330-20c936baa82ef861.webp",
+      "sha256": "20c936baa82ef861543bdc7f06e8f69816427cf4c3a679f0f4ed61f68401e2b8",
+      "bytes": 29854
+    },
+    {
+      "id": "adventure_gift_331",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G27",
+      "name": "Viking Ship",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 331,
+      "file": "Vehicle Models/Viking Ship.webp",
+      "key": "burrow/adventure-gifts/v1/331-fa8ad6119985e9e7.webp",
+      "sha256": "fa8ad6119985e9e7be57fa8e4c6a65c9a3c2a9641af03034a78b93d0c415d7ad",
+      "bytes": 42902
+    },
+    {
+      "id": "adventure_gift_332",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G28",
+      "name": "Hovercraft Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 332,
+      "file": "Vehicle Models/Hovercraft Model.webp",
+      "key": "burrow/adventure-gifts/v1/332-88dc8002aa16757c.webp",
+      "sha256": "88dc8002aa16757c7527de80747161073002d29f333d8c392510a272e034d183",
+      "bytes": 29526
+    },
+    {
+      "id": "adventure_gift_333",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G29",
+      "name": "Biplane Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 333,
+      "file": "Vehicle Models/Biplane Model.webp",
+      "key": "burrow/adventure-gifts/v1/333-6e8a3d6867ec3fab.webp",
+      "sha256": "6e8a3d6867ec3fab90f848efc4a59b322c492cccab92fc7507757e6187f6d82b",
+      "bytes": 47162
+    },
+    {
+      "id": "adventure_gift_334",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G30",
+      "name": "Jet Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 334,
+      "file": "Vehicle Models/Jet Model.webp",
+      "key": "burrow/adventure-gifts/v1/334-e9f799345444268d.webp",
+      "sha256": "e9f799345444268d3fd5b42189f4f15561176ea6be7eb90e3907ff10f9e3b0ae",
+      "bytes": 31166
+    },
+    {
+      "id": "adventure_gift_335",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G31",
+      "name": "Airship Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 335,
+      "file": "Vehicle Models/Airship Model.webp",
+      "key": "burrow/adventure-gifts/v1/335-d7eeb429aa52d9dc.webp",
+      "sha256": "d7eeb429aa52d9dc07deab9ef4e0f5bd5c66751a9d8ac358edd2e030e836fd29",
+      "bytes": 32384
+    },
+    {
+      "id": "adventure_gift_336",
+      "friendId": "adventure_friend_ru",
+      "giftId": "RU-G32",
+      "name": "Shuttle Model",
+      "category": "Vehicle Models",
+      "categoryCode": "C10",
+      "sourceId": 336,
+      "file": "Vehicle Models/Shuttle Model.webp",
+      "key": "burrow/adventure-gifts/v1/336-a04584c9ebef4780.webp",
+      "sha256": "a04584c9ebef4780617c4814804ac7db38f9708cbbc682d360a60adbe026029a",
+      "bytes": 27832
+    }
+  ]
+}

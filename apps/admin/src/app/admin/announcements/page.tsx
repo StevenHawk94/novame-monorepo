@@ -9,6 +9,8 @@ import { apiClient } from '@/lib/api-client';
 type AnnouncementForm = {
   title: string;
   content: string;
+  button_text: string;
+  action_url: string;
   type: string;
   target_users: string;
   end_at: string;
@@ -55,6 +57,8 @@ export default function AdminAnnouncements() {
   const [form, setForm] = useState<AnnouncementForm>({
     title: '',
     content: '',
+    button_text: 'Let’s Burrow!',
+    action_url: '',
     type: 'info',
     target_users: 'all',
     end_at: '',
@@ -75,7 +79,7 @@ export default function AdminAnnouncements() {
 
   const resetComposer = () => {
     setShowAdd(false);
-    setForm({ title: '', content: '', type: 'info', target_users: 'all', end_at: '' });
+    setForm({ title: '', content: '', button_text:'Let’s Burrow!',action_url:'', type: 'info', target_users: 'all', end_at: '' });
     setImageFile(null);
     setImagePreview('');
   };
@@ -126,9 +130,13 @@ export default function AdminAnnouncements() {
 
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.content.trim() || !imageFile) {
-      alert('请填写标题、上传图片并填写详情文字');
+    if (!form.title.trim() || !form.content.trim() || !form.button_text.trim() || !imageFile) {
+      alert('请填写标题、上传图片、详情文字和按钮文字');
       return;
+    }
+    if(form.action_url.trim()){
+      try{const url=new URL(form.action_url.trim());if(url.protocol!=='https:'||url.username||url.password)throw Error();}
+      catch{alert('跳转链接须为有效的 HTTPS 地址');return;}
     }
     setAdding(true);
     try {
@@ -230,6 +238,7 @@ export default function AdminAnnouncements() {
                     />
                   )}
                   <p className="text-gray-600 whitespace-pre-wrap">{a.content}</p>
+                  <p className="text-sm text-gray-500 mt-2">按钮：{a.button_text || 'Continue'} · {a.action_url || '关闭公告（无跳转链接）'}</p>
                   <div className="flex gap-4 mt-3 text-xs text-gray-400">
                     <span>创建: {new Date(a.created_at).toLocaleDateString()}</span>
                     {a.end_at && (
@@ -287,6 +296,7 @@ export default function AdminAnnouncements() {
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="例如：Welcome to Visdom!"
+                  maxLength={120}
                   className="w-full px-3 py-2 border rounded-lg"
                   required
                 />
@@ -309,9 +319,19 @@ export default function AdminAnnouncements() {
                   onChange={(e) => setForm({ ...form, content: e.target.value })}
                   placeholder="图片下方展示的公告详情..."
                   rows={4}
+                  maxLength={2000}
                   className="w-full px-3 py-2 border rounded-lg resize-none"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">按钮文字 *</label>
+                <input required maxLength={60} value={form.button_text} onChange={e=>setForm({...form,button_text:e.target.value})} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">跳转链接（可选，仅 HTTPS）</label>
+                <input type="url" maxLength={2048} placeholder="https://..." value={form.action_url} onChange={e=>setForm({...form,action_url:e.target.value})} className="w-full px-3 py-2 border rounded-lg"/>
+                <p className="text-xs text-gray-400 mt-1">有链接时打开链接；留空时点击按钮关闭公告。</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -363,9 +383,10 @@ export default function AdminAnnouncements() {
               {/* 预览 */}
               <div>
                 <label className="block text-sm font-medium mb-2">预览效果</label>
-                <div className="rounded-2xl bg-[#6E3F2C] p-5 text-center text-white">
+                <div className="rounded-2xl bg-[#542914] p-5 text-center text-white">
+                  <div className="text-right text-2xl mb-5">✕</div>
                   <p className="font-bold text-xl mb-4">{form.title || '公告标题'}</p>
-                  <div className="aspect-square w-full rounded-xl overflow-hidden bg-[#FFF4D8] mb-4 flex items-center justify-center">
+                  <div className="aspect-square w-full rounded-xl overflow-hidden border-[10px] border-white bg-white mb-4 flex items-center justify-center">
                     {imagePreview ? (
                       <img src={imagePreview} alt="公告预览" className="w-full h-full object-contain" />
                     ) : (
@@ -375,7 +396,7 @@ export default function AdminAnnouncements() {
                   <p className="font-semibold whitespace-pre-wrap mb-5">
                     {form.content || '详情文字预览...'}
                   </p>
-                  <div className="rounded-xl bg-[#FFF4D8] py-3 font-bold text-[#4A2F1E]">Start Today</div>
+                  <div className="rounded-xl bg-[#ffc447] py-3 font-bold text-[#49270f]">{form.button_text || '按钮文字'}</div>
                 </div>
               </div>
 

@@ -30,8 +30,7 @@ export function NotificationTimePicker({
   onDisabled?: () => void;
   showDisable?: boolean;
 }) {
-  const [hour, setHour] = useState(initialHour);
-  const [min, setMin] = useState(initialMin);
+  const hour=20,min=0;
   const [busy, setBusy] = useState(false);
 
   const h12 = hour % 12 || 12;
@@ -59,57 +58,36 @@ export function NotificationTimePicker({
     setBusy(true);
     try {
       await cancelDailyReminder();
+      onDisabled?.();
     } catch (error) {
       console.warn('[notification] cancel failed:', error);
+      appAlert('Could not turn off reminder','Please try again. Your previous setting has been kept.');
     } finally {
       setBusy(false);
-      onDisabled?.();
     }
   };
 
   return (
     <>
       <Text style={styles.emoji}>🔔</Text>
-      <Text style={styles.title}>Set Reminder Time</Text>
-      <Text style={styles.description}>Choose when your companion should remind you.</Text>
+      <Text style={styles.title}>Adventure Reminder</Text>
+      <Text style={styles.description}>At 8:00 PM, only if you haven’t started your adventure.</Text>
 
       <View style={styles.card}>
         <View style={styles.row}>
           <View style={styles.column}>
-            <StepButton direction="up" onPress={() => {
-              void haptics.selection();
-              setHour((value) => (value + 1) % 24);
-            }} />
             <Text style={styles.digit}>{String(h12).padStart(2, '0')}</Text>
-            <StepButton direction="down" onPress={() => {
-              void haptics.selection();
-              setHour((value) => (value - 1 + 24) % 24);
-            }} />
           </View>
 
           <Text style={styles.colon}>:</Text>
 
           <View style={styles.column}>
-            <StepButton direction="up" onPress={() => {
-              void haptics.selection();
-              setMin((value) => (value + 1) % 60);
-            }} />
             <Text style={styles.digit}>{String(min).padStart(2, '0')}</Text>
-            <StepButton direction="down" onPress={() => {
-              void haptics.selection();
-              setMin((value) => (value - 1 + 60) % 60);
-            }} />
           </View>
 
-          <Pressable
-            onPress={() => {
-              void haptics.selection();
-              setHour((value) => (value + 12) % 24);
-            }}
-            style={({ pressed }) => [styles.ampm, pressed && { opacity: 0.7 }]}
-          >
+          <View style={styles.ampm}>
             <Text style={styles.ampmText}>{ampm}</Text>
-          </Pressable>
+          </View>
         </View>
 
         <Text style={styles.summary}>Daily at {formatReminderTime(hour, min)}</Text>
@@ -135,7 +113,7 @@ export function NotificationTimePicker({
             { opacity: busy ? 0.6 : pressed ? 0.6 : 1 },
           ]}
         >
-          <Text style={styles.secondaryButtonText}>Turn off notifications</Text>
+          <Text style={styles.secondaryButtonText}>Turn off reminder</Text>
         </Pressable>
       ) : null}
     </>

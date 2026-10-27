@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { TapYourDayChoice } from '@novame/engine';
-import { ItemSprite } from '@/components/ui/item-sprite';
+import { TapDayIcon } from '@/components/ui/tap-day-icon';
+import { tapDayIconSize } from '@/lib/tap-day-icon-layout';
 
 export const TAP_ITEM_GAP = 8;
 export const TAP_GRID_PADDING = 10;
@@ -22,10 +23,11 @@ export function TapYourDayItem({ choice, width, iconSize = 58, selected = false,
   showLabel?: boolean;
   onPress?: () => void;
 }) {
-  const size = Math.max(1, Math.min(iconSize, width - 6));
+  const requestedSize = Math.max(1, Math.min(iconSize, width - 6));
+  const size = tapDayIconSize(requestedSize);
   const content = <>
     <View style={[styles.icon, { width: size + 6, height: size + 6 }, selected && styles.selected]}>
-      <ItemSprite itemId={choice.itemId} size={size} radius={11} />
+      <TapDayIcon itemId={choice.itemId} size={requestedSize} radius={11} />
       {selected && <View style={styles.check}><MaterialIcons name="check" size={12} color="#FFFFFF" /></View>}
     </View>
     {showLabel && <Text style={styles.label}>{choice.label}</Text>}

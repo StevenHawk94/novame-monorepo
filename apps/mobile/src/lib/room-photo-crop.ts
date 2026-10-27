@@ -40,3 +40,12 @@ export function positionedFrameCrop(width: number, height: number, previewWidth:
   };
   return { crop, scale, offsetX: clampedX, offsetY: clampedY };
 }
+
+/** Square photo plane underneath the costume's actual transparent opening. */
+export function positionedDollCrop(width:number,height:number,previewSize:number,zoom:number,offsetX:number,offsetY:number){
+ if(!Number.isFinite(width)||!Number.isFinite(height)||width<1||height<1||!Number.isFinite(previewSize)||previewSize<=0)throw Error('photo_too_small');
+ const side=Math.min(width,height)/clamp(zoom,1,3),scale=previewSize/side;
+ const x=clamp(offsetX,-(width*scale-previewSize)/2,(width*scale-previewSize)/2);
+ const y=clamp(offsetY,-(height*scale-previewSize)/2,(height*scale-previewSize)/2);
+ return {scale,offsetX:x,offsetY:y,crop:{originX:clamp((width-side)/2-x/scale,0,width-side),originY:clamp((height-side)/2-y/scale,0,height-side),width:side,height:side}};
+}

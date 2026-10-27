@@ -8,5 +8,5 @@ export default function AffectionDetailRoute() {
   const { type } = useLocalSearchParams<{ type?: string }>();
   if (!enabled || !AFFECTION_TYPES.includes(type as AffectionType))
     return <Redirect href="/(main)/burrow-detail?section=affection"/>;
-  return <AffectionDetailScreen type={type as AffectionType}/>;
+  return <AffectionDetailScreen key={type} type={type as AffectionType}/>;
 }

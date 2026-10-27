@@ -1,0 +1,133 @@
+{
+  "date": "2026-10-23",
+  "status": "implemented_and_verified",
+  "scope": "Client navigation responsiveness and subscription isolation. Existing UI, animation durations, business rules and notification readiness/cache policy are preserved.",
+  "changes": [
+    "Detail route observes identity scope and Adventure removal guard only.",
+    "Footer observes latest shared badge data and readiness but invalidates React only on visible count changes. New unready revisions do not retain an old data closure.",
+    "Adventure, Surprise and partner room observe required fields. Affection/Adventure do not subscribe to unrelated wallet updates.",
+    "Hidden lists/wallets/Adventure settlement UI stay frozen. Focus synchronously consumes the latest selected cache. Essential hidden Home artwork handoff and light Affection preparation remain.",
+    "Same-scope silent remote structural sharing is interruptible. Final publication and durable local intents stay atomic; pending local projections rebase after yielding. Revocation and identity changes remain immediate.",
+    "Notification version calculation reuses unchanged branches without changing version values or readiness predicates.",
+    "Optional Game warmups reuse a matching scope/epoch/catalogue/tier revision; actual catalogue or tier changes still refresh. Notification freshness remains authoritative.",
+    "Non-room hubs avoid unused room-slot computation. Previous native drawing, preloading, stable route IDs and touch recovery optimizations remain.",
+    "Adventure test now verifies production Free 6-hour and Plus 2-hour optimistic counters, receipt correction and restoration.",
+    "Two existing onboarding name-form fixtures now supply the welcome-metrics function required by the current component."
+  ],
+  "validation": {
+    "regression": {
+      "passed": 464,
+      "failed": 0,
+      "log": "/private/tmp/burrow-entry-perf-h2SIng/regression-final.log",
+      "database": "Temporary PGlite only; PGLITE_MODULE supplied. No production writes."
+    },
+    "finalSourceTargeted": {
+      "passed": 47,
+      "failed": 0,
+      "log": "/private/tmp/burrow-entry-perf-h2SIng/final-source-targeted.log"
+    },
+    "typecheck": {
+      "status": "passed",
+      "log": "/private/tmp/burrow-entry-perf-h2SIng/typecheck-final.log"
+    },
+    "iosExport": {
+      "status": "passed",
+      "directory": "/private/tmp/burrow-entry-perf-h2SIng/export-ios"
+    },
+    "androidExport": {
+      "status": "passed",
+      "directory": "/private/tmp/burrow-entry-perf-h2SIng/export-android"
+    },
+    "releaseSimulator": {
+      "device": "iPhone 17 Pro / iOS 26.2",
+      "bundleId": "com.novame.navigationreleaseqa",
+      "mode": "Existing isolated native Release host + production/minified JS + Hermes -O. Actual screens, native stack, retained tabs and Burrow store; local API/auth/storage/Game fixtures. External requests and business writes blocked.",
+      "dev": false,
+      "fabric": true,
+      "finalWindowSeconds": 72.51611562538147,
+      "detailOpenRequests": 39,
+      "tabRequests": 36,
+      "incomingFixture": "Wallet and Moments updates every 400ms while opening/returning Affection and Adventure.",
+      "runtimeOrPreparationErrors": 0,
+      "navigationDispatchToFocus": {
+        "affection": {
+          "samples": 12,
+          "p50Ms": 22.5683331489563,
+          "p95Ms": 33.914459228515625
+        },
+        "adventure": {
+          "samples": 17,
+          "p50Ms": 24.679040908813477,
+          "p95Ms": 76.23070907592773
+        },
+        "memories_room": {
+          "samples": 4,
+          "p50Ms": 37.69770908355713,
+          "p95Ms": 43.99258279800415
+        },
+        "game-room": {
+          "samples": 3,
+          "p50Ms": 51.04358386993408,
+          "p95Ms": 96.69887495040894
+        },
+        "surprise-room": {
+          "samples": 3,
+          "p50Ms": 43.57950019836426,
+          "p95Ms": 59.802417278289795
+        }
+      },
+      "frameScheduling": {
+        "callbacks": 4069,
+        "over34ms": 104,
+        "maxIntervalMs": 166.36458325386047,
+        "maxJsTimerLagMs": 255.1371669769287
+      },
+      "manualChecks": [
+        "Home Affection opens all six choices; back reveals Home.",
+        "Home Adventure entry is complete.",
+        "Ongoing Adventure opens with running counter and path; Back to Home followed by Affection works."
+      ],
+      "raw": "/private/tmp/burrow-entry-perf-h2SIng/events-final-clean.json",
+      "harness": "/private/tmp/burrow-entry-perf-h2SIng",
+      "qaAssetPackaging": "QA-only copied resources now include Expo mobile-relative asset paths. Earlier missing-image QA sample excluded.",
+      "excludedRun": "events-interrupted-host-pause.json: approximately 926-second event gap; not used as a performance result.",
+      "limitations": [
+        "Navigation timings measure dispatch to focus callback, not physical touch-to-pixel latency or full transition completion.",
+        "104/4069 frame callbacks exceeded 34ms; max callback interval about 166ms and max JS timer lag about 255ms. No claim of zero dropped frames.",
+        "No comparable frozen before/after workload under identical host conditions; no percentage speedup claimed.",
+        "Isolated simulator fixtures do not replace real paired-account push delivery, real media upload/payment or target-device Release acceptance.",
+        "Android export passed; Android emulator was not exercised."
+      ]
+    }
+  },
+  "deployment": {
+    "api": false,
+    "admin": false,
+    "migration": false,
+    "appStore": false,
+    "easBuildOrSubmit": false,
+    "clientReleaseRequired": true
+  },
+  "sourceSha256": {
+    "apps/mobile/src/lib/burrow-store.ts": "5d26fedd6ef386843f18809c34f6680122a8840985f0764a64a3d1fb9d435311",
+    "apps/mobile/src/lib/retained-page-model.ts": "7ccf8b1d794f225bde463ff6eb902ec5553e20cef3f867062c05ccbea86852e4",
+    "apps/mobile/src/lib/burrow-tab-attention.ts": "c97fbed6e01ab0ced67bfbe2bf10b55cddb2e7c74a1e07725e2a10020371bd04",
+    "apps/mobile/src/lib/idle-snapshot-sharing.ts": "5aad0918d62fdcd3a7a08af9e8bfdaa6dfa43513ea6c780f15bffc08a3c01b06",
+    "apps/mobile/src/lib/notification-content-version.ts": "f051cd4a4072d5fe51a65d3906aa71f54273f41962e29a6d03414571bd4f643b",
+    "apps/mobile/src/lib/burrow-page-entry.ts": "1ca894e595726f1bcec80b426d261987140e736943aa52356a6210b0f3751d4e",
+    "apps/mobile/src/lib/burrow-foreground-prewarm.ts": "0426ce943e143d82e9d0f348c15537f24d4c30ecd41c7d899196d63946af9be4",
+    "apps/mobile/src/lib/ui-idle.ts": "133f97b1e414e289f3b0fc43ee280bf308a071143bde76dc0c9c6b60c152d005",
+    "apps/mobile/src/lib/burrow-attention.ts": "9482172d28f1aab0891df457a95b940badfe64beedb47713e445d92f7c10059a",
+    "apps/mobile/app/(main)/burrow-detail.tsx": "546b31af699ae636cf32c73f271f97ccb0b2a9f014c99503725431bb14cbc419",
+    "apps/mobile/src/components/main/bottom-tab-bar.tsx": "64461a1305296a20e2e4f8ba866c94a4c37c04b322716faf640b6a7cfdb24664",
+    "apps/mobile/src/components/burrow/burrow-screen.tsx": "a53c45f9edfe18d69452b5bb425309b65dabf69434cfda1a1396bf30b5090004",
+    "apps/mobile/src/components/burrow/surprise-room-screen.tsx": "acc2c2f420f886d772db9ad6ac4c53726a94d1a2a4319e55a9eb3353a4c7d4ae",
+    "apps/mobile/src/components/burrow/partner-room-screen.tsx": "1ce03c949756743d8dc9204e05da124739b201f9d53a0806793452cedcd1367a",
+    "tools/test-entry-performance-contracts.cjs": "806bccb8019f7f3f4004d40eb18e1097edfd5d4c519c27007cde23f3c9970285",
+    "tools/test-burrow-page-entry.cjs": "40671140b130bba5725f8ddbd7bccdad48b801a56d7fcd1d890c7098bb050f49",
+    "tools/test-burrow-performance.cjs": "f015105c00309a6401059b9c2f2632356dd817b2c7176ad715ab08b4d3bddadb",
+    "tools/test-fast-page-preparation.cjs": "221896d432ab9fc3e959b1ee7c72a4be6c7c6434370ffb8c9246542845b95256",
+    "tools/test-burrow-entry-fixes.cjs": "2e1e448ed1ebe194f96b8bf73c11f5417033e7a176bf545c2f5980c0f5168e3e",
+    "tools/lifecycle-test-utils.cjs": "2ca560b640de8601937b41599d3600e96a532d492831fc82af1d7ca33823ce63"
+  }
+}

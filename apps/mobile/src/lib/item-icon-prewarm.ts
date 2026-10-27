@@ -1,5 +1,6 @@
 import { ITEM_IMAGES } from './item-images.g';
 import { TAP_PERSON_IMAGES } from './tap-person-images';
+import { TAP_DAY_IMAGES } from './tap-day-images.g';
 import { baseItemIconUrl } from './base-item-icons';
 import { remoteImageUri } from './remote-items';
 import { ensurePriorityR2Image } from './download-queue';
@@ -21,6 +22,7 @@ type PrewarmOptions = {
 
 /** Mirrors ItemSprite's source precedence without mounting or decoding a tile. */
 function remoteUrlForItem(itemId: string): string {
+  if (TAP_DAY_IMAGES[itemId]) return '';
   const bundled = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
   return remoteImageUri(itemId) || (!bundled ? baseItemIconUrl(itemId) : '');
 }

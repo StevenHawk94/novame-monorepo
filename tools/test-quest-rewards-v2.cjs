@@ -7,7 +7,9 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('Quests tab is the requested product-action reward board', () => {
-  const screen = read('apps/mobile/app/(main)/(tabs)/quests.tsx');
+  const tab = read('apps/mobile/app/(main)/(tabs)/quests.tsx');
+  assert.match(tab, /BurrowScreen section="quests"/);
+  const screen = read('apps/mobile/src/components/burrow/quest-board.tsx');
   const route = read('apps/api/src/app/api/quests/rewards/route.js');
   assert.match(screen, /Daily Quests/);
   assert.match(screen, /Special Quests/);

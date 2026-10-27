@@ -8,7 +8,7 @@ export function observeSessionIdentity(userId: string | null): boolean {
   if (!unchanged) {
     owner = userId;
     epoch += 1;
-    listeners.forEach(fn => fn());
+    listeners.forEach(fn => {try{fn();}catch{console.warn('[session/observer]','reset_failed');}});
   }
   return unchanged;
 }

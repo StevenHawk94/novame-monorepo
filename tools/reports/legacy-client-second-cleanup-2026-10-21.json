@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-21",
+  "scope": "Second legacy-client cleanup; release remains paused.",
+  "assets": {
+    "removed": [
+      "true-north-1.png",
+      "true-north-2.png",
+      "true-north-3.png",
+      "NewLens.png",
+      "friend-list.png",
+      "calendar.png",
+      "memory.png",
+      "shared-memories.png",
+      "bunny.png",
+      "plus.png"
+    ],
+    "bytesRemoved": 152313,
+    "recoverableBackup": "/private/tmp/burrow-retired-icons-second-pass-RKdBA9",
+    "retainedLegacyAsset": "apps/mobile/assets/Icons/Menu.png",
+    "menuUsage": "The current Home menu is code-drawn in home-art-scene.tsx; Menu.png is retained at the user's request, not falsely reported as a runtime dependency.",
+    "privacyReplacement": "meta-privacy-provider.tsx now uses assets/icon.png. Consent gating, region classification, allow/deny persistence and measurement controls are preserved.",
+    "currentPlusArtwork": "assets/burrow-webp/affection page icons/plus.webp is retained."
+  },
+  "retiredPages": {
+    "burrowAliases": [
+      "true-north",
+      "new-lens",
+      "quiet-wins",
+      "friend-add",
+      "friends-list",
+      "friend-profile",
+      "their-patterns",
+      "friend-detail"
+    ],
+    "momentsAliases": [
+      "my-logs",
+      "reflect-detail",
+      "friend-reflect-detail"
+    ],
+    "collectionAliases": [
+      "item-sheet"
+    ],
+    "gameRoomAliases": [
+      "guess",
+      "guesses"
+    ],
+    "hiddenSelfCareSection": "Removed the placeholder UI/type/title metadata. Old self_care_room links forward to Burrow.",
+    "transitions": "Retired aliases do not mount legacy UI, fire legacy API calls or run a legacy entrance animation."
+  },
+  "cleanup": [
+    "Removed unused legacy icon registry, legacy Reflect settlement/result/grid/editor UI, clover burst and old Good Vibes UI/root mount.",
+    "Kept only the existing palette and back control in reflect-shared.tsx.",
+    "Tap Your Day now contains only its already-active Burrow save branch; identical durable draft checkpoint, idempotency key, privacy/session checks and local-completion queue are retained.",
+    "Removed unused client APIs for New Lens, True North, Small Wins, Visit Master, day guessing and the old Tame Enemy system, plus their unused helper modules.",
+    "Removed unreferenced old Home bubble/prompt/announcement/background, old quest/reward, old plan/billing and old skin-unlock client modules.",
+    "Removed retired Bags/Paired sprite prefetch from foreground cache refresh. Current profile refresh and Burrow SyncGate/art preparation remain.",
+    "Retired tests belonging solely to removed features; updated mixed regression suites to assert current behavior rather than resurrect old UI."
+  ],
+  "preserved": [
+    "Current Release Room's release-room-api.ts, SwipeAttackLayer and heart animation.",
+    "Current Adventure journal jobs, reflect-settlement-outbox.ts and startup recovery.",
+    "Existing notification/readiness/pairing flows, authorization and duplicate-submit/failed-save recovery.",
+    "Server API/Admin sources were not edited in this turn; pre-existing unrelated worktree changes remain untouched.",
+    "Database history, legacy server endpoints, shared domain data and storage-key registrations were not deleted."
+  ],
+  "verification": {
+    "regressionTestsPassed": 319,
+    "regressionTestsFailed": 0,
+    "log": "/private/tmp/burrow-cleanup2-regression-final.log",
+    "mobileTypeCheck": "passed",
+    "typeCheckLog": "/private/tmp/burrow-cleanup2-types-final.log",
+    "literalAssetReferences": 1600,
+    "missingAssetReferences": 0,
+    "iosProductionResourceExport": "/private/tmp/burrow-cleanup2-final-ios",
+    "androidProductionResourceExport": "/private/tmp/burrow-cleanup2-final-android",
+    "nativeSimulatorOrSignedBuild": "not run"
+  },
+  "externalActions": {
+    "vercelDeployed": false,
+    "easBuildSubmitted": false,
+    "appStoreConnectSubmitted": false,
+    "databaseChanged": false,
+    "gitCommitted": false
+  }
+}

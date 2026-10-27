@@ -9,6 +9,8 @@ export async function GET(request) {
     return NextResponse.json({error:'Unauthorized'},{status:401})
   try {
     const db=appMajorUpdateServiceClient()
+    const recovery=await db.rpc('recover_paid_burrow_surprises_v1')
+    if(recovery.error)throw recovery.error
     const {data,error}=await db.rpc('collect_surprise_garbage_v1')
     if(error||!Array.isArray(data)||data.length>100)throw Error('invalid_garbage')
     for(const path of data){

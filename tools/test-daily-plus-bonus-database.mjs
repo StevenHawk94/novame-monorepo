@@ -1,0 +1,70 @@
+/** Isolated PostgreSQL only; never touches the configured production database. */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const sql=file=>readFileSync(resolve('supabase/migrations',file),'utf8');
+test('daily Plus claim is explicit, timezone-scoped, idempotent and preserves old automatic receipts',async()=>{
+  const runtime=process.env.BURROW_PGLITE_PATH;
+  assert.ok(runtime,'Set BURROW_PGLITE_PATH to an existing isolated PGlite installation.');
+  const {PGlite}=await import(pathToFileURL(resolve(runtime)).href),db=new PGlite();
+  const me='00000000-0000-0000-0000-000000000001',free='00000000-0000-0000-0000-000000000002',partner='00000000-0000-0000-0000-000000000003';
+  const rpc=async(name,...args)=>(await db.query(`select ${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) result`,args)).rows[0].result;
+  try {
+    await db.exec(`create role anon;create role authenticated;create role service_role;
+      create table profiles(id uuid primary key,subscription_tier text,timezone_name text);
+      create table pairings(user_id uuid primary key,partner_user_id uuid);
+      create table wallets(user_id uuid primary key references profiles,carrot_balance integer default 0,version bigint default 1,updated_at timestamptz default now());
+      create table currency_ledger(id uuid default gen_random_uuid(),user_id uuid references profiles,requested_delta integer,delta integer,balance_after integer,
+        reason text,reference_type text,reference_id text,idempotency_key text,created_at timestamptz default now(),unique(user_id,idempotency_key));
+      create table app_config(key text primary key,value text);
+      create table content_revisions(id text primary key,status text);
+      create table room_needs(owner_id uuid primary key);
+      create table catalog_items(stable_id text primary key,revision_id text,status text,metadata jsonb);
+      create table user_inventory(owner_id uuid,item_id text,source text,unique(owner_id,item_id));
+      create table adventures(id uuid);
+      create function lock_burrow_pair(p_user uuid) returns uuid language sql as $$
+        select p.partner_user_id from pairings p join pairings q on q.user_id=p.partner_user_id and q.partner_user_id=p.user_id where p.user_id=p_user $$;
+      insert into app_config values('app_major_update_content_revision','revision');insert into content_revisions values('revision','published');`);
+    await db.query('insert into profiles values($1,$4,$5),($2,$6,$5),($3,$6,$5)',[me,free,partner,'plus','UTC','free']);
+    const wallet=sql('20260920000119_app_major_update_commands.sql').split('revoke all on function public.change_carrot_balance_v1')[0];
+    await db.exec(wallet);
+    const core=sql('20260920000121_burrow_interactive_screens.sql').match(/create or replace function public.burrow_bootstrap_v1\(p_user_id uuid\)[\s\S]*?end \$\$;/)[0];
+    await db.exec(core.replace('public.burrow_bootstrap_v1(','public.burrow_bootstrap_core_v1('));
+    const solo=sql('20260920000147_burrow_solo_core.sql').match(/create or replace function public.solo_burrow_initialize_v1\(p_user_id uuid\)[\s\S]*?end \$\$;/)[0];
+    await db.exec(solo);
+    await db.exec(sql('20261007000202_burrow_reward_wallet_state.sql'));
+    const day=(await db.query("select (now() at time zone 'UTC')::date::text as local_date")).rows[0].local_date;
+    await rpc('change_carrot_balance_v1',me,50,'plus_daily_login',null,null,'plus-login:'+day);
+    await db.exec(sql('20261012000222_burrow_daily_plus_bonus.sql'));
+    const patched=(await db.query("select pg_get_functiondef('burrow_bootstrap_core_v1(uuid)'::regprocedure) body")).rows[0].body;
+    assert.ok(!patched.includes("'plus_daily_login'"),'all paired wrappers now read without granting');
+    assert.equal((await rpc('daily_plus_bonus_state_v1',me)).claimed,true);
+    assert.equal((await rpc('claim_daily_plus_bonus_v1',me,day)).applied,false,'old automatic grant cannot be claimed again');
+    await db.query('delete from currency_ledger where user_id=$1',[me]);await db.query('update wallets set carrot_balance=100 where user_id=$1',[me]);
+    assert.equal((await rpc('solo_burrow_initialize_v1',me)).initialized,true);
+    assert.equal((await db.query('select carrot_balance from wallets where user_id=$1',[me])).rows[0].carrot_balance,100,'solo initialization does not auto-grant');
+    assert.equal((await rpc('daily_plus_bonus_state_v1',me)).claimed,false);
+    assert.equal((await rpc('claim_daily_plus_bonus_v1',me,'2000-01-01')).error,'day_changed');
+    assert.equal((await rpc('claim_daily_plus_bonus_v1',me,null)).error,'day_changed');
+    assert.equal((await rpc('claim_daily_plus_bonus_v1',free,day)).error,'plus_required');
+    const results=await Promise.all([rpc('claim_daily_plus_bonus_v1',me,day),rpc('claim_daily_plus_bonus_v1',me,day)]);
+    assert.equal(results.filter(r=>r.applied).length,1);assert.equal(results.reduce((n,r)=>n+r.reward,0),50);
+    assert.equal(results[0].coinState.wallet.balance,150);assert.equal(results[0].dailyPlusBonus.claimed,true);
+    assert.equal(results[0].coinState.credits[0].key,'plus-login:'+day);
+    assert.equal((await db.query('select count(*)::int n from currency_ledger where user_id=$1',[me])).rows[0].n,1);
+    await db.query('insert into pairings values($1,$2),($2,$1)',[free,me]);
+    assert.equal((await rpc('daily_plus_bonus_state_v1',free)).eligible,true,'existing shared Plus policy stays intact');
+    assert.equal((await rpc('claim_daily_plus_bonus_v1',free,day)).reward,50);
+    await db.query('delete from pairings');await db.query("update profiles set subscription_tier='plus',timezone_name='Pacific/Kiritimati' where id=$1",[partner]);
+    const local=(await db.query("select (now() at time zone 'Pacific/Kiritimati')::date::text as local_date")).rows[0].local_date;
+    const status=await rpc('daily_plus_bonus_state_v1',partner);assert.equal(status.localDate,local);
+    await rpc('change_carrot_balance_v1',partner,99990,'fixture',null,null,'cap');
+    assert.equal((await rpc('claim_daily_plus_bonus_v1',partner,local)).reward,9,'wallet cap uses the actual credited delta');
+    assert.equal((await rpc('claim_daily_plus_bonus_v1',partner,local)).reward,0,'retry at cap still cannot mint coins');
+    const permissions=(await db.query("select has_function_privilege('authenticated','claim_daily_plus_bonus_v1(uuid,date)','execute') allowed")).rows[0];
+    assert.equal(permissions.allowed,false,'only authenticated API service can call the writer');
+    assert.equal((await rpc('daily_plus_bonus_state_v1','00000000-0000-0000-0000-000000000999')).error,'profile_not_found');
+  } finally {await db.close();}
+});

@@ -23,7 +23,7 @@ export async function readPhotoRequest(request) {
   finally { reader.releaseLock() }
 }
 
-/** Accept exact 201:290 frames, while keeping old 5:7/square clients valid. */
+/** Exact photo-frame ratios, square toys, or bounded free-form Surprise cutouts. */
 export function decodeRoomPhoto(base64, aspect = 'square') {
   if (typeof base64 !== 'string' || base64.length > Math.ceil(PHOTO_MAX_BYTES / 3) * 4 || base64.length % 4 !== 0
       || /[^A-Za-z0-9+/]/.test(base64.replace(/={1,2}$/, ''))) throw new Error('invalid_request')
@@ -41,7 +41,7 @@ export function decodeRoomPhoto(base64, aspect = 'square') {
       if (length < 8) throw new Error('invalid_request')
       const height = bytes[at + 3] * 256 + bytes[at + 4]
       const width = bytes[at + 5] * 256 + bytes[at + 6]
-      if ((aspect === 'frame' ? width * 290 !== height * 201 && width * 7 !== height * 5 && width !== height : width !== height)
+      if ((aspect === 'surprise' ? width/height<.5 || width/height>2 : aspect === 'frame' ? width * 290 !== height * 201 && width * 7 !== height * 5 && width !== height : width !== height)
           || width < 64 || height < 64 || width > 1024 || height > 1024) throw new Error('invalid_request')
       dimensions = true
     }

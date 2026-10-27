@@ -5,9 +5,19 @@ import { ITEM_IMAGES } from './item-images.g';
 import { TAP_PERSON_IMAGES } from './tap-person-images';
 import { baseItemIconUrl } from './base-item-icons';
 import { ensurePriorityR2Image } from './download-queue';
-import { getProfileDefaultAvatar } from './avatar';
+import {initialAvatar,uploadedAvatarUri} from './avatar';
+import {sessionUserId} from './session-lifecycle';
 import { remoteImageUri } from './remote-items';
 import type { FeedEntry, PairingStatus } from './friends-api';
+import {widgetUpdatesEnabled} from './widget-policy';
+// Retain the native widget implementation for a future redesign. Clear stale
+// private content once, but do not copy avatars/icons or refresh its feed.
+let pausedWidgetCleared=false;
+async function pauseWidget(){
+  if(pausedWidgetCleared)return;
+  const cleared=await nativeSyncLatestFriendReflect(JSON.stringify({state:'unpaired',name:'',createdAt:'',avatar:null,items:[],totalItems:0}));
+  if(cleared)pausedWidgetCleared=true;
+}
 
 /**
  * Pushes the complete Paired state to the native home-screen widget:
@@ -18,6 +28,7 @@ export async function syncWidgetLatestFriend(
   feed: FeedEntry[],
   pairing: PairingStatus | null = null,
 ): Promise<void> {
+  if(!widgetUpdatesEnabled()){await pauseWidget();return;}
   const partner = pairing?.paired ? pairing.partner : null;
   // Never let a previous partner's cached row leak into a new pairing.
   const eligible = partner
@@ -69,29 +80,14 @@ export async function syncWidgetLatestFriend(
         return { src, emoji: latest.emoji[i] ?? '✨' };
       }),
     );
-    // Avatar: preserve legacy uploads; otherwise resolve the friend's chosen
-    // bundled avatar (or deterministic initial default for older profiles).
-    let avatarSrc: string | null = null;
-    if (latest.friendAvatarUrl && latest.friendIsDefaultAvatar === false) {
-      avatarSrc = latest.friendAvatarUrl;
-    } else {
-      try {
-        const asset = Asset.fromModule(getProfileDefaultAvatar(
-          latest.friendAvatarUrl,
-          latest.friendUserId,
-        ));
-        if (!asset.localUri) await asset.downloadAsync();
-        avatarSrc = asset.localUri;
-      } catch {
-        // widget falls back to its 🐰 placeholder
-      }
-    }
+    const avatarSrc=uploadedAvatarUri(latest.friendAvatarUrl,latest.friendIsDefaultAvatar);
+    const fallback=initialAvatar(latest.friendUserId,latest.friendName,sessionUserId());
     await nativeSyncLatestFriendReflect(
       JSON.stringify({
         state: 'latest',
         name: latest.friendName,
         createdAt: latest.createdAt,
-        avatar: avatarSrc ? { src: avatarSrc } : null,
+        avatar: { ...(avatarSrc?{src:avatarSrc}:{}), initial:fallback.initial, backgroundColor:fallback.backgroundColor },
         items,
         totalItems: latest.itemIds.length,
       }),

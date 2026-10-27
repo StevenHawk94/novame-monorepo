@@ -11,11 +11,13 @@ function cardHarness(visit) {
   const commands = [], routes = [];
   let response = {};
   const { FriendVisitCard } = load('apps/mobile/src/components/burrow/friend-visit-card.tsx', {
+    '@/lib/burrow-page-entry':{openPreparedBurrow:r=>routes.push(r)},
     react: h.react,
     'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { Alert: {}, Pressable: 'Pressable', Text: 'Text', View: 'View', StyleSheet: { create: x => x } },
 './burrow-image': { Image: 'Image' }, 'expo-image': { Image: 'Image' },
     '@/lib/burrow-ui-assets': { burrowFriendArt: () => null },
+    './couple-friend-visit-card': { CoupleFriendVisitCard: () => null },
     'expo-router': { router: { push: route => routes.push(route), back() {} } },
     '@/lib/app-major-update-api': { respondFriendVisit: async (id, input) => { commands.push({ id, input }); return response; } },
     '@/lib/burrow-store': { runBurrowAction: async (_, action) => { await action(); return true; } },
@@ -71,6 +73,8 @@ function apiHarness(file, enabled = true, authorized = true) {
   const calls = [];
   const supabase = { rpc: async (name, args) => { calls.push({ name, args }); return { data: { applied: true }, error: null }; } };
   const route = load(file, {
+    '@/lib/adventure-bootstrap.mjs': { readAdventureDisplay: async () => null },
+    '@/lib/burrow-reward-wallet.mjs': { withRewardWallet: async (_, __, result) => result },
     'next/server': { NextResponse: { json: (body, options = {}) => ({ body, status: options.status ?? 200 }) } },
     '@/lib/auth-guard': { verifyToken: async () => authorized ? { id: '00000000-0000-0000-0000-000000000001' } : null },
     '@supabase/supabase-js': { createClient: () => supabase },
