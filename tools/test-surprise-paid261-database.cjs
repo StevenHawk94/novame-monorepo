@@ -101,3 +101,28 @@ test('new financial and recovery RPCs remain service-only',async()=>{
  for(const fn of ['pay_burrow_surprise_v1(uuid,uuid,text,uuid,text,integer,text,integer)','cancel_paid_burrow_surprise_v1(uuid,uuid)','recover_paid_burrow_surprises_v1()'])
   for(const role of ['anon','authenticated'])assert.equal((await q('select has_function_privilege($1,$2,\'execute\') allowed',[role,fn]))[0].allowed,false);
 });
+test('every active Surprise frame pays, completes and reads with real catalog offers and no duplicate debit',async()=>{
+ const products=require('../catalog/generated/shop-catalog-release.json').products.filter(p=>p.status==='active'&&p.type==='surprise');
+ assert.equal(products.length,36);
+ await db.exec(`alter table profiles add column subscription_tier text default 'free';
+ create table content_revisions(id text primary key,status text);
+ insert into content_revisions values('frame-test','published');
+ create table app_config(key text primary key,value text);insert into app_config values('app_major_update_content_revision','frame-test');
+ create table catalog_items(stable_id text primary key,revision_id text,item_type text,status text,price integer,plus_only boolean,shop_price_version bigint default 0,metadata jsonb);
+ update profiles set subscription_tier='plus' where id='${A}';update wallets set carrot_balance=100000 where user_id='${A}';`);
+ const source=fs.readFileSync('supabase/migrations/20261013000227_burrow_service_catalog_permissions.sql','utf8');
+ await db.exec(source.slice(source.indexOf('create function public.burrow_has_plus_v1'),source.indexOf('-- Fail closed')).replace('create function public.burrow_service_offer_v1','create or replace function public.burrow_service_offer_v1'));
+ // Include production's catalog-backed frame constraint, not the fixture's
+ // older fixed-name list. No protection is removed or replaced with true.
+ const catalogMigration=fs.readFileSync('supabase/migrations/20261022000259_bundled_shop_catalog.sql','utf8');
+ await db.exec(catalogMigration.slice(catalogMigration.indexOf('create function public.burrow_shop_frame_storage_v1'),catalogMigration.indexOf('create function public.publish_burrow_shop_catalog_v1')));
+ for(const p of products){
+  await q("insert into catalog_items(stable_id,revision_id,item_type,status,price,plus_only,metadata) values($1,'frame-test','surprise','active',$2,$3,$4)",[p.id,p.seed.price,p.seed.plusOnly,{frameId:p.metadata.frameId}]);
+  const patch={frame:p.metadata.frameId,key:require('node:crypto').randomUUID(),price:p.seed.price};
+  const before=await balance(),ticket=await pay(patch);assert.equal(ticket.paid,true,JSON.stringify({frame:p.id,ticket}));
+  await pay(patch);assert.equal(await balance(),before-p.seed.price);
+  await upload(ticket);assert.equal((await rpc('complete_burrow_surprise_v1',[A,ticket.id])).applied,true);
+  assert.ok(!(await rpc('read_burrow_surprises_v1',[B,ticket.id,false])).error);
+  assert.equal(await balance(),before-p.seed.price);
+ }
+});

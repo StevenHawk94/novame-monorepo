@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-27",
+  "status": "production_repaired",
+  "authorization": "User approved the diagnosed, scoped production capability repair and asked to verify all products.",
+  "cause": {
+    "clientDisplayVersion": "Metro 1.0.25",
+    "catalogRelease": "f7647586172bd52cc353933b38ac06b40fc3ad51e870eed9635e80e26d8a3c15",
+    "apiRecognized": true,
+    "databaseRegistrationMissing": true,
+    "previouslyBlocked": 43,
+    "breakdown": {
+      "wallpapers": 33,
+      "cabinets": 10
+    },
+    "notCausedByR2Cleanup": true
+  },
+  "production": {
+    "migration": 279,
+    "release": "f7647586172bd52cc353933b38ac06b40fc3ad51e870eed9635e80e26d8a3c15",
+    "registered": 496,
+    "previouslyBlocked": 43,
+    "nowBlocked": 0,
+    "productFieldsUnchanged": true,
+    "protectedDataAndPermissionsUnchanged": true,
+    "result": [
+      {
+        "protected_sets": 171
+      }
+    ],
+    "currentProducts": 496,
+    "capabilityVersionsVerified": 6,
+    "CocoaGingham": {
+      "id": "shop:wallpapers:de601bea-7c2c-4478-99e5-9f157217c58f",
+      "price": 150,
+      "status": "active",
+      "supported": true
+    },
+    "publishedCatalogNotReplaced": true,
+    "activeCatalogPointerUnchanged": true,
+    "priorVersionSetsUnchanged": true,
+    "realUserTransactionsExecuted": 0,
+    "apiRedeployRequired": false,
+    "appUpdateRequired": false,
+    "appPublished": false
+  },
+  "verification": {
+    "catalogSweep": {
+      "checks": 3138,
+      "products": 496,
+      "counts": {
+        "room": 390,
+        "paidGames": 68,
+        "freeGames": 2,
+        "surpriseOffers": 36
+      },
+      "isolated": true,
+      "productionWrites": false
+    },
+    "surprise": {
+      "testsPassed": 11,
+      "testsFailed": 0,
+      "all36ActiveFrames": "actual catalog offer resolver, pay, idempotent retry, upload fixture, complete, recipient read; exact single debit"
+    },
+    "personalRoomRegression": {
+      "assertions": 39
+    },
+    "checkoutRegression": {
+      "assertions": 30
+    },
+    "shopApiAndCatalog": {
+      "passed": 16,
+      "failed": 0
+    },
+    "preflight": {
+      "passed": 4,
+      "failed": 0
+    },
+    "domain": {
+      "passed": 858,
+      "failed": 0
+    },
+    "mobileTypecheck": "passed",
+    "catalogCheck": "passed:555 permanent identities,496 active",
+    "diffCheck": "passed"
+  },
+  "prevention": {
+    "apiSnapshot": "Mandatory read-only production capability comparison before any candidate snapshot is copied; all six historical/current sets exact",
+    "ci": "All-current-product isolated PostgreSQL capability/checkout sweep added"
+  },
+  "scope": {
+    "changedRuntime": "Only 496 rows appended for the reviewed current release in burrow_shop_release_support; migration metadata registered",
+    "untouched": [
+      "product IDs, prices, Plus eligibility, tradability, statuses and artwork",
+      "wallets, inventory, loadouts, purchase and checkout receipts",
+      "Adventure plans, results, reward selection and active catalog pointer",
+      "all previous capability sets and table/function/RLS permissions"
+    ]
+  },
+  "limits": [
+    "No batch purchases against real production users",
+    "Free/Plus and balance requirements remain enforced; not an unconditional permission to buy every item",
+    "Isolated SQL fixtures are real stored-function execution, not physical-device UI, StoreKit/Play Billing or every production historical migration combination",
+    "Two free games validated for current capability/free catalog classification, not purchased as paid products; 68 paid games use real game unlock transactions"
+  ]
+}

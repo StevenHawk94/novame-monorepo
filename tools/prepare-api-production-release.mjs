@@ -5,7 +5,10 @@ import os from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {readProductionShopSupport,verifyShopClientSupport} from './check-shop-client-support.mjs';
 const root=path.resolve(import.meta.dirname,'..');
+// Never deploy an API that recognizes a bundle the transaction database rejects.
+const shopSupport=verifyShopClientSupport(JSON.parse(fs.readFileSync(path.join(root,'packages/domain/src/generated/shop-catalog-release.json'))),readProductionShopSupport());
 assert.ok(!/(?:_authToken|_password|_auth\s*=|password\s*=)/i.test(fs.readFileSync(path.join(root,'.npmrc'),'utf8')),
  'Never include registry credentials in a release snapshot; configure them in Vercel instead');
 const destination=fs.mkdtempSync(path.join(os.tmpdir(),'novame-api-production-release-'));
@@ -43,7 +46,7 @@ function walk(directory){for(const entry of fs.readdirSync(directory,{withFileTy
  }
 }}
 walk(destination);
-const report={destination,projectId:project.projectId,files:files.length,bytes:files.reduce((sum,f)=>sum+f.bytes,0),
+const report={destination,projectId:project.projectId,shopSupport,files:files.length,bytes:files.reduce((sum,f)=>sum+f.bytes,0),
  sourceHashes:Object.fromEntries(files.filter(f=>['apps/api/src/app/api/vnext/surprise/route.js','apps/api/src/lib/burrow-surprise.mjs','apps/api/src/app/api/vnext/command/route.js','apps/api/src/app/api/vnext/bootstrap/route.js','apps/api/src/lib/burrow-unpaired-bootstrap.mjs'].includes(f.path)).map(f=>[f.path,f.sha256]))};
 const target=process.argv.find(arg=>arg.startsWith('--report='))?.slice(9);if(target)fs.writeFileSync(target,JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

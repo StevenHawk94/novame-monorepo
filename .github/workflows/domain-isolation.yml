@@ -25,3 +25,5 @@ jobs:
         run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" pnpm test:personal-rooms:db
       - name: Verify payments, economic isolation and deletion without production access
         run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" pnpm test:security:db
+      - name: Verify every current Shop capability and checkout without production access
+        run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node tools/test-shop-support279-database.mjs
