@@ -123,7 +123,7 @@ export function RoomPhoto({ photo, circle = false, memory = false }: { photo?: P
   return url ? <Image source={{ uri: url }} cachePolicy={memory ? 'none' : 'memory-disk'} contentFit="cover"
     onError={() => { if(photo){if(memory)photoUrlCache.delete(key);else invalidateRoomPhotoCache(photo);}setResolved(null);
       if (failures.current++ < 2) retryTimer.current = setTimeout(() => setRetry(n => n + 1), 1000 * failures.current);
-    }} style={[styles.image, circle && { borderRadius: 200 }]} accessibilityLabel={memory ? 'Shared memory photo' : circle ? 'Doll face photo' : 'Room photo'} />
+    }} style={[styles.image, circle && { borderRadius: 200 }]} accessibilityLabel={memory ? 'Shared memory photo' : circle ? 'Plushie face photo' : 'Room photo'} />
     : <Pressable accessibilityRole="button" accessibilityLabel="Reload private photo" onPress={() => { failures.current = 0; setRetry(n => n + 1); }} style={styles.empty}><Text>{photo ? '↻ Photo' : circle ? '🐰' : '🖼️'}</Text></Pressable>;
 }
 
@@ -219,7 +219,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
       if (camera && kind === 'doll' && toyAsset) {
         const permission = cameraPermission?.granted ? cameraPermission : await requestCameraPermission();
         if (!current()) return;
-        if (!permission.granted) { Alert.alert('Camera permission needed', 'Allow camera access in Settings to take a toy photo.'); if(captureOnly)onClose(); return; }
+        if (!permission.granted) { Alert.alert('Camera permission needed', 'Allow camera access in Settings to take a plushie photo.'); if(captureOnly)onClose(); return; }
         setCapturedPhotoUri(null);
         setCameraOpen(true);
         return;
@@ -374,7 +374,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
       if (!current()) return;
       const code = (failure as { body?: { error?: string } }).body?.error ?? (failure instanceof Error ? failure.message : '');
       if (captureOnly && code === 'daily_limit_reached') { recoverDirectPhoto(failure); return; }
-      setError(code === 'photo_conflict' || code === 'upload_expired' ? 'This photo changed or the upload expired. Close, refresh, and choose it again. Your saved memory is safe.' : code === 'daily_limit_reached' ? 'You already changed this toy’s photo today. Try again after your local midnight.' : 'Save didn’t finish. Retry uses the same request, so it won’t count twice.');
+      setError(code === 'photo_conflict' || code === 'upload_expired' ? 'This photo changed or the upload expired. Close, refresh, and choose it again. Your saved memory is safe.' : roomPhotoFailureMessage(failure,'Save didn’t finish. Retry uses the same request, so it won’t count twice.',kind));
     } finally { operationInFlight.current = false; if (current()) setBusy(false); }
   }
   async function remove() {
@@ -433,7 +433,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
     </View> : <View style={embedded ? styles.embedded : styles.scrim}><ScrollView style={embedded ? styles.embeddedSheet : styles.sheet} contentContainerStyle={{ padding: 22, gap: 14, paddingBottom: embedded ? 44 : 22 }} keyboardShouldPersistTaps="handled">
       {embedded&&<BurrowBackButton onPress={onClose}/>}
       <Text style={styles.title}>{memory ? 'A photo to remember' : kind === 'doll' ? 'A familiar little face' : 'A memory on the wall'}</Text>
-      <Text style={styles.copy}>{memory ? canEdit ? `Drag and zoom to crop. Only you can change this memory.${data.partner?' Photos are shared privately with your current partner.':''} No AI.` : 'Your partner’s memory · view only' : kind === 'doll' ? 'Align your face inside the toy. Its transparent opening follows this costume, not a fixed circle.' : ownerId === data.profile.id ? `Drag and zoom in the photo editor. ${data.partner?'Your partner can look, but ':''}Only you can replace this photo.` : 'Your partner’s photo · view only'}</Text>
+      <Text style={styles.copy}>{memory ? canEdit ? `Drag and zoom to crop. Only you can change this memory.${data.partner?' Photos are shared privately with your current partner.':''} No AI.` : 'Your partner’s memory · view only' : kind === 'doll' ? "Fit the face inside your plushie’s face opening." : ownerId === data.profile.id ? 'Drag and zoom in the photo editor.' : 'Your partner’s photo · view only'}</Text>
       {kind==='doll'&&toyAsset?<View style={[styles.toyPreview,{width:toySize,height:toyHeight}]}>
         <View style={[styles.toyArt,toyArt]}>
           <View style={[styles.toyFace,dollFaceRect(toyAsset)]} {...drag}><PlushieFaceMask asset={toyAsset}
@@ -447,7 +447,6 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
             sourceUri={draft?.uri} photo={draft?undefined:photo} imageRect={draftFaceRect}/></View>
         </View>
       </View>:<View style={[styles.preview,kind==='frame'&&!memory&&styles.framePreview]}>{draft ? <Image source={{ uri: draft.uri }} cachePolicy="none" contentFit="cover" style={styles.image} /> : <RoomPhoto photo={photo} memory={!!memory} />}</View>}
-      {kind === 'doll' && !data.photoUsage?.doll.unlimited && toyPhotoChangedToday(data, toyId, ownerId) && <Text style={styles.copy}>Today’s photo change for this toy is used. Other toys have their own photos.</Text>}
       {kind==='doll'&&draft&&!draft.submitted&&<View style={styles.row}><Button label="− Zoom" disabled={busy} onPress={()=>zoom(-1)}/><Button label="+ Zoom" disabled={busy} onPress={()=>zoom(1)}/></View>}
       {error && <Text accessibilityRole="alert" style={styles.copy}>{error}</Text>}
       {canEdit && <View style={styles.row}>{(memory||kind==='frame')&&<Button label="Photo library" disabled={busy} onPress={() => void choose(false)} />}<Button label="Camera" disabled={busy} onPress={() => void choose(true)} /></View>}

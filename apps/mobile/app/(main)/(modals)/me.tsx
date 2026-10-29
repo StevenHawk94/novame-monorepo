@@ -378,14 +378,14 @@ export default function MeScreen() {
             <MenuRow icon="account" label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
             <MenuRow
               icon="account-group"
-              label={menuPairing?.paired ? 'My Paired' : 'Pair with My Partner'}
+              label={menuPairing?.paired ? "My Paired Partner" : 'Pair with My Partner'}
               onPress={onPairedRow}
               divider
             />
             <MenuRow icon="cash-multiple" label="Get More Coins" onPress={() => goTo('/(main)/coin-shop')} divider />
             <MenuRow icon="ticket-percent-outline" label="Redeem Code" onPress={()=>{void haptics.light();void openOfficialRedeemCode();}} divider />
             <MenuRow icon="link-variant" label="Connect Account" onPress={() => goTo('/(main)/(modals)/connect-account')} divider />
-            <MenuRow icon="star" label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
+            <MenuRow icon="star" label="Love Burrow? Rate us" onPress={() => void onRateUs()} divider />
             <MenuRow icon="bug" label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
             <MenuRow icon="heart" label="Help Center" onPress={() => goTo('/(main)/(modals)/support')} divider />
             {(['sound','haptics'] as const).map(key => <MenuPreferenceRow key={key}

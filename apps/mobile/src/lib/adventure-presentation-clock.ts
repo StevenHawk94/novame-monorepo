@@ -57,7 +57,7 @@ export function createAdventurePresentationClock() {
       const timing=team?`${team.id}:${team.progressAt}:${team.progressFraction}:${team.endsAt}`:undefined;
       const accelerated=!!timing&&!!state.teamTiming&&timing!==state.teamTiming&&teamEnd<(state.teamEnd??teamEnd);
       if(accelerated){
-        // An actual join immediately shortens the remaining segment. Its
+        // A join or verified Plus upgrade shortens the remaining segment. Its
         // progress anchor, not (now-start)/(new end-start), preserves position.
         state.phase={at:clock,from:rawRemaining,to:rawRemaining,correctionMs:0};
         state.authoritative=authoritative;state.serverDeadlineClock=deadlineClock;state.pending=false;state.revision++;

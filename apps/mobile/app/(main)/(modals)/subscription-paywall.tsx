@@ -96,7 +96,7 @@ export default function SubscriptionPaywallModal({ onContinue, onClose }: { onCo
 
           appAlert(
             'Keep your Plus safe',
-            'Connect an account so your subscription and memories are never lost — even if you change phones.',
+            "Connect an account so your data can be safe.",
             [
               { text: 'Later', style: 'cancel', onPress: confirmSkipAccountConnection },
               {

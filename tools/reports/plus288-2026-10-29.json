@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-29",
+  "laterReleaseEvidence": "This report records its original local-only turn. Subsequent explicit authorization and production release are recorded in tools/reports/care-smooth-adventure288289-2026-10-29.json.",
+  "status": "local_implementation_verified_not_deployed",
+  "authorization": "Implement the confirmed plan locally. No production migration, deployment, App release or real-account transaction authorized in this turn.",
+  "migration": {
+    "file": "supabase/migrations/20261029000288_adventure_upgrade_and_owned_games.sql",
+    "sha256": "9c7c0dacdea52a690e84b4d0940133068516ffbf70b9f3426a370a5ac8c13e4b",
+    "productionApplied": false,
+    "existingJourneyAndPartyDataPreservedAtMigration": true,
+    "unexpectedOfferDefinitionAbortsAndRollsBackDDL": true,
+    "unrelatedFunctionBodiesAndACLsPreserved": true
+  },
+  "changes": {
+    "adventure": [
+      "Verified effective Plus halves only the remaining time, once per journey/party.",
+      "Subscription authority reconciliation and current team snapshot recovery reuse one service-only accelerator.",
+      "Eligible independent partner trips are refreshed even when the subscriber has no active trip.",
+      "Couple members receive one shared deadline and continuous progress anchor; original 1.5x join timing and cutoff remain intact.",
+      "Original personal plus_snapshot, reserved results, logs, economic dates, quotas and rewards are not rewritten.",
+      "Plus-at-start, expired deadlines, completed journeys and repeated refreshes cannot obtain an extra boost. Expiry does not undo an accepted boost."
+    ],
+    "games": [
+      "Permanent unlocks take precedence over the Plus acquisition gate in cards, Start and authoritative game-only service validation.",
+      "Unowned Plus games, Surprise, catalogue validation, reciprocal relationship and economic isolation checks remain intact.",
+      "Valid historical zero-price unlocks preserve existing ownership; no new ownership is fabricated."
+    ],
+    "copy": {
+      "currencyOnlyReplacements": 9,
+      "includes": ["insufficient funds", "price changed / refreshing / refresh failed / refreshed", "update required", "Plushie accessibility price", "legacy currency section title"],
+      "actualFoodAndProductNamesPreserved": true,
+      "internalFieldsProductIDsAndIdempotencyKeysPreserved": true,
+      "treasureCopyUnchanged": true,
+      "priorFourPurchaseCopyChangesPreserved": true
+    }
+  },
+  "verification": {
+    "domainIsolation": { "command": "pnpm test:domain-isolation", "passed": 1260, "failed": 0 },
+    "mobileTypes": { "command": "pnpm --filter @novame/mobile exec tsc --noEmit", "exitCode": 0 },
+    "catalog": { "command": "pnpm catalog:check", "exitCode": 0, "products": 555, "active": 496, "release": "5acf169b89ae03ad502a2f18797ae0e03b9aa59005e6e3104165845a63ff20f4" },
+    "targetedUIAndContracts": { "passed": 76, "failed": 0, "files": ["tools/test-plus288.cjs", "tools/test-burrow-game-card-state.cjs", "tools/test-burrow-game-room-local-content.cjs", "tools/test-toy-collection.cjs"] },
+    "finalSQLContracts": { "command": "node --test tools/test-plus288.cjs", "passed": 3, "failed": 0 },
+    "isolatedSQL": { "command": "node --test tools/test-plus288-database.mjs", "passed": 15, "failed": 0, "actualCatalogGamesPurchasedThenStartedAfterExpiry": 70 },
+    "crossFeatureCandidateSQL": { "command": "BURROW_PLUS288_CANDIDATE=1 node --test tools/test-temporary-pair285-database.mjs", "passed": 14, "failed": 0, "candidate288AppliedBeforeExistingTests": true },
+    "diffCheck": { "command": "git diff --check", "exitCode": 0 },
+    "countsOverlap": true,
+    "initialRegressionFailure": "Six Plushie tests still selected old carrots accessibility labels. Updated only those labels to coins; retained their payment, cancellation, price-conflict, identity and rejection assertions. Final full regression passed."
+  },
+  "release": {
+    "productionWrites": false,
+    "realPaymentsOrAccountTransactions": false,
+    "appPublished": false,
+    "committedOrPushed": false,
+    "apiRouteChangesRequired": false,
+    "order": "Obtain separate production authorization and apply migration 288 first; then use the updated Metro/client build. Current API RPC names are unchanged. A client reload alone does not enable the new production timing or game permission rules."
+  },
+  "limitations": [
+    "Disposable PGlite PostgreSQL with synthetic identities is not multi-connection production concurrency stress testing.",
+    "No simulator, physical-device, real StoreKit/Play Billing purchase or production two-account end-to-end acceptance was performed in this turn.",
+    "UI checks execute real component logic in the test harness; they do not constitute native screenshot or frame-rate verification."
+  ],
+  "documentation": "docs/burrow-development-standards.md v1.42"
+}

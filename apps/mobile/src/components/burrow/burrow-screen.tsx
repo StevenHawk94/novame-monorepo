@@ -90,8 +90,8 @@ import {adventureEntryState,adventureScope} from '@/lib/adventure-entry-state';
 import {readAdventureDeliveryRows,useAdventureDeliveryRevision} from '@/lib/adventure-delivery-state';
 
 export type BurrowSection = 'home'|'burrow'|'quests'|'shop'|'moments'|'collection'|'adventure'|'affection'|'decorate'|'partner_room'|'our_room'|'friends_room'|'game_room'|'memories_room'|'carrot_shop';
-const titles: Record<BurrowSection,string> = {home:'Our Room',burrow:'Our Burrows',quests:'Quests',shop:'Shop',moments:'Our Moments',collection:'Collection',adventure:'Adventure',affection:'Affection',decorate:'Decorate',partner_room:'Partner’s Room',our_room:'Our Room',friends_room:"Friend's Room",game_room:'Game Room',memories_room:'Memories Room',carrot_shop:'Carrot Shop'};
-const questNames:Record<string,string>={write_adventure_record:'Complete today’s Adventure record',send_affection:'Send an Affection',water_partner_flower:'Water a flower',feed_partner_bunny:'Feed your bunny',interact_with_toy:'Play with your doll',visit_partner_room:'Visit your partner’s room',finish_adventure:'Finish an adventure',play_game:'Play a game with your partner'};
+const titles: Record<BurrowSection,string> = {home:'Our Room',burrow:'Our Burrows',quests:'Quests',shop:'Shop',moments:'Our Moments',collection:'Collection',adventure:'Adventure',affection:'Affection',decorate:'Decorate',partner_room:'Partner’s Room',our_room:'Our Room',friends_room:"Friend's Room",game_room:'Game Room',memories_room:'Memories Room',carrot_shop:'Burrow Coins'};
+const questNames:Record<string,string>={write_adventure_record:'Complete today’s Adventure record',send_affection:'Send an Affection',water_partner_flower:'Water a flower',feed_partner_bunny:'Feed your bunny',interact_with_toy:'Play with your plushie',visit_partner_room:'Visit your partner’s room',finish_adventure:'Finish an adventure',play_game:'Play a game with your partner'};
 const decorCategories=BURROW_DECOR_SHOP_CATEGORIES.filter(category=>category!=='shelf_decor');
 const categoryName=(value:string)=>value.replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 export function openBurrow(section:BurrowSection,extra?:Record<string,string>,fromStack=false){
@@ -537,8 +537,8 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
     {section==='home'&&focused&&nappingOpen&&<AdventureNappingDialog onClose={()=>setNappingOpen(false)}/>}
     <ScreenOverlay visible={toyOpen&&!!data} transparent onRequestClose={()=>setToyOpen(false)}>
       <View style={[s.scrim,{justifyContent:'center',paddingHorizontal:20}]}><View style={[s.sheet,s.toySheet]} accessibilityViewIsModal>
-        <Text accessibilityRole="header" style={s.cardTitle}>A little love for your toy</Text>
-        <Text style={s.body}>Tap, press or gently drag the doll. It bounces back and sends up little hearts.</Text>
+        <Text accessibilityRole="header" style={s.cardTitle}>A little love for your plushie</Text>
+        <Text style={s.body}>Tap, press or gently drag the plushie. It bounces back and sends up little hearts.</Text>
         {(()=>{const asset=burrowArtForItem(sceneSlots.couple_doll,'couple_dolls');if(!asset)return <Text style={s.itemIcon}>🧸</Text>;
           const ratio=Math.min(214/asset.width,238/asset.height);
           return <InteractiveDoll asset={asset} photo={data?toyPhotoFor(data.roomPhotos,data.profile.id,sceneSlots.couple_doll?.stable_id):undefined}
@@ -583,7 +583,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
     </Modal>
     <Modal visible={!!careKind&&!!data} transparent animationType="slide" onRequestClose={()=>setCareKind(null)}>
       <View style={s.scrim}><View style={s.sheet} accessibilityViewIsModal>
-        <Text accessibilityRole="header" style={s.cardTitle}>{careKind==='food'?'Feed your bunny':'Water your flowers'}</Text>
+        <Text accessibilityRole="header" style={s.cardTitle}>{careKind==='food'?'Feed your bunny':"Water your flower."}</Text>
         <Text style={{fontSize:82,textAlign:'center'}}>{careKind==='food'?'🐰':'🌼'}</Text>
         <Text style={s.body}>{careKind==='food'?'A little snack will bring their energy back.':'A gentle watering keeps your flowers bright.'}</Text>
         {displayedCareProgress!==null&&<View style={s.progress}><View style={[s.progressFill,{width:`${Math.round(displayedCareProgress)}%`}]} /></View>}

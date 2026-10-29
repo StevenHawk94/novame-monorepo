@@ -51,7 +51,7 @@ export default function RoomInteractionScreen(){
   const params=useLocalSearchParams<{kind?:string;ownerId?:string;actorId?:string;pairVersion?:string;compose?:string}>();
   const kind=kinds.includes(params.kind as Kind)?params.kind as Kind:'toy';
   const entrySettled=usePageEntrySettled(kind==='letter');
-  const {data,loading}=useBurrow(false,kind==='toy'?'plushie':undefined);
+  const {data,loading}=useBurrow(false,kind==='toy'?'plushie':kind==='food'||kind==='water'?'care':undefined);
   const ownerId=params.ownerId??data?.profile.id;
   const targetAllowed=!!data&&(!params.pairVersion||params.pairVersion===data.pairVersion)
     &&((!params.ownerId||params.ownerId===data.profile.id)
@@ -109,9 +109,13 @@ export default function RoomInteractionScreen(){
     // The immutable intent must be on disk BEFORE optimistic coins/Done.
     // Unknown network outcomes stay queued; no late callback navigates here.
     try{
+      // Prevent synchronous projection listeners from treating our just-saved
+      // pending operation as somebody else's cooldown and unmounting the art.
+      careOperation.current={};
       enqueueRoomCare(data,ownerId,which);
-      careOperation.current={};setCompleted(true);setError(null);setCareCelebration(which);
+      setCompleted(true);setError(null);setCareCelebration(which);
     }catch{
+      careOperation.current=null;
       setError('Could not save on this device. Please hold to try again.');setRetry(n=>n+1);
     }
   }
@@ -158,7 +162,7 @@ export default function RoomInteractionScreen(){
   if(kind==='letter')return <LoveNoteScreen key={`${data.profile.id}:${data.partner?.id??''}:${data.pairVersion??''}:${params.compose??''}`} data={data} compose={params.compose==='1'} autoFocusReady={entrySettled}/>;
   const careHeight=Math.max(1,height-insets.top-insets.bottom-68);
   return <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={styles.root} keyboardVerticalOffset={0}>
-    <View style={[styles.header,kind==='toy'&&styles.plushieHeader,{paddingTop:insets.top+12}]}><BurrowBackButton light={kind==='toy'} onPress={()=>router.back()}/><Text numberOfLines={isCare?2:1} adjustsFontSizeToFit minimumFontScale={isCare?.75:.85} style={[styles.headerTitle,isCare&&styles.careHeaderTitle,kind==='toy'&&styles.plushieHeaderTitle]}>{title}</Text>{kind==='toy'?<Pressable accessibilityRole="button" accessibilityLabel={ownToy?'Toy menu':'Touch Note History'} accessibilityState={{expanded:toyMenuOpen}} onPress={()=>{if(ownToy)setToyMenuOpen(value=>!value);else router.push({pathname:'/(main)/plushie-touch',params:{mode:'history',pairVersion:data.pairVersion}});}} style={styles.headerAction}><Feather name={ownToy?'more-vertical':'clock'} size={25} color="#FFFFFF"/></Pressable>:<View style={{width:44}}/>}</View>
+    <View style={[styles.header,kind==='toy'&&styles.plushieHeader,{paddingTop:insets.top+12}]}><BurrowBackButton light={kind==='toy'} onPress={()=>router.back()}/><Text numberOfLines={isCare?2:1} adjustsFontSizeToFit minimumFontScale={isCare?.75:.85} style={[styles.headerTitle,isCare&&styles.careHeaderTitle,kind==='toy'&&styles.plushieHeaderTitle]}>{title}</Text>{kind==='toy'?<Pressable accessibilityRole="button" accessibilityLabel={ownToy?'Plushie menu':'Touch Note History'} accessibilityState={{expanded:toyMenuOpen}} onPress={()=>{if(ownToy)setToyMenuOpen(value=>!value);else router.push({pathname:'/(main)/plushie-touch',params:{mode:'history',pairVersion:data.pairVersion}});}} style={styles.headerAction}><Feather name={ownToy?'more-vertical':'clock'} size={25} color="#FFFFFF"/></Pressable>:<View style={{width:44}}/>}</View>
     {kind==='toy'?<View style={styles.toyPage} onLayout={event=>{const next=event.nativeEvent.layout.height;if(next>0)setToyPageHeight(next);}}>
       <PlushieRoomBackground wallpaper={slots.wallpaper} width={width} height={(toyPageHeight??Math.max(1,height-insets.top-insets.bottom-68))+insets.bottom}
         floorY={toyPhoto?touchBody*.56:floorY} bottomInset={insets.bottom}/>
@@ -168,22 +172,22 @@ export default function RoomInteractionScreen(){
           Both Skia and native fallback therefore stay still: no rub, pull,
           particles, haptics or task/rating recording before a local photo. */}
       {!ownToy||!toyPhoto?<View style={toyPhoto?undefined:styles.toyPreview}><DollPhotoPreview asset={toy} photo={toyPhoto} style={{width:size,height:size,alignSelf:'center'}} artStyle={artStyle}
-        onEditPhoto={openToyPhotoChoice} label={ownToy?'Add plushie photo':`Change ${partnerName}'s doll photo`}/></View>:LocalizedToy?<LocalizedToy key={slots.couple_doll?.stable_id} asset={toy} photo={toyPhoto} size={size} artStyle={artStyle}
+        onEditPhoto={openToyPhotoChoice} label={ownToy?'Add plushie photo':`Change ${partnerName}'s plushie photo`}/></View>:LocalizedToy?<LocalizedToy key={slots.couple_doll?.stable_id} asset={toy} photo={toyPhoto} size={size} artStyle={artStyle}
         containerStyle={{width:size,height:touchBody*.73}} actionsStyle={{position:'absolute',top:touchBody*.73-insets.bottom-102,left:28-(width-size)/2,width:width-56}}
         onInteract={()=>recordToy()} showActions={!!toyPhoto} interactionScope={`${careScope}:${slots.couple_doll?.stable_id}:${toyPhoto?.id??'empty'}`}/>
         :<InteractiveDoll key={slots.couple_doll?.stable_id} asset={toy} photo={toyPhoto} style={{width:size,height:size,alignSelf:'center'}} artStyle={artStyle}
          containerStyle={{width:size,height:touchBody*.73}} actionsStyle={{position:'absolute',top:touchBody*.73-insets.bottom-102,left:28-(width-size)/2,width:width-56}}
          onInteract={()=>recordToy()} showActions={!!toyPhoto} interactionScope={`${careScope}:${slots.couple_doll?.stable_id}:${toyPhoto?.id??'empty'}`}/>}
       </View>
-      {!toyPhoto&&<Text style={[styles.toySubtitle,styles.toyEmptySubtitle]}>{ownToy?'Add your babe’s face and give them a squeeze.':`Add your face to let ${partnerName} squeeze`}</Text>}
+      {!toyPhoto&&<Text style={[styles.toySubtitle,styles.toyEmptySubtitle]}>{ownToy?'Add your babe’s face and give them a squeeze.':`Add your face so ${partnerName} can give you a squeeze.`}</Text>}
       {(!ownToy||!toyPhoto)&&<View style={[styles.toyButtons,toyPhoto&&{position:'absolute',bottom:24,left:28,right:28}]}><Button label={toyPhoto?'Change Photo':'Add Photo'} onPress={openToyPhotoChoice}/></View>}
-      {ownToy&&!LocalizedToy&&<Text style={styles.caption}>Rebuild the development app to enable local Toy deformation.</Text>}
+      {ownToy&&!LocalizedToy&&<Text style={styles.caption}>Oops, something went wrong. Please try again.</Text>}
     </View>:!currentRoomCare(data)?<View style={styles.center}><Text style={styles.caption}>Care is syncing. Please return to your room and try again shortly.</Text></View>
       :careBlocked?<View style={{flex:1}}/>:<GardenCareInteraction key={`${careScope}:${retry}`} action={action} flower={flower} availableHeight={careHeight} complete={completed} onComplete={()=>finishCare(kind as 'food'|'water')}/>}
     {error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     <View style={{height:insets.bottom}}/>
     {kind==='toy'&&toyMenuOpen&&<View style={styles.toyMenuLayer}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Close toy menu" style={StyleSheet.absoluteFillObject} onPress={()=>setToyMenuOpen(false)}/>
+      <Pressable accessibilityRole="button" accessibilityLabel="Close plushie menu" style={StyleSheet.absoluteFillObject} onPress={()=>setToyMenuOpen(false)}/>
       <View accessibilityViewIsModal style={[styles.toyMenu,{top:insets.top+56}]}>
         {ownToy&&<><Pressable accessibilityRole="button" accessibilityLabel="Plushies Collection" onPress={()=>{setToyMenuOpen(false);router.push('/(main)/toy-collection');}} style={styles.toyMenuOption}><Feather name="grid" size={23} color="#4C2B22"/><Text style={styles.toyMenuText}>Plushies Collection</Text></Pressable>
         <View style={styles.toyMenuDivider}/></>}
@@ -191,7 +195,10 @@ export default function RoomInteractionScreen(){
       </View>
     </View>}
     <Modal transparent visible={photoChoiceOpen} animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setPhotoChoiceOpen(false)}><View style={styles.choiceScrim}><Pressable style={StyleSheet.absoluteFillObject} onPress={()=>setPhotoChoiceOpen(false)}/><View style={styles.choiceCard}><Text style={styles.choiceTitle}>Choose how to add photos</Text><Pressable accessibilityRole="button" onPress={()=>selectPhoto('camera')} style={styles.choiceButton}><Text style={styles.buttonText}>Take Photo</Text></Pressable><Pressable accessibilityRole="button" onPress={()=>selectPhoto('library')} style={[styles.choiceButton,styles.choiceButtonSecondary]}><Text style={[styles.buttonText,{color:'#4C2B22'}]}>Upload Photo</Text></Pressable><Pressable onPress={()=>setPhotoChoiceOpen(false)} style={styles.choiceCancel}><Text style={styles.counterText}>Cancel</Text></Pressable></View></View></Modal>
-    {careCelebration&&<CareQuestCelebration title={careCelebration==='food'?'Yum!':'Ahh!'} message={partnerCare?careCelebration==='food'?`${partnerName}'s bunny is full and happy.`:`${partnerName}'s flower is fresh and growing.`:careCelebration==='food'?'Your bunny is full and happy.':'Your flower is fresh and growing.'} icon={careCelebration==='water'?'heart':undefined} onClose={leaveCompletedCare}/>}
+    {/* Prepare only this small visual tree during care, not another page or
+        business controller. Inactive means no touch, accessibility or Back
+        interception; activation still follows the durable intent above. */}
+    {isCare&&<CareQuestCelebration key={careScope} visible={!!careCelebration} title={kind==='food'?'Yum!':'Ahh!'} message={partnerCare?kind==='food'?`${partnerName}'s bunny is full and happy.`:`${partnerName}'s flower is fresh and growing.`:kind==='food'?'Your bunny is full and happy.':'Your flower is fresh and growing.'} icon={kind==='water'?'heart':undefined} onClose={leaveCompletedCare}/>}
     {careStatus&&<CareStatusDialog kind={careStatus} partnerName={partnerCare?partnerName:undefined} onClose={leaveFullCare}/>}
     {photoMode&&targetAllowed&&<RoomPhotoEditor key={`${kind}:${photoMode}:${careScope}:${toyId}`} data={data} ownerId={ownerId!} kind="doll" toyId={toyId} toyAsset={toy} initialSource={photoMode} captureOnly onDailyLimit={()=>setPhotoChangeUsed(true)} onClose={()=>setPhotoMode(null)}/>}
   </KeyboardAvoidingView>;

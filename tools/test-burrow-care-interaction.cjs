@@ -246,7 +246,7 @@ test('rendered water clip plane follows actual layout and no fixed floor-height 
 
 function screenHarness(kind,{localized=false}={}) {
   const h = hooks(), save = deferred(), marks = [], alerts = [], navigation = [], targets = [], timer = clock(),toyRatings=[];
-  let requests = 0, coolingDown = false, epoch = 1, rejectedCode='network_error',reserves=0,diskFails=false;
+  let requests = 0, coolingDown = false, epoch = 1, rejectedCode='network_error',reserves=0,diskFails=false,synchronousProjection=()=>{};
   const params = { kind };
   let data = { profile: { id: 'me' }, roomPhotos: [], localDate: '2026-10-07', toyId: 'default',vase:{stable_id:'vase-1'} };
   const art = { bounds: [0, 0, 600, 600], width: 600, height: 600, source: 1 };
@@ -264,7 +264,7 @@ function screenHarness(kind,{localized=false}={}) {
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0 }) },
     '@/lib/burrow-art-assets': { BURROW_ART: { couple_dolls: [art], vases: [art] }, burrowArtForItem: (item,category) => category==='vases'&&item?{...art,source:item.stable_id}:null },
     '@/lib/burrow-presentation': { roomSlots: () => ({ couple_doll: { stable_id: data.toyId },wallpaper:data.wallpaper,vase:data.vase,dresser_plant:{stable_id:'kettle-not-a-flower'} }) },
-    '@/lib/app-major-update-api': {enqueueRoomCare:(_data,...args)=>{if(diskFails)throw Error('intent_not_saved');requests++;targets.push(args);}},
+    '@/lib/app-major-update-api': {enqueueRoomCare:(_data,...args)=>{if(diskFails)throw Error('intent_not_saved');requests++;targets.push(args);synchronousProjection();}},
     '@/lib/room-care-model':{...load('apps/mobile/src/lib/room-care-model.ts'),currentRoomCare:()=>({version:2})},
     ...require('./burrow-attention-test-mocks.cjs'),
     '@/lib/official-rating-milestones':{recordPhotoToyPlayForRating:(user,toy,photo)=>{if(toy&&photo)toyRatings.push([user,toy,photo]);}},
@@ -296,6 +296,7 @@ function screenHarness(kind,{localized=false}={}) {
     replaceToy(id){data={...data,toyId:id};},
     replaceWallpaper(id){data={...data,wallpaper:{stable_id:id}};},
     finish: () => nodes(render()).find(node => node.type==='Garden').props.onComplete(),failDisk(){diskFails=true;},
+    onProjection(fn){synchronousProjection=fn;},
     coolDown() { coolingDown = true; }, rejectWith(code){rejectedCode=code;},reserves:()=>reserves,changeSession() { epoch++; }, unmount: h.unmount };
 }
 
@@ -368,7 +369,7 @@ test('Plushie creation and play use the brown/white header, soft copy, yellow ph
   const title=all.find(n=>n.props?.children==='Make a Plushie');assert.equal(title.props.style.at(-1).color,'#FFFFFF');
   assert.ok(all.some(n=>n.type==='BackButton'&&n.props.light===true));
   assert.ok(all.some(n=>n.type==='Feather'&&n.props.name===(partner?'clock':'more-vertical')&&n.props.color==='#FFFFFF'));
-  const copy=all.find(n=>n.props?.children===(partner?'Add your face to let Alex squeeze':'Add your babe’s face and give them a squeeze.'));
+  const copy=all.find(n=>n.props?.children===(partner?'Add your face so Alex can give you a squeeze.':'Add your babe’s face and give them a squeeze.'));
   assert.equal(copy.props.style[0].fontWeight,'400');assert.equal(copy.props.style[0].fontSize,16);
   assert.equal(copy.props.style[1].color,'#FFFFFF');
   assert.equal(all.some(n=>n.props?.children==='Align face inside Plushie.'),false);
@@ -407,21 +408,21 @@ test('care headings distinguish my room from the partner target and use the part
   }
 });
 
-test('Toy menu offers Collection separately from Change Photo, including after daily photo quota', () => {
+test('Plushie menu offers Collection separately from Change Photo, including after daily photo quota', () => {
   const h = screenHarness('toy');
   const press = label => {
     const node = nodes(h.render()).find(node => node.props?.accessibilityLabel === label);
     assert.ok(node, label); node.props.onPress();
   };
-  press('Toy menu'); press('Plushies Collection');
+  press('Plushie menu'); press('Plushies Collection');
   assert.deepEqual(h.navigation, ['/(main)/toy-collection']);
   assert.equal(nodes(h.render()).some(node => node.props?.accessibilityLabel === 'Change Photo'), false);
-  press('Toy menu'); press('Change Photo');
+  press('Plushie menu'); press('Change Photo');
   assert.equal(nodes(h.render()).find(node => node.type === 'Modal').props.visible, true);
   h.data.dollPhotoChangesUsed = ['default'];
-  press('Toy menu'); press('Change Photo');
+  press('Plushie menu'); press('Change Photo');
   assert.deepEqual(h.alerts, [['Daily limit', 'Try tomorrow']]);
-  press('Toy menu'); press('Plushies Collection');
+  press('Plushie menu'); press('Plushies Collection');
   assert.equal(h.navigation.length, 2); h.unmount();
 });
 test('Toy interaction keeps one original-canvas scale, without per-costume width or height fitting',()=>{
@@ -458,14 +459,14 @@ for (const kind of ['food', 'water']) for (const partner of [false,true]) {
     const h = screenHarness(kind);
     if(partner){h.data.partner={id:'partner',display_name:'Irina'};Object.assign(h.params,{ownerId:'partner',actorId:'me'});h.render();h.render();}
     h.finish(); h.finish();
-    const popup = nodes(h.render()).find(node => node.type === 'CarePopup');
+    const popup = nodes(h.render()).find(node => node.type === 'CarePopup' && node.props.visible !== false);
     assert.ok(popup); assert.equal(popup.props.title, kind === 'food' ? 'Yum!' : 'Ahh!');
     assert.equal(popup.props.message,`${partner?"Irina's":'Your'} ${kind==='food'?'bunny is full and happy.':'flower is fresh and growing.'}`);
     assert.equal(popup.props.icon,kind==='water'?'heart':undefined,'watering alone switches to a heart; feeding keeps its existing icon');
     assert.equal(h.requests(), 1); assert.equal(h.marks.length, 0);
     popup.props.onClose();popup.props.onClose();
     assert.deepEqual(h.navigation,['back']);
-    assert.equal(nodes(h.render()).some(node=>node.type==='CarePopup'),false);
+    assert.equal(nodes(h.render()).some(node=>node.type==='CarePopup'&&node.props.visible!==false),false);
     h.unmount();
     h.save.resolve(true); await flush();
     assert.deepEqual(h.marks, [],'the shared settled observer, not an unmounted page, owns confirmed cooldown');assert.deepEqual(h.navigation,['back']);
@@ -478,7 +479,8 @@ test('watering completion shares the feeding card layout, with the requested hea
   let closed=0,removed=0;
   const {CareQuestCelebration}=load('apps/mobile/src/components/burrow/care-quest-celebration.tsx',{
    react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
-   'react-native':{...native,AppState:{addEventListener:()=>({remove(){}})},BackHandler:{addEventListener:(_name,fn)=>{back.push(fn);return{remove:()=>removed++};}}},
+   '@/lib/care-confetti-motion':load('apps/mobile/src/lib/care-confetti-motion.ts'),
+   'react-native':{...native,...require('./motion-test-utils.cjs').careConfettiHarness(),AppState:{addEventListener:()=>({remove(){}})},BackHandler:{addEventListener:(_name,fn)=>{back.push(fn);return{remove:()=>removed++};}}},
    'react-native-reanimated':{...require('./motion-test-utils.cjs').motionHarness(h).reanimated,withSpring:value=>value},
   });
   const tree=nodes(h.render(()=>CareQuestCelebration({title,message,icon:kind==='water'?'heart':undefined,onClose:()=>closed++})));
@@ -494,10 +496,16 @@ test('watering completion shares the feeding card layout, with the requested hea
 test('failed durable care save cannot display success or coins, restores retry, and does not start cooldown', async () => {
   const h = screenHarness('food'); h.failDisk();h.finish();
   const tree = nodes(h.render());
-  assert.equal(tree.some(node => node.type === 'CarePopup'), false);
+  assert.equal(tree.some(node => node.type === 'CarePopup' && node.props.visible !== false), false);
   assert.equal(tree.find(node => node.type === 'Garden').props.complete, false);
   assert.ok(tree.some(node => node.props?.children === 'Could not save on this device. Please hold to try again.'));
   assert.equal(h.marks.length, 0); h.unmount();
+});
+for(const kind of ['food','water'])for(const partner of [false,true])test(`${kind}: ${partner?'partner':'own'} synchronous reward projection cannot replace the finishing artwork with a cooldown page`,()=>{
+ const h=screenHarness(kind);if(partner){h.data.partner={id:'partner',display_name:'Irina'};Object.assign(h.params,{ownerId:'partner',actorId:'me'});h.render();h.render();}
+ h.onProjection(()=>{h.coolDown();const during=nodes(h.render());assert.ok(during.some(n=>n.type==='Garden'));
+  assert.equal(during.some(n=>n.type==='CareStatus'),false);assert.equal(during.find(n=>n.type==='CarePopup').props.visible,false,'no completion before enqueue returns');});
+ h.finish();const after=nodes(h.render());assert.equal(after.find(n=>n.type==='CarePopup').props.visible,true);assert.equal(h.requests(),1);h.unmount();
 });
 
 for(const kind of ['food','water'])test(`${kind}: another device's refreshed cooldown at the final frame presents status instead of submitting again`,async()=>{
@@ -513,7 +521,7 @@ test('existing cooldown does not show a speculative success or submit another ca
   assert.equal(popup.props.kind, 'water'); popup.props.onClose();
   assert.equal(nodes(h.render()).some(node => node.type === 'CareStatus'), false);
   assert.deepEqual(h.navigation,['back'],'a full direct/deep-link entry exits instead of reopening the care gesture');
-  assert.equal(nodes(h.render()).some(node => node.type === 'CarePopup'), false); h.unmount();
+  assert.equal(nodes(h.render()).some(node => node.type === 'CarePopup' && node.props.visible !== false), false); h.unmount();
 });
 
 test('late care failure cannot dismiss a success popup on a different interaction screen', async () => {
@@ -530,11 +538,11 @@ for(const kind of ['food','water'])test(`${kind}: partner care submits the partn
   Object.assign(h.params,{ownerId:'partner',actorId:'me'});
   h.render();h.render();h.finish();
   assert.deepEqual(h.targets,[['partner',kind]]);
-  assert.ok(nodes(h.render()).some(node=>node.type==='CarePopup'));
-  assert.match(nodes(h.render()).find(node=>node.type==='CarePopup').props.message,/Irina's (bunny|flower)/);
+  assert.ok(nodes(h.render()).some(node=>node.type==='CarePopup'&&node.props.visible!==false));
+  assert.match(nodes(h.render()).find(node=>node.type==='CarePopup'&&node.props.visible!==false).props.message,/Irina's (bunny|flower)/);
   h.save.resolve(true);await flush();
   assert.deepEqual(h.marks,[],'the page never marks an unverified completion');
-  const popup=nodes(h.render()).find(node=>node.type==='CarePopup');
+  const popup=nodes(h.render()).find(node=>node.type==='CarePopup'&&node.props.visible!==false);
   popup.props.onClose();popup.props.onClose();
   assert.deepEqual(h.navigation,['back']);h.unmount();
 });
@@ -580,7 +588,7 @@ test('unpairing while partner care saves cannot publish a late cooldown or succe
   const h=screenHarness('food');h.data.partner={id:'partner',display_name:'Irina'};
   Object.assign(h.params,{ownerId:'partner',actorId:'me'});h.render();h.render();h.finish();
   h.data.partner=null;h.render();h.render();h.save.resolve(true);await flush();
-  assert.equal(h.marks.length,0);assert.equal(nodes(h.render()).some(node=>node.type==='CarePopup'),false);h.unmount();
+  assert.equal(h.marks.length,0);assert.equal(nodes(h.render()).some(node=>node.type==='CarePopup'&&node.props.visible!==false),false);h.unmount();
 });
 test('partner toy shares camera/upload flow but exposes no play, deformation or Collection controls',()=>{
  for(const source of ['camera','library']){

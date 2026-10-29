@@ -35,6 +35,16 @@ jobs:
         run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-plushie-touch-test-pair-database.mjs
       - name: Verify expiring current-pair test permission and committed transaction recovery without production access
         run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-temporary-pair285-database.mjs
+      - name: Verify one-time Adventure upgrade and permanent Plus game access without production access
+        run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-plus288-database.mjs
+      - name: Recheck temporary-pair cross-feature isolation against the Plus candidate
+        run: BURROW_PLUS288_CANDIDATE=1 BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-temporary-pair285-database.mjs
+      - name: Verify Adventure availability and scoped copy candidates without production access
+        run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-adventure289-database.mjs
+      - name: Recheck cross-feature isolation against Adventure availability candidate
+        run: BURROW_ADVENTURE289_CANDIDATE=1 BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-temporary-pair285-database.mjs
+      - name: Rehearse guarded Adventure 288 and 289 release without production access
+        run: BURROW_RELEASE288289_CANDIDATE=1 BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-plus288-database.mjs
       - name: Verify owner-scoped Plushie photos and unpaired visibility without production access
         run: BURROW_PGLITE_PATH="$RUNNER_TEMP/burrow-test-db/node_modules/@electric-sql/pglite/dist/index.js" node --test tools/test-personal-plushie-photos281-database.mjs tools/test-burrow-unpaired-bootstrap.mjs
       - name: Verify unlimited Plushie replacement and current-frame retention without production access

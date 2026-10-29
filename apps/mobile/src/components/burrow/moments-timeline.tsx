@@ -159,7 +159,7 @@ export function MomentsTimeline({ data }: { data: MajorUpdateBootstrap }) {
           </Pressable>)}</View>
       </View></>}
       ListFooterComponent={<View style={[styles.panel, { minHeight: 40, flexGrow: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]}>
-        {!visible.length && <View style={styles.empty}><Text style={styles.emptyTitle}>Little moments will live here</Text><Text style={styles.emptyCopy}>After you finish an activity together, it will appear on this timeline.</Text></View>}
+        {!visible.length && <View style={styles.empty}><Text style={styles.emptyTitle}>Little moments will live here</Text><Text style={styles.emptyCopy}>Both of your activities will appear on this timeline</Text></View>}
         {error && !visible.length && <Pressable onPress={() => void load(false)} style={styles.retry}><Text style={styles.retryText}>Couldn’t refresh moments · Tap to retry</Text></Pressable>}
         {page?.hasMore && !loading && <Pressable accessibilityRole="button" onPress={() => void load(true)} style={styles.more}><Text style={styles.moreText}>More moments</Text></Pressable>}
       </View>}

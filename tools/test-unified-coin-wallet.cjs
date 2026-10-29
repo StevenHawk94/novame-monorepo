@@ -80,6 +80,36 @@ test('promoting a plus-free wallet preserves its compact face and particle geome
  assert.equal(face.type,'WalletFace');assert.equal(face.props.showAdd,false);assert.equal(face.props.balance,1234);
  h.unmount();
 });
+for(const os of ['ios','android'])test(`${os}: seven prepared coin nodes stay invisible/touch-through when idle, retarget origins without remounting and yield to the real modal owner`,()=>{
+ const h=hooks(),m=motionHarness(h),jsx=(type,props,key)=>({type,props,key});
+ // Real useDerivedValue retains one shareable object; this identity check
+ // must not use the legacy numeric harness's fresh getter on every render.
+ m.reanimated.useDerivedValue=fn=>{const latest=h.react.useRef(fn);latest.current=fn;return h.react.useMemo(()=>({get value(){return latest.current();}}),[]);};
+ const model={balance:100,count:{value:100},pulse:{value:1},elapsed:{value:0},batch:null,reduced:false};
+ const registry={slot:null,portal:null};
+ const api=load('apps/mobile/src/components/burrow/coin-reward-banner.tsx',{
+  react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
+  'react-native':{View:'View',Platform:{OS:os},StyleSheet:{create:x=>x,absoluteFill:{}},useWindowDimensions:()=>({width:390,height:844})},
+  'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:44})},'react-native-screens':{FullWindowOverlay:'WindowOverlay'},'expo-router':{},
+  'react-native-reanimated':m.reanimated,'./coin-ui':{},'./coin-wallet-face':{CoinWalletFace:'WalletFace'},
+  './coin-wallet-context':{useWalletMotion:()=>model},'@/lib/coin-wallet-registry':{useCoinWalletRegistry:()=>registry},
+  '@/lib/coin-wallet-layout':layout,'@/lib/coin-reward-store':{},'@/lib/burrow-motion':motion,'@/lib/haptics':{},
+ });
+ const render=props=>h.render(()=>api.CoinRewardSurface(props??{}));
+ const content=t=>t.type==='WindowOverlay'?t.props.children:t;
+ let tree=content(render()),layer=tree.props.children[0],particles=layer.props.children;
+ assert.equal(tree.props.pointerEvents,'box-none');assert.equal(layer.props.pointerEvents,'none');assert.equal(layer.props.style[1].opacity,0);
+ assert.equal(layer.props.importantForAccessibility,'no-hide-descendants');assert.equal(particles.length,7);
+ const hiddenWallet=tree.props.children[1];assert.equal(hiddenWallet.props.pointerEvents,'none');assert.equal(hiddenWallet.props.accessibilityElementsHidden,true);assert.equal(hiddenWallet.props.style[1].opacity,0);assert.equal(hiddenWallet.props.children.props.disabled,true);
+ const origin=particles[0].props.preparedOrigin,target=particles[0].props.target;
+ model.batch={id:1,flight:{id:1,origin:{x:20,y:30}}};tree=content(render());layer=tree.props.children[0];
+ assert.equal(layer.props.style[1].opacity,1);assert.equal(layer.key,undefined);assert.equal(layer.props.children[0].props.preparedOrigin,origin);
+ assert.equal(layer.props.children[0].props.target,target);assert.deepEqual(origin.value,{x:20,y:30});
+ model.batch={id:2,flight:{id:2,origin:{x:80,y:90}}};tree=content(render());assert.equal(tree.props.children[0].props.children[0].props.preparedOrigin,origin);assert.deepEqual(origin.value,{x:80,y:90});
+ model.batch=null;assert.equal(content(render()).props.children[0].props.style[1].opacity,0,'background/finished never freezes coins onscreen');
+ registry.portal={};assert.equal(render(),null,'root yields to the modal rather than duplicating an overlay');
+ assert.notEqual(render({portal:registry.portal}),null);model.balance=null;assert.equal(render({portal:registry.portal}),null,'identity revoked');h.unmount();
+});
 test('release before receipt is immediate, receipt retargets once; cap changes cannot create visible phantom coins',()=>{
  const h=storeHarness(),a=h.beginCoinReward('a','a',10,true);h.releaseCoinReward('a');const batch=h.getCoinRewardSnapshot().batch;
  h.settleCoinReward(a,{reward:5,coinReward:{key:'a',amount:5},coinState:wallet(105,2,[['a',5]])});

@@ -80,6 +80,16 @@ or refreshing Adventure reservations. Approval evidence lives in
 suggested ratios are superseded by the user's final cells. See
 `docs/burrow-shop-pricing.md` for sorting, quote and release/compatibility details.
 
+The 2026-10-29 copy audit incorrectly classified the decor product Rabbit Carrots
+(`burrow_kettle_01_07`) as currency. After clarification, the user explicitly
+withdrew that rename. Keep all product names and other catalog fields unchanged;
+currency wording fixes do not authorize renaming carrot-themed merchandise.
+The unshipped `68b83c91…` capability entry and local candidate migration 290 were
+removed. The generated release remains the existing `5acf169b…` with its original
+support sets; no catalog publication or production title update is required for
+this copy review. The original workbook decision and subsequent clarification
+are both preserved in `approvals/copy-review-2026-10-29.json`.
+
 The App reports its compiled catalog hash. Missing/unknown hashes use the frozen
 legacy capability list, never the latest list. Shop offers and new Adventure
 treasure candidates are filtered by supported IDs. Since repair 262, retired

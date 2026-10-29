@@ -382,13 +382,13 @@ export function BurrowShop({ data, section, initialCategory, away, initialDetail
     const error = getBurrowSnapshot().error;
     if (error === 'insufficient_balance') { showInsufficientCoins(); return; }
     if (error === 'price_changed') {
-      setMessage('The price changed. Refreshing prices… No carrots were spent.');
+      setMessage('The price changed. Refreshing prices… No coins were spent.');
       await refreshBurrow({ silent: true });
       if (!checkout.isCurrent()) return;
       setMessage(getBurrowSnapshot().error
-        ? 'Could not refresh prices. Check your connection and try again. No carrots were spent.'
-        : 'Prices refreshed. Review the total and tap Pay / Buy again. No carrots were spent.');
-    } else setMessage(error === 'price_confirmation_required' ? 'Please update the app before purchasing this item. No carrots were spent.' : fallback);
+        ? 'Could not refresh prices. Check your connection and try again. No coins were spent.'
+        : 'Prices refreshed. Review the total and tap Pay / Buy again. No coins were spent.');
+    } else setMessage(error === 'price_confirmation_required' ? 'Please update the app before purchasing this item. No coins were spent.' : fallback);
   }
 
   async function applyRoom(slots: Record<string, MajorUpdateCatalogItem>) {

@@ -73,6 +73,10 @@ before(async()=>{
  assert.deepEqual(await q('select * from wallets order by user_id'),wallets);
  await assert.rejects(db.exec(transaction.replace('create temporary table test285_after',()=>"create or replace function public.same_economic_domain_v1(p_a uuid,p_b uuid) returns boolean language sql stable security definer set search_path=public,pg_temp as $$select true$$;create temporary table test285_after")),/Unrelated function changed/);await db.exec('rollback');
  verified=(await db.exec(transaction)).find(r=>r.rows?.some(v=>v.verified))?.rows.find(v=>v.verified).verified;assert.ok(verified.protectedRowsUnchanged);
+ // Re-run the existing cross-feature isolation/recovery suite against the
+ // candidate, not only against its historical pre-288 baseline.
+ if(process.env.BURROW_PLUS288_CANDIDATE==='1'||process.env.BURROW_ADVENTURE289_CANDIDATE==='1')await db.exec(src('20261029000288_adventure_upgrade_and_owned_games'));
+ if(process.env.BURROW_ADVENTURE289_CANDIDATE==='1')await db.exec(src('20261029000289_adventure_nudge_availability'));
 });
 after(()=>db?.close());beforeEach(()=>db.exec('begin'));afterEach(()=>db.exec('rollback'));
 test('exact release transaction preserves old rows/security and enables only current approved reciprocal pair for exactly 168 hours',async()=>{

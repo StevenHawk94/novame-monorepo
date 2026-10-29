@@ -3,7 +3,7 @@ import { badgeLabel } from '@/lib/burrow-attention';
 export function UpdateBadge({count,dot=false,size=23,style,exact=false}:{count:number;dot?:boolean;size?:number;style?:StyleProp<ViewStyle>;exact?:boolean}){
   const label=exact&&count>0?String(Math.floor(count)):badgeLabel(count);if(!label)return null;
   const diameter=dot?12:size;
-  return <View pointerEvents="none" accessible accessibilityLabel={`${count} updates`} style={[s.badge,{minWidth:diameter,height:diameter,borderRadius:diameter/2,paddingHorizontal:dot?0:4},style]}>
+  return <View pointerEvents="none" accessible accessibilityLabel={`${count} ${count===1?'update':'updates'}`} style={[s.badge,{minWidth:diameter,height:diameter,borderRadius:diameter/2,paddingHorizontal:dot?0:4},style]}>
     {!dot&&<Text maxFontSizeMultiplier={1} style={[s.text,{fontSize:Math.round(size*.62),lineHeight:size}]}>{label}</Text>}
   </View>;
 }

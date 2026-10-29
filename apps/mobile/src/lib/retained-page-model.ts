@@ -1,5 +1,5 @@
 import type { MajorUpdateBootstrap } from './app-major-update-api';
-export type RetainedPage = 'home' | 'burrow' | 'quests' | 'shop' | 'moments' | 'collection' | 'affection' | 'adventure' | 'game' | 'surprise' | 'partner_room' | 'plushie';
+export type RetainedPage = 'home' | 'burrow' | 'quests' | 'shop' | 'moments' | 'collection' | 'affection' | 'adventure' | 'game' | 'surprise' | 'partner_room' | 'plushie' | 'care';
 const fields: Record<RetainedPage, readonly (keyof MajorUpdateBootstrap)[]> = {
   home: ['catalog','catalogComplete','inventory','loadouts','roomPhotos','photoUsage','adventureCollection','unread','wallet',
     'activeAdventure','adventureResult','adventurePlan','dailyAdventureUsed','readyRecordId','roomNeeds','lastCareAt','sharedRoom',
@@ -15,6 +15,7 @@ const fields: Record<RetainedPage, readonly (keyof MajorUpdateBootstrap)[]> = {
   game: ['catalog','catalogComplete','wallet'],
   surprise: ['catalog','catalogComplete','wallet'],
   plushie:['catalog','catalogComplete','inventory','loadouts','roomPhotos','photoUsage','dollPhotoChangesUsed','dollPhotoChangeTargetsUsed'],
+  care:['catalog','loadouts','roomCare','roomNeeds','partnerNeeds','lastCareAt','partnerLastCareAt','serverNow','moments'],
   partner_room: ['catalog','catalogComplete','inventory','loadouts','roomPhotos','adventureCollection','wallet',
     'partnerAdventure','roomNeeds','lastCareAt','sharedRoom','roomCare'],
 };

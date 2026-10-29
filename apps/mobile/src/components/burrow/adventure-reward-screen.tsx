@@ -135,7 +135,7 @@ export function AdventureRewardScreen({ variant, title, item, coins=0, friendNam
         </Animated.View>
       </View>}
       <AdventureReveal delay={M.buttonDelay} style={[s.footer, { bottom: isGift ? gift.footerBottom : treasure.footerBottom }]}>
-        {!isGift && <Animated.Text accessibilityElementsHidden={!opened} importantForAccessibility={opened ? 'auto' : 'no-hide-descendants'} style={[s.note, claimLabel]}>{isCoins?'Add to your coins':item ? item.item_type === 'decor' ? 'Add to Furnitures' : 'Add to Collection' : hasFriend ? 'A friend has a story to share.' : 'Your little discovery is ready.'}</Animated.Text>}
+        {!isGift && item?.item_type!=='decor' && <Animated.Text accessibilityElementsHidden={!opened} importantForAccessibility={opened ? 'auto' : 'no-hide-descendants'} style={[s.note, claimLabel]}>{isCoins?'Add to your coins':item ? 'Add to Collection' : hasFriend ? 'A friend has a story to share.' : 'Your little discovery is ready.'}</Animated.Text>}
         {error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
         <Pressable accessibilityRole="button" accessibilityLabel={emptyGift ? 'Finish adventure' : opened ? 'Claim' : isGift ? 'Open' : 'Tap to Open'} disabled={disabled} accessibilityState={{ disabled }} onPress={emptyGift || opened ? claim : open}
           style={({ pressed }) => [s.button, isGift && s.giftButton, { minHeight: isGift ? gift.buttonHeight : treasure.buttonHeight }, pressed && s.pressed, (busy || claiming) && s.busy]}>

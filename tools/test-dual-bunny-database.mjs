@@ -217,7 +217,7 @@ test('old relationship requests cannot start in a new pair; same key different r
  assert.equal((await rpc('start_adventure_v5',a.args)).error,'pair_changed');
  assert.equal((await q('select count(*)::int n from adventures'))[0].n,1);
 });
-test('new solo timing is also 3h for legacy protocol; v5 upgrade cannot shorten a frozen journey',async()=>{
+test('pre-288 baseline: legacy starts use 3h and v274 upgrade keeps its frozen deadline',async()=>{
  await pair();const a=await start();const before=a.receipt.endsAt;
  await rpc('reconcile_store_subscription_v3',[A,{store:'apple',environment:'production',credential:'upgrade',transactionId:'upgrade-tx',productId:'novame.plus.monthly',state:'active',periodEnd:new Date(Date.now()+86400000).toISOString(),observedAt:new Date().toISOString(),eventAt:new Date().toISOString()}]);
  const result=await rpc('accelerate_adventure_for_plus_v1',[A,a.receipt.adventureId]);

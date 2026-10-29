@@ -1,0 +1,848 @@
+{
+  "schema": 1,
+  "date": "2026-10-29",
+  "sourceWorkbook": {
+    "name": "Burrow-App-Copy-Review-2026-10-28.xlsx",
+    "sha256": "39ae11f31ebcecac195c888684f2ac31702cb4d9745947ad702777d498787297",
+    "notesColumn": "I",
+    "annotatedRows": 101,
+    "modified": false,
+    "readVerification": "Imported with artifact-tool; direct OOXML read verified blank cells/annotations after importer represented empty cells as a shared-string index."
+  },
+  "counts": {
+    "retain-visible-conditional": 1,
+    "retain": 26,
+    "applied": 51,
+    "rename-revoked": 1,
+    "retired-ui": 2,
+    "already-removed": 1,
+    "previously-updated": 19
+  },
+  "approvedExceptions": {
+    "plushieDailyQuota": "No daily quota; actor-wide technical 10 uploads/hour unchanged.",
+    "terminology": "All visible toy/doll terms refer to plushie, including accessibility and permission descriptions; internal fields/IDs and other product names unchanged.",
+    "adventure": "Do not merge already-started Solos. Use is finishing near the end, has already finished after the partner trip is due. Fixed recipient economic day; previous-day pending claims do not prevent Nudge, but original claim sequence still gates Start."
+  },
+  "entries": [
+    {
+      "id": "TXT-0151",
+      "sheet": "功能页与提示",
+      "row": 156,
+      "original": "Your wisdoms and cards will be waiting for you.",
+      "decision": "这是老版本app的文案，用户端是否有显示？没有则删除。",
+      "status": "retain-visible-conditional",
+      "reason": "The sign-in page remains reachable from existing-account login and anonymous-auth failure. User authorized deletion only if not visible; retain this sentence, no login flow removed."
+    },
+    {
+      "id": "TXT-0187",
+      "sheet": "功能页与提示",
+      "row": 192,
+      "original": "Allow notifications in your device settings to choose a daily reminder time.",
+      "decision": "先不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-0208",
+      "sheet": "功能页与提示",
+      "row": 213,
+      "original": "My Paired",
+      "decision": "My Paired Partner",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0213",
+      "sheet": "功能页与提示",
+      "row": 218,
+      "original": "Rate Us on App Store",
+      "decision": "Love Burrow? Rate us",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0310",
+      "sheet": "功能页与提示",
+      "row": 241,
+      "original": "support@soulsayit.com",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-0342",
+      "sheet": "功能页与提示",
+      "row": 273,
+      "original": "To help you create memories details and connection insight, Burrow uses third-party AI technology.",
+      "decision": "老功能，可以删除",
+      "status": "retired-ui"
+    },
+    {
+      "id": "TXT-0343",
+      "sheet": "功能页与提示",
+      "row": 274,
+      "original": "I agree that Gemini may process my entries and messages to generate AI responses.",
+      "decision": "老功能，可以删除",
+      "status": "retired-ui"
+    },
+    {
+      "id": "TXT-0351",
+      "sheet": "功能页与提示",
+      "row": 282,
+      "original": "To keep your data safe, we recommend you to create an account.",
+      "decision": "We recommend connecting your account so you can keep your data safe.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0375",
+      "sheet": "功能页与提示",
+      "row": 306,
+      "original": "This permanently deletes your account and all data. This cannot be undone.",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-0489",
+      "sheet": "功能页与提示",
+      "row": 412,
+      "original": "Add your face to let {partnerName} squeeze",
+      "decision": "Add your face so {name} can give you a squeeze.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0492",
+      "sheet": "功能页与提示",
+      "row": 415,
+      "original": "Rebuild the development app to enable local Toy deformation.",
+      "decision": "什么情况下会发生？可以直接Oops, something wrong happened. Please try again.",
+      "status": "applied",
+      "resolution": "Only the native deformation module-unavailable fallback used this developer instruction. Replace with a user-facing retry sentence; keep the fallback renderer."
+    },
+    {
+      "id": "TXT-0495",
+      "sheet": "功能页与提示",
+      "row": 418,
+      "original": "Plushies Collection",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-0496",
+      "sheet": "功能页与提示",
+      "row": 419,
+      "original": "Plushies Collection",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-0663",
+      "sheet": "功能页与提示",
+      "row": 535,
+      "original": "Water partner’s flowers",
+      "decision": "Fertilize your partner’s flower. ",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0679",
+      "sheet": "功能页与提示",
+      "row": 551,
+      "original": "Gift {partnerRoom.name} something to be happy with:",
+      "decision": "Make {name}’s day with a gift.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0705",
+      "sheet": "功能页与提示",
+      "row": 577,
+      "original": "You already changed this toy’s photo today. Try again after your local midnight.",
+      "decision": "You already changed this plushie's photo. Try again tomorrow. ",
+      "status": "applied",
+      "resolution": "User reconfirmed no Plushie daily quota: obsolete daily server rejection uses a generic retry message, never tomorrow."
+    },
+    {
+      "id": "TXT-0719",
+      "sheet": "功能页与提示",
+      "row": 591,
+      "original": "Align your face inside the toy. Its transparent opening follows this costume, not a fixed circle.",
+      "decision": "Fit the face inside your plushie’s face openin",
+      "status": "applied",
+      "resolution": "User explicitly approved repairing openin to opening."
+    },
+    {
+      "id": "TXT-0721",
+      "sheet": "功能页与提示",
+      "row": 593,
+      "original": "Drag and zoom in the photo editor. Your partner can look, but Only you can replace this photo.",
+      "decision": "Drag and zoom in the photo editor.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0726",
+      "sheet": "功能页与提示",
+      "row": 598,
+      "original": "Today’s photo change for this toy is used. Other toys have their own photos.",
+      "decision": "已删除限制逻辑，技术限流遇到时文案提示，You upload too much photos, please try again later.",
+      "status": "applied",
+      "resolution": "Remove obsolete daily hint. Actual upload_limit uses “You’ve uploaded too many photos. Please try again later.”; no limiter or retry behavior changes."
+    },
+    {
+      "id": "TXT-0763",
+      "sheet": "功能页与提示",
+      "row": 635,
+      "original": "Join plus to enable more photos used on your plushie, or come back tomorrow;",
+      "decision": "已删除限制逻辑",
+      "status": "already-removed"
+    },
+    {
+      "id": "TXT-0810",
+      "sheet": "功能页与提示",
+      "row": 674,
+      "original": "Plushies Collection",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-0811",
+      "sheet": "功能页与提示",
+      "row": 675,
+      "original": "Plushies Shop",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-0816",
+      "sheet": "功能页与提示",
+      "row": 680,
+      "original": "Each Plushie gets its own photo of Babe.",
+      "decision": "Add a photo of your partner to each plushie.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0826",
+      "sheet": "功能页与提示",
+      "row": 690,
+      "original": "View {item.title}, {item.price} carrots",
+      "decision": "View {item.title}, {item.price} coins",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-0842",
+      "sheet": "功能页与提示",
+      "row": 706,
+      "original": "Could not save on this phone. Please try again.",
+      "decision": "Could not save on this device. Please try again.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0843",
+      "sheet": "功能页与提示",
+      "row": 707,
+      "original": "Could not save playback on this phone. Please try again.",
+      "decision": "Could not save playback on this device. Please try again.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0856",
+      "sheet": "功能页与提示",
+      "row": 720,
+      "original": "Only your latest received Touch Note will be saved.\nJoin Plus to keep up to 10 between you.",
+      "decision": "Plus keeps your 10 most recent Touch Notes together. You can only view the notes you received.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0857",
+      "sheet": "功能页与提示",
+      "row": 721,
+      "original": "Your received notes from the latest 10 Touch Notes between you are shown here.",
+      "decision": "Plus keeps your 10 most recent Touch Notes together. You can only view the notes you received.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0886",
+      "sheet": "功能页与提示",
+      "row": 750,
+      "original": "Not just playing by yourself. Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.",
+      "decision": "Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-0915",
+      "sheet": "功能页与提示",
+      "row": 779,
+      "original": "Not just playing by yourself. Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.",
+      "decision": "Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-1045",
+      "sheet": "功能页与提示",
+      "row": 908,
+      "original": "Your arms are wrapped around {name} right now.",
+      "decision": "A warm hug is on its way to {name}.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-1051",
+      "sheet": "功能页与提示",
+      "row": 914,
+      "original": "Your thanks is in {name}'s hands now.",
+      "decision": "Your thanks are on their way to {name}.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-1094",
+      "sheet": "功能页与提示",
+      "row": 957,
+      "original": "{name} sent you {count} \"miss you\"",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-1095",
+      "sheet": "功能页与提示",
+      "row": 958,
+      "original": "{name} sent you a \"miss you\"",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-1608",
+      "sheet": "功能页与提示",
+      "row": 973,
+      "original": "You can pass if nothing you want to select here",
+      "decision": "You can skip if there is nothing to add on this page.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-1645",
+      "sheet": "功能页与提示",
+      "row": 1010,
+      "original": "Select items that tell your day.",
+      "decision": "Choose the moments that tell your day’s story.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-1687",
+      "sheet": "功能页与提示",
+      "row": 1039,
+      "original": "Join Plus to finish 2x faster.\nConnect a partner to team up on a future adventure.",
+      "decision": "已经修改",
+      "status": "previously-updated",
+      "resolution": "Do not apply the stale next-trip-only spreadsheet suggestion. Latest confirmed ongoing state/speed plan supersedes it."
+    },
+    {
+      "id": "TXT-1688",
+      "sheet": "功能页与提示",
+      "row": 1040,
+      "original": "Join Plus to finish 2x faster.\nEach bunny keeps their own adventure rewards.",
+      "decision": "已经修改",
+      "status": "previously-updated",
+      "resolution": "Do not apply the stale next-trip-only spreadsheet suggestion. Latest confirmed ongoing state/speed plan supersedes it."
+    },
+    {
+      "id": "TXT-1716",
+      "sheet": "功能页与提示",
+      "row": 1068,
+      "original": "You found new {burrowShopCategoryName(item.category)}",
+      "decision": "保持不变，都是可数名词",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-1723",
+      "sheet": "功能页与提示",
+      "row": 1075,
+      "original": "Add to Furnitures",
+      "decision": "直接删除这句话；",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-1753",
+      "sheet": "功能页与提示",
+      "row": 1105,
+      "original": "You’re enjoying 1.5x adventure speed.\nJoin Plus to finish an extra 2x faster.",
+      "decision": "已经修改",
+      "status": "previously-updated",
+      "resolution": "Do not apply the stale next-trip-only spreadsheet suggestion. Latest confirmed ongoing state/speed plan supersedes it."
+    },
+    {
+      "id": "TXT-1754",
+      "sheet": "功能页与提示",
+      "row": 1106,
+      "original": "You’re enjoying 3x adventure speed.",
+      "decision": "已经修改",
+      "status": "previously-updated",
+      "resolution": "Do not apply the stale next-trip-only spreadsheet suggestion. Latest confirmed ongoing state/speed plan supersedes it."
+    },
+    {
+      "id": "TXT-1756",
+      "sheet": "功能页与提示",
+      "row": 1108,
+      "original": "You’re enjoying 2x adventure speed.\nNudge {name} to team up for 1.5x faster adventures.",
+      "decision": "已经修改",
+      "status": "previously-updated",
+      "resolution": "Do not apply the stale next-trip-only spreadsheet suggestion. Latest confirmed ongoing state/speed plan supersedes it."
+    },
+    {
+      "id": "TXT-1757",
+      "sheet": "功能页与提示",
+      "row": 1109,
+      "original": "Nudge {name} to team up for 1.5x faster adventures.\nJoin Plus to finish 2x faster.",
+      "decision": "已经修改",
+      "status": "previously-updated",
+      "resolution": "Do not apply the stale next-trip-only spreadsheet suggestion. Latest confirmed ongoing state/speed plan supersedes it."
+    },
+    {
+      "id": "TXT-2602",
+      "sheet": "功能页与提示",
+      "row": 1138,
+      "original": "Lose",
+      "decision": "Loss",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-2634",
+      "sheet": "功能页与提示",
+      "row": 1170,
+      "original": "Unlock once, play anytime.",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-2637",
+      "sheet": "功能页与提示",
+      "row": 1173,
+      "original": "Reminder sent.",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-2645",
+      "sheet": "功能页与提示",
+      "row": 1181,
+      "original": "Game result awaiting to be checked",
+      "decision": "Your result is ready.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-2674",
+      "sheet": "功能页与提示",
+      "row": 1210,
+      "original": "You lose!",
+      "decision": "{name} won this round! \n对方的名字",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-2679",
+      "sheet": "功能页与提示",
+      "row": 1215,
+      "original": "You can leave now, we will let you know when the result is ready",
+      "decision": "You can leave now and we will let you know when the result is ready.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-2688",
+      "sheet": "功能页与提示",
+      "row": 1224,
+      "original": "Could not save your progress. Please retry. You will never receive the same reward twice.",
+      "decision": "Could not save your progress. Please retry. ",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-2740",
+      "sheet": "功能页与提示",
+      "row": 1274,
+      "original": "The spinning stopped. It’s just standing there, thinking nothing.",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-2742",
+      "sheet": "功能页与提示",
+      "row": 1276,
+      "original": "It stopped holding its head together. It was fine the whole time.",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-2804",
+      "sheet": "功能页与提示",
+      "row": 1338,
+      "original": "New page and question will be ready next day\nafter both sides finish their writing.",
+      "decision": "After you both save your answers, a new page will be ready the next day.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3037",
+      "sheet": "功能页与提示",
+      "row": 1476,
+      "original": "{name} will be showered with your cute faces the moment they open the app.",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3055",
+      "sheet": "功能页与提示",
+      "row": 1494,
+      "original": "{coin} {price} will be needed",
+      "decision": "Costs {price} coins per send. ",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3059",
+      "sheet": "功能页与提示",
+      "row": 1498,
+      "original": "{name} will see it when their surprise is ready.",
+      "decision": "{name} can view your surprise once it’s ready.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3069",
+      "sheet": "功能页与提示",
+      "row": 1508,
+      "original": "{name} will see it when their surprise is ready.",
+      "decision": "{name} can view your surprise once it’s ready.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3096",
+      "sheet": "功能页与提示",
+      "row": 1535,
+      "original": "Water your flowers",
+      "decision": "Water your flower.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3099",
+      "sheet": "功能页与提示",
+      "row": 1538,
+      "original": "Adventure Finished",
+      "decision": "Adventures Completed.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3125",
+      "sheet": "功能页与提示",
+      "row": 1564,
+      "original": "The price changed. Refreshing prices… No carrots were spent.",
+      "decision": "The price changed. Refreshing prices… No coins were spent.",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-3126",
+      "sheet": "功能页与提示",
+      "row": 1565,
+      "original": "Could not refresh prices. Check your connection and try again. No carrots were spent.",
+      "decision": "Could not refresh prices. Check your connection and try again. No coins were spent.",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-3127",
+      "sheet": "功能页与提示",
+      "row": 1566,
+      "original": "Prices refreshed. Review the total and tap Pay / Buy again. No carrots were spent.",
+      "decision": "Prices refreshed. Review the total and tap Pay / Buy again. No coins were spent.",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-3128",
+      "sheet": "功能页与提示",
+      "row": 1567,
+      "original": "Please update the app before purchasing this item. No carrots were spent.",
+      "decision": "Please update the app before purchasing this item. No coins were spent.",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-3902",
+      "sheet": "功能页与提示",
+      "row": 1669,
+      "original": "Connect an account so your subscription and memories are never lost — even if you change phones.",
+      "decision": "Connect an account so your data can be safe.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3938",
+      "sheet": "功能页与提示",
+      "row": 1705,
+      "original": "Complete quests to earn coins and unlock new items, gift and games!",
+      "decision": "Complete quests to earn coins and unlock new items, gifts and games!",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3962",
+      "sheet": "功能页与提示",
+      "row": 1729,
+      "original": "Free Plus for your partner",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3963",
+      "sheet": "功能页与提示",
+      "row": 1730,
+      "original": "One subscription unlocks Plus for both of you!",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3965",
+      "sheet": "功能页与提示",
+      "row": 1732,
+      "original": "Earn 50 coins every day you log in",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3968",
+      "sheet": "功能页与提示",
+      "row": 1735,
+      "original": "Get extra release of negative energy every day",
+      "decision": "Tame more monsters each day.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-3974",
+      "sheet": "功能页与提示",
+      "row": 1741,
+      "original": "Forever photo storage",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3975",
+      "sheet": "功能页与提示",
+      "row": 1742,
+      "original": "Keep every photo safely stored",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3978",
+      "sheet": "功能页与提示",
+      "row": 1745,
+      "original": "Join the queue and help us bring your favorite furniture into the app",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3986",
+      "sheet": "功能页与提示",
+      "row": 1753,
+      "original": "Subscription auto-renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your {store} settings.",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-3991",
+      "sheet": "功能页与提示",
+      "row": 1758,
+      "original": "Link their account to yours in the app, and they’ll get access to all Plus features too.",
+      "decision": "Connect with your partner to share your Plus benefits.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4015",
+      "sheet": "功能页与提示",
+      "row": 1782,
+      "original": "Payment is pending approval. Carrots will arrive after the store confirms it.",
+      "decision": "已更改",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-4023",
+      "sheet": "功能页与提示",
+      "row": 1790,
+      "original": "Carrot purchases are not enabled on this server yet.",
+      "decision": "已更改",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-4026",
+      "sheet": "功能页与提示",
+      "row": 1793,
+      "original": "Please sign in before purchasing carrots.",
+      "decision": "已更改",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-4029",
+      "sheet": "功能页与提示",
+      "row": 1796,
+      "original": "Payment is pending approval. Carrots will arrive after the store confirms it.",
+      "decision": "已更改",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-4047",
+      "sheet": "功能页与提示",
+      "row": 1814,
+      "original": "Please finish your carrot purchase first.",
+      "decision": "已更改",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-4056",
+      "sheet": "功能页与提示",
+      "row": 1822,
+      "original": "iap upload returned !success",
+      "decision": "We couldn’t finish syncing your purchase. Try Restore Purchases",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4094",
+      "sheet": "功能页与提示",
+      "row": 1860,
+      "original": "After you finish an activity together, it will appear on this timeline.",
+      "decision": "Both of your activities will appear on this timeline",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4118",
+      "sheet": "功能页与提示",
+      "row": 1884,
+      "original": "{actor} answered a question in memories room",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-4122",
+      "sheet": "功能页与提示",
+      "row": 1888,
+      "original": "{actor} sent {partnerName} a {affectionNames[row.payload.affectionType]}",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-4124",
+      "sheet": "功能页与提示",
+      "row": 1890,
+      "original": "{actor} sent you a {affectionNames[row.payload.affectionType]}",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-4185",
+      "sheet": "功能页与提示",
+      "row": 1945,
+      "original": "Burrow uses only the photos you select for your room frame, doll, and profile.",
+      "decision": "把所有toy/doll的词都统一改成plushie",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4186",
+      "sheet": "功能页与提示",
+      "row": 1946,
+      "original": "Burrow uses photos you choose for your profile, room frame, and couple doll, visible to your paired partner.",
+      "decision": "把所有toy/doll的词都统一改成plushie",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4187",
+      "sheet": "功能页与提示",
+      "row": 1947,
+      "original": "Burrow uses the camera only when you choose to align your face inside an interactive toy.",
+      "decision": "把所有toy/doll的词都统一改成plushie",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4188",
+      "sheet": "功能页与提示",
+      "row": 1948,
+      "original": "Burrow uses the camera only when you choose to take a photo for your room or couple doll.",
+      "decision": "把所有toy/doll的词都统一改成plushie",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4189",
+      "sheet": "功能页与提示",
+      "row": 1949,
+      "original": "Burrow uses the camera only when you choose to take a room, toy, or profile photo.",
+      "decision": "把所有toy/doll的词都统一改成plushie",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4322",
+      "sheet": "功能页与提示",
+      "row": 1983,
+      "original": "{count} updates",
+      "decision": "按建议执行",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4341",
+      "sheet": "功能页与提示",
+      "row": 2002,
+      "original": "support@soulsayit.com",
+      "decision": "保持不变",
+      "status": "retain"
+    },
+    {
+      "id": "TXT-4345",
+      "sheet": "功能页与提示",
+      "row": 2006,
+      "original": "iOS version:",
+      "decision": "按建议执行",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4352",
+      "sheet": "功能页与提示",
+      "row": 2013,
+      "original": "Would you mind taking a moment to rate us on the App Store? Every rating helps Burrow reach more people.",
+      "decision": "Would you mind taking a moment to rate us? Every rating helps Burrow reach more people.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4399",
+      "sheet": "功能页与提示",
+      "row": 2058,
+      "original": "Purchase could not be completed ({errorCode(error)}). Your unconfirmed coins have been restored.",
+      "decision": "Purchase could not be completed.  Please try again later.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4417",
+      "sheet": "功能页与提示",
+      "row": 2075,
+      "original": "You don’t have enough carrots for this item yet.",
+      "decision": "You don’t have enough coins for this item yet.",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-4423",
+      "sheet": "功能页与提示",
+      "row": 2081,
+      "original": "The price changed. Review the updated price and tap Buy again. No carrots were spent.",
+      "decision": "The price changed. Review the updated price and tap Buy again. No coins were spent.",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-4424",
+      "sheet": "功能页与提示",
+      "row": 2082,
+      "original": "Please update the app to confirm this item’s current price. No carrots were spent.",
+      "decision": "Please update the app to confirm this item’s current price. No coins were spent.",
+      "status": "previously-updated"
+    },
+    {
+      "id": "TXT-3724",
+      "sheet": "目录与内容",
+      "row": 1735,
+      "original": "Rabbit Carrots",
+      "decision": "Burrow Coins",
+      "status": "rename-revoked",
+      "resolution": "The original audit incorrectly classified this carrot-themed decor product as currency. After clarification, the user explicitly confirmed withdrawal on 2026-10-29. Keep Rabbit Carrots and every catalog field/support set unchanged. The unshipped rename and its local candidate migration 290 were removed; no production change occurred. Actual coin wording fixes remain."
+    },
+    {
+      "id": "TXT-0632",
+      "sheet": "兼容与异常候选",
+      "row": 127,
+      "original": "Water your flowers",
+      "decision": "Water your flower.",
+      "status": "applied"
+    },
+    {
+      "id": "TXT-4405",
+      "sheet": "兼容与异常候选",
+      "row": 450,
+      "original": "Could not apply this room change ({code}). Your other choices have been kept.",
+      "decision": "Could not apply this room change. Please try again.",
+      "status": "applied"
+    }
+  ]
+}

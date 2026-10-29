@@ -160,11 +160,11 @@ test('Plushies Shop and detail center the title using equal side lanes, with one
   assert.equal(left.props.style.width,right.props.style.width);
   assert.equal(right.props.children.type,'CoinWallet');assert.equal(right.props.children.props.showAdd,false);
   assert.equal(tree.filter(n=>n.type==='CoinWallet').length,1);
-  assert.ok(tree.some(n=>n.props?.children==='Each Plushie gets its own photo of Babe.'));
+  assert.ok(tree.some(n=>n.props?.children==='Add a photo of your partner to each plushie.'));
   assert.equal(tree.some(n=>n.type==='ScreenOptions'),false);
   assert.ok(tree.some(n=>n.type==='BackButton'&&n.props.light));
  };
- check();h.findLabel('View blue, 100 carrots').props.onPress();check();h.unmount();
+ check();h.findLabel('View blue, 100 coins').props.onPress();check();h.unmount();
 });
 test('Switch durably queues once, updates immediately and returns without waiting for the network; disk failure stays retryable',async()=>{
   const h=uiHarness();h.findLabel('Select bunny').props.onPress();
@@ -178,7 +178,7 @@ test('Switch durably queues once, updates immediately and returns without waitin
   bad.failQueue(false);await bad.pressText('Switch');assert.equal(bad.writes.length,1);assert.deepEqual(bad.navigations,['back']);bad.unmount();
 });
 test('buying confirms displayed price and self recipient, immediately equips through personal room path',async()=>{
-  const h=uiHarness(true,{manual:true});h.findLabel('View blue, 100 carrots').props.onPress();
+  const h=uiHarness(true,{manual:true});h.findLabel('View blue, 100 coins').props.onPress();
   const pending=h.pressText('Buy · {coin} 100');h.pressText('Buy · {coin} 100');await flush();
   assert.equal(h.writes.length,0);assert.equal(h.checkout.offers.length,1);assert.equal(h.checkout.offers[0].price,100);
   h.checkout.approval.resolve(true);await flush();assert.equal(h.writes.length,1);
@@ -192,18 +192,18 @@ test('buying confirms displayed price and self recipient, immediately equips thr
   h.pressText('View collection');assert.deepEqual(h.navigations,['back']);h.unmount();
 });
 test('cancelling a Toy purchase leaves balance, ownership and current page unchanged',async()=>{
- const h=uiHarness(true,{manual:true});h.findLabel('View blue, 100 carrots').props.onPress();
+ const h=uiHarness(true,{manual:true});h.findLabel('View blue, 100 coins').props.onPress();
  const pending=h.pressText('Buy · {coin} 100');h.checkout.approval.resolve(false);await pending;
  assert.equal(h.writes.length,0);assert.equal(h.calls.length,0);assert.equal(h.data().wallet.balance,1000);
  assert.equal(h.checkout.successes.length,0);assert.equal(h.navigations.length,0);h.unmount();
 });
 test('price conflict refreshes without claiming ownership; Plus and low balance never send purchase',async()=>{
-  const h=uiHarness(true);h.findLabel('View blue, 100 carrots').props.onPress();
+  const h=uiHarness(true);h.findLabel('View blue, 100 coins').props.onPress();
   const pending=h.pressText('Buy · {coin} 100');await flush();h.purchase.reject(Error('price_changed'));await pending;await flush();
   assert.ok(h.calls.some(x=>x[0]==='refresh'));assert.equal(h.calls.some(x=>x[0]==='receipt'),false);h.unmount();
-  const plus=uiHarness(true);plus.findLabel('View plus, 100 carrots').props.onPress();plus.pressText('Buy · {coin} 100 · Plus');
+  const plus=uiHarness(true);plus.findLabel('View plus, 100 coins').props.onPress();plus.pressText('Buy · {coin} 100 · Plus');
   assert.deepEqual(plus.navigations,['/(main)/(modals)/subscription-paywall']);assert.equal(plus.calls.length,0);plus.unmount();
-  const poor=uiHarness(true);poor.data().wallet.balance=50;poor.findLabel('View blue, 100 carrots').props.onPress();poor.pressText('Buy · {coin} 100');
+  const poor=uiHarness(true);poor.data().wallet.balance=50;poor.findLabel('View blue, 100 coins').props.onPress();poor.pressText('Buy · {coin} 100');
   assert.equal(poor.calls.length,0);assert.deepEqual(poor.navigations,['/(main)/insufficient-coins']);poor.unmount();
 });
 test('late switch or purchase after account change cannot equip, cache ownership or navigate',async()=>{
@@ -211,11 +211,11 @@ test('late switch or purchase after account change cannot equip, cache ownership
   const staleSwitch=h.nodes().find(n=>n.type==='Pressable'&&nodes(n).some(x=>x.props?.children==='Switch')).props.onPress;
   h.changeAccount();await staleSwitch();await flush();
   assert.equal(h.calls.some(x=>x[0]==='local-switch'),false);assert.equal(h.navigations.length,0);h.unmount();
-  const buy=uiHarness(true);buy.findLabel('View blue, 100 carrots').props.onPress();const buying=buy.pressText('Buy · {coin} 100');await flush();buy.changeAccount();buy.purchase.resolve({purchaseId:'late'});await buying;await flush();
+  const buy=uiHarness(true);buy.findLabel('View blue, 100 coins').props.onPress();const buying=buy.pressText('Buy · {coin} 100');await flush();buy.changeAccount();buy.purchase.resolve({purchaseId:'late'});await buying;await flush();
   assert.equal(buy.calls.some(x=>x[0]==='receipt'),false);assert.equal(buy.navigations.length,0);buy.unmount();
 });
 test('Toys server-side rejection rolls back preview and releases the purchase lock without confirmed ownership',async()=>{
- const h=uiHarness(true);h.findLabel('View blue, 100 carrots').props.onPress();
+ const h=uiHarness(true);h.findLabel('View blue, 100 coins').props.onPress();
  const pending=h.pressText('Buy · {coin} 100');await flush();h.purchase.reject(Error('insufficient_balance'));await pending;await flush();
  assert.deepEqual(h.navigations,[]);assert.equal(h.calls.some(x=>x[0]==='receipt'),false);
  assert.equal(h.data().inventory.some(i=>i.item_id==='blue'&&i.owner_id==='A'),false);

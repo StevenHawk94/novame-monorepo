@@ -175,7 +175,7 @@ export default function ReflectGuidedScreen() {
                 ))}
               </ScrollView>
               <AdventureReveal enabled delay={300} style={[styles.stepsFooter, { paddingBottom: insets.bottom + 12 }]}>
-                <Text style={[styles.hint, styles.passHint]}>You can pass if nothing you want to select here</Text>
+                <Text style={[styles.hint, styles.passHint]}>You can skip if there is nothing to add on this page.</Text>
                 <OffsetCard color={RC.yellowDrop} offset={4} radius={24} onPress={onNext} cardStyle={styles.yellowBtn}>
                   <Text style={styles.yellowBtnText}>Next</Text>
                 </OffsetCard>

@@ -101,7 +101,7 @@ for(const file of ['home-art-scene','room-scene-art'])test(`${file}: every Toy u
  for(let i=0;i<art.BURROW_ART.couple_dolls.length;i++){
   const asset=art.BURROW_ART.couple_dolls[i],Component=HomeArtScene??RoomSceneArt;
   const tree=nodes(h.render(()=>Component({balance:0,slots:{couple_doll:toy('toy-'+i,i+1)},photos:[],ownerId:'me',onSlot(){}})));
-  const target=tree.find(n=>file==='home-art-scene'?n.props?.accessibilityLabel==='Open Toy':n.type==='Doll');
+  const target=tree.find(n=>file==='home-art-scene'?n.props?.accessibilityLabel==='Open Plushie':n.type==='Doll');
   const box=JSON.parse(JSON.stringify(target.props.style));baseline??=box;assert.deepEqual(box,baseline,asset.name);
   assert.equal(box.width/box.height,asset.width/asset.height);
   if(file==='room-scene-art'){assert.equal(target.props.artStyle.width,box.width);assert.equal(target.props.artStyle.height,box.height);}

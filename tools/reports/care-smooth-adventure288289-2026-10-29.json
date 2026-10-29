@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-29",
+  "verifiedAt": "2026-10-29T12:02:54Z",
+  "authorization": "Fix and check all four care completion popups; then execute previously approved migrations 288 and 289 and commit/deploy all pending updates to Vercel. No App release, announcement, force update, catalog publication or new economic exception.",
+  "diagnosis": {
+    "video": "The supplied 25fps video shows a completion-layer delay; it cannot establish 60fps frame timing.",
+    "causes": [
+      "Completion created 36 individual confetti animation graphs at the same time as the spring and reward presentation.",
+      "The care route subscribed to unrelated wallet updates and could react to its own synchronous optimistic cooldown projection before reserving its in-flight token.",
+      "The shared wallet mounted fresh particles and a temporary counter on the first reward frame."
+    ],
+    "isolatedBaselineMaximumFrameMs": 583.333333,
+    "fix": [
+      "Prepare the small inactive care card on entry; no touches, accessibility, Back handling, success claim or animation while inactive.",
+      "A single preattached native clock drives the original damped spring and all 36 original confetti paths. No per-frame JavaScript, 36 effect startups or changed visual/business rule.",
+      "Minimal care subscription excludes wallet-only updates. Reserve only an internal in-flight token before durable enqueue; success still follows successful persistence, and failure releases the token.",
+      "Reuse seven shared coin nodes and the temporary wallet face. Idle layers are invisible, noninteractive and accessibility-hidden. Reward durations, sound, haptics, authority and modal ownership remain unchanged."
+    ]
+  },
+  "nativeVerification": {
+    "runtime": "Isolated iOS 26.2 simulator; minified Release/Hermes JavaScript in an existing copied local QA binary.",
+    "realComponents": "GardenCareInteraction, CareQuestCelebration, durable CoinCommandOutbox, quest projection, wallet controller/surface/counter, native SVG/Image and animation runtimes.",
+    "syntheticIdentities": true,
+    "businessApiBlocked": true,
+    "totalRuns": 20,
+    "samples": 1920,
+    "over50ms": 0,
+    "results": [
+      {"action":"own carrot", "runs":5, "samples":480, "p95FrameMs":16.666667, "maximumFrameMs":16.666667, "over50ms":0},
+      {"action":"own water", "runs":5, "samples":480, "p95FrameMs":16.666667, "maximumFrameMs":34.646334, "over50ms":0},
+      {"action":"partner leaf", "runs":5, "samples":480, "p95FrameMs":16.666667, "maximumFrameMs":16.666667, "over50ms":0},
+      {"action":"partner fertilizer", "runs":5, "samples":480, "p95FrameMs":16.666667, "maximumFrameMs":16.666667, "over50ms":0}
+    ],
+    "sampling": "UI-thread frame callback intervals, last 96 frames around each completed interaction. Not a compositor/GPU trace or a physical-device guarantee.",
+    "visualAndInteraction": [
+      "Separate four-action review run completed, existing centered card/icon/copy and flower pose visually inspected.",
+      "Actual native Home test-button click recorded after care completion: invisible prepared layers do not intercept it.",
+      "Real Daily Plus native modal/portal rendered the wallet; one claim survived repeated activation, one wallet completion, then portal=false and overlay=false.",
+      "Actual native click after the Daily Plus modal closed visibly changed Home interactions from 1 to 2."
+    ],
+    "evidenceDirectory": "outputs/care-smooth-2026-10-29/",
+    "finalPerformanceEvidence": "outputs/care-smooth-2026-10-29/final-native.json",
+    "earlierCandidates": "Partial optimizations retained locally as discarded first/second/third/fourth-pass evidence; only final-native.json supports the final performance claim.",
+    "simulatorRestoredToShutdown": true
+  },
+  "regressions": {
+    "domain": {"passed":1332,"failed":0,"log":"/private/tmp/burrow-care-smooth.PaNmL8/final-domain.log"},
+    "mobileTypes": {"exitCode":0,"log":"/private/tmp/burrow-care-smooth.PaNmL8/final-types.log"},
+    "catalog": {"passed":true,"active":496,"release":"5acf169b89ae03ad502a2f18797ae0e03b9aa59005e6e3104165845a63ff20f4"},
+    "guarded288289Sql": {"passed":22,"failed":0,"productionFunctionDefinitionsRehearsed":true,"wrongBaselineRollbackAndReplayRefusal":true},
+    "crossFeatureSql": {"passed":14,"failed":0},
+    "allShopSweep": {"assertions":3137,"products":496,"room":390,"paidGames":68,"freeGames":2,"surpriseOffers":36},
+    "focusedCareWallet": {"passed":94,"failed":0,"overlapsDomain":true},
+    "releaseSourceGuard": "Regression rejects missing/empty source, archive transport placeholders, unsafe paths, missing digests and duplicate files."
+  },
+  "productionDatabase": {
+    "status":"applied and read-only verified",
+    "migrations":[
+      {"version":"20261029000288","sha256":"9c7c0dacdea52a690e84b4d0940133068516ffbf70b9f3426a370a5ac8c13e4b"},
+      {"version":"20261029000289","sha256":"b1cc65828f3251b6edd7e62ce36aeb0fc2bf7b68eacd10d105ef828e40e4ff04"}
+    ],
+    "atomicGuard":"Captured baseline function digests, explicit 287 baseline, advisory lock, lock/statement deadlines and repeatable-read 288→289 transaction.",
+    "protectedDataSets":175,
+    "protectedDataUnchanged":true,
+    "unrelatedFunctionsUnchanged":true,
+    "existingTablePermissionsUnchanged":true,
+    "catalogUnchanged":true,
+    "deploymentAcceleratedTrips":0,
+    "functionPermissions":"All nine changed/private functions deny anon/authenticated direct execution. Only the three intended public service RPCs allow service_role.",
+    "accountBusinessOperationsPerformed":false
+  },
+  "vercel": {
+    "api":{"id":"dpl_Noe3YZaFrSspRFxM4aL1cq2WMP3Z","domain":"https://api.soulsayit.com","ready":true,"verifiedSourceFiles":294,"protectedEndpoints401":4,"existingCronCount":10,"roomPhotoCleanup":"*/5 * * * *"},
+    "admin":{"id":"dpl_HgoaDc2sC1nbGDQZhAHNzMtsqoJT","domain":"https://novame-monorepo-admin.vercel.app","ready":true,"verifiedSourceFiles":903,"loginStatus":200},
+    "build":"Both optimized production builds, lint and type validation succeeded before promotion; API native avatar codec runtime check passed.",
+    "sourceVerification":"Every retrievable candidate source file hashed against the explicit local release snapshot. No mobile, private evidence or .env file uploaded. Git-generated baseline source endpoint was unavailable; its exact Git SHA matched the checked-out pre-task HEAD.",
+    "baselineGitSha":"f2e7f8bfd2b6b98dfb43b68697dedbde4d11bb13",
+    "discardedCandidates":"Initial archive-upload candidates were not promoted: source tree exposed only transport artifacts. Replaced by ordinary-file candidates and hardened the verifier rather than accepting zero files.",
+    "apiRuntimeDiffFromBaseline":"No API/Admin runtime source changes in this pending batch; redeployed compatible snapshots with authorized schema updates. Mobile changes remain source changes requiring client reload/build.",
+    "evidence":"Private release responses and source inspection retained outside the repository; no credentials or user rows included in this report."
+  },
+  "pendingWorkIncluded": [
+    "Approved annotated copy audit and Adventure ongoing/Nudge behavior from the preceding task.",
+    "Migration 288 one-time verified mid-trip Plus acceleration and permanently owned Plus-game access after expiry.",
+    "Migration 289 prior-day pending-claim Nudge availability, retaining claim-before-Start and independent-Solo rules.",
+    "Rabbit Carrots product rename remains withdrawn; no migration 290 or catalog/price/Plus/inventory changes.",
+    "This four-action smoothness fix, shared-wallet regression guards, release verification and development baseline v1.45."
+  ],
+  "delivery":"Included in the main release commit; the final Git SHA and push outcome are supplied in the task handoff. Production observations above are timestamped, not a guarantee that later Git integration deployments cannot replace them.",
+  "clientCompatibility":"Reload Metro to use the client fixes. Vercel does not replace installed native UI. Permission-description wording in app.json requires a later native binary. No store App, announcement or force update published.",
+  "limits":[
+    "No Android native, physical-device haptic/audio or real StoreKit/Play Billing test in this task.",
+    "Synthetic local care/bonus identities do not establish production two-account end-to-end behavior or multi-connection SQL stress performance.",
+    "Business HTTP was blocked in QA; pre-existing copied native SDK initializers can still attempt their own telemetry connections.",
+    "Reduced Motion, early Done, background cleanup, identity rotation, persistence failure and portal ownership have code/component regression coverage; not all were re-measured as separate native performance runs.",
+    "Finite simulator samples do not prove zero stutter on all devices or historical states."
+  ],
+  "developmentBaseline":"docs/burrow-development-standards.md v1.45"
+}

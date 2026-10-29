@@ -12,7 +12,7 @@ import { createAdventurePresentationClock } from '@/lib/adventure-presentation-c
 import { burrowClock } from '@/lib/burrow-store';
 import { retryAdventureJournalJob, useAdventureJournalJob } from '@/lib/adventure-journal-jobs';
 import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
-import {adventureModeCopy,teamStateFor} from '@/lib/cooperative-adventure';
+import {adventureOngoingPresentation,teamStateFor} from '@/lib/cooperative-adventure';
 import {queueAdventureNudge,useAdventureNudge} from '@/lib/adventure-nudge';
 import {useBunnyVariant} from '@/lib/bunny-identity';
 import {showBurrowToast} from '@/lib/burrow-toast';
@@ -25,14 +25,6 @@ export function AdventureProgressScreen({data,now,onHome}:{data:MajorUpdateBoots
   const coordination=teamStateFor(data),team=coordination?.team;
   const variant=useBunnyVariant();
   const nudge=useAdventureNudge(team?.id);
-  const plus=team?.plus??data.hasPlus,couple=!!team?.followerId;
-  const mode=adventureModeCopy(plus,couple,data.partner?.display_name||'your partner');
-  // Unknown coordination is not an unpaired/Solo fact. Entry already knows
-  // the confirmed partner while the personal Start receipt reconciles.
-  const canInvite=!!data.partner&&(!coordination||coordination.nudgeAvailable);
-  const footerCopy=!couple&&!canInvite
-    ?`${plus?'You’re enjoying 2x adventure speed.':'Join Plus to finish 2x faster.'}\n${!data.partner?'Connect a partner to team up on a future adventure.':'Each bunny keeps their own adventure rewards.'}`
-    :mode.copy;
   const pending=journey.id.startsWith('pending:')||journey.localStartPending===true;
   const scope=`${data.profile.id}:${data.partner?.id??'solo'}:${data.pairVersion??''}`;
   const clock=useRef(createAdventurePresentationClock());
@@ -42,6 +34,9 @@ export function AdventureProgressScreen({data,now,onHome}:{data:MajorUpdateBoots
   const display=clock.current.read({identity:scope,adventureId:journey.id,pending,
     startedAt:journey.started_at,endsAt:journey.ends_at,now,clockNow:burrowClock(),team});
   const {progress,remaining}=display;
+  const mode=adventureOngoingPresentation({state:coordination,paired:!!data.partner,name:data.partner?.display_name||'your partner',
+    hasPlus:data.hasPlus,pending,remaining,now,nudge});
+  const {couple}=mode;
   const completed=data.specialQuests.find(quest=>quest.questId==='adventures_completed')?.progress;
   const ordinal=adventureOrdinal(typeof completed==='number'?completed+1:null);
   return <View style={s.root}>
@@ -51,7 +46,7 @@ export function AdventureProgressScreen({data,now,onHome}:{data:MajorUpdateBoots
       <Text style={[s.subtitle,{fontSize:Math.max(16,22*scale),lineHeight:Math.max(23,30*scale)}]}>Your {ordinal}adventure</Text>
     </View>
     <BurrowBackButton light onPress={onHome} style={{position:'absolute',left:26*scale,top:layout.headerTop,width:Math.max(44,60*scale),height:Math.max(44,60*scale),borderRadius:30*scale}}/>
-    {plus&&<View style={[s.plus,{right:24*scale,top:layout.headerTop+8}]}><Text style={s.plusText}>Plus</Text></View>}
+    {data.hasPlus&&<View style={[s.plus,{right:24*scale,top:layout.headerTop+8}]}><Text style={s.plusText}>Plus</Text></View>}
     <View style={{position:'absolute',left:layout.routeLeft,top:layout.routeTop}}>
       {/* This ongoing page owns one journey. Pending record/adventure IDs are
           aliases, not a new character/animation lifetime. Scope changes reset. */}
@@ -69,12 +64,12 @@ export function AdventureProgressScreen({data,now,onHome}:{data:MajorUpdateBoots
     </Pressable>}
     <View style={{position:'absolute',left:28*scale,right:28*scale,bottom:layout.footerBottom,width:undefined}}>
       {couple?<View accessibilityRole="text" style={[s.mode,{height:layout.buttonHeight}]}><Text style={[s.homeText,{fontSize:Math.max(18,23*scale)}]}>{mode.label}</Text></View>
-       :<Pressable accessibilityRole="button" disabled={!coordination?.nudgeAvailable||pending||remaining<=600000||nudge==='queued'||nudge==='sent'||!!team?.nudged}
+       :<Pressable accessibilityRole="button" disabled={!mode.canNudge}
         onPress={()=>{try{if(team){queueAdventureNudge(team.id);showBurrowToast('Reminder submitted ✓');}}catch{showBurrowToast('Could not save the invitation. Please try again.');}}}
         style={({pressed})=>[s.mode,{height:layout.buttonHeight},pressed&&s.pressed]}>
-        <Text style={[s.homeText,{fontSize:Math.max(18,23*scale)}]}>{nudge==='queued'||nudge==='sent'||team?.nudged?'Reminder submitted ✓':!data.partner?'Solo Adventure':remaining<=600000?'Your bunny is almost back':coordination&&!coordination.nudgeAvailable?'Solo Adventure':mode.label}</Text>
+        <Text style={[s.homeText,{fontSize:Math.max(18,23*scale)}]}>{mode.label}</Text>
        </Pressable>}
-      <Text style={[s.modeCopy,{fontSize:Math.max(12,14*scale)}]}>{footerCopy}</Text>
+      <Text style={[s.modeCopy,{fontSize:Math.max(12,14*scale)}]}>{mode.copy}</Text>
     </View>
   </View>;
 }

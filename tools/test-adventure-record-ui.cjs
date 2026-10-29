@@ -50,7 +50,7 @@ test('Adventure uses the new natural-ratio banner, local icons and exact copy wi
   assert.equal(nodes(hero).find(n=>n.type==='Text').props.children,'Start Today’s Adventure');
   assert.deepEqual(nodes(content).filter(n=>n.type==='Text').map(n=>n.props.children),[
     'Log a moment to begin','Write Freely','Anything worth remembering today',
-    'Tap your day','Select items that tell your day.',
+    'Tap your day','Choose the moments that tell your day’s story.',
   ]);
   assert.deepEqual(nodes(content).filter(n=>n.type==='Image').map(n=>n.props.source),['compass-art','write-art','tap-art']);
   nodes(content).filter(n=>n.type==='Image').forEach(n=>assert.equal(n.props.contentFit,'contain'));

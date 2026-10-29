@@ -133,8 +133,8 @@ export function HomeArtScene({ timeZone, now, updates, balance, onWalletAnchor, 
       {dollArt&&(previewOnly?<View pointerEvents="none" style={anchoredBox(dollArt, dollPlacement, scale)}>
         <View style={[styles.dollPhoto,dollFaceRect(dollArt)]}>{doll ? <RoomPhoto photo={doll} /> : <RoomPhotoPlaceholder kind="doll" />}</View><Image source={dollArt.source} contentFit="fill" style={styles.fill} />
       </View>:partnerName!==undefined?<DollPhotoPreview asset={dollArt} photo={doll} style={anchoredBox(dollArt,dollPlacement,scale)}
-        disabled={busy} onEditPhoto={canEditToy?pull.guard(toyPhotoAction):undefined} label={`Change ${partnerName}'s doll photo`}/>:<Pressable
-        accessibilityRole="button" accessibilityLabel="Open Toy" disabled={busy}
+        disabled={busy} onEditPhoto={canEditToy?pull.guard(toyPhotoAction):undefined} label={`Change ${partnerName}'s plushie photo`}/>:<Pressable
+        accessibilityRole="button" accessibilityLabel="Open Plushie" disabled={busy}
         onPress={pull.guard(toyAction)} style={anchoredBox(dollArt,dollPlacement,scale)}>
         {/* Home is only an entry point: no pan responder, press deformation,
             hearts, haptics or interaction task receipt before opening Toy. */}
@@ -155,12 +155,12 @@ export function HomeArtScene({ timeZone, now, updates, balance, onWalletAnchor, 
       })}
       {previewInteractive&&<>
         {hotspot('Select photo frames', 'frame', 635, 755, 125, 190)}
-        {dollArt&&<Pressable accessibilityRole="button" accessibilityLabel="Select couple dolls" onPress={pull.guard(()=>slotAction('couple_doll'))} style={anchoredBox(dollArt,dollPlacement,scale)}/>}
+        {dollArt&&<Pressable accessibilityRole="button" accessibilityLabel="Select plushies" onPress={pull.guard(()=>slotAction('couple_doll'))} style={anchoredBox(dollArt,dollPlacement,scale)}/>}
         {hotspot('Select outfits', 'outfit', 125, 1158, 205, 255)}
       </>}
 
       {!previewOnly&&<>{(!partnerRoom||!away)&&hotspot(away ? 'Open adventure' : 'Feed bunny', 'bunny', 125, 1158, 205, 255)}
-      {hotspot(partnerRoom ? 'Water partner’s flowers' : 'Water flowers', 'vase', 610, 1118, 140, 190)}
+      {hotspot(partnerRoom ? "Fertilize your partner’s flower." : 'Water flowers', 'vase', 610, 1118, 140, 190)}
       {!partnerRoom && hotspot('Choose a collected adventure gift', 'shelf_decor', 565, 580, 120, 140)}
       {!partnerRoom&&<>{hotspot('Open room photo', 'frame', 635, 760, 125, 205)}
       {hotspot('Choose music', 'music_player', 670, 600, 125, 135)}
@@ -200,7 +200,7 @@ export function HomeArtScene({ timeZone, now, updates, balance, onWalletAnchor, 
       </View>
       {partnerRoom.onTouch&&<Pressable accessibilityRole="button" accessibilityLabel="Open partner touches" onPress={partnerRoom.onTouch} style={{position:'absolute',top:insets.top+72,right:22,padding:10,backgroundColor:'#FFF9EF',borderRadius:26}}><Text style={{fontSize:26}}>❤️‍🔥</Text>{partnerRoom.touchIndicator}</Pressable>}
       <View style={[styles.partnerFooter,{paddingBottom:Math.max(16,insets.bottom),paddingHorizontal:Math.max(18,64*scale)}]}>
-        <Text numberOfLines={2} style={styles.partnerPrompt}>Gift {partnerRoom.name} something to be happy with:</Text>
+        <Text numberOfLines={2} style={styles.partnerPrompt}>Make {partnerRoom.name}’s day with a gift.</Text>
         <View style={styles.partnerButtons}>
           <Pressable accessibilityRole="button" accessibilityLabel="Gift Furniture" disabled={busy} onPress={pull.guard(partnerRoom.onGift)} style={[styles.partnerGift,busy&&{opacity:.55}]}><Text style={styles.partnerGiftText}>Gift Furniture</Text></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Gift Surprise" disabled={busy} onPress={pull.guard(partnerRoom.onSurprise)} style={[styles.partnerGift,styles.partnerSurprise,busy&&{opacity:.55}]}><Text style={[styles.partnerGiftText,{color:'#FFF9EF'}]}>Gift Surprise</Text></Pressable>

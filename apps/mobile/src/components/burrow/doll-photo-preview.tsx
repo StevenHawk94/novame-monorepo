@@ -7,7 +7,7 @@ import {Image} from './burrow-image';
 import {PlushieFaceMask} from './plushie-face-mask';
 
 /** Photo editing only: no deformation, hearts, haptics or toy-quest callback. */
-export function DollPhotoPreview({asset,photo,style,artStyle,onEditPhoto,disabled=false,label='Change doll face photo'}:{
+export function DollPhotoPreview({asset,photo,style,artStyle,onEditPhoto,disabled=false,label='Change plushie face photo'}:{
  asset:BurrowArtAsset;photo?:MajorUpdateBootstrap['roomPhotos'][number];style:StyleProp<ViewStyle>;
  artStyle?:StyleProp<ViewStyle>;onEditPhoto?:()=>void;disabled?:boolean;label?:string;
 }){

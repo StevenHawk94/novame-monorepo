@@ -59,7 +59,7 @@ const cancelled=(error:unknown)=>!!error&&typeof error==='object'&&'code' in err
 function storeFailure(error:unknown):{message:string;status:Status}{
   const code=error&&typeof error==='object'&&'code' in error?error.code:null;
   if(code===ErrorCode.Pending||code===ErrorCode.DeferredPayment)return{
-    message:'Payment is pending approval. Carrots will arrive after the store confirms it.',status:'pending'};
+    message:'Payment is pending approval. Coins will arrive after the store confirms it.',status:'pending'};
   const rejected=[ErrorCode.ItemUnavailable,ErrorCode.SkuNotFound,ErrorCode.BillingUnavailable,
     ErrorCode.IapNotAvailable,ErrorCode.DeveloperError,ErrorCode.UserError].filter(Boolean);
   if(code&&rejected.includes(code as ErrorCode))return{
@@ -84,13 +84,13 @@ export async function purchaseCarrots(productId:string) {
     if(epoch!==sessionEpoch()||attempt!==operation)throw new Error('Your account changed. Please reopen the shop.');
     if(ready.reason==='sandbox_account_conflict')throw new Error('This account contains test coins. Use a separate live account for real purchases.');
     if(ready.reason==='production_account_conflict')throw new Error('This account has live purchases. Use a separate test account for sandbox testing.');
-    if(!ready.available)throw new Error('Carrot purchases are not enabled on this server yet.');
+    if(!ready.available)throw new Error('Coin purchases are temporarily unavailable. Please try again later.');
     if(subscriptionBusy())throw new Error('Please finish your subscription purchase first.');
     publish({message:ready.environment==='sandbox'&&ready.wallet!=='room'
       ?'Sandbox testing: this purchase credits a separate test balance, not Home coins.':'Waiting for the store…'});
     const user=data.session?.user.id;
     if(epoch!==sessionEpoch()||attempt!==operation)throw new Error('Your account changed. Please reopen the shop.');
-    if(!user)throw new Error('Please sign in before purchasing carrots.');
+    if(!user)throw new Error('We couldn’t reconnect to your account. Please try again.');
     owner=user;
     const account=await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256,`novame:${user}`);
     if(epoch!==sessionEpoch()||attempt!==operation)throw new Error('Your account changed. Please reopen the shop.');
@@ -124,7 +124,7 @@ export async function handleCarrotPurchase(purchase:Purchase):Promise<boolean> {
   if(!isCarrotProduct(purchase.productId))return false;
   const epoch=sessionEpoch(),attempt=operation;
   const update=(message:string,status:Status='unconfirmed')=>{if(!activeProduct||activeProduct===purchase.productId)finishCurrent(epoch,attempt,message,status);};
-  if(purchase.purchaseState==='pending'){update('Payment is pending approval. Carrots will arrive after the store confirms it.','pending');return false;}
+  if(purchase.purchaseState==='pending'){update('Payment is pending approval. Coins will arrive after the store confirms it.','pending');return false;}
   const credential=purchase.purchaseToken;
   if(!credential){update('The store receipt is unavailable. Please check pending purchases.');return false;}
   const key=`${epoch}:${Platform.OS}:${credential}`;

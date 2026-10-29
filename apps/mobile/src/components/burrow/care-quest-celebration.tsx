@@ -1,61 +1,62 @@
-import { useEffect, useRef } from 'react';
-import { AppState, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { memo, useEffect, useMemo, useRef } from 'react';
+import { Animated as NativeAnimated, Easing as NativeEasing, AppState, BackHandler, StyleSheet, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/feedback-pressable';
-import Animated, { cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { useReducedMotion } from 'react-native-reanimated';
+import {CARE_CONFETTI,CARE_CONFETTI_DURATION,CARE_COMPLETION_INPUT,CARE_COMPLETION_SCALE} from '@/lib/care-confetti-motion';
 
 const COLORS = ['#E9AD48', '#F17E67', '#79B99A', '#F4D777', '#CE91B9', '#86BED1'];
 
-function ConfettiPiece({ index }: { index: number }) {
-  const progress = useSharedValue(0);
-  useEffect(() => { progress.value = withTiming(1, { duration: 700 + index % 5 * 50, easing: Easing.out(Easing.cubic) }); }, [progress, index]);
-  const angle = index * 2.39996;
-  const distance = 92 + index % 7 * 15;
-  const style = useAnimatedStyle(() => ({
-    opacity: progress.value < .7 ? 1 : Math.max(0, (1 - progress.value) / .3),
-    transform: [
-      { translateX: Math.cos(angle) * distance * progress.value },
-      { translateY: Math.sin(angle) * distance * progress.value + 44 * progress.value * progress.value },
-      { rotate: `${index * 31 * progress.value}deg` },
-      { scale: .5 + progress.value * .7 },
-    ],
-  }));
-  return <Animated.View style={[styles.piece, { backgroundColor: COLORS[index % COLORS.length], width: index % 4 ? 8 : 11, height: index % 4 ? 15 : 10 }, style]} />;
-}
+const ConfettiPiece = memo(function ConfettiPiece({ index, elapsed }: { index: number; elapsed: NativeAnimated.Value }) {
+  const piece=CARE_CONFETTI[index];
+  const style=useMemo(()=>{
+    const interpolate=(outputRange:number[]|string[])=>elapsed.interpolate({inputRange:piece.inputRange,outputRange,extrapolate:'clamp'});
+    return {opacity:interpolate(piece.opacity),transform:[{translateX:interpolate(piece.x)},{translateY:interpolate(piece.y)},
+      {rotate:interpolate(piece.rotation)},{scale:interpolate(piece.scale)}]};
+  },[piece,elapsed]);
+  return <NativeAnimated.View style={[styles.piece,{backgroundColor:COLORS[index%COLORS.length],width:piece.width,height:piece.height},style]}/>;
+});
 
 /** Care's status message stays separate from the global currency presentation.
  * Use an in-screen layer, not a native Modal that would cover the banner. */
-export function CareQuestCelebration({ title, message, reward, icon='celebration', onClose }: {
-  title: string; message?: string; reward?: number; icon?: 'celebration'|'heart'; onClose: () => void;
+export function CareQuestCelebration({ title, message, reward, icon='celebration', onClose, visible=true }: {
+  title: string; message?: string; reward?: number; icon?: 'celebration'|'heart'; onClose: () => void; visible?: boolean;
 }) {
   const close = useRef(onClose);
   close.current = onClose;
   // Entrance belongs to this mounted completion, never a reward receipt or
   // changing callback. Animate the card only; the scrim and wallet stay put.
   const reduced = useRef(useReducedMotion()).current;
-  const scale = useSharedValue(reduced ? 1 : .84), opacity = useSharedValue(0);
+  const clock=useRef<NativeAnimated.Value|null>(null);
+  if(!clock.current)clock.current=new NativeAnimated.Value(0,{useNativeDriver:true});
+  const elapsed=clock.current;
+  const entrance=useMemo(()=>({opacity:elapsed.interpolate({inputRange:[0,reduced?160:120],outputRange:[0,1],extrapolate:'clamp'}),
+    transform:[{scale:reduced?1:elapsed.interpolate({inputRange:CARE_COMPLETION_INPUT,outputRange:CARE_COMPLETION_SCALE,extrapolate:'clamp'})}]}),[elapsed,reduced]);
   useEffect(() => {
-    if (!reduced) scale.value = withSpring(1, { mass: .6, stiffness: 300, damping: 8.5,
-      energyThreshold: .0001, overshootClamping: false, reduceMotion: ReduceMotion.System });
-    opacity.value = withTiming(1, { duration: reduced ? 160 : 120, reduceMotion: ReduceMotion.Never });
+    if (!visible) { elapsed.stopAnimation(); elapsed.setValue(0); return; }
+    // One clock for all 36 pieces, not 36 effects/animations competing with
+    // the card and wallet on the same completion frame. Geometry is unchanged.
+    const burst=NativeAnimated.timing(elapsed,{toValue:reduced?160:CARE_CONFETTI_DURATION,duration:reduced?160:CARE_CONFETTI_DURATION,easing:NativeEasing.linear,useNativeDriver:true,isInteraction:false});
+    burst.start();
     const state = AppState.addEventListener('change', next => {
       if (next === 'active') return;
-      cancelAnimation(scale); cancelAnimation(opacity); scale.value = 1; opacity.value = 1;
+      burst.stop(); elapsed.stopAnimation(); elapsed.setValue(CARE_CONFETTI_DURATION);
     });
-    return () => { state.remove(); cancelAnimation(scale); cancelAnimation(opacity); };
-  }, [reduced, scale, opacity]);
-  const entrance = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ scale: scale.value }] }));
+    return () => { state.remove(); burst.stop(); elapsed.stopAnimation(); };
+  }, [visible, reduced, elapsed]);
   useEffect(() => {
+    if (!visible) return;
     const back = BackHandler.addEventListener('hardwareBackPress', () => { close.current(); return true; });
     return () => back.remove();
-  }, []);
-  return <View accessibilityViewIsModal style={[StyleSheet.absoluteFillObject, styles.scrim, { zIndex: 100 }]}>
-      {!reward && <View pointerEvents="none" style={styles.burst}>{Array.from({ length: 36 }, (_, index) => <ConfettiPiece key={index} index={index} />)}</View>}
-      <Animated.View style={[styles.card, entrance]}>
+  }, [visible]);
+  return <View accessibilityViewIsModal={visible} accessibilityElementsHidden={!visible} importantForAccessibility={visible?'auto':'no-hide-descendants'}
+      pointerEvents={visible?'auto':'none'} style={[StyleSheet.absoluteFillObject, styles.scrim, { zIndex: 100, opacity: visible ? 1 : 0 }]}>
+      {!reward && <View pointerEvents="none" style={[styles.burst,reduced&&{opacity:0}]}>{Array.from({ length: 36 }, (_, index) => <ConfettiPiece key={index} index={index} elapsed={elapsed} />)}</View>}
+      <NativeAnimated.View shouldRasterizeIOS renderToHardwareTextureAndroid style={[styles.card, entrance]}>
         <Text style={styles.emoji}>{icon==='heart'?'❤️':'🎉'}</Text>
         <Text style={styles.title}>{title}</Text>
         {!!message&&<Text style={styles.message}>{message}</Text>}
-        <Pressable accessibilityRole="button" onPress={onClose} style={styles.button}><Text style={styles.buttonText}>Done</Text></Pressable>
-      </Animated.View>
+        <Pressable accessibilityRole="button" disabled={!visible} onPress={onClose} style={styles.button}><Text style={styles.buttonText}>Done</Text></Pressable>
+      </NativeAnimated.View>
   </View>;
 }
 

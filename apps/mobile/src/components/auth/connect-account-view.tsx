@@ -24,7 +24,7 @@ export function ConnectAccountView({ onClose, onProvider, busy, children, connec
       <View style={[styles.content,{paddingTop:emailOpen?30:Math.max(42,Math.min(100,height*.09))}]}>
         <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.7}>Connect Your Account</Text>
         <Text style={styles.description}>{connectedAs?`You're connected as ${connectedAs}.\nYour memories are safe.`:
-          'To keep your data safe, we recommend you to create an account.'}</Text>
+          "We recommend connecting your account so you can keep your data safe."}</Text>
         {connectedAs?<MaterialIcons name="check-circle" size={54} color="#7BB661" style={styles.connected}/>:
           <><View style={[styles.providers,{marginTop:emailOpen?28:52}]}>
             {Platform.OS==='ios'&&<Pressable accessibilityRole="button" accessibilityLabel="Sign in with Apple" disabled={busy}

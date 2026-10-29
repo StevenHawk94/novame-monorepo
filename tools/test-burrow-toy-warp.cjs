@@ -240,7 +240,7 @@ test('native button gestures coexist with each other and a held body pull; each 
   });
   const render=()=>h.render(()=>SquishyToyControls({onHit,onRecord,handle,identity,bodyGesture:body}));render();const tree=render();assert.equal(gestures.length,2);
   const bonk=tree.props.children[1],button=bonk.type(bonk.props).props.children;
-  assert.equal(button.props.accessibilityLabel,'Bonk toy');assert.equal(button.props.children.props.children,'Bonk');
+  assert.equal(button.props.accessibilityLabel,'Bonk plushie');assert.equal(button.props.children.props.children,'Bonk');
   assert.equal(button.props.style[1].backgroundColor,'#FFF2DC');assert.equal(button.props.style[1].shadowOffset.height,3);
   assert.ok(gestures[0].others.includes(body));assert.ok(gestures[1].others.includes(body));
   assert.ok(gestures[0].others.includes(gestures[1]));assert.ok(gestures[1].others.includes(gestures[0]));

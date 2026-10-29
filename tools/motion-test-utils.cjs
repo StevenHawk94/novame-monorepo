@@ -52,4 +52,9 @@ function presentationImports(h,time) {
     './adventure-reward-screen':{AdventureRewardScreen:'RewardScreen'},
     'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:20,bottom:0})},motion};
 }
-module.exports={model,motionHarness,presentationImports};
+function careConfettiHarness(){
+ const clocks=[],animations=[];
+ class Value{constructor(value,config){this.value=value;this.config=config;clocks.push(this);}setValue(value){this.value=value;}stopAnimation(){}interpolate(config){return{clock:this,config};}}
+ return {clocks,animations,Animated:{Value,View:'ConfettiView',timing:(value,config)=>{const animation={value,config,started:false,stopped:false,start(){this.started=true;},stop(){this.stopped=true;}};animations.push(animation);return animation;}},Easing:{linear:'linear'}};
+}
+module.exports={model,motionHarness,presentationImports,careConfettiHarness};

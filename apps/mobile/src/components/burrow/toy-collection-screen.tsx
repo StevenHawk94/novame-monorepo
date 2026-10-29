@@ -39,7 +39,7 @@ export function ToyCollectionScreen({ shop = false }: { shop?: boolean }) {
   const insets = useSafeAreaInsets();
   if (!data) return <View style={[s.root, { paddingTop: insets.top }]}>
     <BurrowBackButton onPress={() => router.back()}/><View style={s.center}>
-      {loading ? <ActivityIndicator color={brown}/> : <><Text style={s.description}>Your toys could not load.</Text>
+      {loading ? <ActivityIndicator color={brown}/> : <><Text style={s.description}>Your plushies could not load.</Text>
         <Pressable onPress={() => void refreshBurrow()}><Text style={s.link}>Retry</Text></Pressable></>}
     </View>
   </View>;
@@ -159,7 +159,7 @@ function Collection({ data, shop }: { data: MajorUpdateBootstrap; shop: boolean 
           <Action label={busy ? 'Switching…' : 'Switch'} disabled={busy || !selected || selected === current} onPress={() => void switchToy()}/>
         </View>
       </> : <>
-        <View style={s.shopIntro}><Text style={s.description}>Each Plushie gets its own photo of Babe.</Text></View>
+        <View style={s.shopIntro}><Text style={s.description}>Add a photo of your partner to each plushie.</Text></View>
         {detail ? <ScrollView bounces={false} overScrollMode="never" contentContainerStyle={s.detail} showsVerticalScrollIndicator={false}>
           <ToyPortrait item={detail} photo={photoFor(detail.stable_id)} width={Math.min(290, contentWidth - 48)} height={Math.min(340, Math.max(160, (height - insets.top - insets.bottom) * .42))}/>
           <Text style={s.detailTitle}>{detail.title}</Text><Text style={s.description}>{detail.description}</Text>
@@ -172,8 +172,8 @@ function Collection({ data, shop }: { data: MajorUpdateBootstrap; shop: boolean 
         </ScrollView> : <FlatList data={available} numColumns={4} keyExtractor={item => item.stable_id}
           bounces={false} overScrollMode="never" showsVerticalScrollIndicator={false} initialNumToRender={16} maxToRenderPerBatch={8} windowSize={5}
           contentContainerStyle={[s.shopList, { paddingBottom: insets.bottom + 24 }]} columnWrapperStyle={s.shopRow}
-          ListEmptyComponent={<View style={s.empty}><Feather name="heart" size={35} color={brown}/><Text style={s.detailTitle}>Collection complete!</Text><Text style={s.description}>You own every toy currently available.</Text></View>}
-          renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.title}, ${item.price} carrots`}
+          ListEmptyComponent={<View style={s.empty}><Feather name="heart" size={35} color={brown}/><Text style={s.detailTitle}>Collection complete!</Text><Text style={s.description}>You own every plushie currently available.</Text></View>}
+          renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.title}, ${item.price} coins`}
             onPress={() => { setDetailId(item.stable_id); setMessage(''); }} style={[s.shopCard, { width: cardWidth }]}>
             <ToyPortrait item={item} photo={photoFor(item.stable_id)} width={cardWidth - 12} height={cardWidth * 1.35}/>
             <Text numberOfLines={2} style={s.shopName}>{item.title}</Text>

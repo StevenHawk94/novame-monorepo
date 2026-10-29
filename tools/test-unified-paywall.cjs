@@ -26,14 +26,21 @@ test('Android rejects missing/invalid periods, unknown cycle counts and paid int
 
 const iapSource=fs.readFileSync('apps/mobile/src/lib/iap.ts','utf8'),iapAst=ts.createSourceFile('iap.ts',iapSource,99,true);
 const functionNode=name=>iapAst.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text===name);
-test('purchase, restore and offer selection stay frozen; receipt handler matches the approved IAP isolation revision',()=>{
+test('purchase, restore and offer selection stay frozen except approved coin wording; receipt handler matches the approved IAP isolation revision',()=>{
   const before={isIOSIntroTrialEligible:'2f8e8c2dec594884e8ed848023910c156e242e1256288f41233d1c2eff83539d',isAndroidIntroTrialEligible:'c3b64c33721987089381290570017fae7e35f502ffe632cf94a647fb346165de',
     selectAndroidOffer:'3a0fd7e34bfcbc6e7144d238a5397d76dd3cdb9fc8238ccb87b639cfe74d6070',getSubscriptionPlanPricing:'c8fafcce75b1f3abe62239d56d1fb73dfb2f95aa76087fdb875295db4cb08fd4',
-    purchaseSubscription:'aec35a7e6a7875b7577b7be1201be14c0c160580ecff2d8c337ad0de1a880aaf',restoreSubscriptions:'9f40542adc9cde7dd927aa073de1037c0b6a45f15003df9156a542c831406ac5',
+    // User approved only "carrot purchase" -> "coin purchase" on 2026-10-29.
+    purchaseSubscription:'cc711a8bf7f604ad386248f9b4679a9b5369bd455c4c4bc5df76e15d63e4ccb4',restoreSubscriptions:'9f40542adc9cde7dd927aa073de1037c0b6a45f15003df9156a542c831406ac5',
     // User approved silent recovery isolation on 2026-10-24; executable cases
     // live in test-coin-iap-isolation.cjs rather than hiding this body change.
     handlePurchaseUpdate:'d0b4668fb33d13a665deb424b75b1063a066c5621e9304285df6235b3aaeecf1'};
   for(const [name,hash] of Object.entries(before))assert.equal(crypto.createHash('sha256').update(functionNode(name).body.getText(iapAst)).digest('hex'),hash,name);
+  const purchaseBody=functionNode('purchaseSubscription').body.getText(iapAst);
+  assert.equal(purchaseBody.split('Please finish your coin purchase first.').length-1,2);
+  // Preserve the original frozen body too: reversing ONLY the two approved
+  // sentences must recover the old hash, so no payment logic can slip through.
+  assert.equal(crypto.createHash('sha256').update(purchaseBody.replaceAll('Please finish your coin purchase first.','Please finish your carrot purchase first.')).digest('hex'),
+    'aec35a7e6a7875b7577b7be1201be14c0c160580ecff2d8c337ad0de1a880aaf');
 });
 function pricingModel(platform,products,eligible=true){
   const names=['hasFreePhase','isIOSIntroTrialEligible','isAndroidIntroTrialEligible','selectAndroidOffer','getSubscriptionPlanPricing','formatStoreCurrency','fetchStoreSubscriptionPricing'];

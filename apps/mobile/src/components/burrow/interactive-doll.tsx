@@ -54,7 +54,7 @@ export function InteractiveDoll({asset,photo,style,artStyle,onInteract,action,di
     headWidth:face[2]-face[0],scale,bounds:[...asset.bounds]}),[asset.bounds[0],asset.bounds[1],asset.bounds[2],asset.bounds[3],scale,face[0],face[2]]);
   const {state,gesture,handle,performHit,record,identity}=useSquishyToy({geometry,left,top,disabled,onInteract,action,onControllerReady,interactionScope});
   const stage=<GestureDetector gesture={gesture}><View collapsable={false} style={style} accessibilityRole="button"
-    accessibilityLabel="Play with our dolls" accessibilityHint="Tap or drag to make the toy spring back.">
+    accessibilityLabel="Play with our plushies" accessibilityHint="Tap or drag to make the plushie spring back.">
     <NativeDollSurface asset={asset} photo={photo} artStyle={artStyle} state={state} showEmptyPhotoDecoration={showEmptyPhotoDecoration}/>
   </View></GestureDetector>;
   const controls=showActions&&!disabled?<SquishyToyControls onHit={performHit} onRecord={record} handle={handle} identity={identity} bodyGesture={gesture}/>:null;

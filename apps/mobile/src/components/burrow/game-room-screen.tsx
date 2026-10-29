@@ -248,7 +248,7 @@ export function GameRoomScreen({initialGameId,initialSessionId,fromHistory=false
     const unfinished=overview.sessions.find(row=>row.gameId===next.id&&!row.completedAt);
     if(unfinished){openRound(unfinished);return;}
     if(next.active===false){Alert.alert('Unavailable','This game is not available right now.');return;}
-    if(next.plus_only&&!burrow.hasPlus){router.push('/(main)/(modals)/subscription-paywall' as Href);return;}
+    if(next.plus_only&&!burrow.hasPlus&&!overview.availableIds.includes(next.id)){router.push('/(main)/(modals)/subscription-paywall' as Href);return;}
     const enter=()=>{setSession(createLocalGame(next,undefined,{freeUnlock:next.price===0&&!overview.availableIds.includes(next.id)}));setSelected(next);setTransition(false);setVisit(n=>n+1);requestedRound.current=undefined;};
     if(overview.availableIds.includes(next.id)||next.price===0){try{enter();}catch{setError('Unable to save your game on this device.');}return;}
     void unlockSelected(next,enter);
@@ -372,7 +372,7 @@ export function GameRoomScreen({initialGameId,initialSessionId,fromHistory=false
       contentContainerStyle={{paddingBottom:insets.bottom+28}} showsVerticalScrollIndicator={false}
       ListHeaderComponent={<>
         {error&&<Text style={st.errorLight}>{error}</Text>}
-        {attention(ready,'Game result awaiting to be checked','Check')}
+        {attention(ready,"Your result is ready.",'Check')}
         {attention(incoming,'Game from '+partnerName,'Play')}
         {attention(continuing,'Continue your game','Open')}
         {attention(pendingPartner,'Waiting for '+partnerName,'Open')}
@@ -425,7 +425,7 @@ export function GameRoomScreen({initialGameId,initialSessionId,fromHistory=false
       {mode==='results'&&session?.result&&<>
         <Panel style={st.resultPanel}><Image source={BURROW_GAME_RULE_ICONS[2]} contentFit="contain" style={st.resultArt}/>
           <View style={[st.categoryPill,{alignSelf:'center'}]}><Text style={st.categoryText}>{game?.title}</Text></View>
-          <Text style={st.resultTitle}>{session.result.outcome==='win'?'You win!':session.result.outcome==='lose'?'You lose!':'It’s a draw!'}</Text>
+          <Text style={st.resultTitle}>{session.result.outcome==='win'?'You win!':session.result.outcome==='lose'?`${partnerName} won this round!`:'It’s a draw!'}</Text>
           <View style={st.scoreRow}>{[{value:session.result.mine,color:orange},{value:session.result.partner,color:'#F5A526'}].map((item,i)=>
           <View key={i} style={[st.scoreCell,i===0&&{borderRightWidth:1,borderColor:'#E9DECF'}]}>{personAvatar(i===0,48)}<Text style={st.score}>{item.value}/6</Text><ScoreDots count={item.value} color={item.color}/></View>)}</View>
           <View style={st.divider}/></Panel>
@@ -439,7 +439,7 @@ export function GameRoomScreen({initialGameId,initialSessionId,fromHistory=false
           </Panel>}
       </>}
     </ScrollView>{fixedFooter&&<View style={[st.fixedFooter,{paddingBottom:Math.max(24,insets.bottom+8)}]}>
-      {mode==='waiting'?<><Text style={st.hintLight}>You can leave now, we will let you know when the result is ready</Text>
+      {mode==='waiting'?<><Text style={st.hintLight}>You can leave now and we will let you know when the result is ready.</Text>
         <Button disabled={busy} label={busy?'Sending…':'Nudge '+partnerName+' to play'} onPress={notify}/></>
       :<Button label="Done" onPress={fromHistory?back:leave}/>}
     </View>}</>}

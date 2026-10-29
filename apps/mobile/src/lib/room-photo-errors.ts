@@ -1,6 +1,8 @@
-export const TOY_PHOTO_DAILY_LIMIT_TITLE = 'Today’s photo limit reached';
+// Legacy service compatibility only. Modern Plushies have no daily quota.
+export const TOY_PHOTO_DAILY_LIMIT_TITLE = 'Photo update unavailable';
 export const TOY_PHOTO_DAILY_LIMIT_MESSAGE =
-  'You’ve reached today’s photo limit. Please try again tomorrow.';
+  'Could not update this plushie’s photo. Please try again later.';
+export const PHOTO_UPLOAD_LIMIT_MESSAGE = 'You’ve uploaded too many photos. Please try again later.';
 
 export function roomPhotoFailureCode(failure: unknown): string | null {
   if (failure && typeof failure === 'object' && 'body' in failure) {
@@ -12,10 +14,10 @@ export function roomPhotoFailureCode(failure: unknown): string | null {
   return null;
 }
 
-export function roomPhotoFailureMessage(failure: unknown, fallback: string): string {
+export function roomPhotoFailureMessage(failure: unknown, fallback: string, kind: 'doll'|'frame' = 'doll'): string {
   switch (roomPhotoFailureCode(failure)) {
-    case 'daily_limit_reached': return TOY_PHOTO_DAILY_LIMIT_MESSAGE;
-    case 'upload_limit': return 'Too many photo attempts. Please try again in an hour.';
+    case 'daily_limit_reached': return kind==='frame'?'You’ve reached today’s photo limit. Please try again tomorrow.':TOY_PHOTO_DAILY_LIMIT_MESSAGE;
+    case 'upload_limit': return PHOTO_UPLOAD_LIMIT_MESSAGE;
     case 'photo_unavailable': return 'The photo could not be saved. Check your connection and try again.';
     default: return fallback;
   }

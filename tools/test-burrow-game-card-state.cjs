@@ -6,7 +6,7 @@ const round={id:'first',gameId:'morning',createdAt:'2026-10-13T10:00:00Z',comple
 test('price, Plus gate and shared permanent unlock have mutually exclusive card states',()=>{
  assert.equal(gameCardState(game,base,false).kind,'locked');assert.equal(gameCardState(game,base,false).price,210);
  const plus={...game,plus_only:true};assert.equal(gameCardState(plus,base,false).kind,'plus');
- assert.equal(gameCardState(plus,{...base,availableIds:['morning']},false).kind,'plus');
+ assert.equal(gameCardState(plus,{...base,availableIds:['morning']},false).kind,'unlocked','permanent unlock survives Plus expiry');
  assert.equal(gameCardState(plus,base,true).kind,'locked');
  const state=gameCardState(plus,{...base,availableIds:['morning']},true);
  assert.equal(state.kind,'unlocked');assert.equal(state.mineFinished,false);assert.equal(state.partnerFinished,false);

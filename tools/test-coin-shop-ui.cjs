@@ -70,7 +70,7 @@ test('three compact cards use store-localized prices; each card directly opens i
   }
 });
 test('Burrow Coins explains quests and unlocks with the requested exact copy',()=>{
- const h=harness();assert.ok(h.all().some(n=>n.props?.children==='Complete quests to earn coins and unlock new items, gift and games!'));h.unmount();
+ const h=harness();assert.ok(h.all().some(n=>n.props?.children==='Complete quests to earn coins and unlock new items, gifts and games!'));h.unmount();
 });
 test('cold URI and warm ImageRef pack art have identical square viewports on all supported sizes',()=>{
  const flatten=s=>Object.assign({},...(Array.isArray(s)?s:[s]).filter(Boolean));
@@ -139,6 +139,21 @@ test('store failure shows bounded recovery actions; pending check reuses transac
   assert.ok(h.packs().every(n => n.props.disabled));
   assert.ok(h.all().some(n => n.props?.children === 'The store is unavailable. Please try again.'));
   h.pressText('Retry store'); await flush(); assert.equal(h.calls.includes('reconcile'),false); h.unmount();
+});
+test('coin checkout shows approved reconnect/unavailable copy instead of generic failure',async()=>{
+ for(const message of ['We couldn’t reconnect to your account. Please try again.','Coin purchases are temporarily unavailable. Please try again later.']){
+  const h=harness();await h.ready();h.packs()[0].props.onPress();h.checkout.reject(Error(message));await flush();
+  assert.ok(h.all().some(n=>n.type==='Text'&&n.props.children===message));
+  assert.equal(h.all().some(n=>n.type==='Text'&&n.props.children==='Couldn’t start this purchase. Please try again.'),false);
+  h.unmount();
+ }
+});
+test('pending coin-approval copy keeps purchase-recovery access without granting coins',async()=>{
+ const h=harness();await h.ready();
+ const message='Payment is pending approval. Coins will arrive after the store confirms it.';
+ h.setPurchase({busy:false,status:'pending',message});
+ assert.ok(h.all().some(n=>n.type==='Text'&&n.props.children===message));
+ h.pressText('Check pending purchases');await flush();assert.ok(h.calls.includes('reconcile'));h.unmount();
 });
 test('cancelled checkout returns to the same shop without messages or recovery buttons',async()=>{
   const h=harness();await h.ready();h.packs()[0].props.onPress();h.checkout.resolve();await flush();

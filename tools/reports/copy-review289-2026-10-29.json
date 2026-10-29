@@ -1,0 +1,175 @@
+{
+  "date": "2026-10-29",
+  "laterReleaseEvidence": "Original local-only evidence below is historical. Subsequent authorized production 288/289 release and pending-code deployment: tools/reports/care-smooth-adventure288289-2026-10-29.json.",
+  "completedAt": "2026-10-29T11:02:00Z",
+  "scope": "Approved Adventure ongoing availability/copy and annotated pre-release copy review; local implementation only",
+  "sourceWorkbook": {
+    "name": "Burrow-App-Copy-Review-2026-10-28.xlsx",
+    "sha256": "39ae11f31ebcecac195c888684f2ac31702cb4d9745947ad702777d498787297",
+    "notesColumn": "I",
+    "annotatedRows": 101,
+    "modified": false,
+    "readVerification": "Imported with artifact-tool; direct OOXML read verified blank cells/annotations after importer represented empty cells as a shared-string index."
+  },
+  "audit": {
+    "path": "catalog/approvals/copy-review-2026-10-29.json",
+    "counts": {
+      "retain-visible-conditional": 1,
+      "retain": 26,
+      "applied": 51,
+      "retired-ui": 2,
+      "already-removed": 1,
+      "previously-updated": 19,
+      "rename-revoked": 1
+    }
+  },
+  "changes": {
+    "adventure": [
+      "Do not merge two existing pre-pair Solos; ordinary later Start retains existing join transaction.",
+      "Partner previous-day due/incomplete claims permit Nudge when today is unused; real claim sequence must finish before Start, which rechecks >600 seconds.",
+      "One label/footer/action model with truthful finishing/finished/independent-trip/restricted/pending/submitted/blocked states.",
+      "Current membership controls Plus badge and upsell; server-applied speed survives expiry; active-but-not-applied speed shows syncing.",
+      "Immutable Nudge retries and scope preserved; permanent refusal is persisted and surfaced once.",
+      "Start-only optimistic receipt never invents Nudge permission."
+    ],
+    "copy": "Apply only annotated unfinished choices plus explicitly approved Plushie terminology. Keep 26 requested unchanged rows, 19 previously updated rows, obsolete-quota removal and conditional visible login copy. Retire AI consent UI, not backend consent records/processing permissions.",
+    "catalog": "All product names and catalog fields remain unchanged. The Rabbit Carrots rename, its unshipped 68b83c91 capability entry and local migration 290 were withdrawn after explicit user clarification. Actual currency wording fixes remain."
+  },
+  "verification": {
+    "domain": {
+      "passed": 1323,
+      "failed": 0,
+      "log": "/private/tmp/burrow-copy289-revoked-domain.log"
+    },
+    "mobileTypecheck": {
+      "exitCode": 0,
+      "log": "/private/tmp/burrow-copy289-revoked-types.log"
+    },
+    "catalog": {
+      "passed": true,
+      "active": 496,
+      "release": "5acf169b89ae03ad502a2f18797ae0e03b9aa59005e6e3104165845a63ff20f4",
+      "log": "/private/tmp/burrow-copy289-revoked-catalog.log",
+      "generatedFilesEqualPreTask": true
+    },
+    "focused": {
+      "passed": 46,
+      "failed": 0,
+      "overlapsDomain": true,
+      "log": "/private/tmp/burrow-copy289-revoked-focused.log"
+    },
+    "sqlCandidates": {
+      "passed": 7,
+      "failed": 0,
+      "log": "/private/tmp/burrow-copy289-revoked-db.log",
+      "coverage": [
+        "Real pre-fix previous-day invitation failure reproduced.",
+        "Missing 288 rolls back 289 before installing functions.",
+        "All existing selected user rows/timers and unrelated function bodies/ACLs unchanged by 289.",
+        "Real settle/treasure/respond/final-claim flow, idempotent Nudge/outbox, independent successful join.",
+        "Recipient fixed economic date, today used, inclusive cutoff, pre-pair two Solos, domain denial/scoped temporary allowance and relation rotation.",
+        "288 one-time speed repair still wrapped; metadata excludes partner logs/results; service-only RPC.",
+        "All catalog fields/support sets preserved during 289; Rabbit Carrots retained and unshipped rename/support migration absent."
+      ]
+    },
+    "crossFeatureSql": {
+      "passed": 14,
+      "failed": 0,
+      "candidate": "288 + 289",
+      "log": "/private/tmp/burrow-copy289-revoked-cross.log"
+    },
+    "shopSweep": {
+      "assertions": 3137,
+      "products": 496,
+      "room": 390,
+      "paidGames": 68,
+      "freeGames": 2,
+      "surpriseOffers": 36,
+      "log": "/private/tmp/burrow-copy289-revoked-shop.log"
+    },
+    "diffCheck": {
+      "passed": true
+    },
+    "native": {
+      "complete": true,
+      "states": 20,
+      "viewports": [
+        [
+          320,
+          568
+        ],
+        [
+          390,
+          844
+        ]
+      ],
+      "runtime": "iOS 26.2; existing isolated Home Edge QA simulator; real ongoing screen/navigation/SVG/reanimated components in a minified JS QA shell",
+      "syntheticIdentity": true,
+      "businessApiBlocked": true,
+      "errors": [],
+      "horizontalOverflow": 0,
+      "verticalOverflow": 0,
+      "checks": [
+        "Real text and button states for 10 scenarios at two viewport sizes.",
+        "Nudge local feedback, disabled repeat button and back action.",
+        "Native text layout measured; final finishing screenshot visually inspected."
+      ],
+      "report": "outputs/copy-review-2026-10-29/native-report.json",
+      "screenshot": "outputs/copy-review-2026-10-29/adventure-finishing-native.png",
+      "qaHarnessRepairs": [
+        "Added the navigation container required by the real route.",
+        "Supplied the test-shell Expo Image adapter; no production rendering fix was needed."
+      ],
+      "simulatorReturnedToShutdown": true,
+      "reusedAfterClarification": "The withdrawal changes only the catalog back to its original version and removes unshipped title/support SQL. Ongoing-page UI and runtime behavior checked in the existing native evidence are unchanged; no second simulator run was required."
+    },
+    "plus288Sql": {
+      "passed": 15,
+      "failed": 0,
+      "log": "/private/tmp/burrow-copy289-revoked-plus288.log",
+      "permanentGameCoverage": 70
+    }
+  },
+  "candidates": [
+    {
+      "migration": "20261029000288",
+      "status": "previous task; local only",
+      "sha256": "9c7c0dacdea52a690e84b4d0940133068516ffbf70b9f3426a370a5ac8c13e4b"
+    },
+    {
+      "migration": "20261029000289_adventure_nudge_availability.sql",
+      "scope": "Narrow availability and snapshot; requires 288",
+      "sha256": "b1cc65828f3251b6edd7e62ce36aeb0fc2bf7b68eacd10d105ef828e40e4ff04",
+      "status": "local only"
+    }
+  ],
+  "release": {
+    "productionMigration": false,
+    "apiDeployment": false,
+    "adminDeployment": false,
+    "appRelease": false,
+    "gitCommit": false,
+    "requiredOrder": [
+      "Obtain explicit production authorization.",
+      "Apply protected/validated migration 288 before 289.",
+      "Existing RPC names remain compatible; no catalog publication or new catalog support registration is needed for this copy review.",
+      "Metro reload / later client build; system permission text requires a new native binary."
+    ],
+    "warning": "Product/catalog files are unchanged from the existing release. New cross-day Nudge and mid-trip Plus/game service behavior require migration 288 followed by 289; they are not production-effective merely because client code exists.",
+    "productionRulesUntilRelease": "New cross-day Nudge eligibility and mid-trip Plus/game service changes are not live."
+  },
+  "limitations": [
+    "No production account operations, real store payment, Android/physical-device or production two-account end-to-end test.",
+    "PGlite is a single-engine SQL rehearsal, not multi-connection concurrency/load testing.",
+    "Native checks use two viewport budgets within one QA device, not two separate phone models; no frame-rate or haptics claim.",
+    "Copied QA native binary retains native SDK initializers; only business API boundaries are blocked, not every native network request.",
+    "Still-visible legacy sign-in sentence retained per the user conditional; workbook original left untouched."
+  ],
+  "clarification": {
+    "date": "2026-10-29",
+    "userConfirmation": "确认撤回，同时继续完成剩余任务",
+    "item": "TXT-3724; 目录与内容!I1735; burrow_kettle_01_07",
+    "auditError": "Carrot-themed merchandise was incorrectly classified as currency in the original review.",
+    "result": "Keep Rabbit Carrots. Removed only the unshipped local rename/support migration; no production data was changed."
+  }
+}

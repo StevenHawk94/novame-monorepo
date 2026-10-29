@@ -11,4 +11,6 @@ if(!files.includes('tools/test-care-completion-spring.cjs'))files.push('tools/te
 if(!files.includes('tools/test-photo-retention286.cjs'))files.push('tools/test-photo-retention286.cjs');
 for(const name of ['test-adventure-entry-lifecycle.cjs','test-adventure-delivery.cjs','test-adventure-completion-flow.cjs','test-adventure-encounters-ui.cjs','test-adventure-friend-presentation.cjs','test-burrow-attention.cjs','test-burrow-daily-entry.cjs'])if(!files.includes('tools/'+name))files.push('tools/'+name);
 const gate=spawnSync(process.execPath,['tools/check-domain-boundaries.cjs'],{stdio:'inherit'});if(gate.status)process.exit(gate.status);
+for(const name of ['test-plus288.cjs','test-burrow-game-card-state.cjs'])if(!files.includes('tools/'+name))files.push('tools/'+name);
+for(const name of ['test-adventure289.cjs','test-copy-review289.cjs','test-partner-room.cjs'])if(!files.includes('tools/'+name))files.push('tools/'+name);
 const result=spawnSync(process.execPath,['--test','--test-concurrency=2',...files],{stdio:'inherit'});process.exit(result.status??1);

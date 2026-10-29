@@ -4,6 +4,9 @@ export function userErrorMessage(error: unknown, fallback = 'Couldn’t finish t
   const e = error as { body?: { error?: unknown }; message?: unknown; kind?: string; status?: number } | null;
   const code = typeof e?.body?.error === 'string' ? e.body.error : typeof e?.message === 'string' ? e.message : '';
   const messages: Record<string, string> = {
+    'We couldn’t reconnect to your account. Please try again.': 'We couldn’t reconnect to your account. Please try again.',
+    'Coin purchases are temporarily unavailable. Please try again later.': 'Coin purchases are temporarily unavailable. Please try again later.',
+    'We couldn’t finish syncing your purchase. Try Restore Purchases': 'We couldn’t finish syncing your purchase. Try Restore Purchases',
     not_paired: 'Connect with your partner, then try again.',
     pair_changed: 'Your pairing changed. Reopen this page to continue.',
     session_changed: 'Your account changed. Reopen this page to continue.',

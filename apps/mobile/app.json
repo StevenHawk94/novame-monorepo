@@ -18,8 +18,8 @@
       "bundleIdentifier": "com.novame.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "Burrow uses only the photos you select for your room frame, doll, and profile.",
-        "NSCameraUsageDescription": "Burrow uses the camera only when you choose to take a room, toy, or profile photo."
+        "NSPhotoLibraryUsageDescription": "Burrow uses only the photos you select for your room frame, plushie, and profile.",
+        "NSCameraUsageDescription": "Burrow uses the camera only when you choose to take a room, plushie, or profile photo."
       },
       "usesAppleSignIn": true,
       "entitlements": {
@@ -67,14 +67,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Burrow uses the camera only when you choose to align your face inside an interactive toy."
+          "cameraPermission": "Burrow uses the camera only when you choose to align your face inside an interactive plushie."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Burrow uses photos you choose for your profile, room frame, and couple doll, visible to your paired partner.",
-          "cameraPermission": "Burrow uses the camera only when you choose to take a photo for your room or couple doll."
+          "photosPermission": "Burrow uses photos you choose for your profile, room frame, and plushie, visible to your paired partner.",
+          "cameraPermission": "Burrow uses the camera only when you choose to take a photo for your room or plushie."
         }
       ],
       [

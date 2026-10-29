@@ -203,7 +203,7 @@ export function ReleaseRoom({data}:{data:MajorUpdateBootstrap}){
   if(failure instanceof ReleaseRoomError&&failure.status)setStatus(failure.status);
   if(failure instanceof ReleaseRoomError&&failure.code==='daily_limit_reached'){setLimit(true);setPhase('prep');return;}
   setError(failure instanceof ReleaseRoomError&&['pair_changed','session_changed'].includes(failure.code)
-   ?'Your connection changed. Reopen Release Room.':'Could not save your progress. Please retry. You will never receive the same reward twice.');
+   ?'Your connection changed. Reopen Release Room.':"Could not save your progress. Please retry.");
  };
  async function refresh(){
   if(lock.current)return;statusRead.current?.abort();lock.current=true;setChecking(true);const token=++request.current;

@@ -737,7 +737,7 @@ export async function fetchStoreSubscriptionPricing(): Promise<StoreSubscription
 export async function purchaseSubscription(
   productId: IOSSubscriptionProductId,
 ): Promise<PurchaseOutcome> {
-  if (coinPurchaseBusy()) throw new Error('Please finish your carrot purchase first.');
+  if (coinPurchaseBusy()) throw new Error('Please finish your coin purchase first.');
   if (userInitiatedInFlight) throw new Error('A subscription purchase is already in progress.');
   if (!initialized) {
     await initIAP();
@@ -765,7 +765,7 @@ export async function purchaseSubscription(
 
   // Recheck after asynchronous setup; another checkout may have started while
   // authentication or the native connection was being prepared.
-  if (coinPurchaseBusy()) throw new Error('Please finish your carrot purchase first.');
+  if (coinPurchaseBusy()) throw new Error('Please finish your coin purchase first.');
   if (userInitiatedInFlight) throw new Error('A subscription purchase is already in progress.');
   // Mark that the next listener fire originated from a user tap. The
   // listener uses this to decide whether to fire onPurchaseComplete
@@ -1288,7 +1288,7 @@ async function uploadPurchaseToServer(
     throw new PurchasePendingError(data.error);
   }
   if (!data.success) {
-    throw new Error(data.error ?? 'iap upload returned !success');
+    throw new Error(data.error ?? "We couldn’t finish syncing your purchase. Try Restore Purchases");
   }
   return data;
 }

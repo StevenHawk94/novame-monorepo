@@ -1,16 +1,22 @@
 // User-authorized API/Admin pending updates. Never includes mobile or evidence.
 import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';import {execFileSync} from 'node:child_process';
+import {deploymentSourceFiles as files} from './deployment-source-files.mjs';
 const [mode,dir,kind='api',candidateHost]=process.argv.slice(2);assert.ok(dir?.startsWith('/private/tmp/burrow-photo286.'));assert.ok(['api','admin'].includes(kind));
 const project=kind==='api'?'prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4':'prj_uQSVQISOpSpHUgV6sjO4NEqaDASH',team='team_LqL9kutCs8amcePuwOnyqrlO';
 const save=(n,v)=>fs.writeFileSync(`${dir}/${kind}-${n}.json`,JSON.stringify(v,null,2),{mode:0o600}),read=n=>JSON.parse(fs.readFileSync(`${dir}/${kind}-${n}.json`));
 async function vercel(route,{allowMissing=false}={}){const token=JSON.parse(fs.readFileSync('/Users/nihao/Library/Application Support/com.vercel.cli/auth.json','utf8')).token;
  const r=await fetch('https://api.vercel.com'+route+(route.includes('?')?'&':'?')+'teamId='+team,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(30000)});if(allowMissing&&r.status===404)return null;assert.equal(r.status,200,`Vercel read ${route}`);return r.json();}
-function files(tree){const map=new Map();function walk(rows,prefix=''){for(const r of rows){const f=prefix+r.name;if(r.type==='directory')walk(r.children??[],f+'/');else if(r.type==='file')map.set(f,r.uid);}}const src=tree.find(n=>n.name==='src');assert.ok(src?.children);walk(src.children);return map;}
 const sha=b=>createHash('sha1').update(b).digest('hex');
 if(mode==='inspect'){
  const p=await vercel('/v9/projects/'+project),d=await vercel('/v13/deployments/'+p.targets.production.id);assert.equal(d.readyState,'READY');
- const tree=await vercel('/v6/deployments/'+d.id+'/files',{allowMissing:kind==='admin'});save('before',{id:d.id,url:d.url,projectId:project,crons:p.crons??null,sourceComparisonAvailable:!!tree});save('before-files',tree);
- console.log(JSON.stringify({kind,id:d.id,url:d.url,files:tree?files(tree).size:null,sourceComparisonAvailable:!!tree,crons:p.crons?.definitions??[]}));
+ const tree=await vercel('/v6/deployments/'+d.id+'/files',{allowMissing:true});
+ // Git-generated deployments may omit the source-tree endpoint. Do not guess
+ // their baseline: require the exact current checked-out Git commit instead,
+ // and still hash every file of our later explicit deployment candidate.
+ const baselineGitSha=d.gitSource?.sha??d.meta?.githubCommitSha??null;
+ if(!tree)assert.equal(baselineGitSha,execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),'Unavailable deployment source has an unknown baseline');
+ save('before',{id:d.id,url:d.url,projectId:project,crons:p.crons??null,sourceComparisonAvailable:!!tree,baselineGitSha});save('before-files',tree);
+ console.log(JSON.stringify({kind,id:d.id,url:d.url,files:tree?files(tree).size:null,sourceComparisonAvailable:!!tree,baselineGitSha,crons:p.crons?.definitions??[]}));
 }else if(mode==='candidate'){
  assert.match(candidateHost??'',/^novame-monorepo(?:-admin)?-[a-z0-9]+-soulsayit\.vercel\.app$/);
  const d=await vercel('/v13/deployments/'+candidateHost);assert.equal(d.projectId,project);assert.equal(d.readyState,'READY');

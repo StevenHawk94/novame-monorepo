@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-29",
+  "authorization": "User approved changing the four reviewed coin-purchase messages. This is a client-copy-only task, not authorization to change payment/account rules or deploy new production services.",
+  "status": "local_client_copy_verified",
+  "copy": [
+    {
+      "before": "Please sign in before purchasing carrots.",
+      "after": "We couldn’t reconnect to your account. Please try again.",
+      "condition": "No internal session user before native coin checkout",
+      "locations": 1
+    },
+    {
+      "before": "Carrot purchases are not enabled on this server yet.",
+      "after": "Coin purchases are temporarily unavailable. Please try again later.",
+      "condition": "Authenticated purchase readiness returns unavailable",
+      "locations": 1
+    },
+    {
+      "before": "Payment is pending approval. Carrots will arrive after the store confirms it.",
+      "after": "Payment is pending approval. Coins will arrive after the store confirms it.",
+      "condition": "Native Pending/Deferred error or purchase-state pending callback",
+      "locations": 2
+    },
+    {
+      "before": "Please finish your carrot purchase first.",
+      "after": "Please finish your coin purchase first.",
+      "condition": "Subscription checkout sees an active coin checkout before or after setup",
+      "locations": 2
+    }
+  ],
+  "implementation": {
+    "controllers": ["apps/mobile/src/lib/carrot-iap.ts", "apps/mobile/src/lib/iap.ts"],
+    "exactPresentationMappings": "The two new reconnect/unavailable sentences are explicitly preserved by user-error-message.ts, without broadening arbitrary diagnostic passthrough.",
+    "controllerASTIdenticalExceptStringLiterals": true,
+    "legacyFourSentencesAbsentFromActiveControllers": true,
+    "paymentFingerprint": {
+      "before": "aec35a7e6a7875b7577b7be1201be14c0c160580ecff2d8c337ad0de1a880aaf",
+      "after": "cc711a8bf7f604ad386248f9b4679a9b5369bd455c4c4bc5df76e15d63e4ccb4",
+      "protection": "Both new coin-purchase sentences are counted, and reversing only those two sentences must recover the original frozen function hash. Other frozen IAP functions retain their exact hashes."
+    }
+  },
+  "validation": {
+    "coinControllersIsolationAndShopUI": {"passed": 52, "failed": 0},
+    "unifiedPaywall": {"passed": 38, "failed": 0},
+    "transportDiagnosticPresentationRegression": {"passed": 1, "failed": 0, "unrelatedCasesSkipped": 14},
+    "mobileTypecheck": "passed",
+    "gitDiffCheck": "passed",
+    "domainGate": {"passed": 1252, "failed": 0},
+    "firstDomainRun": {
+      "passed": 1251,
+      "failed": 1,
+      "cause": "The frozen purchaseSubscription body hash included the two user-approved changed sentences.",
+      "resolution": "Updated the reviewed expected hash and added inverse-copy verification against the original frozen hash; no guard or assertion removed. Full gate rerun passed all 1252 cases."
+    }
+  },
+  "unchanged": [
+    "Guest/anonymous account eligibility and existing session checks",
+    "No new sign-in or account-binding flow",
+    "Server readiness, store billing, receipt verification and account ownership",
+    "Pending payment never grants coins before verified credit",
+    "Coin/subscription active-purchase mutual exclusion",
+    "Immutable receipt recovery, cancellation and committed-credit protection",
+    "Prices, wallet amounts, quotas and economic-domain isolation"
+  ],
+  "release": {
+    "clientAvailability": "Reload Metro or use a separately published future client build.",
+    "apiChanged": false,
+    "databaseChanged": false,
+    "productionConfigChanged": false,
+    "appPublished": false,
+    "realStorePaymentPerformed": false,
+    "nativeSimulatorOrDeviceVisualTestPerformed": false,
+    "note": "Tests use actual controller/component code with isolated store/session fixtures; no claim of real store, all-device or production-user end-to-end acceptance. Counts overlap the domain gate."
+  },
+  "documentation": "docs/burrow-development-standards.md v1.41"
+}

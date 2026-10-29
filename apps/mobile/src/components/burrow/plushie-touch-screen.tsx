@@ -126,10 +126,10 @@ export function PlushieTouchScreen(){
   },300);
  }catch(e){setError((e as Error).message==='touch_quota_used'?'Your sending allowance has been used. Your recording is saved.':(e as Error).message);}}
  function discardRecording(){try{if(composer.jobKey)discardBlockedTouchJob(composer.jobKey,scope);discardTouchDraft();discardTouchRecording();setDiscard(false);defaultPage();}catch{setError('Could not discard your recording. Please try again.');}}
- function startRecording(){try{acknowledgeTouchGuide();setComposer(v=>({...v,phase:'recording'}));setError(null);}catch{setError('Could not save on this phone. Please try again.');}}
+ function startRecording(){try{acknowledgeTouchGuide();setComposer(v=>({...v,phase:'recording'}));setError(null);}catch{setError("Could not save on this device. Please try again.");}}
  function beginPlayback(){if(!message||!valid)return;try{
   markTouchPlayed(message.id);setActiveMessage(message);setPlayState('playing');setError(null);setHapticDialog(false);
- }catch{setError('Could not save playback on this phone. Please try again.');}}
+ }catch{setError("Could not save playback on this device. Please try again.");}}
  function play(){
   const request=++playbackRequest.current;
   void touchCapabilities().then(current=>{
@@ -156,7 +156,7 @@ export function PlushieTouchScreen(){
     <Text style={s.historyCount}>{m.touches??touchMessage(m.id)?.clip.touches??'—'} Touches</Text><Text style={s.date}>{new Date(m.created_at).toLocaleDateString('en-GB',{year:'2-digit',month:'numeric',day:'numeric'}).split('/').reverse().join('.')}</Text>
    </Pressable>;})}
    {!rows.length&&<Text style={t.copy}>No Touch Notes yet.</Text>}
-   <Text style={[t.copy,{marginTop:8}]}>{state.meta?.hasPlus?'Your received notes from the latest 10 Touch Notes between you are shown here.':'Only your latest received Touch Note will be saved.\nJoin Plus to keep up to 10 between you.'}</Text>
+   <Text style={[t.copy,{marginTop:8}]}>Plus keeps your 10 most recent Touch Notes together. You can only view the notes you received.</Text>
    <Text style={s.retention}>When Plus ends, only each person’s latest received note is kept. Deleted notes cannot be restored by upgrading.</Text>
    {(error||state.error)&&<Text accessibilityRole="alert" style={s.error} onPress={event=>withSoftPress(()=>void refreshPlushieTouch(),event)}>{error??state.error}</Text>}
   </ScrollView>
@@ -194,7 +194,7 @@ export function PlushieTouchScreen(){
   </View>
   <TouchNoteDialog visible={focused&&!entryDismissed&&(guide||quotaDialog)} onClose={defaultPage}>
    <Text style={t.chip}>Touch Note</Text><TouchNoteIcon size={80}/><Text style={t.heading}>Let your partner feel your touch</Text>
-   <Text style={t.copy}>Not just playing by yourself. Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.</Text>
+   <Text style={t.copy}>Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.</Text>
    <Action dark label={quotaDialog?sendPlus?'OK':'Join Plus':'Start'} disabled={!quotaDialog&&!quotaReady} onPress={quotaDialog?sendPlus?defaultPage:joinPlus:startRecording}/>
    <Text style={t.hint}>{quotaDialog?sendPlus?'You’ve used today’s send. Your next send is available tomorrow.':'You’ve used this month’s Free send. Join Plus for one send per day. If you already sent today, your next send is available tomorrow.':sendPlus?'You have 1 send available today.':'You have 1 send available this month.'}</Text>
   </TouchNoteDialog>

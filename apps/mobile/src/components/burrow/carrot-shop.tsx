@@ -89,7 +89,7 @@ export function CarrotShop({ balance, onClose, onTryPlus }: {
     <ScrollView style={s.scroll} bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={[s.content, compact && s.compactContent]}>
       <View style={[s.hero, compact && { width: 68, height: 68 }]}><CoinPackArt amount={1000} /></View>
       <Text style={[s.title, compact && { fontSize: 26 }]}>Burrow Coins</Text>
-      <Text style={s.subtitle}>Complete quests to earn coins and unlock new items, gift and games!</Text>
+      <Text style={s.subtitle}>Complete quests to earn coins and unlock new items, gifts and games!</Text>
       <View style={s.packs}>
         {CARROT_PRODUCTS.map(id => {
           const amount = Number(id.split('.').pop()) as 200 | 400 | 1000;

@@ -18,6 +18,8 @@ function partnerHarness(){
     '@/lib/burrow-page-entry':{openPreparedBurrow:r=>paths.push(r)},
     '@/lib/partner-pairing':{showPartnerPairing(){}},
     '@/lib/burrow-toast':{showBurrowToast:message=>toasts.push(message)},
+    '@/lib/plushie-touch-store':{touchSnapshot:()=>({scope:'',meta:null,seen:[],ready:[]})},
+    './plushie-touch-badge':{PlushieTouchBadge:'TouchBadge'},
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':native,
     'expo-router':{router:{back:()=>paths.push('back'),push:path=>paths.push(path)},useFocusEffect:callback=>{focus=callback;h.react.useEffect(()=>{callback();},[callback]);}},
     'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:44,bottom:34})},
@@ -85,7 +87,7 @@ test('Partner art exposes only rabbit, plant, toy and gift shortcuts; Home contr
   for(const forbidden of ['Open menu','Write a love letter','Explore our burrows','Decorate my burrow','Choose music','Open room photo'])
     assert.equal(tree.some(n=>n.props?.accessibilityLabel===forbidden),false,forbidden);
   tree.find(n=>n.props?.accessibilityLabel==='Feed bunny').props.onPress();
-  tree.find(n=>n.props?.accessibilityLabel==='Water partner’s flowers').props.onPress();
+  tree.find(n=>n.props?.accessibilityLabel==='Fertilize your partner’s flower.').props.onPress();
   assert.deepEqual(calls,['bunny','vase']);
   assert.equal(tree.some(n=>n.type==='Doll'),false);
   tree.find(n=>n.type==='PhotoPreview').props.onEditPhoto();assert.equal(calls.at(-1),'photo');
@@ -100,7 +102,7 @@ test('Partner art exposes only rabbit, plant, toy and gift shortcuts; Home contr
   assert.equal(tree.find(n=>n.type==='HomeLoveLetter').props.count,0,'partner previews never show our private unread count');
   assert.equal(home.some(n=>n.props?.accessibilityLabel==='Decorate my burrow'),false,'cabinet is decorative, not an entry');
   assert.equal(home.some(n=>n.type==='Doll'),false,'Home cannot instantiate toy animation/pan handlers');
-  const openToy=home.find(n=>n.props?.accessibilityLabel==='Open Toy');assert.ok(openToy);
+  const openToy=home.find(n=>n.props?.accessibilityLabel==='Open Plushie');assert.ok(openToy);
   assert.equal(openToy.props.onPressIn,undefined);assert.equal(openToy.props.onLongPress,undefined);
   assert.equal(openToy.props.style.transform,undefined,'no press feedback transform on Home Toy');
   const staticToy=home.find(n=>n.type==='PhotoPreview');assert.ok(staticToy);
@@ -115,11 +117,11 @@ test('Partner art exposes only rabbit, plant, toy and gift shortcuts; Home contr
   const changed=nodes(h.render(()=>HomeArtScene({...fresh,slots:{...fresh.slots,outfit:{stable_id:'changed'}}})));
   assert.notEqual(changed.find(n=>n.props?.testID==='home-pull-room').props.children,room,'actual furniture/outfit changes must repaint');
   const busyHome=nodes(h.render(()=>HomeArtScene({...ownProps,busy:true})));
-  assert.equal(busyHome.find(n=>n.props?.accessibilityLabel==='Open Toy').props.disabled,true);
+  assert.equal(busyHome.find(n=>n.props?.accessibilityLabel==='Open Plushie').props.disabled,true);
   const fallbackHome=nodes(h.render(()=>HomeArtScene({...ownProps,onToyInteract:undefined})));
-  calls.length=0;fallbackHome.find(n=>n.props?.accessibilityLabel==='Open Toy').props.onPress();assert.deepEqual(calls,['couple_doll']);
+  calls.length=0;fallbackHome.find(n=>n.props?.accessibilityLabel==='Open Plushie').props.onPress();assert.deepEqual(calls,['couple_doll']);
   const preview=nodes(h.render(()=>HomeArtScene({...ownProps,previewOnly:true})));
-  assert.equal(preview.some(n=>n.props?.accessibilityLabel==='Open Toy'),false,'room previews stay non-interactive');
+  assert.equal(preview.some(n=>n.props?.accessibilityLabel==='Open Plushie'),false,'room previews stay non-interactive');
   // Both Shop product details and Decorate use previewOnly, including while
   // an adventure is ongoing. Outfit swaps must remain visible in that room.
   for(const partnerRoom of [undefined,props.partnerRoom])for(const away of [false,true])for(const previewOnly of [false,true]){

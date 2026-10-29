@@ -40,7 +40,7 @@ export function TouchNoteEntry({scope,pairVersion}:{scope:string;pairVersion?:st
   <Pressable accessibilityRole="button" accessibilityLabel="Touch Note" onPress={press} style={{position:'absolute',right:12,top:14,zIndex:2,padding:8,alignItems:'center'}}><TouchNoteIcon size={65}/><TouchNoteEntryLabel/></Pressable>
   <TouchNoteDialog visible={focused&&!!intent} onClose={()=>setIntent(null)}>
    <Text style={t.chip}>Touch Note</Text><TouchNoteIcon size={80}/><Text style={t.heading}>Let your partner feel your touch</Text>
-   <Text style={t.copy}>Not just playing by yourself. Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.</Text>
+   <Text style={t.copy}>Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.</Text>
    {intent==='check'?<><Text style={t.hint}>{error||'Checking your allowance…'}</Text>{error&&<TouchNoteButton label="Retry" onPress={press}/>}</>:
     <><TouchNoteButton dark label={intent==='guide'?'Start':sendPlus?'OK':'Join Plus'} onPress={intent==='guide'?start:sendPlus?()=>setIntent(null):plus}/>
     <Text style={t.hint}>{intent==='guide'?(sendPlus?'You have 1 send available today.':'You have 1 send available this month.'):sendPlus?'You’ve used today’s send. Your next send is available tomorrow.':'You’ve used this month’s Free send. Join Plus for one send per day. If you already sent today, your next send is available tomorrow.'}</Text>{!!error&&<Text accessibilityRole="alert" style={t.hint}>{error}</Text>}</>}

@@ -152,7 +152,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
           '',
           '---',
           'App version: ' + appVersion + ' (' + buildNumber + ')',
-          'iOS version: ' + osVersion,
+          (Platform.OS === 'ios' ? 'iOS version: ' : 'Android version: ') + osVersion,
         ].join('\n'),
       );
 
@@ -220,7 +220,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
         <>
           <Text style={styles.title}>Glad you're enjoying it! 💜</Text>
           <Text style={styles.subtitle}>
-            Would you mind taking a moment to rate us on the App Store?
+            Would you mind taking a moment to rate us?
             Every rating helps Burrow reach more people.
           </Text>
 

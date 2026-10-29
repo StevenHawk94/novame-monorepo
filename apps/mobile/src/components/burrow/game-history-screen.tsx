@@ -17,7 +17,7 @@ import { usePageBackGesture } from '@/lib/use-page-back-gesture';
 
 const games = new Map(GAME_ROOM_GAMES.map(game => [game.id, game]));
 const empty: GameHistoryPage = { paired: false, rounds: [], nextCursor: null };
-const labels = { win: 'Win', tie: 'Tie', lose: 'Lose' };
+const labels = { win: 'Win', tie: 'Tie', lose: "Loss" };
 
 export function GameHistoryScreen() {
   usePageBackGesture(true);

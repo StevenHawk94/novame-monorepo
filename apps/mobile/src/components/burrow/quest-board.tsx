@@ -15,12 +15,12 @@ const dailyCopy: Record<DailyId, string> = {
   write_adventure_record: 'Finish today’s adventure record',
   send_affection: 'Send your person affection',
   play_game: 'Play a game with your person',
-  water_partner_flower: 'Water your flowers',
+  water_partner_flower: "Water your flower.",
   feed_partner_bunny: 'Feed your bunny',
-  interact_with_toy: 'Play with your toy',
+  interact_with_toy: 'Play with your plushie',
 };
 const specialCopy: Record<string, { title: string; subtitle: string }> = {
-  adventures_completed: { title: 'Adventure Finished', subtitle: 'Keep exploring and make more memories' },
+  adventures_completed: { title: "Adventures Completed.", subtitle: 'Keep exploring and make more memories' },
   items_collected: { title: 'Collect Items', subtitle: 'Treasures found or added to your burrow' },
   friends_met: { title: 'Meet New Friends', subtitle: 'Say hello to friends along the trail' },
   games_played: { title: 'Games Played', subtitle: 'Discover how well you know each other' },

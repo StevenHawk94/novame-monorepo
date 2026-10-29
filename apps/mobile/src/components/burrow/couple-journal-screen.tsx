@@ -168,7 +168,7 @@ export function CoupleJournalScreen({initialPageId,historyPage=false}:{initialPa
       </>:<Text style={styles.empty}>Your journal is preparing. You can go back at any time.</Text>}
       {!!error&&<Pressable accessibilityRole="button" onPress={()=>void load(view==='history'&&!!snapshot?.hasMore)}><Text style={styles.error}>{error}</Text></Pressable>}
     </ScrollView>
-    {view!=='history'&&<Text pointerEvents="none" style={[styles.footer,{bottom:insets.bottom+18}]}>New page and question will be ready next day{'\n'}after both sides finish their writing.</Text>}
+    {view!=='history'&&<Text pointerEvents="none" style={[styles.footer,{bottom:insets.bottom+18}]}>After you both save your answers, a new page will be ready the next day.</Text>}
     <View style={[styles.topBar,{top:insets.top+12}]}><BurrowBackButton light accessibilityLabel="Back" onPress={back}/><Text pointerEvents="none" style={[styles.topTitle,ROOM_TITLE_STYLE]}>Memories Room</Text>
       {view==='today'?<Pressable accessibilityRole="button" accessibilityLabel="Open journal history" style={styles.historyButton} onPress={openHistory}><Feather name="clock" size={26} color="#FFF0DA"/>{historyDot&&<View style={[styles.dot,styles.historyDot]}/>}</Pressable>:<View/>}</View>
     <AppModal visible={!!full} transparent animationType="fade" onRequestClose={()=>setFull(null)}>

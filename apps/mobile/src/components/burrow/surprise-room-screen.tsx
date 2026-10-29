@@ -439,11 +439,11 @@ function Room({data}:{data:MajorUpdateBootstrap}){
         <View style={flow.intro}><Text style={flow.title}>Preview Your Surprise</Text><Text style={flow.copy}>Tap to see the surprise</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Preview Surprise" disabled={busy} onPress={()=>void play(true)} style={flow.hero}><SurpriseGiftbox size={185} wobble={foreground&&focused.current&&step==='preview'}/></Pressable>
         <View style={flow.actions}><SurpriseAction dark title="Send the surprise" disabled={busy} onPress={()=>void send()}/>
-          <CoinLabel iconSize={26} style={flow.caption}>{`{coin} ${price} will be needed`}</CoinLabel>
+          <CoinLabel iconSize={26} style={flow.caption}>{`Costs ${price} coins per send.`}</CoinLabel>
         </View>
       </>}
       {visibleStep==='sent'&&<View style={s.success}><Text style={s.sentTitle}>{draft.sentId||job?.state==='sent'?'Surprise sent!':job?.state==='failed'?'Your surprise is saved':'Your surprise is on its way'}</Text>
-        <Text accessibilityRole={job?.state==='failed'?'alert':undefined} style={s.copy}>{job?.state==='failed'?surpriseSendFailure(job):draft.sentId||job?.state==='sent'?`${name} will see it when their surprise is ready.`:'You can keep exploring. We’ll finish sending in the background.'}</Text>
+        <Text accessibilityRole={job?.state==='failed'?'alert':undefined} style={s.copy}>{job?.state==='failed'?surpriseSendFailure(job):draft.sentId||job?.state==='sent'?`${name} can view your surprise once it’s ready.`:'You can keep exploring. We’ll finish sending in the background.'}</Text>
         {job?.state==='failed'&&<Button title="Retry send" onPress={()=>retrySurpriseSend(draft.key)}/>}
         {job&&canEditRejectedSurprise(job)&&<Button title="Edit surprise" onPress={()=>editRejected(draft.key)}/>}
         <View style={{height:70}}/><Button title="Back to room" onPress={()=>router.back()}/><Pressable accessibilityRole="button" onPress={()=>void newDraft()}><Text style={s.link}>Make another surprise</Text></Pressable></View>}
@@ -459,7 +459,7 @@ function Room({data}:{data:MajorUpdateBootstrap}){
     portraitUri={portrait} session={playbackSession}
       playing={playing} onClose={exit}>{playbackPanel}</SurprisePlaybackOverlay>}
     {sentConfirmation&&<ScreenOverlay visible transparent onRequestClose={()=>{setSentConfirmation(false);void newDraft();}}>
-      <SurpriseCard title="Surprise Sent!" copy={`${name} will see it when their surprise is ready.`}>
+      <SurpriseCard title="Surprise Sent!" copy={`${name} can view your surprise once it’s ready.`}>
         <View style={s.center}><SurprisePortrait frame={draft.frame} uri={draft.photoUri} size={130}/></View>
         <SurpriseAction dark title="Done" onPress={()=>{setSentConfirmation(false);void newDraft();}}/>
       </SurpriseCard>

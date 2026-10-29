@@ -6,9 +6,10 @@ const newest = (rows:GameSessionSummary[]) => rows.reduce<GameSessionSummary|nul
   !latest || row.createdAt>latest.createdAt || row.createdAt===latest.createdAt&&row.id>latest.id ? row : latest,null);
 /** A replay never erases the completed round on a permanent catalogue card. */
 export function gameCardState(game:GameSummary,overview:GameOverview,hasPlus:boolean):GameCardState {
-  if(game.plus_only&&!hasPlus)return {kind:'plus',price:game.price??150};
+  if(game.plus_only&&!hasPlus&&!overview.availableIds.includes(game.id))return {kind:'plus',price:game.price??150};
   // Free offers use the playable-card UI before their first shared receipt.
-  // Entry still checks pairing, Plus and the current server quote separately.
+  // Plus gates acquisition, not an existing permanent unlock. Entry still
+  // checks pairing, economic domain and the current server quote separately.
   if(game.price!==0&&!overview.availableIds.includes(game.id))return {kind:'locked',price:game.price??150};
   const rounds=overview.sessions.filter(row=>row.gameId===game.id);
   const savedRound=overview.lastRounds?.[game.id];

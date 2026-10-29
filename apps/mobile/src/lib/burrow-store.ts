@@ -176,7 +176,7 @@ const photoOutbox=createPlushiePhotoOutbox({
     setBurrowPhotoLocally(receipt.photo,receipt.photoUsage);scheduleBurrowRefresh();
   },
   rejected:(_job,code)=>{
-    showBurrowToast(code==='daily_limit_reached'?'Today’s photo limit reached. Your previous photo has been restored.'
+    showBurrowToast(code==='upload_limit'?'You’ve uploaded too many photos. Please try again later.'
       :'Your photo could not be synced. Your previous photo has been restored. Please try again.');
     scheduleBurrowRefresh();
   },
@@ -366,7 +366,7 @@ const catalogPurchases=createCoinOperationQueue({
     rejectCoinSpend(`shop-item:${row.id}`);
     showCoinPurchaseNotice(errorCode(error)==='insufficient_balance'?'Not enough coins. Your purchase was not completed.'
       :errorCode(error)==='price_changed'?'The price changed. Review the price and try again.'
-      :`Purchase could not be completed (${errorCode(error)}). Your unconfirmed coins have been restored.`);
+      :'Purchase could not be completed. Please try again later.');
     scheduleBurrowRefresh();
   },
   definitive:error=>coinRewardDefinitelyRejected(error)||['pair_changed','already_owned','not_for_sale','not_tradable','price_changed','plus_required','insufficient_balance','client_upgrade_required','idempotency_conflict'].includes(errorCode(error)),
@@ -432,7 +432,7 @@ const roomEdits=createRoomEditQueue({
       :code==='client_upgrade_required'?'Please update the app to use this item. Your purchase was not applied.'
       :code==='pair_changed'?'Your connection changed. This room change was not applied.'
       :['invalid_loadout','invalid_outfit','not_for_sale','item_unavailable'].includes(code)?'This item is no longer available. Your purchase was not applied.'
-      :`Could not apply this room change (${code}). Your other choices have been kept.`);
+      :'Could not apply this room change. Please try again.');
     scheduleBurrowRefresh();
   },
   schedule:(fn,ms)=>setTimeout(fn,ms),cancel:timer=>clearTimeout(timer as ReturnType<typeof setTimeout>),
@@ -536,7 +536,7 @@ function mergeJournalProjection(data: MajorUpdateBootstrap, readStartedAt?: numb
     if (accepted && data.activeAdventure.localStartPending && data.activeAdventure.id === p.adventureId) {
       const { localStartPending: _pending, ...journey } = data.activeAdventure;
       return { ...data, activeAdventure: { ...journey, ends_at: p.endsAt! },...(p.team?{adventureTeam:{userId:p.owner,partnerId:data.partner?.id??null,pairVersion:data.pairVersion??null,
-        adventureId:p.adventureId!,team:p.team,joinable:null,nudgeAvailable:!p.team.followerId&&!p.team.nudged}}:{}) };
+        adventureId:p.adventureId!,team:p.team,joinable:null,nudgeAvailable:false,coordinationPending:true}}:{}) };
     }
     if (readStartedAt !== undefined && readStartedAt >= (p.after ?? 0)
       && (!p.adventureId || data.activeAdventure.id === p.adventureId)) journalProjection = null;
@@ -545,7 +545,7 @@ function mergeJournalProjection(data: MajorUpdateBootstrap, readStartedAt?: numb
   if (!p.startedAt) return { ...data, readyRecordId: p.recordId,readyRecordLocalDate:p.localDate };
   return { ...data, readyRecordId: null, dailyAdventureUsed: true,
     ...(p.team?{adventureTeam:{userId:p.owner,partnerId:data.partner?.id??null,pairVersion:data.pairVersion??null,
-      adventureId:p.adventureId??`pending:${p.recordId}`,team:p.team,joinable:null,nudgeAvailable:accepted&&!p.team.followerId&&!p.team.nudged}}:{}),
+      adventureId:p.adventureId??`pending:${p.recordId}`,team:p.team,joinable:null,nudgeAvailable:false,coordinationPending:true}}:{}),
     activeAdventure: { id: p.adventureId ?? `pending:${p.recordId}`, status: 'in_progress' as const,
       started_at: p.startedAt,local_date:p.localDate,ends_at: p.endsAt ?? new Date(Date.parse(p.startedAt) + adventureDurationMs(data.hasPlus)).toISOString(),
       ...(accepted ? {} : { localStartPending: true as const }) } };
@@ -781,14 +781,14 @@ export function burrowErrorMessage(code: string): string {
     love_note_minute_limit: 'You can send up to 5 Love Notes per minute. Please wait a moment and try again. Your note is still here.',
     love_note_daily_limit: 'You’ve reached today’s limit of 100 Love Notes. Try again after your local midnight. Your note is still here.',
     feature_disabled: 'This update is not available yet. Please refresh or return to Home.',
-    insufficient_balance: 'You don’t have enough carrots for this item yet.',
+    insufficient_balance: 'You don’t have enough coins for this item yet.',
     cooldown_active: 'Your next free gesture isn’t ready yet. Refresh to see the time.',
     care_cooldown: 'Your bunny or flower is happy now. Come back in 12 hours.',
     already_full: 'Your bunny has everything it needs for now.',
     already_owned: 'That item is already owned, or waiting to be opened.',
     plus_required: 'This little extra needs Burrow Plus.',
-    price_changed: 'The price changed. Review the updated price and tap Buy again. No carrots were spent.',
-    price_confirmation_required: 'Please update the app to confirm this item’s current price. No carrots were spent.',
+    price_changed: 'The price changed. Review the updated price and tap Buy again. No coins were spent.',
+    price_confirmation_required: 'Please update the app to confirm this item’s current price. No coins were spent.',
     daily_adventure_used: 'Your bunny has already started today’s adventure.',
     adventure_pending: 'Finish your current adventure before starting another.',
     record_required: 'Save today’s story before starting the adventure.',
@@ -811,7 +811,7 @@ export function burrowErrorMessage(code: string): string {
     visit_session_changed: 'This conversation changed on another device. Please open it again.',
     visit_submission_rejected: 'Your visit could not be saved. Your balance has been corrected; refresh to see the latest conversation.',
     already_completed: 'You’ve already chatted with this friend. They’re waiting for your partner.',
-    upload_limit: 'Too many photo attempts. Please try again in an hour.',
+    upload_limit: 'You’ve uploaded too many photos. Please try again later.',
   };
   return messages[code] ?? 'That didn’t finish. Check your connection and try again.';
 }
@@ -1263,7 +1263,7 @@ export function useBurrow(backgroundRoom=false, retainedPage?:RetainedPage) {
   const snapshot = useSyncExternalStore(subscribePage, read, read);
   // Neither hub paints a wallet. Rewards own their global wallet animation;
   // subscribing these full-screen rooms to wallet changes adds no feedback.
-  const balance = useCoinBalance(focused&&retainedPage!=='affection'&&retainedPage!=='adventure'&&retainedPage!=='plushie');
+  const balance = useCoinBalance(focused&&retainedPage!=='affection'&&retainedPage!=='adventure'&&retainedPage!=='plushie'&&retainedPage!=='care');
   useFocusEffect(useCallback(() => {
     void refreshBurrowIfStale();
   }, []));

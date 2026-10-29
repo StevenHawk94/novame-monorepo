@@ -12,7 +12,7 @@ function Action({kind,onRecord,handle,gesture,pressed}:{kind:ToyHit;onRecord:(re
     transform:[{translateY:pressed.value?3:0},{scale:pressed.value?0.98:1}],
     shadowOffset:{width:0,height:pressed.value?0:3},shadowOpacity:pressed.value?0:1,elevation:pressed.value?0:3}));
   return <GestureDetector gesture={gesture}><Animated.View collapsable={false} accessible accessibilityRole="button"
-    accessibilityLabel={kind==='squeeze'?'Squeeze toy':'Bonk toy'}
+    accessibilityLabel={kind==='squeeze'?'Squeeze plushie':'Bonk plushie'}
     onAccessibilityTap={()=>{handle.hit(kind);runOnUI(onRecord)(undefined,kind);}} style={[styles.button,pressStyle]}>
     <Text style={styles.text}>{kind==='squeeze'?'Squeeze':'Bonk'}</Text>
   </Animated.View></GestureDetector>;

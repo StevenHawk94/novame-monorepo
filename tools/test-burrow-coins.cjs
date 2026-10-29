@@ -75,7 +75,7 @@ test('verify endpoint authenticates, validates product and ignores client amount
   assert.equal(args[2],a);assert.equal(args.length,4);
 });
 function mobile(platform='ios',extra={}){
-  const time=clock(),calls=[],readinessCalls=[],gate=deferred();let auth=a,identity,epoch=0;
+  const time=clock(),calls=[],readinessCalls=[],gate=deferred();let auth=extra.withoutSession?null:a,identity,epoch=0;
   const m=load('apps/mobile/src/lib/carrot-iap.ts',{'react':{useSyncExternalStore:(_,get)=>get()},'react-native':{Platform:{OS:platform}},'expo-crypto':{CryptoDigestAlgorithm:{SHA256:'sha256'},digestStringAsync:async(_,v)=>crypto.createHash('sha256').update(v).digest('hex')},'expo-iap':{ErrorCode:{UserCancelled:'cancelled'},requestPurchase:async body=>{calls.push(['request',body]);if(extra.requestError)throw extra.requestError;},fetchProducts:async()=>[],finishTransaction:async()=>{calls.push(['finish']);if(extra.finishError)throw extra.finishError;}},'./supabase':{supabase:{auth:{getSession:async()=>({data:{session:auth?{user:{id:auth}}:null}})}}},'./api':{apiClient:{get:async()=>{readinessCalls.push(epoch);return extra.readiness?extra.readiness():{available:!extra.disabled,environment:extra.environment};},post:async()=>{calls.push(['verify']);return extra.pending?gate.promise:{success:!extra.fail,environment:extra.environment,balance:extra.balance};}}},'./burrow-store':{refreshBurrow:async()=>calls.push(['refresh'])},'./session-lifecycle':{sessionEpoch:()=>epoch,subscribeSessionIdentity:fn=>{identity=fn;}}},time.globals);
   return {m,calls,readinessCalls,gate,time,switchUser:()=>{auth=b;epoch++;identity();}};
 }
@@ -144,6 +144,8 @@ test('readiness requires store configuration and platform, not a global live-or-
 });
 test('mobile pending transactions never grant or finish, Google does not double consume',async()=>{
   const h=mobile('android');await h.m.handleCarrotPurchase({productId:'burrow.coin.200',purchaseToken:'t',purchaseState:'pending'});assert.equal(h.calls.length,0);
+  assert.equal(h.m.useCarrotPurchase().message,'Payment is pending approval. Coins will arrive after the store confirms it.');
+  assert.equal(h.m.useCarrotPurchase().status,'pending');assert.equal(h.m.coinPurchaseBusy(),false);
   await h.m.handleCarrotPurchase({productId:'burrow.coin.200',purchaseToken:'t',purchaseState:'purchased'});assert.deepEqual(h.calls.map(x=>x[0]),['verify','refresh']);
 });
 test('duplicate listeners share one verification and one finish operation',async()=>{
@@ -181,8 +183,13 @@ test('committed credit remains success when native finishing fails; replay uses 
  assert.equal(h.m.useCarrotPurchase().status,'success');
 });
 test('disabled server cannot open store checkout; account switch during readiness cancels checkout',async()=>{
-  const h=mobile('ios',{disabled:true});await assert.rejects(h.m.purchaseCarrots('burrow.coin.200'),/not enabled/);assert.equal(h.calls.length,0);
+  const h=mobile('ios',{disabled:true});await assert.rejects(h.m.purchaseCarrots('burrow.coin.200'),{message:'Coin purchases are temporarily unavailable. Please try again later.'});assert.equal(h.calls.length,0);
   const next=mobile(),purchase=next.m.purchaseCarrots('burrow.coin.200');next.switchUser();await assert.rejects(purchase,/account changed/);assert.equal(next.calls.length,0);
+});
+test('missing internal session uses reconnect copy without starting payment or requesting manual sign-in',async()=>{
+  const h=mobile('ios',{withoutSession:true});
+  await assert.rejects(h.m.purchaseCarrots('burrow.coin.200'),{message:'We couldn’t reconnect to your account. Please try again.'});
+  assert.equal(h.calls.length,0);assert.equal(h.m.coinPurchaseBusy(),false);
 });
 test('mobile environment-conflict responses block checkout before the native payment sheet',async()=>{
   const source=require('node:fs').readFileSync(require('node:path').join(__dirname,'../apps/mobile/src/lib/carrot-iap.ts'),'utf8');
@@ -210,7 +217,7 @@ test('readiness is memory-only, expires after 30 seconds, fails closed and disca
   const h=mobile();h.m.prewarmCarrotPurchase();await flush();h.time.advance(30000);
   await h.m.purchaseCarrots('burrow.coin.200');assert.equal(h.readinessCalls.length,2,'expired success rechecked');
   const denied=mobile('ios',{disabled:true});denied.m.prewarmCarrotPurchase();await flush();
-  await assert.rejects(denied.m.purchaseCarrots('burrow.coin.200'),/not enabled/);
+  await assert.rejects(denied.m.purchaseCarrots('burrow.coin.200'),{message:'Coin purchases are temporarily unavailable. Please try again later.'});
   assert.equal(denied.readinessCalls.length,2,'failed availability cannot be reused');assert.equal(denied.calls.length,0);
   const first=deferred(),second=deferred();let count=0;
   const swapped=mobile('ios',{readiness:()=>++count===1?first.promise:second.promise});

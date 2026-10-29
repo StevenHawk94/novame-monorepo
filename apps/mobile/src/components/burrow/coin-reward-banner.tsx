@@ -15,17 +15,18 @@ import {useAppViewport} from '@/lib/app-viewport';
 import {useCoinFlightFeedback} from '@/lib/use-coin-flight-feedback';
 import {coinOperations} from '@/lib/coin-command-outbox';
 
-export const RewardParticle=memo(function RewardParticle({index,width,origin,target,elapsed}:{
- index:number;width:number;origin:CoinRewardPoint;target:SharedValue<CoinRewardPoint>;elapsed:SharedValue<number>;
+export const RewardParticle=memo(function RewardParticle({index,width,origin,target,elapsed,preparedOrigin}:{
+ index:number;width:number;origin:CoinRewardPoint;target:SharedValue<CoinRewardPoint>;elapsed:SharedValue<number>;preparedOrigin?:SharedValue<CoinRewardPoint>;
 }){
  const source=useRef(origin).current;
  const style=useAnimatedStyle(()=>{
   const raw=Math.max(0,Math.min(1,(elapsed.value-index*BURROW_MOTION.coinStagger)/BURROW_MOTION.coinFlight));
   const t=raw<.5?2*raw*raw:1-(-2*raw+2)**2/2;
   const destination=target.value;
+   const start=preparedOrigin?.value??source;
   return {opacity:raw===0||raw===1?0:1,transform:[
-   {translateX:source.x+(destination.x-source.x)*t-12.5},
-   {translateY:source.y+(destination.y-source.y)*t-Math.sin(t*Math.PI)*65-12.5},
+   {translateX:start.x+(destination.x-start.x)*t-12.5},
+   {translateY:start.y+(destination.y-start.y)*t-Math.sin(t*Math.PI)*65-12.5},
    {rotate:`${Math.sin(t*Math.PI)*(index-3)*18}deg`},{scale:.85-t*.25},
   ]};
  });
@@ -109,22 +110,28 @@ export function CoinRewardSurface({portal}:{portal?:object}){
  const right=slot?width-slot.anchor.x-slot.anchor.width:frameLeft+18;
  const top=slot?.anchor.y??frameTop+insets.top+16;
  const fallbackOrigin=useMemo(()=>({x:width/2,y:frameTop+canvas.height*.46}),[width,height,frameTop,canvas.height]);
+ const preparedOrigin=useSharedValue(fallbackOrigin);
+ useEffect(()=>{if(model?.batch)preparedOrigin.value=model.batch.flight.origin??fallbackOrigin;},[model?.batch?.id,model?.batch?.flight.id,fallbackOrigin,preparedOrigin]);
  const count=model?.count;
  const showAdd=slot?.showAdd??true;
  const target=useDerivedValue(()=>({x:width-right-coinWalletWidth(count?.value??0,fontSize,showAdd)+m.padding+m.iconSize/2,y:top+m.height/2}));
  const persistentWallet=!!slot,fade=model?.pulse;
- const temporaryWalletStyle=useAnimatedStyle(()=>({opacity:persistentWallet?1:fade?.value??1}));
- if(!model||model.balance===null||registry.portal!==(portal??null)||(!slot&&!model.batch)||(!portal&&slot&&!model.batch))return null;
+ const temporaryWalletStyle=useAnimatedStyle(()=>({opacity:persistentWallet?1:model?.batch?(fade?.value??1):0}));
+ if(!model||model.balance===null||registry.portal!==(portal??null))return null;
  // Anchors and reward origins are measured in native-window coordinates.
  // Android/root and modal outlets live inside the canvas; translate the whole
  // overlay once, not just its wallet, so particle paths share those coordinates.
  const inCanvas=Platform.OS!=='ios'||!!portal;
  const content=<View pointerEvents="box-none" style={[s.overlay,inCanvas&&{left:-frameLeft,top:-frameTop,right:undefined,bottom:undefined,width,height}]}>
-  {model.batch&&!model.reduced&&<View key={`${model.batch.id}:${model.batch.flight.id}`} pointerEvents="none" style={StyleSheet.absoluteFill}>
+  {/* Keep only seven noninteractive nodes prepared. A new reward retargets
+      their origin instead of mounting images/worklets beside a completion
+      popup. Idle/background is explicitly invisible, never a frozen flight. */}
+  {!model.reduced&&<View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill,{opacity:model.batch?1:0}]}>
    {Array.from({length:BURROW_MOTION.coinParticles},(_,index)=><RewardParticle key={index} index={index} width={width}
-    origin={model.batch!.flight.origin??fallbackOrigin} target={target} elapsed={model.elapsed}/>)}</View>}
-  {(!!portal||!slot)&&<Animated.View style={[{position:'absolute',right,top:top-m.touchInset,height:m.touchHeight},temporaryWalletStyle]}>
-   <CoinWalletFace count={model.count} balance={model.balance} fontSize={fontSize} showAdd={showAdd} disabled={!!portal||slot?.disabled}
+    origin={fallbackOrigin} preparedOrigin={preparedOrigin} target={target} elapsed={model.elapsed}/>)}</View>}
+  {(!!portal||!slot)&&<Animated.View pointerEvents={slot||model.batch?'auto':'none'} accessibilityElementsHidden={!slot&&!model.batch}
+   importantForAccessibility={!slot&&!model.batch?'no-hide-descendants':'auto'} style={[{position:'absolute',right,top:top-m.touchInset,height:m.touchHeight},temporaryWalletStyle]}>
+   <CoinWalletFace count={model.count} balance={model.balance} fontSize={fontSize} showAdd={showAdd} disabled={!slot&&!model.batch||!!portal||slot?.disabled}
     onPress={slot?.onPress??(()=>router.push('/(main)/coin-shop'))}/>
   </Animated.View>}
  </View>;

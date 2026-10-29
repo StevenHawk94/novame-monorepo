@@ -47,7 +47,7 @@ export function AdventureEntry({ onWrite, onTap, timeZone, now }: {
         <Image source={BURROW_ADVENTURE_ENTRY_ART.write} contentFit="contain" style={iconStyle}/>
       </Pressable></AdventureReveal>
       <AdventureReveal delay={260} style={{width:"100%"}}><Pressable accessibilityRole="button" accessibilityLabel="Tap your day" onPress={onTap} style={({pressed})=>[s.choice,choiceStyle,pressed&&s.pressed]}>
-        <View style={s.choiceCopy}><Text style={[s.choiceTitle,titleStyle]}>Tap your day</Text><Text style={[s.choiceText,textStyle]}>Select items that tell your day.</Text></View>
+        <View style={s.choiceCopy}><Text style={[s.choiceTitle,titleStyle]}>Tap your day</Text><Text style={[s.choiceText,textStyle]}>Choose the moments that tell your day’s story.</Text></View>
         <Image source={BURROW_ADVENTURE_ENTRY_ART.tap} contentFit="contain" style={iconStyle}/>
       </Pressable></AdventureReveal>
     </View>

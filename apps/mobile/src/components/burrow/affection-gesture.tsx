@@ -29,10 +29,10 @@ export const AFFECTION_COPY: Record<AffectionType, Copy> = {
 
 export const AFFECTION_SENT_COPY: Record<AffectionType, { title: string; description: (name: string) => string }> = {
   kiss: { title: 'Kiss Sent', description: name => `Your kiss is on its way to ${name}.` },
-  hug: { title: 'Hug Sent', description: name => `Your arms are wrapped around ${name} right now.` },
+  hug: { title: 'Hug Sent', description: name => `A warm hug is on its way to ${name}.` },
   spicy: { title: 'Spice Sent', description: name => `Ten sparks are flying over to ${name}.` },
   cuddle: { title: 'Cuddle Sent', description: name => `All that warmth is heading to ${name}.` },
-  gratitude: { title: 'Gratitude Sent', description: name => `Your thanks is in ${name}'s hands now.` },
+  gratitude: { title: 'Gratitude Sent', description: name => `Your thanks are on their way to ${name}.` },
   miss_you: { title: 'Miss You Sent', description: name => `${name} will know you were thinking of them.` },
 };
 

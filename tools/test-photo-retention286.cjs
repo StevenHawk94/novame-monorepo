@@ -28,7 +28,11 @@ test('failed queue acknowledgement retains retry work; malformed batches cannot 
  const bad=harness({invalid:true});assert.equal((await bad.run()).status,503);assert.deepEqual(bad.state.removed,[]);assert.deepEqual(bad.state.acks,[]);
 });
 test('unlimited metadata suppresses stale daily hints without removing pending-crop protection',()=>{
- const editor=fs.readFileSync('apps/mobile/src/components/burrow/room-photo.tsx','utf8');assert.match(editor,/!data\.photoUsage\?\.doll\.unlimited && toyPhotoChangedToday/);
+ const editor=fs.readFileSync('apps/mobile/src/components/burrow/room-photo.tsx','utf8');
+ // User's reviewed copy removes the obsolete daily hint, not the protected
+ // pending-crop/legacy-service gate exercised by test-toy-photos.cjs.
+ assert.doesNotMatch(editor,/Today’s photo change for this toy is used/);
+ assert.match(editor,/!toyPhotoChangedToday\(data, toyId, ownerId\)/);
  const bootstrap=fs.readFileSync('apps/api/src/app/api/vnext/bootstrap/route.js','utf8');assert.match(bootstrap,/doll\?\.unlimited === true \? \{ dollChangeUsed: false, dollPhotoChangesUsed: \[\], dollPhotoChangeTargetsUsed: \[\]/);
  const history=fs.readFileSync('apps/mobile/app/(main)/frame-photo-history.tsx','utf8');assert.match(history,/except the current photo in your frame/);
 });

@@ -13,7 +13,7 @@ export const PAYWALL_BENEFITS = [
   { title: 'Free Plus for your partner', description: 'One subscription unlocks Plus for both of you!', icon: require('../../../assets/burrow-webp/paywall/01_Heart.webp') },
   { title: 'Daily coin rewards', description: 'Earn 50 coins every day you log in', icon: require('../../../assets/burrow-webp/paywall/02_Heart_Coin.webp') },
   { title: 'Share more love', description: 'Send 6x more affection every day.', icon: require('../../../assets/burrow-webp/paywall/03_Kiss.webp') },
-  { title: 'Tame more monsters', description: 'Get extra release of negative energy every day', icon: require('../../../assets/burrow-webp/paywall/04_Monster.webp') },
+  { title: 'Tame more monsters', description: "Tame more monsters each day.", icon: require('../../../assets/burrow-webp/paywall/04_Monster.webp') },
   { title: 'Shorter adventures', description: 'Get back from the burrow faster', icon: require('../../../assets/burrow-webp/paywall/05_Shovel.webp') },
   { title: 'Exclusive items, games and surprises', description: 'Enjoy more ways to get cozy and grow closer', icon: require('../../../assets/burrow-webp/paywall/06_Gift.webp') },
   { title: 'Forever photo storage', description: 'Keep every photo safely stored', icon: require('../../../assets/burrow-webp/paywall/07_Photo.webp') },
@@ -81,7 +81,7 @@ export function BurrowPaywallPage(p: PaywallPageProps) {
       <ScrollView style={s.scroll} removeClippedSubviews={false} bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={[s.plans, { paddingTop: compact ? 6 : Math.max(0, height * .12 - insets.top - 54), paddingHorizontal: 20 }]}>
         <Art accessibilityLabel="Burrow bunny" source={BUNNY} contentFit="contain" style={{ width: compact ? 66 : Math.min(112, width * .27), height: compact ? 76 : Math.min(132, height * .145), alignSelf: 'center' }}/>
         <Text maxFontSizeMultiplier={1.35} style={[s.title, { fontSize: titleSize, marginTop: compact ? 10 : 12 }]}>Choose your plan</Text>
-        <Text maxFontSizeMultiplier={1.35} style={[s.subtitle,compact&&{marginTop:12,fontSize:13,lineHeight:18}]}>Link their account to yours in the app, and they’ll get access to all Plus features too.</Text>
+        <Text maxFontSizeMultiplier={1.35} style={[s.subtitle,compact&&{marginTop:12,fontSize:13,lineHeight:18}]}>Connect with your partner to share your Plus benefits.</Text>
         <View style={[s.offers,compact&&{marginTop:20,gap:12}]}>
           {(['yearly', 'monthly'] as const).map(plan => <Pressable key={plan} accessibilityRole="radio" accessibilityLabel={plan === 'yearly' ? 'Yearly' : 'Monthly'}
             accessibilityState={{ selected: p.plan === plan, disabled }} disabled={disabled} onPress={() => p.onSelectPlan(plan)}

@@ -319,6 +319,16 @@ test('Games preflight to Oops only for paid unlocks; already-unlocked play remai
  nodes(owned.render()).find(n=>n.props?.label==='Start Game').props.onPress();
  assert.equal(owned.routes.length,0);assert.equal(owned.alerts.length,0);assert.equal(charges,0);assert.ok(owned.draft());owned.unmount();
 });
+test('expired Plus permanently unlocked game opens rules and starts locally, without paywall or new payment',()=>{
+ const overview=content.localGameOverview({paired:true,availableIds:[game.id],products:{[game.id]:{price:300,plus_only:true,active:true}}});
+ const lobby=screenHarness(undefined,{overview,hasPlus:false,balance:0});
+ const tile=nodes(lobby.render()).find(n=>n.type?.name==='GameTile'&&n.props.game.id===game.id);
+ assert.equal(tile.props.state.kind,'unlocked');tile.props.onSelect(tile.props.game);
+ assert.equal(lobby.routes.length,1);assert.equal(lobby.routes[0].params.gameId,game.id);lobby.unmount();
+ const rules=screenHarness(undefined,{overview,initialGameId:game.id,hasPlus:false,balance:0});
+ nodes(rules.render()).find(n=>n.props?.label==='Start Game').props.onPress();
+ assert.ok(rules.draft());assert.equal(rules.routes.length,0);assert.equal(rules.checkout.offers.length,0);rules.unmount();
+});
 test('Games stale-balance unlock failure uses Oops and clears the unlock spinner without starting a round',async()=>{
  const h=screenHarness(undefined,{initialGameId:game.id,overview:content.localGameOverview({paired:true,availableIds:[]}),api:{unlockGame:async()=>{throw Error('insufficient_balance');}}});
  nodes(h.render()).find(n=>n.props?.label==='Start Game').props.onPress();
@@ -654,7 +664,7 @@ test('completed sender result is the first lobby entry and opens with confetti, 
   const h=screenHarness(undefined,{session:done,overview:content.localGameOverview({paired:true,availableIds:[game.id],sessions:[{
     id:progress.id,gameId:game.id,createdAt:'2026-10-12',completedAt:'2026-10-12',ownCount:6,guessCount:6,partnerOwnCount:6,partnerGuessCount:6}]})});
   let tree=h.render();const entry=nodes(tree).find(n=>n.props?.accessibilityLabel?.startsWith('Check '));assert.ok(entry);
-  assert.ok(nodes(tree).some(n=>n.props?.children==='Game result awaiting to be checked'));
+  assert.ok(nodes(tree).some(n=>n.props?.children==='Your result is ready.'));
   entry.props.onPress();assert.equal(h.routes[0].params.sessionId,progress.id);
   const child=screenHarness(progress.id,{session:done,viewed:h.viewed});tree=child.render();
   assert.ok(nodes(tree).some(n=>n.props?.children==='You win!'));
