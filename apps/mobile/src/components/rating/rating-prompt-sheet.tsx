@@ -35,7 +35,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 
 import {
   BottomSheetBackdrop,

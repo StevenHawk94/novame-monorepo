@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
-import {Animated,AppState,Keyboard,Pressable,ScrollView,Share,StyleSheet,Text,View} from 'react-native';
+import { Animated, AppState, Keyboard, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {router} from 'expo-router';
 import {useIsFocused} from '@react-navigation/native';
 import {MaterialIcons} from '@expo/vector-icons';

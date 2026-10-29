@@ -24,13 +24,8 @@
  *   compatible.
  */
 import React from 'react';
-import {
-  LayoutChangeEvent,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import Animated, {
   SharedValue,
   useAnimatedStyle,

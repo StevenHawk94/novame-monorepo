@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-28",
+  "scope": "Final user-edited item prices and Plus flags; Free-first ascending-price presentation in Shop, standalone Plushie Shop, Game themes and Surprise picker",
+  "authorization": {
+    "source": "User request to execute final workbook prices/Plus on client and server following the final-confirmation-and-go-live workflow",
+    "additionalSorting": "Free first, then Plus, each group ascending by price",
+    "notAuthorizedOrPerformed": ["App release", "announcement", "force update", "unrelated dirty workspace deployment", "real-user purchases"]
+  },
+  "approval": {
+    "workbook": "/Users/nihao/Downloads/Burrow-Pricing-V1.xlsx",
+    "sha256": "ed93774c63a3233a42be6c6da4ce1f546b02ab23107ab8c5722556ef1c3746a6",
+    "approvedValuesSha256": "074e65b448154d3876e6245440df87972492f0f354c85c5f809b190880b55285",
+    "columns": {"price": "E", "access": "F", "permanentId": "N"},
+    "readOnlyWorkbook": true,
+    "independentReaders": ["OOXML literal-cell parser", "artifact-tool XLSX import with 496 row comparisons"],
+    "products": 496,
+    "free": 343,
+    "plus": 153,
+    "changedFromOriginalProposal": 185,
+    "changedFromLiveBaseline": 426,
+    "starterAndFreeGameCount": 18,
+    "starterException": "WIN-01 200 -> 0 expressly approved in the final workbook",
+    "evidence": "catalog/approvals/pricing-2026-10-28.json"
+  },
+  "verification": {
+    "domainTests": {"passed": 1083, "failed": 0},
+    "mobileTypecheck": "passed",
+    "catalogCheck": "passed",
+    "shopCatalogPricingUnitTests": {"passed": 39, "failed": 0},
+    "existingPricingAndSurprisePaymentDatabaseTests": {"passed": 26, "failed": 0},
+    "pricing283Database": {
+      "assertions": 4971,
+      "products": 496,
+      "roomPurchases": 390,
+      "gameUnlocks": 70,
+      "surpriseOffers": 36,
+      "checks": ["426 exact audits and CAS versions", "concurrent edit rejects whole batch", "idempotent migration and purchases", "stale quote no debit", "Free/Plus eligibility", "owned room item reuse", "game unlock reuse without another charge", "frozen Adventure rows preserved", "protected table/function/permission digests"]
+    },
+    "capability279Regression": {"assertions": 3137, "products": 496},
+    "surpriseDelivery": "All 36 approved-seed frames paid, uploaded to isolated storage fixture, completed and read with actual SQL; no duplicate debit",
+    "limitations": ["No simulator or physical-device visual test in this pricing/sort task", "No real store payment or production-user purchase", "PGlite tests do not simulate simultaneous independent transaction scheduling", "Counts from distinct test commands overlap and are not a single all-history suite"]
+  },
+  "production": {
+    "migration": 283,
+    "appliedAt": "2026-10-28T10:10:30.686Z",
+    "catalogRelease": "d32938720e72d3b1ce81c5f667e4e81afb87a6798552183c72460b5ec3edc97c",
+    "priceRowsChanged": 426,
+    "verifiedProducts": 496,
+    "priceAuditBatch": "ed93774c-63a3-433a-82be-6c6da4ce1f54",
+    "protectedDataAndPermissionsUnchanged": true,
+    "protectedSets": 173,
+    "legacyClientSetsUnchanged": true,
+    "capabilityVersions": 7,
+    "activeCatalogPointerAndAdventurePlansUnchanged": true,
+    "api": {
+      "deploymentId": "dpl_6g4mSrUyDMLgWB1quT4VxuZ1dAwt",
+      "state": "READY",
+      "url": "https://api.soulsayit.com",
+      "verifiedSourceFiles": 292,
+      "onlyChangedSource": "packages/domain/src/generated/shop-catalog-release.json",
+      "previousDeployment": "dpl_6BsmLMPJX2RJqtKfuxQxSfvu2wfU",
+      "unauthenticatedBootstrap": 401,
+      "unauthenticatedCommand": 401
+    },
+    "privateEvidence": "/private/tmp/burrow-pricing283.Ku9T63",
+    "recovery": "Reviewed before-values and exact audit batch retained. Any future restore must be a separately authorized audited price adjustment using fresh versions, never reverting committed purchases, wallets or ownership. Scoped migration intentionally fails on baseline drift.",
+    "clientAvailability": "Metro reload/current client bundle enables sorting. Existing clients receive authoritative prices by normal silent catalog refresh; stale quotes require reconfirmation. No App release."
+  }
+}

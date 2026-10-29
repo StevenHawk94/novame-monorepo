@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import { PanResponder, Pressable, Text, View } from 'react-native';
+import { PanResponder, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';

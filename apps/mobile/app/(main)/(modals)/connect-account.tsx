@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator, Pressable,
-  StyleSheet, Text, TextInput,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePreventRemove } from '@react-navigation/native';
 

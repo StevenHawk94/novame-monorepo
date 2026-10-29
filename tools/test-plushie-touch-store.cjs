@@ -28,6 +28,16 @@ test('recording draft is durable, scoped, and queueing never sends before local 
  q.fail(false);q.queuePlushieTouch('toy','photo',clip());await flush();assert.equal(q.touchSnapshot().jobs[0].state,'committed');assert.equal(q.touchDraft(),null);
  assert.equal(JSON.parse(q.disk.get('state')).prepared&&Object.keys(JSON.parse(q.disk.get('state')).prepared).length,0);q.pausePlushieTouch();
 });
+test('explicit server transport permission permits cross-domain v2 queue without pretending sameDomain or shared Plus; absent/revoked permission denies',async()=>{
+ const q=harness();q.meta={...q.meta,version:2,sameDomain:false,sendAllowed:true,sendHasPlus:false};await q.refreshPlushieTouch();
+ const c={version:2,durationMs:60000,touches:1,events:[[0,4,0,0,0]]};q.queuePlushieTouch('toy','photo',c);await flush();
+ assert.equal(q.calls.filter(v=>v.post).length,1);assert.equal(q.touchSnapshot().jobs[0].state,'committed');
+ assert.equal(q.touchSnapshot().meta.sameDomain,false);assert.equal(q.touchSnapshot().meta.hasPlus,false);q.pausePlushieTouch();
+ for(const permission of [undefined,false,'true']){
+  const denied=harness();denied.meta={...denied.meta,version:2,sameDomain:false,sendAllowed:permission};await denied.refreshPlushieTouch();
+  assert.throws(()=>denied.queuePlushieTouch('toy','photo',c),/economic_domain_conflict/);assert.equal(denied.calls.filter(v=>v.post).length,0);denied.pausePlushieTouch();
+ }
+});
 test('partial recording is durable but never sendable; stale pair cannot recover it; disk failure keeps last checkpoint',async()=>{
  const q=harness();await q.refreshPlushieTouch();const r=recorder.createTouchRecorder();r.input([0,4,0,0,0]);
  const scope=`A:B:${q.pair}`;
@@ -79,11 +89,20 @@ test('explicit recovery retries the SAME immutable failed intent and key, never 
  q.setPost(async()=>({success:true,version:1}));assert.equal(q.queuePlushieTouch('toy','photo',q.touchDraft().clip,undefined,q.touchDraft().recoveryKey),key);await flush();
  assert.equal(JSON.stringify(q.calls.filter(c=>c.post)[1].body),original);q.pausePlushieTouch();
 });
-test('Plus shared outgoing history can prepare/replay without clearing incoming unread or creating its own badge',async()=>{
+test('Plus history is incoming only, even when an older server returns shared outgoing metadata',async()=>{
  const q=harness(),own={...q.row('own'),sender_id:'A',recipient_id:'B'};q.meta={...q.meta,version:2,hasPlus:true,items:[own,q.row('received')]};await q.refreshPlushieTouch();
- assert.ok(q.touchMessage('own'));assert.equal(q.usePlushieTouchBadge(),1);q.markTouchPlayed('own');await flush();
+ assert.equal(q.touchMessage('own'),undefined);assert.deepEqual(Array.from(q.touchSnapshot().meta.items,m=>m.id),['received']);
+ assert.equal(q.calls.filter(c=>c.get?.includes('&id=own')).length,0);assert.equal(q.usePlushieTouchBadge(),1);q.markTouchPlayed('own');await flush();
  assert.equal(q.usePlushieTouchBadge(),1);assert.equal(q.calls.filter(c=>c.body?.action==='seen').length,0);
  q.markTouchPlayed('received');assert.equal(q.usePlushieTouchBadge(),0);await flush();assert.equal(q.calls.filter(c=>c.body?.action==='seen').length,1);q.pausePlushieTouch();
+});
+test('seen acknowledgement updates prepared history and stale metadata cannot resurrect unread; new messages remain unread',async()=>{
+ const q=harness();q.meta={...q.meta,version:2,items:[q.row('one')]};await q.refreshPlushieTouch();
+ assert.equal(q.touchMessage('one').read_at,null);q.markTouchPlayed('one');await flush();
+ assert.ok(q.touchMessage('one').read_at);assert.equal(q.touchSnapshot().seen.length,0);assert.equal(q.usePlushieTouchBadge(),0);
+ await q.refreshPlushieTouch();assert.ok(q.touchMessage('one').read_at);assert.ok(q.touchSnapshot().meta.items[0].read_at);
+ q.meta={...q.meta,items:[q.row('one'),q.row('two')]};await q.refreshPlushieTouch();assert.equal(q.usePlushieTouchBadge(),1);
+ q.setPlushieTouchScope(null);assert.equal(q.touchMessage('one'),undefined);q.pausePlushieTouch();
 });
 test('discarding a recovered rejected intent really removes its retained content; queued sends cannot be discarded',async()=>{
  const q=harness();await q.refreshPlushieTouch();const pending=deferred();q.setPost(()=>pending.promise);const key=q.queuePlushieTouch('toy','photo',clip());

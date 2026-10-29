@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import type { Stack } from 'expo-router';
 import { HORIZONTAL_EDGE_BACK_OPTIONS } from './page-edge-gesture';
+import { ADVENTURE_LOG_BACKGROUND } from './burrow-surface';
 type NativeStackNavigationOptions = Exclude<NonNullable<ComponentProps<typeof Stack.Screen>['options']>, Function>;
 
 /** One transition owner per layer. Never put a native pan around the tab compositor. */
@@ -17,7 +18,7 @@ export const MAIN_CARD_OPTIONS: NativeStackNavigationOptions = {
 export const MAIN_ADVENTURE_INPUT_OPTIONS: NativeStackNavigationOptions = {
   ...MAIN_CARD_OPTIONS,
   animationDuration: 300,
-  contentStyle: { backgroundColor: '#925735' },
+  contentStyle: { backgroundColor: ADVENTURE_LOG_BACKGROUND },
 };
 
 export const MAIN_TAB_OPTIONS: NativeStackNavigationOptions = {
@@ -43,7 +44,7 @@ export function burrowDetailOptions(params?: Record<string, unknown>): NativeSta
       contentStyle: { backgroundColor: '#2B1008' } };
   if (isRetainedBurrowAlias(params) || params?.section === 'carrot_shop' || params?.section === 'our_room')
     return { animation: 'none', gestureEnabled: false };
-  const background = { adventure: '#482010', affection: '#EF8392', memories_room: '#FBEEDD',
+  const background = { adventure: ADVENTURE_LOG_BACKGROUND, affection: '#EF8392', memories_room: '#FBEEDD',
     partner_room: '#482010', decorate: '#FFFAF2', friends_room: '#793D29' }[String(params?.section)];
   return background ? { ...(params?.section === 'adventure' ? { animationDuration: 300 } : {}),
     contentStyle: { backgroundColor: background } } : {};

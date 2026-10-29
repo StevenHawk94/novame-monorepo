@@ -14,6 +14,11 @@ manifest download or startup download of the Shop catalog.
   generator hashes actual bytes, detecting a file replaced at the same path.
   Update visible/photo bounds when its shape changes. Surprise face geometry is
   recalculated automatically from changed image bytes.
+- Product descriptions may be empty. The two retired development descriptions
+  (`Replaceable artwork. Fixed-slot room decoration.` and
+  `Replaceable catalog content used to validate purchase, gifting and decoration.`)
+  are rejected by catalog validation. Their removal does not authorize rewriting
+  normal descriptions, changing product settings, or publishing the full catalog.
 - Remove from sale: set `status` to `retired`. Keep the entry and artwork because
   purchases, loadouts, gifts, rewards and histories can still reference it.
   `draft` entries are not offers or Adventure candidates.
@@ -57,6 +62,23 @@ an unsupported product first and expect an old bundle to download its image.
 Publication updates presentation/status atomically, preserving existing Admin
 prices, Plus flags, tradability, ownership and receipts. `seed` settings apply
 only to newly inserted rows. It does not advance the global content revision.
+
+The 2026-10-28 development-copy cleanup clears only the two exact descriptions
+above on 12 existing products. Other descriptions and all product settings stay
+unchanged. Its generated catalog hash is a local release candidate, not a live
+registration: before using that candidate against production, obtain approval
+for the exact client-support registration and a conditional description-only
+data update. Do not run full catalog publication just to remove this copy; it
+can also refresh unstarted Adventure reservations. Production data and API
+capability publication are separate from preparing these generated files.
+
+The approved 2026-10-28 itemized pricing update is a scoped exception to ordinary
+seed-only maintenance: migration 283 changes the reviewed live price/Plus values
+and registers the exact new capability set, without running the publication RPC
+or refreshing Adventure reservations. Approval evidence lives in
+`approvals/pricing-2026-10-28.json`; it is not a runtime offer source. The original
+suggested ratios are superseded by the user's final cells. See
+`docs/burrow-shop-pricing.md` for sorting, quote and release/compatibility details.
 
 The App reports its compiled catalog hash. Missing/unknown hashes use the frozen
 legacy capability list, never the latest list. Shop offers and new Adventure

@@ -52,6 +52,7 @@ test('progress uses the curved digging route and fixed Home button; no fabricate
   assert.ok(tree.some(n=>n.props.children==='02:00:00'));
   assert.equal(tree.some(n=>n.type==='Video'),false);
   assert.equal(tree[0].props.style.backgroundColor,'#360e02');
+  assert.deepEqual([...tree.find(n=>n.type==='Gradient').props.colors],['#2C0D00','#360E02','#2C0D00']);
   tree.find(n=>n.type==='Back').props.onPress();assert.equal(home.length,1);x.h.unmount();
   const source=fs.readFileSync('apps/mobile/src/components/burrow/burrow-screen.tsx','utf8');assert.match(source,/completion.current\)return <AdventureStageTransition[^]*?<AdventureCompletionScreen/);
   assert.match(source,/adventure\?\.status==='in_progress'\)return <AdventureStageTransition[^]*?<AdventureProgressScreen/);
@@ -62,6 +63,7 @@ test('ongoing keeps a dark background and uniformly scaled vector route on compa
     const x=progressHarness({width,height});
     const tree=x.screen({data:{profile:{id:'me'},hasPlus:false,specialQuests:[],activeAdventure:{id:'a',started_at:'2026-10-12T00:00:00Z',ends_at:'2026-10-12T04:00:00Z'}},now:Date.parse('2026-10-12T02:00:00Z'),onHome(){}});
     assert.equal(tree[0].props.style.backgroundColor,'#360e02');
+    assert.deepEqual([...tree.find(n=>n.type==='Gradient').props.colors],['#2C0D00','#360E02','#2C0D00']);
     assert.equal(tree.some(n=>n.type==='Video'),false);
     assert.ok(tree.find(n=>n.type==='DiggingRoute').props.scale>0);
     x.h.unmount();

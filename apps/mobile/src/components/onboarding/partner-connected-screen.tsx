@@ -6,7 +6,8 @@ import {readPartnerConnection} from '@/lib/partner-pairing';
 import {getBurrowSnapshot,refreshBurrowAfterCurrent} from '@/lib/burrow-store';
 import {sessionEpoch} from '@/lib/session-lifecycle';
 import {registerOverlay} from '@/lib/overlay-presence';
-import {View,Text,Pressable} from 'react-native';
+import { View, Text } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 
 /** Also rendered inside the invitation route, so success never exposes Home. */
 export function PartnerConnectedScreen(){

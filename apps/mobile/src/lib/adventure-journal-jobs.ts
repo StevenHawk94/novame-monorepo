@@ -18,6 +18,8 @@ import { stageCoinOperationReward, cancelStagedCoinOperationReward } from './coi
 import { releaseCoinReward } from './coin-reward-store';
 import { captureQuestFact, questProgress } from './quest-progress-store';
 import type { QuestIntent } from './quest-progress-model';
+import {adventureDay} from './adventure-entry-state';
+import {finishAdventureDeliveryBeforeStart} from './adventure-delivery';
 
 type Input = Parameters<typeof prepareReflect>[0];
 export type AdventureJournalJob = {
@@ -82,14 +84,17 @@ export function queueAdventureJournal(input: Input, draft?: { scope: string; tar
   load(); const ctx = context();
   if (!ctx) throw Error('session_changed');
   const id = input.idempotencyKey ?? randomUUID();
+  const localDate=adventureDay(ctx.data,Date.parse(ctx.data.serverNow)+Math.max(0,burrowClock()-getBurrowSnapshot().receivedAt));
+  const captured=captureQuestFact('write_adventure_record');
+  const quest=captured&&captured.day!==localDate?{...captured,day:localDate,assignmentId:undefined}:captured;
   const previous = jobs.find(j => j.id === id && j.scope === ctx.scope);
   if (previous) return previous.id;
   // Only one unfinished day can own the Adventure entry point.
-  const pending = jobs.find(j => j.scope === ctx.scope && j.localDate === ctx.data.localDate && !j.receipt && !j.blocked);
+  const pending = jobs.find(j => j.scope === ctx.scope && j.localDate === localDate && !j.receipt && !j.blocked);
   if (pending) return pending.id;
-  const job: AdventureJournalJob = { id, owner: ctx.owner, scope: ctx.scope, localDate: ctx.data.localDate,
-    quest: captureQuestFact('write_adventure_record'),
-    input: { ...input, idempotencyKey: id, localDate: ctx.data.localDate }, startKey: randomUUID(),startPlan:{version:5,catalogRelease:BUNDLED_SHOP_RELEASE,partnerId:ctx.data.partner?.id??null,pairVersion:ctx.data.pairVersion??null},
+  const job: AdventureJournalJob = { id, owner: ctx.owner, scope: ctx.scope, localDate,
+    quest,
+    input: { ...input, idempotencyKey: id, localDate }, startKey: randomUUID(),startPlan:{version:5,catalogRelease:BUNDLED_SHOP_RELEASE,partnerId:ctx.data.partner?.id??null,pairVersion:ctx.data.pairVersion??null},
     draftScope: draft?.scope, draftTarget: draft?.target, draftKey: draft?.key };
   const next = [...jobs, job].slice(-30);
   storage.set(kAdventureJournalJobs.name, JSON.stringify(next));
@@ -121,7 +126,8 @@ export function startPendingAdventureJournal(recordId: string) {
   if (job) return requestAdventureJournalStart(job.id);
   if (!ctx || ctx.data.readyRecordId !== recordId || recordId.startsWith('pending:')) return false;
   const id = randomUUID();
-  const next = [...jobs, { id, owner: ctx.owner, scope: ctx.scope, localDate: ctx.data.localDate,
+  const localDate=adventureDay(ctx.data,Date.parse(ctx.data.serverNow)+Math.max(0,burrowClock()-getBurrowSnapshot().receivedAt));
+  const next = [...jobs, { id, owner: ctx.owner, scope: ctx.scope, localDate,
     input: { promptId: 9, body: '', mode: 'typing' as const }, confirmedRecordId: recordId, startKey: randomUUID(),startPlan:{version:5 as const,catalogRelease:BUNDLED_SHOP_RELEASE,partnerId:ctx.data.partner?.id??null,pairVersion:ctx.data.pairVersion??null} }];
   storage.set(kAdventureJournalJobs.name, JSON.stringify(next)); jobs = next;
   return requestAdventureJournalStart(id);
@@ -159,7 +165,7 @@ async function drain(own: number) {
     try {
       if(!job.snapshot&&!job.confirmedRecordId)stageRecordReward(job);
       if (!job.draft && !job.confirmedRecordId) {
-        if (job.localDate !== ctx.data.localDate) throw Error('day_changed');
+        if (job.localDate !== adventureDay(ctx.data,Date.parse(ctx.data.serverNow)+Math.max(0,burrowClock()-getBurrowSnapshot().receivedAt))) throw Error('day_changed');
         const prepared = await prepareReflect(job.input);
         if (prepared.ok) held = prepared.draft.draftId;
         if (!current(job)) return;
@@ -192,6 +198,8 @@ async function drain(own: number) {
           void refreshBurrowAfterCurrent({silent:true,after:burrowClock()});
           throw Error('adventure_protocol_unavailable');
         }
+        if(!await finishAdventureDeliveryBeforeStart())throw Error('adventure_delivery_pending');
+        if(!current(job))return;
         const receipt = await startAdventure(latest.snapshot?.reflectId ?? latest.confirmedRecordId!, latest.startKey,latest.startPlan??{version:4});
         if (!current(job)) return;
         if (typeof receipt.adventureId !== 'string' || typeof receipt.endsAt !== 'string') throw Error('network');

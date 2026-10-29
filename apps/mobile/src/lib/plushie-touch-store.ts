@@ -1,7 +1,7 @@
 import {useSyncExternalStore} from 'react';
 import {AppState} from 'react-native';
 import {randomUUID} from 'expo-crypto';
-import {validateTouchClip,type TouchClip} from '@novame/domain';
+import {validateTouchClip,touchSendAllowed,type TouchClip} from '@novame/domain';
 import {apiClient} from './api';
 import {storage} from './storage';
 import {kPlushieTouch,kPlushieTouchDraft,kPlushieTouchGuide,kPlushieTouchRecording} from '../shared/storage/keys';
@@ -16,7 +16,7 @@ import {showBurrowToast} from './burrow-toast';
 type Scope={user:string;partner:string;pair:string};
 export type TouchSummary={id:string;sender_id:string;recipient_id:string;pair_version:string;toy_id:string;created_at:string;expires_at:string|null;read_at:string|null;touches?:number;toy?:MajorUpdateCatalogItem};
 export type TouchMessage=TouchSummary&{clip:TouchClip;toy:MajorUpdateCatalogItem;photo:MajorUpdateBootstrap['roomPhotos'][number]|null};
-type Meta={version:1|2;userId:string;partnerId:string;pairVersion:string;serverNow:string;localDate:string;hasPlus:boolean;remaining:number;sameDomain:boolean;items:TouchSummary[]};
+type Meta={version:1|2;userId:string;partnerId:string;pairVersion:string;serverNow:string;localDate:string;hasPlus:boolean;remaining:number;sameDomain:boolean;sendAllowed?:boolean;sendHasPlus?:boolean;items:TouchSummary[]};
 type Payload={action:'send';protocol?:2;partnerId:string;pairVersion:string;localDate:string;key:string;toyId:string;photoId:string;clip:TouchClip};
 type Job={scope:Scope;payload:Payload;state:'queued'|'committed'|'blocked';error?:string};
 type State={scope:string;meta:Meta|null;prepared:Record<string,TouchMessage>;ready:string[];seen:string[];jobs:Job[];error:string|null};
@@ -43,7 +43,7 @@ export function setPlushieTouchScope(next:Scope|null){
  let restored=empty();
  if(next)try{const v=JSON.parse(storage.getString(kPlushieTouch.name)??'null');if(v?.scope===key(next)&&Array.isArray(v.jobs)&&Array.isArray(v.seen)
   &&[1,2].includes(v.meta?.version)&&Array.isArray(v.meta.items)){
-   restored={...restored,scope:key(next),meta:v.meta,seen:v.seen.filter((s:unknown)=>typeof s==='string').slice(-70),
+   restored={...restored,scope:key(next),meta:{...v.meta,items:v.meta.items.filter((m:TouchSummary)=>incoming(m,next))},seen:v.seen.filter((s:unknown)=>typeof s==='string').slice(-70),
     jobs:v.jobs.filter((j:Job)=>j.scope&&key(j.scope)===key(next)&&validateTouchClip(j.payload?.clip)&&['queued','committed','blocked'].includes(j.state)).slice(-4)};
   }}catch{}
  // Never persist clips/inbox from another pair. Restored sends can also exist
@@ -56,7 +56,8 @@ export function setPlushieTouchScope(next:Scope|null){
  try{emit(restored);}catch{emit({...restored,error:'Local storage is unavailable. Please free up space and try again.'},false);}
 }
 export function pausePlushieTouch(){if(retry)clearTimeout(retry);retry=undefined;}
-export function touchMessage(id:string|undefined){return id&&state.ready.includes(id)?state.prepared[id]:undefined;}
+function incoming(m:TouchSummary,s:Scope){return m.recipient_id===s.user&&m.sender_id===s.partner&&m.pair_version===s.pair;}
+export function touchMessage(id:string|undefined){const m=id&&state.ready.includes(id)?state.prepared[id]:undefined;return m&&context&&live(context)&&incoming(m,context)?m:undefined;}
 export function pinTouchMessage(id:string|null){pinned=id&&state.ready.includes(id)?id:null;}
 export type TouchDraft={scope:string;toyId:string;photoId:string;clip:TouchClip;recoveryKey?:string};
 export function touchDraft():TouchDraft|null{try{const d=JSON.parse(storage.getString(kPlushieTouchDraft.name)??'null');return context&&live(context)&&d?.scope===key(context)&&validateTouchClip(d.clip)?d:null;}catch{return null;}}
@@ -82,7 +83,7 @@ export function touchGuideSeen(){try{return context&&storage.getString(kPlushieT
 export function acknowledgeTouchGuide(){if(context)storage.set(kPlushieTouchGuide.name,context.user);}
 export async function prepareTouchMessage(id:string):Promise<void>{
  const s=context,own=generation;if(!s||!live(s,own))return;
- const row=state.meta?.items.find(m=>m.id===id);if(!row)return;
+ const row=state.meta?.items.find(m=>m.id===id);if(!row||!incoming(row,s))return;
  const hit=state.prepared[id],photos=getBurrowSnapshot().data?.roomPhotos??[];
  if(hit&&state.ready.includes(id)&&(!hit.photo||photos.some(p=>p.id===hit.photo!.id&&p.updatedAt===hit.photo!.updatedAt)))return;
  const pending=preparing.get(id);if(pending)return pending;
@@ -90,14 +91,14 @@ export async function prepareTouchMessage(id:string):Promise<void>{
   const response=await apiClient.get<{version:1|2;userId:string;partnerId:string;pairVersion:string;message:TouchMessage}>(`/api/vnext/plushie-touch?pair=${s.pair}&v=2&id=${id}`);
   const m=response.message;
   if(![1,2].includes(response.version)||response.userId!==s.user||response.partnerId!==s.partner||response.pairVersion!==s.pair||!m||m.id!==id
-   ||!((m.recipient_id===s.user&&m.sender_id===s.partner)||(response.version===2&&state.meta?.hasPlus&&m.sender_id===s.user&&m.recipient_id===s.partner))||m.pair_version!==s.pair||!validateTouchClip(m.clip))throw Error('touch_not_ready');
+   ||!incoming(m,s)||!validateTouchClip(m.clip))throw Error('touch_not_ready');
   const art=burrowArtForItem(m.toy,'couple_dolls');if(!art)throw Error('touch_asset_unavailable');
   await prepareBurrowImage(art.source,1024);
   if(m.photo)await loadRoomPhoto(m.photo);
   if(!live(s,own)||!state.meta?.items.some(item=>item.id===id))return;
   const ids=[...state.ready.filter(k=>k!==id&&k!==pinned),id].slice(-(pinned&&pinned!==id?5:6));
   if(pinned&&pinned!==id&&state.prepared[pinned])ids.push(pinned);
-  const prepared={...state.prepared,[id]:m};
+  const prepared={...state.prepared,[id]:{...m,read_at:m.read_at??state.meta?.items.find(item=>item.id===id)?.read_at??null}};
   for(const k of Object.keys(prepared))if(!ids.includes(k))delete prepared[k];
   emit({...state,prepared,ready:ids},false);
  })().finally(()=>{if(preparing.get(id)===task)preparing.delete(id);});preparing.set(id,task);return task;
@@ -109,8 +110,13 @@ export function refreshPlushieTouch():Promise<void>{
    const meta=await apiClient.get<Meta>(`/api/vnext/plushie-touch?pair=${s.pair}&v=2`);
    if(!live(s,own))return;
    if(![1,2].includes(meta.version)||meta.userId!==s.user||meta.partnerId!==s.partner||meta.pairVersion!==s.pair||!Array.isArray(meta.items))throw Error('touch_not_ready');
-   const ids=meta.items.map(m=>m.id),prepared={...state.prepared};for(const id of Object.keys(prepared))if(!ids.includes(id))delete prepared[id];
-   emit({...state,meta,prepared,ready:state.ready.filter(id=>ids.includes(id)),seen:state.seen.filter(id=>ids.includes(id)),error:null});
+   // Read receipts are monotonic within this identity + relationship. A stale
+   // metadata response or prepared detail must not turn a played note unread.
+   const items=meta.items.filter(m=>incoming(m,s)).map(m=>({...m,read_at:m.read_at??state.meta?.items.find(old=>old.id===m.id)?.read_at??state.prepared[m.id]?.read_at??null}));
+   const ids=items.map(m=>m.id),prepared={...state.prepared};for(const id of Object.keys(prepared)){
+    const row=items.find(m=>m.id===id);if(!row)delete prepared[id];else if(row.read_at!==prepared[id].read_at)prepared[id]={...prepared[id],read_at:row.read_at};
+   }
+   emit({...state,meta:{...meta,items},prepared,ready:state.ready.filter(id=>ids.includes(id)),seen:state.seen.filter(id=>ids.includes(id)),error:null});
    await prepareTouchPage(0);failures=0;
   }catch(error){if(live(s,own)){
    const code=(error as {body?:{error?:string}})?.body?.error;
@@ -126,7 +132,7 @@ export async function prepareTouchPage(page:number){
 }
 export function queuePlushieTouch(toyId:string,photoId:string,clip:TouchClip,expectedScope?:string,recoveryKey?:string){
  const s=context;if(!s||!live(s)||(expectedScope&&key(s)!==expectedScope)||!validateTouchClip(clip))throw Error('touch_not_ready');
- if(!state.meta?.sameDomain)throw Error('economic_domain_conflict');
+ if(!state.meta||!touchSendAllowed(state.meta))throw Error('economic_domain_conflict');
  if(state.jobs.some(j=>j.state==='queued'))throw Error('touch_pending');
  const recovered=recoveryKey?state.jobs.find(j=>j.payload.key===recoveryKey&&j.state==='blocked'&&j.payload.toyId===toyId&&j.payload.photoId===photoId&&JSON.stringify(j.payload.clip)===JSON.stringify(clip)):undefined;
  if(recoveryKey&&!recovered)throw Error('touch_not_ready');
@@ -170,7 +176,9 @@ export function resumePlushieTouch():Promise<void>{
    for(const id of state.seen){
     if(!live(s,own)||AppState.currentState!=='active')return;
     try{await apiClient.post('/api/vnext/plushie-touch',{action:'seen',protocol:2,pairVersion:s.pair,messageId:id});
-     if(live(s,own))emit({...state,seen:state.seen.filter(k=>k!==id),meta:state.meta?{...state.meta,items:state.meta.items.map(m=>m.id===id?{...m,read_at:new Date().toISOString()}:m)}:null});}
+     if(live(s,own)){const read_at=state.prepared[id]?.read_at??new Date().toISOString();emit({...state,seen:state.seen.filter(k=>k!==id),
+      prepared:state.prepared[id]?{...state.prepared,[id]:{...state.prepared[id],read_at}}:state.prepared,
+      meta:state.meta?{...state.meta,items:state.meta.items.map(m=>m.id===id?{...m,read_at}:m)}:null});}}
     catch(error){if((error as {status?:number}).status!==404)throw error;
      if(live(s,own))emit({...state,seen:state.seen.filter(k=>k!==id)});}
    }

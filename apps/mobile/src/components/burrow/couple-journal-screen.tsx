@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useRef,useState,useSyncExternalStore} from 'react';
-import {AppState,BackHandler,Keyboard,Platform,Pressable,ScrollView,StatusBar,StyleSheet,Text,TextInput,View} from 'react-native';
+import { AppState, BackHandler, Keyboard, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {router} from 'expo-router';
 import {useIsFocused} from '@react-navigation/native';
 import {Feather} from '@expo/vector-icons';

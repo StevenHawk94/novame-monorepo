@@ -23,7 +23,8 @@ import { BackIcon } from '@/components/burrow/burrow-back-button';
  * inline with the payment intent creation.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import { router, useLocalSearchParams } from 'expo-router';

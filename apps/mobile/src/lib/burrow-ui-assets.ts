@@ -30,10 +30,20 @@ export const BURROW_DAILY_ENTRY_ART = {
 export const BURROW_QUEST_BANNER = require('../../assets/burrow-webp/Quest-Page-Banner.webp');
 
 export const BURROW_ADVENTURE_ENTRY_ART = {
-  banner: require('../../assets/burrow-webp/adventure-page-banner.webp'),
   compass: require('../../assets/burrow-webp/adventure-page/select-page.webp'),
   write: require('../../assets/burrow-webp/adventure-page/write-freely.webp'),
   tap: require('../../assets/burrow-webp/adventure-page/tab-your-day.webp'),
+} as const;
+
+export const BURROW_ADVENTURE_BANNERS = {
+  'spring-day': require('../../assets/burrow-webp/adventure-page/banner/spring-day.webp'),
+  'spring-night': require('../../assets/burrow-webp/adventure-page/banner/spring-night.webp'),
+  'summer-day': require('../../assets/burrow-webp/adventure-page/banner/summer-day.webp'),
+  'summer-night': require('../../assets/burrow-webp/adventure-page/banner/summer-night.webp'),
+  'autumn-day': require('../../assets/burrow-webp/adventure-page/banner/autumn-day.webp'),
+  'autumn-night': require('../../assets/burrow-webp/adventure-page/banner/autumn-night.webp'),
+  'winter-day': require('../../assets/burrow-webp/adventure-page/banner/winter-day.webp'),
+  'winter-night': require('../../assets/burrow-webp/adventure-page/banner/winter-night.webp'),
 } as const;
 
 export const BURROW_QUEST_ICONS = {

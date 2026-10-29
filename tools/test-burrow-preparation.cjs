@@ -76,6 +76,8 @@ test('foreground warmup is staggered, scope-fenced and cancelled before unseen j
 test('prewarm follows actual Shop thumbnails and every visible Game category without removed Latest previews',async()=>{
  const calls=[],resident=new Set();
  const api=load('apps/mobile/src/lib/burrow-page-art.ts',{
+  './burrow-environment-state':{getBurrowEnvironment:()=>({context:null,environment:{season:'autumn',period:'night',banner:'autumn-night'}})},
+  './burrow-map-model':load('apps/mobile/src/lib/burrow-map-model.ts'),
   'react-native':{Dimensions:{get:()=>({width:390,height:400})}},
   './game-room-layout':load('apps/mobile/src/lib/game-room-layout.ts'),
   './burrow-art-assets':{BURROW_BACKGROUNDS:{common:100},burrowArtForItem:item=>({source:item.source,thumbnail:item.thumb})},
@@ -85,7 +87,9 @@ test('prewarm follows actual Shop thumbnails and every visible Game category wit
     prepareBurrowImages:async sources=>{calls.push(Array.from(sources));sources.forEach(source=>resident.add(source));}},
   './burrow-game-room-content':{GAME_ROOM_CATEGORIES:['A','B','C'],GAME_ROOM_GAMES:[{id:'first',category:'A'},{id:'second',category:'B'},{id:'last',category:'C'}],gameRailItems:games=>games.filter(game=>game.active)},
   './burrow-game-room-art':{gameRoomBackground:200,gameRoomIcons:{first:202,second:203,last:204}},
-  './burrow-ui-assets':{BURROW_GAME_RULE_ICONS:[205,206,207]},
+  './burrow-ui-assets':{BURROW_GAME_RULE_ICONS:[205,206,207],BURROW_ADVENTURE_ENTRY_ART:{compass:301,write:302,tap:303},
+    BURROW_ADVENTURE_BANNERS:{'autumn-day':304,'autumn-night':305,'spring-day':306,'spring-night':307}},
+  './adventure-progress-assets':{ADVENTURE_PROGRESS_ART:{start:308,current:309,end:310}},
   '../../assets/burrow-webp/game room/waiting-page.webp':208,
  });
  const data={catalog:[{category:'wallpapers',source:1,thumb:2},{category:'outfits',source:4,thumb:5},{category:'cushions',source:3},...['first','second','last'].map(id=>({stable_id:'game:'+id}))]};
@@ -93,6 +97,8 @@ test('prewarm follows actual Shop thumbnails and every visible Game category wit
  await api.warmBurrowPageArt('game',data);assert.deepEqual(calls[1],[202,203,204,205,206,207,208]);
  assert.equal(api.burrowPageArtReady('shop',data),true);resident.delete(5);assert.equal(api.burrowPageArtReady('shop',data),false);
  await api.warmBurrowPageArt('shop',data);assert.equal(api.burrowPageArtReady('shop',data),true);
+ await api.warmBurrowPageArt('adventure',data);
+ assert.deepEqual(calls.at(-1),[304,305,301,302,303,308,309,310],'only the shared current season is warmed, not all eight banners or a deleted fixed banner');
 });
 test('a complete Home survives a year without opening another owner or promoting partial catalogues',()=>{
  const time=clock(),disk=new Map(),api=load('apps/mobile/src/lib/burrow-cache.ts',{

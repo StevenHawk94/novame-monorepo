@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GoogleLogo } from './account-provider-logo';
+import { withSoftPress } from '@/lib/haptics';
 
 /** Presentation only: provider linking, OTP, purchase and close guards stay with the caller. */
 export function ConnectAccountView({ onClose, onProvider, busy, children, connectedAs }: {
@@ -44,9 +46,9 @@ export function ConnectAccountView({ onClose, onProvider, busy, children, connec
           </Pressable></>}
       </View>
       <View style={styles.footer}><Text style={styles.legal}>By continuing, you agree to Burrow’s{ '\n' }
-        <Text accessibilityRole="link" onPress={()=>openLegal('terms')} style={styles.link}>Terms &amp; Conditions</Text>
+        <Text accessibilityRole="link" onPress={event=>withSoftPress(()=>openLegal('terms'),event)} style={styles.link}>Terms &amp; Conditions</Text>
         {' and acknowledge the '}
-        <Text accessibilityRole="link" onPress={()=>openLegal('privacy')} style={styles.link}>Privacy Policy</Text>.
+        <Text accessibilityRole="link" onPress={event=>withSoftPress(()=>openLegal('privacy'),event)} style={styles.link}>Privacy Policy</Text>.
       </Text></View>
     </ScrollView>
   </KeyboardAvoidingView></View>;

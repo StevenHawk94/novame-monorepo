@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-27",
+  "request": "Love Note opens with a stutter every time the composer and keyboard appear; preserve existing UI and business behavior",
+  "scope": "Client-only keyboard/route lifecycle repair. No API, database, economy, notification eligibility, quota, or send-queue changes. No commit, deployment, or App publication.",
+  "failureMechanism": {
+    "trigger": "Open the composer from Home or explicit Write Back",
+    "previousState": "TextInput autoFocus on mount plus an immediate focus effect could open the keyboard before the native card appearance completed, causing keyboard avoidance and card layout/transition work to overlap",
+    "evidence": "All 5 baseline native samples recorded keyboardWillShow before transitionEnd. These are JS-received native events, not physical touch or compositor timestamps.",
+    "rejectedCandidate": "Using only afterUiSettles was insufficient: idle JS before the native start event did not prove that the card had appeared. Final implementation requires the actual native appearance event."
+  },
+  "fix": {
+    "routeObserver": "usePageEntrySettled observes native transitionEnd at the route boundary even when data is unavailable; closing/blur revoke readiness, gestureCancel can restore readiness for the still-focused page, listeners are released",
+    "singleFocusOwner": "No mount autoFocus. A ready, focused composer schedules one guarded focus through the existing UI scheduler; an already-focused input is not focused again",
+    "lifecycle": "Cleanup cancels pending work; account epoch, current relationship scope, and mounted status fence late callbacks",
+    "unchanged": ["Unread-first reading", "Immediate tappable editor", "Managed drafts", "Explicit Write Back", "Direct reading-page return", "Existing one-second send-button feedback", "Durable send intent and original idempotency key"]
+  },
+  "verification": {
+    "domainIsolation": {"command": "pnpm test:domain-isolation", "passed": 983, "failed": 0, "log": "outputs/love-note-keyboard-2026-10-27/domain-tests.log"},
+    "targeted": {"command": "node --test tools/test-love-notes.cjs tools/test-burrow-care-interaction.cjs", "passed": 88, "failed": 0, "overlapsDomainGate": true, "log": "outputs/love-note-keyboard-2026-10-27/target-tests.log"},
+    "types": {"command": "pnpm --filter @novame/mobile exec tsc --noEmit", "exitCode": 0},
+    "diffCheck": {"command": "git diff --check", "exitCode": 0},
+    "counterexamples": ["Old mount autoFocus fails the new entry-timing assertion", "Idle callback before native appearance cannot request keyboard", "Delayed content uses appearance already observed by its route", "Typing does not reschedule focus", "Blur/unmount/account/pair changes fence queued focus", "Reading never schedules keyboard", "User focus before queued focus prevents a second focus", "Native closing, cancelled back gesture, and listener cleanup", "Existing incoming, history, draft, send-failure, feedback, and care/Plushie regressions"]
+  },
+  "native": {
+    "environment": "Dedicated iphone se simulator, iOS 26.2, existing com.novame.plushtouchqa isolated native shell; minified Release JS, Hermes, actual LoveNoteScreen, usePageEntrySettled, UI scheduler and MAIN_CARD_OPTIONS; Love Note data/attention/API use synthetic isolated seams. Not the complete production Home/room route or production network path.",
+    "inputMethod": "All UI operations through CUA; no deep-link or driver press invocation",
+    "sampling": "UI-thread Reanimated frame callbacks covering approximately the first 1.6 seconds after the first sampled page frame; does not include pre-first-frame time or necessarily the entire cold keyboard animation. Navigation and keyboard event timings are recorded separately. No concurrent builds or test processes during sampling.",
+    "baseline": {"opens": 5, "keyboardAfterTransitionEnd": 0, "frames": 341, "over50ms": 6, "maxMs": 1089.9977917671204, "raw": "outputs/love-note-keyboard-2026-10-27/native-before.json"},
+    "final": {"opens": 20, "automaticKeyboardVisibleChecksPassed": 20, "keyboardAfterTransitionEnd": 20, "frames": 1723, "over50ms": 18, "maxMs": 945.596583366394, "worstPerOpenP95Ms": 161.0627498626709, "dispatchToTransitionEndP50Ms": 526.0445837974548, "dispatchToKeyboardWillShowP50Ms": 658.9260406494141, "dispatchToKeyboardDidShowP50Ms": 1057.5046672821045, "raw": "outputs/love-note-keyboard-2026-10-27/native-after.json"},
+    "additionalChecks": ["Synthetic draft text entered successfully and Send button enabled, without sending", "Draft survives closing/reopening", "Received-note body still opens without keyboard", "Header back returns to the QA source without History redirect"],
+    "limits": ["Transition/keyboard overlap eliminated in these 20 observations, not a zero-jank claim", "Cold and some repeated opens still have slow frames; the largest final measured interval is about 946ms", "The small, unequal before/after samples and system keyboard warmup do not establish a reliable FPS improvement percentage", "CUA paste uses Mac input; software-keyboard visibility after paste is not counted among the 20 automatic-open checks", "Android native, physical devices, production full-route performance, independent compositor traces and all lifecycle combinations were not verified in this shell"]
+  },
+  "sourceSha256": {
+    "apps/mobile/src/lib/use-page-entry-settled.ts": "faeace717a9f923dc7c6568c78f19896282fc98288c5c56733205d5be6f718eb",
+    "apps/mobile/src/components/burrow/love-note-screen.tsx": "c25650bd826e35a06765f2ef16547ee8b7e57108df4fd46c4e584d7d30bd6434",
+    "apps/mobile/app/(main)/room-interaction.tsx": "ddc043ae5f38628b8c75b9b1e8d374ca7667cb9f2de7201badb0f271ae90541e",
+    "isolatedNativeBundle": "6050107982556b256e4c15a7c10d2ae999cc1bf7ab916db1cc6ec3c719d152df"
+  },
+  "documentation": "docs/burrow-development-standards.md v1.23 / section 10",
+  "delivery": "Metro reload required for the client change; no new native dependency or API deployment required"
+}

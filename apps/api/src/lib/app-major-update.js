@@ -29,7 +29,7 @@ export function commandStatus(error) {
   if (['visit_expired', 'visit_session_changed', 'already_completed'].includes(error)) return 409
   if (error === 'photo_conflict' || error === 'upload_expired') return 409
   if (error === 'not_found') return 404
-  if (error === 'not_paired' || error === 'plus_required' || error === 'feature_disabled' || error === 'own_toy_only' || error === 'economic_domain_mismatch') return 403
+  if (error === 'not_paired' || error === 'plus_required' || error === 'feature_disabled' || error === 'own_toy_only' || error === 'economic_domain_mismatch' || error === 'care_target_not_allowed') return 403
   if (error === 'insufficient_balance') return 402
   if (error === 'cooldown_active' || error === 'care_cooldown' || error === 'daily_adventure_used'
       || error === 'already_full' || error === 'not_completed'

@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-27",
+  "authorization": {
+    "sixRequestedFixes": true,
+    "historyIncomingOnlyReplacesPriorPlusSenderReplay": true,
+    "soloJoinOnlySameEconomicDomainAndNeverBound": true,
+    "production281282AndCorrespondingApiAfterIsolation": true,
+    "appPublication": false,
+    "economicDomainConversion": false
+  },
+  "results": {
+    "decor": "Previous workspace fix retained and revalidated: one reference canvas per category, original aspect ratio, shared Home/Partner/Decorate/legacy geometry. No per-item alpha-width enlargement. Existing gifts +20% retained.",
+    "heart": "Closed glossy SVG, no time stroke, 0..999 monotonic count scale, max/min linear size 1.5. Six fixed flight slots target actual meter center and preserve landing rebound under dense input. UI logical time freezes on Stop/background; Reduce Motion omits flight/pop. Recorded counts and haptics unchanged.",
+    "history": "Own menu has no history. Partner entry and all prepared/cache/metadata/detail access are incoming-only for Free and Plus. Shared latest-ten retention and each Free latest-incoming retention remain unchanged.",
+    "readReceipt": "Seen acknowledgement updates both metadata and prepared detail. Same-scope stale reads cannot regress read_at. Played history preview has no unread banner; opening history itself does not mark unread content played.",
+    "adventure": "Fresh read-only production audit found YRZQDM=sandbox, HA54J3=production. Deployed migration 275 and both pairing triggers are present. Existing isolation explains the reported two Solo trips. No domain or Adventure rule mutation performed. Same-domain solo-before-pair join, remaining-only 1.5x, 600/601 boundaries and never-rebind protection revalidated with actual SQL.",
+    "moments": "Production receipts showed photo_required for natural interactions using owner photos uploaded Solo or under the former relationship. Migration 282 removes only obsolete upload-pair restriction on saved owner+doll+toy photo proof, including legacy selectors. Current relationship/time/calendar, fixed first-touch hour, durable queue, idempotency and quests remain intact. Old rejected receipts are not rewritten or fictitiously backfilled."
+  },
+  "validation": {
+    "domainGate": {"passed": 974, "failed": 0, "log": "/private/tmp/burrow-six-domain-complete.log"},
+    "mobileTypeCheck": {"passed": true, "log": "/private/tmp/burrow-six-types-complete.log"},
+    "catalogCheck": {"passed": true, "log": "/private/tmp/burrow-six-catalog.log"},
+    "animationAndRecoveryTargeted": {"passed": 20, "failed": 0, "log": "/private/tmp/burrow-six-animation-final.log"},
+    "bootstrapMomentAndLayoutTargeted": {"passed": 27, "failed": 0, "log": "/private/tmp/burrow-six-related.log"},
+    "isolatedSql": {
+      "engine": "Disposable PGlite PostgreSQL; synthetic records only",
+      "adventure": {"passed": 20, "failed": 0},
+      "historicalAndLatestTouchContracts": {"passed": 16, "failed": 0, "log": "/private/tmp/burrow-six-sql-tests.log"},
+      "personalPhoto281": {"passed": 6, "failed": 0},
+      "touch280AndExact281282Guard": {"passed": 11, "failed": 0, "log": "/private/tmp/burrow-six-release-guard.log"},
+      "naturalMomentWindow": "Actual 258 + 282 moments block: reproduced old upload-pair rejection, saved owner photo succeeds, 59-minute accumulation, new fixed hour, duplicate receipt/no recount, wrong owner/toy/photo, stale relationship rejection, legacy adapter, unchanged photo rows and old skipped receipt."
+    },
+    "native": {
+      "device": "Dedicated iphone se simulator, iOS 26.2",
+      "build": "Production/minified Metro bundle + Hermes in isolated Release host com.novame.plushtouchqa",
+      "businessApi": "Local synthetic fixtures, no production trades or private faces",
+      "checks": ["Own menu Collection / Change Photo only", "Unread receipt preview", "First device haptic confirmation flow (simulated capability, not real vibration)", "Stop freezes 108 touches, Continue resumes, full replay reaches 120 and offers Replay", "Exit to partner default, clock opens received history, played history has no unread banner", "Final six-slot dense full 60-second/999-touch playback completed; heart growth and collecting trajectory visually inspected"],
+      "screenshots": "outputs/plushie-six-fixes-2026-10-27/",
+      "finalDenseSample": {"frames": 3537, "p50Ms": 16.666666507720947, "p95Ms": 16.666666984558105, "p99Ms": 16.666666984558105, "maxMs": 127.82629156112671, "over50Ms": 1, "meanFps": 59.80935303673174},
+      "limitations": "One dense Detailed sample, not every device or independent GPU/compositor measurement. One >50ms interval remains; no zero-jank guarantee. No concurrent local build/test workload during this sample. No physical vibration, Android native, true low-memory or live two-account end-to-end certification."
+    },
+    "countsNote": "Suites overlap; do not sum into a unique/all-scenarios claim."
+  },
+  "production": {
+    "migrations": [281, 282],
+    "combinedSourceSha256": "d9fc89fc8c4a8d6fe8759b33bd4b702d84c4b0b22b9782c32992853206b63800",
+    "protectedSets": 172,
+    "protectedRowsUnchanged": true,
+    "unrelatedFunctionsAndExistingPermissionsUnchanged": true,
+    "migrationSourceDigestsVerified": true,
+    "noHistoricalDataDeleted": true,
+    "api": {
+      "deploymentId": "dpl_6BsmLMPJX2RJqtKfuxQxSfvu2wfU",
+      "projectId": "prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4",
+      "state": "READY",
+      "url": "https://api.soulsayit.com",
+      "deploymentUrl": "https://novame-monorepo-ioci5f6ta-soulsayit.vercel.app",
+      "shopPreflight": {"clientVersions": 6, "currentProducts": 496},
+      "verifiedSourceFiles": 292,
+      "sourceManifestSha256": "12613fe8fed10eb8e6e2f65aab703c980201f2a6531efac1ed2c721ad73efe4c",
+      "unauthenticatedBootstrap": 401,
+      "unauthenticatedTouchNote": 401,
+      "mobileAdminAndSecretsExcluded": true
+    },
+    "privateReleaseEvidence": "/private/tmp/burrow-plushie281282.LxsZ09",
+    "clientAvailability": "UI/cache/geometry changes need current Metro bundle reload or a subsequent App release. No App, announcement or force-update published."
+  }
+}

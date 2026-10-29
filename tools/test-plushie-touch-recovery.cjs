@@ -11,13 +11,14 @@ function recordingHarness(initial){
   react:h.react,'react/jsx-runtime':jsx,'react-native':rn,'@react-navigation/native':{useIsFocused:()=>focused},
   'react-native-reanimated':{runOnJS:fn=>(...args)=>js.push(()=>fn(...args)),runOnUI:fn=>(...args)=>ui.push(()=>fn(...args)),useReducedMotion:()=>false,useSharedValue:value=>{const r=h.react.useRef(null);return r.current??={value};}},
   '@/lib/plushie-touch-recorder':model,'./plushie-touch-toy':{PlushieTouchToy:'Toy'},'./plushie-touch-heart':{TouchHeartMeter:'Heart',TouchFlyingHearts:'Flying'},
+  '@/lib/touch-heart-motion':load('apps/mobile/src/lib/touch-heart-motion.ts'),
  });
  function flush(){for(const f of ui.splice(0))f();for(const f of js.splice(0))f();}
  const render=()=>{tree=h.render(()=>PlushieTouchRecording({asset:{},photo:{id:'p'},size:300,scope:'A:B:pair',initial,
   onComplete:c=>complete.push(c),onInterrupted:()=>errors.push('empty'),onCheckpoint:c=>{if(fail)throw Error('disk_full');saved.push(JSON.parse(JSON.stringify(c)));}}));flush();return tree;};
  return {render,complete,errors,saved,h,fail:v=>fail=v,frame(timestamp){find(tree,'Toy').props.onFrame({feedbackAt:0},{timestamp,timeSincePreviousFrame:16});flush();},
   input(timestamp,events){find(tree,'Toy').props.inputStart.value=timestamp;find(tree,'Toy').props.onInput(events);},
-  app(status){rn.AppState.currentState=status;app(status);flush();},focus(v){focused=v;render();},get progress(){return find(tree,'Heart').props.progress.value;}};
+  app(status){rn.AppState.currentState=status;app(status);flush();},focus(v){focused=v;render();},get elapsed(){return find(tree,'Heart').props.clock.value;}};
 }
 test('real recording component completes on logical 60000, not a second rounded absolute start; single completion survives rerender',()=>{
  const q=recordingHarness();q.render();q.frame(1234.6);q.input(1234.6,[[0,4,0,0,0]]);q.frame(61234.5);assert.equal(q.complete.length,0);
@@ -28,7 +29,7 @@ test('real recording component completes on logical 60000, not a second rounded 
 test('real recording component ignores background frames and rebases foreground resume, including cancelled held pointers',()=>{
  const q=recordingHarness();q.render();q.input(1000,[[0,4,0,0,0],[100,0,4,500,500]]);q.frame(20000);q.app('inactive');
  const saved=q.saved.at(-1);assert.equal(saved.elapsedMs,19000);assert.equal(saved.events.at(-1)[1],3);
- q.frame(120000);assert.equal(q.complete.length,0);assert.equal(q.progress,19000/60000);
+ q.frame(120000);assert.equal(q.complete.length,0);assert.equal(q.elapsed,19000);
  q.app('active');q.frame(150000);q.frame(190999);assert.equal(q.complete.length,0);q.frame(191000);
  assert.equal(q.complete.length,1);assert.equal(q.complete[0].touches,39);assert.ok(contract.validateTouchClip(q.complete[0]));q.h.unmount();
 });
@@ -43,9 +44,11 @@ test('v2 held contact counts down and each half-second, including final cancella
 });
 function screenHarness(mode='record',options={}){
  const h=hooks(),guards=[],gestures=[],backs=[],writes=[],routes=[],read=[],queued=[];let discarded=0,data={profile:{id:'A'},partner:{id:'B',display_name:'Sam'},pairVersion:'pair',catalog:[{stable_id:'toy'}],roomPhotos:[{id:'photo',ownerId:'A'}]},diskFail=false,scope='A:B:pair',tree;
- const m={id:'msg',sender_id:'B',recipient_id:'A',toy:{stable_id:'toy'},clip:{version:2,durationMs:60000,touches:1,events:[[0,4,0,0,0]]},created_at:'2026-10-25',read_at:null};
- const meta={version:2,items:mode==='record'?[]:[m],hasPlus:false,remaining:1,sameDomain:true},state={scope,meta,jobs:[],seen:[],ready:mode==='record'||options.unprepared?[]:['msg']};
+ const m={id:'msg',sender_id:'B',recipient_id:'A',pair_version:'pair',touches:1,toy:{stable_id:'toy'},clip:{version:2,durationMs:60000,touches:1,events:[[0,4,0,0,0]]},created_at:'2026-10-25',read_at:options.readAt??null};
+ const meta={version:2,items:mode==='record'?[]:[m],hasPlus:false,remaining:1,sameDomain:true,...options.meta},state={scope,meta,jobs:[],seen:[],ready:mode==='record'||options.unprepared?[]:['msg']};
  const {PlushieTouchScreen}=load('apps/mobile/src/components/burrow/plushie-touch-screen.tsx',{
+  '@novame/domain':contract,
+  '@/lib/haptics':{withSoftPress:action=>action()},
   react:h.react,'react/jsx-runtime':jsx,'react-native':{ActivityIndicator:'Busy',Pressable:'Pressable',ScrollView:'Scroll',Text:'Text',View:'View',StyleSheet:{create:v=>v,absoluteFillObject:{}},BackHandler:{addEventListener:(_event,fn)=>{backs.push(fn);return{remove:()=>backs.push('removed')};}}},
   '@react-navigation/native':{useIsFocused:()=>true,usePreventRemove:v=>guards.push(v)},'expo-router':{router:{canGoBack:()=>true,back(){routes.push('back');},replace(p){routes.push(p);},push(p){routes.push(p);}},useLocalSearchParams:()=>({mode})},
   '@expo/vector-icons':{Feather:'Icon'},'react-native-reanimated':{useReducedMotion:()=>false,useSharedValue:value=>h.react.useRef({value}).current},'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:40,bottom:20})},
@@ -69,6 +72,13 @@ test('screen locks only started recording, releases on completion even if saving
  q.fail(true);record.onComplete({version:1,durationMs:60000,touches:1,events:[[0,4,0,0,0]]});const tree=q.render();
  assert.equal(q.guards.at(-1),false);assert.equal(q.gestures.at(-1),true);assert.equal(q.backs.at(-1),'removed');assert.equal(find(tree,'Recording'),undefined);
  assert.equal(find(tree,'Heart').props.count,1);assert.equal(q.writes[0][3],'A:B:pair');q.h.unmount();
+});
+test('cross-domain server permission reaches recording and durable send; absent permission never mounts a new recorder',()=>{
+ const q=screenHarness('record',{meta:{sameDomain:false,sendAllowed:true}});
+ assert.ok(q.recording);q.recording.onComplete({version:2,durationMs:60000,touches:1,events:[[0,4,0,0,0]]});q.render();
+ assert.equal(q.button('Send Touch Note').props.disabled,false);q.button('Send Touch Note').props.onPress();q.render();
+ assert.equal(q.queued.length,1);assert.equal(q.routes.at(-1),'back');assert.equal(q.state.meta.sameDomain,false);assert.equal(q.state.meta.hasPlus,false);q.h.unmount();
+ const denied=screenHarness('record',{meta:{sameDomain:false}});assert.equal(find(denied.tree,'Recording'),undefined);denied.h.unmount();
 });
 test('identity/relation revocation releases navigation lock and removes recording instead of trapping the user',()=>{
  const q=screenHarness();q.recording.onStatus({started:true,count:1,seconds:45});q.render();assert.equal(q.guards.at(-1),true);
@@ -106,4 +116,10 @@ test('iPad/no-vibrator recipient can play animation, clear unread, Stop/Continue
  q.button('Stop').props.onPress();q.render();q.button('Continue').props.onPress();q.render();assert.equal(find(q.tree,'Playback').props.paused,false);
  find(q.tree,'Playback').props.onFinish();q.render();q.button('Replay').props.onPress();q.render();assert.equal(find(q.tree,'Playback').props.paused,false);
  q.h.unmount();
+});
+test('read history preview has no unread banner; unopened history keeps it until explicit play',()=>{
+ const read=screenHarness('history',{readAt:'2026-10-26T00:00:00Z'});read.button('Replay 1 touches').props.onPress();read.render();
+ assert.ok(read.button('Feel Sam’s touch'));assert.ok(!JSON.stringify(read.tree).includes('You have an unread Touch Note'));assert.equal(read.read.length,0);read.h.unmount();
+ const fresh=screenHarness('history');fresh.button('Replay 1 touches').props.onPress();fresh.render();
+ assert.ok(JSON.stringify(fresh.tree).includes('You have an unread Touch Note'));assert.equal(fresh.read.length,0);fresh.h.unmount();
 });

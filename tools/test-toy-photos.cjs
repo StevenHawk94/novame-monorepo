@@ -23,6 +23,30 @@ test('toy face selection never borrows a default, legacy or partner crop; quotas
   assert.notEqual(photos.roomPhotoTarget('doll','me','toy-A'),photos.roomPhotoTarget('doll','me','toy-B'));
   assert.equal(photos.roomPhotoTarget('frame','me'),'frame:me');
 });
+test('current Free and Plus photo usage gates only the exact owner/toy, not newly purchased toys',()=>{
+ for(const limit of [1,3]){
+  const data={profile:{id:'me'},localDate:'2026-10-27',roomPhotos:[],photoUsage:{localDate:'2026-10-27',doll:{limit,targets:[{ownerId:'me',toyId:'toy-A',used:limit}]}}};
+  assert.equal(photos.toyPhotoChangedToday(data,'toy-A'),true);
+  assert.equal(photos.toyPhotoChangedToday(data,'toy-B'),false);
+  assert.equal(photos.toyPhotoChangedToday(data,'toy-A','partner'),false);
+  data.photoUsage.doll.targets.push({ownerId:'me',toyId:'toy-B',used:limit-1});
+  assert.equal(photos.toyPhotoChangedToday(data,'toy-B'),false);
+  data.roomPhotos.push(face('toy-A','local-plushie-pending'));
+  assert.equal(photos.toyPhotoChangedToday(data,'toy-B'),false,'another toy pending upload is not a daily limit');
+ }
+});
+test('server-declared unlimited Plushie policy ignores daily legacy usage but keeps pending-photo protection',()=>{
+ const data={profile:{id:'me'},localDate:'2026-10-28',roomPhotos:[],dollPhotoChangesUsed:['toy-A'],
+  dollPhotoChangeTargetsUsed:[{ownerId:'me',toyId:'toy-A'}],
+  photoUsage:{localDate:'2026-10-28',doll:{limit:null,unlimited:true,targets:[{ownerId:'me',toyId:'toy-A',used:99}]}}};
+ assert.equal(photos.toyPhotoChangedToday(data,'toy-A'),false);
+ assert.equal(photos.toyPhotoChangedToday(data,'toy-B'),false);
+ data.roomPhotos.push(face('toy-A','local-plushie-pending'));
+ assert.equal(photos.toyPhotoChangedToday(data,'toy-A'),true);
+ assert.equal(photos.toyPhotoChangedToday(data,'toy-B'),false);
+ data.photoUsage.localDate='2026-10-27';data.roomPhotos=[];
+ assert.equal(photos.toyPhotoChangedToday(data,'toy-A'),false,'policy is not a daily quota reset');
+});
 
 const registry='apps/mobile/src/lib/burrow-art-assets.ts';
 const art=load(registry,Object.fromEntries([...fs.readFileSync(registry,'utf8').matchAll(/require\((['"])(.*?)\1\)/g)]
@@ -104,11 +128,11 @@ test('collection portrait uses each costume’s actual face bounds, not the prev
   }
 });
 
-function routeHarness({committed=false,mismatch=false}={}){
+function routeHarness({committed=false,mismatch=false,allowed=true}={}){
   const user='11111111-1111-4111-8111-111111111111',calls=[],uploads=[];
   const db={rpc:async(name,args)=>{
     calls.push([name,args]);
-    return {data:name==='check_rate_limit'?{allowed:true}:name==='prepare_toy_photo_v1'
+    return {data:name==='check_rate_limit'?{allowed}:name==='prepare_toy_photo_v1'
       ?{path:'immutable-toy.jpg',ticketId:user,toyId:args.p_toy_id,committed}:{applied:true}};
   },from:()=>({select(){return this;},eq(){return this;},maybeSingle:async()=>({data:{id:user,owner_id:user,kind:'doll',toy_id:mismatch?'toy-A':'toy-B',updated_at:'now'}})}),
     storage:{from:()=>({upload:async(...args)=>{uploads.push(args);return {};}})}};
@@ -127,6 +151,14 @@ test('photo API passes the exact toy to the ticket and returns that toy in its v
   assert.equal(h.calls.find(c=>c[0]==='prepare_toy_photo_v1')[1].p_owner_id,h.user);
   assert.equal(h.calls.at(-2)[0],'complete_toy_photo_v1');assert.equal(h.calls.at(-1)[0],'burrow_photo_usage_v1');assert.equal(h.uploads.length,1);
   const retry=routeHarness({committed:true});assert.equal((await retry.post()).status,200);assert.equal(retry.uploads.length,0);
+});
+test('Plushie API hourly upload guard is 10 per actor across toys; frame guard stays 20 and fails closed',async()=>{
+ const h=routeHarness();await h.post();
+ assert.deepEqual(JSON.parse(JSON.stringify(h.calls.find(c=>c[0]==='check_rate_limit')[1])),{p_bucket:`burrow-photo:doll:${h.user}`,p_limit:10,p_window_seconds:3600});
+ const f=routeHarness();await f.post({kind:'frame',toyId:undefined});
+ assert.equal(f.calls.find(c=>c[0]==='check_rate_limit')[1].p_limit,20);
+ const blocked=routeHarness({allowed:false});assert.equal((await blocked.post()).status,429);
+ assert.equal(blocked.uploads.length,0);assert.deepEqual(blocked.calls.map(c=>c[0]),['check_rate_limit']);
 });
 test('photo API rejects mismatched toy receipts and malformed toy IDs; frame endpoint cannot carry a toy',async()=>{
   assert.equal((await routeHarness({mismatch:true}).post()).status,409);

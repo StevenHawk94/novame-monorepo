@@ -1,5 +1,6 @@
 import { Image } from './burrow-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BURROW_ROOM_ICONS } from '@/lib/burrow-ui-assets';

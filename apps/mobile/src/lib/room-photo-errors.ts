@@ -1,6 +1,6 @@
 export const TOY_PHOTO_DAILY_LIMIT_TITLE = 'Today’s photo limit reached';
 export const TOY_PHOTO_DAILY_LIMIT_MESSAGE =
-  'Join plus to enable more photos used on your plushie, or come back tomorrow;';
+  'You’ve reached today’s photo limit. Please try again tomorrow.';
 
 export function roomPhotoFailureCode(failure: unknown): string | null {
   if (failure && typeof failure === 'object' && 'body' in failure) {

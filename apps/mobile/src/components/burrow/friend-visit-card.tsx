@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import { Image } from './burrow-image';
 import { router, type Href } from 'expo-router';
 import { respondFriendVisit, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';

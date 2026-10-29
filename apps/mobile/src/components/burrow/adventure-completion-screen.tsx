@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { useIsFocused, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from './burrow-image';
-import { BurrowBackButton } from './burrow-back-button';
 import { AdventureTreasure } from './adventure-treasure';
 import { AdventureEncounterCard } from './adventure-encounter-card';
 import { AdventureFriendCard } from './adventure-friend-card';
 import { AdventureEncounterLayout } from './adventure-encounter-layout';
 import { BURROW_BACKGROUNDS } from '@/lib/burrow-art-assets';
 import { claimAdventureResult, type MajorUpdateBootstrap, type MajorUpdateCatalogItem } from '@/lib/app-major-update-api';
-import { confirmBurrowAdventureClaimLocally, confirmBurrowAdventureInteractionLocally, confirmBurrowAdventureItemLocally, runBurrowAction } from '@/lib/burrow-store';
+import { confirmBurrowAdventureClaimLocally, confirmBurrowAdventureInteractionLocally, confirmBurrowAdventureItemLocally, runBurrowAction,scheduleBurrowRefresh } from '@/lib/burrow-store';
 import { queueAdventureDelivery, readAdventureDelivery, resumeAdventureDelivery } from '@/lib/adventure-delivery';
 import { dismissToRetainedTab } from '@/lib/retained-tab-navigation';
 import { adventureFriendPresentation } from '@/lib/adventure-friend-presentation';
@@ -19,20 +18,25 @@ import { adventureTreasureReward } from '@/lib/adventure-treasure-reward';
 import { AdventureStageTransition } from './adventure-stage-transition';
 import { recordAdventurePaywallCompletion } from '@/lib/adventure-paywall';
 import { markNavigationTransitionPending } from '@/lib/rating-navigation';
+import {useAdventureCompletionGuard} from '@/lib/use-adventure-completion-guard';
+import {useAdventureDeliveryRevision} from '@/lib/adventure-delivery-state';
 
 /** One mounted flow per journey. The intermediate claim receipt advances the
  * UI immediately; a slow/stale bootstrap must not strand users at the chest. */
 export function AdventureCompletionScreen({ data }: { data: MajorUpdateBootstrap }) {
   const adventure = data.activeAdventure!, result = data.adventureResult!, meta = result.metadata;
+  useAdventureDeliveryRevision();
   const v2 = !!meta?.encounterV2, hasFriend = !!result.friend_id || !!meta?.dialogue;
   const pending = readAdventureDelivery(adventure.id);
   const finishedOnEntry = useRef(!!pending?.finish && !pending.failed);
+  const [exitRequested,setExitRequested]=useState(finishedOnEntry.current);
   const [encounter, setEncounter] = useState(!!pending?.treasure || v2 && !meta?.treasureReserved || !!meta?.treasureClaimed || !!meta?.dialogueCompleted || adventure.status === 'interaction_required' || result.claim_status === 'interaction_required');
   // Freeze before the chest claim (legacy claims can add a discovery), not on each dialogue tap.
   const [meeting] = useState(() => adventureFriendPresentation(data));
   const [legacyInvited, setLegacyInvited] = useState(!meeting.isNewFriend), [finished, setFinished] = useState<string | null>(null);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const focused = useIsFocused(), focusRef = useRef(focused); focusRef.current = focused;
+  useAdventureCompletionGuard(data,exitRequested);
   const route = useRoute(), exitLock = useRef(false);
   const [completionOrdinal] = useState(() => {
     const completed = data.specialQuests?.find(quest => quest.questId === 'adventures_completed')?.progress;
@@ -52,21 +56,24 @@ export function AdventureCompletionScreen({ data }: { data: MajorUpdateBootstrap
     if (Platform.OS !== 'web') markNavigationTransitionPending(route.key);
     recordAdventurePaywallCompletion({ userId: data.profile.id, adventureId: adventure.id,
       hasPlus: data.hasPlus, ordinal: completionOrdinal });
-    exit();
+    setExitRequested(true);
   };
+  // Commit guard release before dispatching our own final pop. No network wait.
+  useEffect(()=>{if(exitRequested&&focused)exit();},[exitRequested,focused]);
   useEffect(() => { if (v2) { void resumeAdventureDelivery();
     // Restore completed journeys on entry only. In-session claims own their
     // immediate navigation; a background receipt must not tear down that page.
-    if (focused && finishedOnEntry.current) { finishedOnEntry.current = false; exit(); }
+    if (focused && finishedOnEntry.current) { finishedOnEntry.current = false; setExitRequested(true); }
   } }, [adventure.id, v2, focused]);
   async function claimTreasure() {
     if (v2) {
       // Everything visual is already frozen. Durable backend writes do not
       // gate the invitation/animation or the next local dialogue line.
-      if (queueAdventureDelivery(adventure.id, { treasure: true, ...(!meta?.giftSnapshot ? { finish: true } : {}) }) === false) {
+      const needsEncounter=!!meta?.giftSnapshot||!!meta?.dialogue;
+      if (queueAdventureDelivery(adventure.id, { treasure: true, ...(!needsEncounter ? { finish: true } : {}) }) === false) {
         setError('Your discovery couldn’t be saved on this device. Please try again.'); return;
       }
-      if (meta?.giftSnapshot) setEncounter(true); else finish();
+      setError(null);if (needsEncounter) setEncounter(true); else finish();
       return;
     }
     setBusy(true); setError(null);
@@ -100,9 +107,9 @@ export function AdventureCompletionScreen({ data }: { data: MajorUpdateBootstrap
             : <ScrollView bounces={false} contentContainerStyle={s.legacyDialogue}><AdventureFriendCard embedded data={data} busy={busy} onComplete={feedback => { confirmBurrowAdventureClaimLocally(adventure.id); setFinished(feedback); }}/></ScrollView>}
         </AdventureEncounterLayout>}
       {error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
-      {pending?.failed && <Pressable onPress={() => queueAdventureDelivery(adventure.id, {})}><Text style={s.error}>Your discovery is saved on this device. Tap to retry background saving.</Text></Pressable>}
+      {pending?.terminal?<Pressable onPress={()=>scheduleBurrowRefresh()}><Text accessibilityRole="alert" style={s.error}>This adventure is no longer available. Tap to refresh.</Text></Pressable>
+        :pending?.failed && <Pressable onPress={() => queueAdventureDelivery(adventure.id, {})}><Text style={s.error}>Your discovery is saved on this device. Tap to retry background saving.</Text></Pressable>}
     </View>
-    <BurrowBackButton light onPress={() => router.back()} style={{ position: 'absolute', left: 16, top: insets.top + 8 }}/>
     </View>
     </AdventureStageTransition>
   </View>;

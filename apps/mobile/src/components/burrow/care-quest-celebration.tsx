@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { AppState, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
+import Animated, { cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 const COLORS = ['#E9AD48', '#F17E67', '#79B99A', '#F4D777', '#CE91B9', '#86BED1'];
 
@@ -23,23 +24,38 @@ function ConfettiPiece({ index }: { index: number }) {
 
 /** Care's status message stays separate from the global currency presentation.
  * Use an in-screen layer, not a native Modal that would cover the banner. */
-export function CareQuestCelebration({ title, message, reward, onClose }: {
-  title: string; message?: string; reward?: number; onClose: () => void;
+export function CareQuestCelebration({ title, message, reward, icon='celebration', onClose }: {
+  title: string; message?: string; reward?: number; icon?: 'celebration'|'heart'; onClose: () => void;
 }) {
   const close = useRef(onClose);
   close.current = onClose;
+  // Entrance belongs to this mounted completion, never a reward receipt or
+  // changing callback. Animate the card only; the scrim and wallet stay put.
+  const reduced = useRef(useReducedMotion()).current;
+  const scale = useSharedValue(reduced ? 1 : .84), opacity = useSharedValue(0);
+  useEffect(() => {
+    if (!reduced) scale.value = withSpring(1, { mass: .6, stiffness: 300, damping: 8.5,
+      energyThreshold: .0001, overshootClamping: false, reduceMotion: ReduceMotion.System });
+    opacity.value = withTiming(1, { duration: reduced ? 160 : 120, reduceMotion: ReduceMotion.Never });
+    const state = AppState.addEventListener('change', next => {
+      if (next === 'active') return;
+      cancelAnimation(scale); cancelAnimation(opacity); scale.value = 1; opacity.value = 1;
+    });
+    return () => { state.remove(); cancelAnimation(scale); cancelAnimation(opacity); };
+  }, [reduced, scale, opacity]);
+  const entrance = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ scale: scale.value }] }));
   useEffect(() => {
     const back = BackHandler.addEventListener('hardwareBackPress', () => { close.current(); return true; });
     return () => back.remove();
   }, []);
   return <View accessibilityViewIsModal style={[StyleSheet.absoluteFillObject, styles.scrim, { zIndex: 100 }]}>
       {!reward && <View pointerEvents="none" style={styles.burst}>{Array.from({ length: 36 }, (_, index) => <ConfettiPiece key={index} index={index} />)}</View>}
-      <View style={styles.card}>
-        <Text style={styles.emoji}>🎉</Text>
+      <Animated.View style={[styles.card, entrance]}>
+        <Text style={styles.emoji}>{icon==='heart'?'❤️':'🎉'}</Text>
         <Text style={styles.title}>{title}</Text>
         {!!message&&<Text style={styles.message}>{message}</Text>}
         <Pressable accessibilityRole="button" onPress={onClose} style={styles.button}><Text style={styles.buttonText}>Done</Text></Pressable>
-      </View>
+      </Animated.View>
   </View>;
 }
 

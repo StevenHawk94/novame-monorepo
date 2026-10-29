@@ -3,11 +3,12 @@ import type { MajorUpdateBootstrap } from './app-major-update-api';
 import { storage } from './storage';
 import { kBurrowAttention } from '../shared/storage/keys';
 import { sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
-import { adventureHasArrived } from './burrow-presentation';
 import { momentKind } from './burrow-moments-model';
 import { notificationReadiness, type NotificationDestination } from './notification-readiness';
 import { notificationContentVersion } from './notification-content-version';
 import { preparedShopGiftIds } from './shop-gift-preparation';
+import {adventureEntryState} from './adventure-entry-state';
+import {readAdventureDeliveryRows,subscribeAdventureDelivery} from './adventure-delivery-state';
 
 export type AttentionChannel = 'moments' | 'letters' | 'games' | 'journal' | 'visits' | 'quests';
 export type AttentionItem = { id: string; at: string; pageId?:string;answerId?:string;revision?:string;kind?:'page'|'answer' };
@@ -18,6 +19,7 @@ type Seen = Partial<Record<SeenChannel,string[]>>;
 const cache = new Map<string,Seen>(), pending = new Map<string,Set<string>>(), listeners = new Set<()=>void>();
 let revision=0;
 const publish=()=>{revision++;listeners.forEach(fn=>fn());};
+subscribeAdventureDelivery(publish);
 subscribeSessionIdentity(()=>{cache.clear();pending.clear();publish();});
 export const attentionScope=(data:MajorUpdateBootstrap)=>`${data.profile.id}:${data.partner?.id??''}:${data.pairVersion??''}`;
 export const notificationContentReady=(data:MajorUpdateBootstrap,kind:NotificationDestination)=>
@@ -79,11 +81,10 @@ export function dismissHomeLetterReminder(data:MajorUpdateBootstrap){
   if(data.profile.id!==sessionUserId())return;
   rememberSeenIds(attentionScope(data),'letterReminders',sources(data).letters.map(item=>item.id));
 }
-/** Dismiss only this journey's arrival notification, never its pending rewards.
- * Journey identity survives stale reads and result/dialogue status changes. */
+/** Legacy entry compatibility. Opening is not a final collection receipt. */
 export function dismissAdventureReminder(data:MajorUpdateBootstrap,now=Date.parse(data.serverNow)){
-  if(data.profile.id!==sessionUserId()||!data.activeAdventure||!adventureHasArrived(data.activeAdventure,now))return;
-  rememberSeenIds(attentionScope(data),'adventureReminders',[data.activeAdventure.id]);
+  // Compatibility for old entry callers. Merely entering is NOT collection.
+  // Old persisted arrival-dismissal IDs no longer hide incomplete rewards.
 }
 function rememberSeenIds(scope:string,channel:SeenChannel,ids:readonly string[]){
   if(!ids.length)return;
@@ -112,8 +113,8 @@ export function burrowAttentionCounts(data:MajorUpdateBootstrap|null|undefined,n
   const special=(data.specialQuests??[]).filter(q=>q.progress>=q.target&&!hidden.has(`special:${q.questId}:${q.stage}`)).length;
   const reminded=new Set([...(read.letters??[]),...(read.letterReminders??[])]);
   const letter=notificationContentReady(data,'letters')?new Set(items.letters.filter(item=>!reminded.has(item.id)).map(item=>item.id)).size:0;
-  const affection=Math.min(data.unread?.affection??0,(data.affectionInbox??[]).length),adventure=notificationContentReady(data,'adventure')&&adventureHasArrived(data.activeAdventure,now??Date.parse(data.serverNow))
-    &&!read.adventureReminders?.includes(data.activeAdventure!.id)?1:0;
+  const affection=Math.min(data.unread?.affection??0,(data.affectionInbox??[]).length),adventure=notificationContentReady(data,'adventure')
+    &&adventureEntryState(data,now??Date.parse(data.serverNow),readAdventureDeliveryRows()).kind==='settlement'?1:0;
   const journalRead=new Set([...(read.journal??[]),...(read.journalReminders??[])]);
   const rooms={game_room:notificationContentReady(data,'games')?unread('games'):0,memories_room:notificationContentReady(data,'journal')?items.journal.filter(item=>!journalRead.has(item.id)).length:0,friends_room:notificationContentReady(data,'visits')?unread('visits'):0};
   const gifts=data.pairAccessVerified===true?preparedShopGiftIds(data).length:0;

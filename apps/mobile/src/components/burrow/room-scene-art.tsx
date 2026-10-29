@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { Image } from './burrow-image';
 import { SeasonalWindowArtwork } from './window-artwork';
 import type { MajorUpdateCatalogItem, MajorUpdateBootstrap } from '@/lib/app-major-update-api';
@@ -11,6 +12,7 @@ import { InteractiveDoll } from './interactive-doll';
 import { toyPhotoFor } from '@/lib/burrow-toy-photos';
 import { dollFaceRect, framePhotoRect } from '@/lib/burrow-doll-face';
 import {PlushieFaceMask} from './plushie-face-mask';
+import {homeAnchoredBox} from '@/lib/burrow-home-layout';
 
 type Placement = { category: string; slot: string; x: number; y: number; width: number; anchor: 'top' | 'bottom'; canvasWidth?: number };
 const ROOM_WIDTH = 360;
@@ -32,18 +34,7 @@ const furniture: Placement[] = [
 ];
 
 function artStyle(asset: BurrowArtAsset, placement: Placement, scale: number) {
-  const [left, top, right, bottom] = asset.bounds;
-  const ratio = placement.canvasWidth == null ? placement.width / (right - left) : placement.canvasWidth / asset.width;
-  const edge = placement.category === 'couple_dolls' || placement.category === 'shelf_decor'
-    ? (placement.anchor === 'top' ? 0 : asset.height)
-    : (placement.anchor === 'top' ? top : bottom);
-  return {
-    position: 'absolute' as const,
-    left: (placement.canvasWidth == null ? placement.x - left * ratio : placement.x + placement.width / 2 - placement.canvasWidth / 2) * scale,
-    top: (placement.y - edge * ratio) * scale,
-    width: asset.width * ratio * scale,
-    height: asset.height * ratio * scale,
-  };
+  return homeAnchoredBox(asset, {...placement, key: placement.slot, anchorY: placement.y, visibleWidth: placement.width}, scale);
 }
 
 export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [], onSlot, partnerOutfit, busy = false, canFeed = true,ownerId,partnerOwnerId }: {

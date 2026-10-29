@@ -6,7 +6,9 @@ import { apiClient } from './api';
 import { withDeadline, HOME_BOOTSTRAP_TIMEOUT_MS } from './async-lifecycle';
 import { sessionEpoch, subscribeSessionIdentity } from './session-lifecycle';
 import { commandCoinReward, settleCoinReward, failCoinReward, type CoinResponse } from './coin-reward-store';
-import {submitCoinOperation,submitCoinCommand} from './coin-command-outbox';
+import {submitCoinOperation,submitCoinCommand,enqueueRoomCareCommand} from './coin-command-outbox';
+import {currentQuestData} from './quest-progress-store';
+import {roomCarePayload} from './room-care-model';
 import type { CoinWalletState } from './coin-reward-ledger';
 import type { DailyPlusBonusState } from './daily-plus-bonus';
 import { trackItemPurchaseForRating } from './official-rating-milestones';
@@ -68,6 +70,7 @@ export type AdventureDisplay = { userId: string; partnerId: string | null; pairV
   adventureResult: MajorUpdateBootstrap['adventureResult']; adventurePlan: AdventurePlan | null };
 
 export interface MajorUpdateBootstrap {
+  roomCare?:import('@novame/domain').RoomCareState;
   bunnyIdentity?:import('./bunny-identity-model').BunnyIdentity;
   adventureTeam?:AdventureTeamState;
   /** Process-local authorization; never trusted from disk. */
@@ -76,7 +79,7 @@ export interface MajorUpdateBootstrap {
   adventurePlan?: AdventurePlan | null;
   /** An atomic bootstrap read, not an inferred/default product price list. */
   catalogComplete?: true;
-  photoUsage?: {localDate:string;frame:{limit:number;used:number;remaining:number};doll:{limit:number;targets:{ownerId:string;toyId:string;used:number}[]}};
+  photoUsage?: {localDate:string;frame:{limit:number;used:number;remaining:number};doll:{limit:number|null;unlimited?:boolean;targets:{ownerId:string;toyId:string;used:number}[]}};
   attention?: import('./burrow-attention').BurrowAttentionSnapshot;
   adventureCollection?: { enabled: boolean; displays: { user_id: string; gift_id: string }[]; progress: { friend_id: string; completed: number }[] };
   coinState?: CoinWalletState;
@@ -107,6 +110,8 @@ export interface MajorUpdateBootstrap {
   memoryPrompts: { id: string; prompt: string }[];
   memoryEntries: { id: string; author_id: string; body: string; prompt_id: string | null; created_at: string; updated_at: string; photos?: { id: string; slot: number; updatedAt: string }[] }[];
   readyRecordId: string | null;
+  /** Date of a locally journalled new-day record while bootstrap catches up. */
+  readyRecordLocalDate?:string;
   lastAffectionAt: string | null;
   partnerNeeds: { food: number; water: number; foodValue?: number; waterValue?: number; foodUpdatedAt?: string; waterUpdatedAt?: string };
   lastCareAt?: { food: string | null; water: string | null };
@@ -124,7 +129,7 @@ export interface MajorUpdateBootstrap {
   affectionInbox: { id: string; affection_type: AffectionType; completed_at: string }[];
   affectionInboxGroups?: { affection_type: AffectionType; completed_at: string; ids: string[] }[];
   affectionUsage?: {localDate:string;used:number;limit:number;remaining:number;keys?:string[];pending?:number};
-  adventureResult: { id: string; result_type: 'item' | 'friend' | 'quiet'; item_id: string | null; friend_id: string | null; claim_status: string;
+  adventureResult: { id: string; adventure_id?:string; result_type: 'item' | 'friend' | 'quiet'; item_id: string | null; friend_id: string | null; claim_status: string;
     metadata?: { encounterV2?: boolean; dialogueCompleted?: boolean; reaction?: string[]; response?: { choiceId: string };
       dialogue?: { id: string; scene: string | null; lines: string[]; choices: { id: string; label: string; reaction: string[] }[]; outro: string | null };
       giftSnapshot?: MajorUpdateCatalogItem; treasureSnapshot?: MajorUpdateCatalogItem | null; treasureReserved?: boolean; treasureClaimed?: boolean;
@@ -161,6 +166,7 @@ export interface MajorUpdateBootstrap {
     serverNow: string;
   };
   activeAdventure: { id: string; status: AdventureStatus; started_at: string; ends_at: string;
+    local_date?:string;
     /** Local preview until a start receipt supplies a real ID and deadline.
      * Exact started_at may be refined by display/bootstrap without a restart. */
     localStartPending?: true } | null;
@@ -345,7 +351,12 @@ export function refillRoomNeed(
   need: 'food' | 'water',
   idempotencyKey = randomUUID(),
 ) {
-  return command<CommandResponse>('refill_room_need', { ownerId, need, idempotencyKey });
+  const data=currentQuestData();
+  if(!data)return Promise.reject(Error('care_unavailable'));
+  return submitCoinCommand<CommandResponse>('complete_room_care_v2',roomCarePayload(data,ownerId,need,idempotencyKey));
+}
+export function enqueueRoomCare(data:MajorUpdateBootstrap,ownerId:string,need:'food'|'water',key=randomUUID()){
+  return enqueueRoomCareCommand(roomCarePayload(data,ownerId,need,key));
 }
 
 export function interactBurrowToy(idempotencyKey = randomUUID(),ownerId?:string) {

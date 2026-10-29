@@ -64,14 +64,28 @@ export const HOME_DOLL_PLACEMENT: HomeArtPlacement = { key: 'doll', category: 'c
 export const HOME_FRAME_PLACEMENT: HomeArtPlacement = { key: 'frame', category: 'frames', slot: 'frame', x: 631, anchorY: 763, visibleWidth: 116, canvasWidth: 500 * 116 / 304, anchor: 'top' };
 export const HOME_LETTER_PLACEMENT: HomeArtPlacement = { key: 'letter', category: 'letter', slot: 'letter', x: 557, anchorY: TABLE_SURFACE, visibleWidth: 71, anchor: 'bottom' };
 
+// One reference canvas per category, calibrated to its existing default item.
+// Never fit each variant's alpha width: a narrow silhouette would become taller.
+// [source canvas width, default visible left, default visible right]. Explicit
+// canvas placements (Toy/frame/kettle/flower/gift +20%) keep their existing rules.
+const DECOR_REFERENCE_CANVASES: Record<string, readonly [number, number, number]> = {
+  light_strings: [625, 0, 625], windows: [512, 30, 482], shelves: [625, 40, 584],
+  music_players: [600, 25, 577], cabinets: [500, 8, 492], lamps: [300, 32, 272],
+  rugs: [800, 43, 763], cushions: [800, 58, 746], ladders: [600, 120, 499],
+  tables: [500, 44, 456], vases: [500, 74, 427],
+};
 export function homeAnchoredBox(asset: { width: number; height: number; bounds: readonly [number, number, number, number] }, placement: HomeArtPlacement, scale: number) {
   const [left, top, right, bottom] = asset.bounds;
-  const ratio = placement.canvasWidth == null ? placement.visibleWidth / (right - left) : placement.canvasWidth / asset.width;
+  const reference = placement.canvasWidth == null ? DECOR_REFERENCE_CANVASES[placement.category] : undefined;
+  const canvasWidth = placement.canvasWidth ?? (reference ? reference[0] * placement.visibleWidth / (reference[2] - reference[1]) : undefined);
+  const ratio = canvasWidth == null ? placement.visibleWidth / (right - left) : canvasWidth / asset.width;
+  const canvasLeft = reference ? placement.x - reference[1] * canvasWidth! / reference[0]
+    : canvasWidth == null ? placement.x - left * ratio : placement.x + placement.visibleWidth / 2 - canvasWidth / 2;
   const edge = placement.category === 'couple_dolls' || placement.category === 'shelf_decor'
     ? (placement.anchor === 'top' ? 0 : asset.height)
     : (placement.anchor === 'top' ? top : bottom);
   return { position: 'absolute' as const,
-    left: (placement.canvasWidth == null ? placement.x - left * ratio : placement.x + placement.visibleWidth / 2 - placement.canvasWidth / 2) * scale,
+    left: canvasLeft * scale,
     top: (placement.anchorY - edge * ratio) * scale,
     width: asset.width * ratio * scale, height: asset.height * ratio * scale };
 }

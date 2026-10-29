@@ -96,6 +96,22 @@ test('missing profile cannot become an anonymous empty burrow', async () => {
   await assert.rejects(unpairedBurrowBootstrap(db, 'missing'), /unpaired_bootstrap_unavailable/)
 })
 
+test('unpaired owner keeps each doll face from a former pair, but no former partner faces or old paired frames',async()=>{
+ const id='self',calls=[],photos=[
+  {id:'my-ballerina',owner_id:id,kind:'doll',toy_id:'ballerina',pair_low:id,pair_high:'old',updated_at:'2026-10-27'},
+  {id:'my-solo-toy',owner_id:id,kind:'doll',toy_id:'solo-toy',pair_low:id,pair_high:id,updated_at:'2026-10-27'},
+  {id:'their-doll',owner_id:'old',kind:'doll',toy_id:'ballerina',pair_low:id,pair_high:'old'},
+  {id:'old-frame',owner_id:id,kind:'frame',pair_low:id,pair_high:'old'},
+  {id:'solo-frame',owner_id:id,kind:'frame',pair_low:id,pair_high:id},
+ ];
+ const db=database({profiles:[{id,subscription_tier:'free',timezone_name:'UTC'}],
+  app_config:[{key:'app_major_update_content_revision',value:'published'}],content_revisions:[{id:'published',status:'published'}],room_photos:photos},calls);
+ const result=await unpairedBurrowBootstrap(db,id);
+ assert.deepEqual(result.roomPhotos.map(p=>p.id),['my-ballerina','my-solo-toy','solo-frame']);
+ const query=calls.find(c=>c.table==='room_photos');assert.ok(query.filters.some(([k,v])=>k==='owner_id'&&v===id));
+ assert.equal(result.roomPhotos[0].toyId,'ballerina');assert.equal(result.roomPhotos[0].pair_low,undefined);
+});
+
 test('a missing initial care row falls back to hungry and thirsty, not falsely full', async () => {
   const id = 'new-user'
   const db = database({

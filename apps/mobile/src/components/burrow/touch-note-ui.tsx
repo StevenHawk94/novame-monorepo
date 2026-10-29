@@ -1,4 +1,5 @@
-import {Pressable,ScrollView,StyleSheet,Text,View,type StyleProp,type ViewStyle} from 'react-native';
+import { ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {Image} from './burrow-image';
 import {AppModal} from '../layout/app-modal';
 export function TouchNoteIcon({size=76}:{size?:number}){return <View style={{width:size,height:size*.68,overflow:'hidden'}}><Image source={require('../../../assets/burrow-webp/touch-note.webp')} contentFit="contain" style={{position:'absolute',top:-size*.16,width:size,height:size}}/></View>;}

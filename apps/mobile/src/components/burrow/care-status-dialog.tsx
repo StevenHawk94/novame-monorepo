@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import { careCooldownMessage } from '@/lib/burrow-care-cooldown';
 

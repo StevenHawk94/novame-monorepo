@@ -1,5 +1,6 @@
 import {useEffect} from 'react';
-import {BackHandler,Image,Platform,Linking,Pressable,StyleSheet,Text,View} from 'react-native';
+import { BackHandler, Image, Platform, Linking, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {hideSplashOnce} from '@/lib/splash';
 import {haptics} from '@/lib/haptics';

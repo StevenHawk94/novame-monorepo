@@ -20,10 +20,14 @@ export function AdventureEncounterCard({ data, onComplete, presentation }: {
   const dialogue = meta.dialogue;
   const pendingChoice = readAdventureDelivery(adventure.id)?.choiceId;
   const savedChoice = dialogue?.choices.find(choice => choice.id === pendingChoice);
+  const checkpoint=readAdventureDelivery(adventure.id)?.checkpoint;
   const [meeting] = useState(() => presentation ?? adventureFriendPresentation(data));
-  const [invited, setInvited] = useState(!meeting.isNewFriend || !!meta.dialogueCompleted || !!savedChoice);
+  const [invited, setInvited] = useState(!!checkpoint?.invited||!meeting.isNewFriend || !!meta.dialogueCompleted || !!savedChoice);
   const insets = useSafeAreaInsets();
-  const [line, setLine] = useState(0), [reaction, setReaction] = useState<string[] | null>(meta.dialogueCompleted ? meta.reaction ?? [] : savedChoice?.reaction ?? null);
+  const replying=!!meta.dialogueCompleted||!!savedChoice;
+  const restoredLine=checkpoint&&Number.isSafeInteger(checkpoint.line)&&checkpoint.line>=0
+    &&(checkpoint.stage!=='intro')===replying?checkpoint.line:0;
+  const [line, setLine] = useState(restoredLine), [reaction, setReaction] = useState<string[] | null>(meta.dialogueCompleted ? meta.reaction ?? [] : savedChoice?.reaction ?? null);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const alive = useRef(true), lock = useRef(false), finishLock = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -45,8 +49,9 @@ export function AdventureEncounterCard({ data, onComplete, presentation }: {
     if (meta.encounterV2) {
       const choice = dialogue?.choices.find(row => row.id === choiceId);
       if (!choice || reaction !== null) return;
-      if (queueAdventureDelivery(adventure.id, { choiceId }) === false) { setError('Your reply couldn’t be saved. Please try again.'); return; }
+      if (queueAdventureDelivery(adventure.id, { choiceId,checkpoint:{stage:'reply',line:0,invited:true} }) === false) { setError('Your reply couldn’t be saved. Please try again.'); return; }
       lock.current = true;
+      setError(null);
       setReaction(choice.reaction); setLine(0);
       return;
     }
@@ -86,6 +91,11 @@ export function AdventureEncounterCard({ data, onComplete, presentation }: {
     if (ok && alive.current) { finishLock.current = true; onComplete(); }
     if (!ok && alive.current) { setError('Your gift is safe. Try claiming again.'); setBusy(false); }
   }
+  function advance(invitation=false){
+    const next=invitation?line:line+1,stage=reaction===null?'intro':next>=replies.length?'gift':'reply';
+    if(meta.encounterV2&&queueAdventureDelivery(adventure.id,{checkpoint:{stage,line:next,invited:true}})===false){setError('Your place couldn’t be saved. Please try again.');return;}
+    setError(null);if(invitation)setInvited(true);else setLine(next);
+  }
   if (giftReady) return <AdventureStageTransition stageKey="friend-gift">
     <AdventureRewardScreen variant="gift" title={gift?.title ?? 'You’ve collected every treasure on this trail.'} item={gift}
       friendName={friendName} busy={busy} error={error} onClaim={claim}/>
@@ -94,10 +104,10 @@ export function AdventureEncounterCard({ data, onComplete, presentation }: {
     <AdventureEncounterLayout friendName={friendName} heading={meeting.heading} answered={reaction !== null} pages={pages}>
       <AdventureStageTransition compact stageKey={!invited ? 'invite' : choosing ? 'choices'
         : `${reaction === null ? 'intro' : 'reply'}:${giftReady ? Math.max(0, lines.length-1) : line}`}>
-      {!invited && dialogue ? <FriendTextPanel page={{...invitePage,welcome:'adventure'}} onAction={()=>setInvited(true)}/>
+      {!invited && dialogue ? <FriendTextPanel page={{...invitePage,welcome:'adventure'}} error={error} onAction={()=>advance(true)}/>
         : choosing ? <FriendTextPanel page={choicePage} disabled={busy} error={error} onChoice={index=>void answer(dialogue!.choices[index].id)}/>
-        : <FriendDialogue key={`${reaction === null ? 'intro' : 'reply'}:${line}`} disabled={busy || giftReady}
-        onPress={() => setLine(x => x + 1)}>{giftReady ? lines.at(-1) ?? 'Your bunny brought a little discovery home.' : lines[line]}</FriendDialogue>}
+        : <FriendDialogue key={`${reaction === null ? 'intro' : 'reply'}:${line}`} disabled={busy || giftReady} error={error}
+        onPress={() => advance()}>{giftReady ? lines.at(-1) ?? 'Your bunny brought a little discovery home.' : lines[line]}</FriendDialogue>}
       </AdventureStageTransition>
     </AdventureEncounterLayout>
   </View>;

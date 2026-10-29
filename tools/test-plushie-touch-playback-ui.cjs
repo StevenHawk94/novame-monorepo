@@ -14,6 +14,7 @@ function harness(){
   '@react-navigation/native':{useIsFocused:()=>focused},'react-native-reanimated':{runOnUI:f=>f,runOnJS:f=>f,useReducedMotion:()=>false,useSharedValue:initial=>{const r=h.react.useRef(null);return r.current??={value:initial,modify(fn){this.value=fn(this.value);}};}},
   '@/lib/plushie-touch-motion':playback,'@/lib/squishy-toy-motion':motion,'@/lib/burrow-art-assets':{burrowArtForItem:()=>({})},
   '@/lib/haptics':{haptics:{touchPulse:async()=>{pulses++;}}},'@/lib/touch-note-runtime':{touchCapabilities:async()=>caps},
+  '@/lib/touch-heart-motion':load('apps/mobile/src/lib/touch-heart-motion.ts'),
   './plushie-touch-toy':{PlushieTouchToy:'Toy'},'./plushie-touch-heart':{TouchHeartMeter:'Meter',TouchFlyingHearts:'Flying'},
  },{...time.globals,setInterval(fn,ms){const token={active:true,id:null};const tick=()=>{if(!token.active)return;fn();if(token.active)token.id=time.globals.setTimeout(tick,ms);};token.id=time.globals.setTimeout(tick,ms);return token;},clearInterval(token){token.active=false;time.globals.clearTimeout(token.id);}});
  const render=()=>tree=h.render(()=>PlushieTouchPlayback({message:{id:'note',toy:{},clip},size:300,paused,initialQuality:'full',onFinish:()=>finished.push(true),onPause:reason=>{pauses.push(reason);paused=true;}}));
@@ -21,9 +22,9 @@ function harness(){
 }
 test('actual playback component freezes all visual clocks on Stop, resumes without elapsed jump and clears particles/deformation on completion',()=>{
  const q=harness();q.frame(1000);q.frame(2000);q.render();assert.equal(find(q.tree,'Meter').props.count,3);
- q.pause(true);const before=JSON.stringify(q.m),progress=find(q.tree,'Meter').props.progress.value;
- assert.equal(q.frame(90000),false);assert.equal(find(q.tree,'Meter').props.progress.value,progress);assert.equal(JSON.stringify(q.m),before);
- q.pause(false);q.frame(100000);assert.equal(find(q.tree,'Meter').props.progress.value,progress);
+ q.pause(true);const before=JSON.stringify(q.m),elapsed=find(q.tree,'Meter').props.clock.value;
+ assert.equal(q.frame(90000),false);assert.equal(find(q.tree,'Meter').props.clock.value,elapsed);assert.equal(JSON.stringify(q.m),before);
+ q.pause(false);q.frame(100000);assert.equal(find(q.tree,'Meter').props.clock.value,elapsed);
  q.frame(159000);q.render();assert.equal(q.finished.length,1);assert.equal(find(q.tree,'Meter').props.count,120);
  assert.ok(find(q.tree,'Flying').props.bursts.value.every(t=>t<0));assert.equal(q.m.touches.length,0);assert.equal(q.m.active,false);assert.equal(q.frame(160000),false);q.h.unmount();
 });

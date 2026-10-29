@@ -1,0 +1,62 @@
+{
+  "authorization": "User explicitly approved isolated verification then database/API deployment for only 24FAGF and 88US9W's current reciprocal relationship, expiring automatically in seven days.",
+  "status": "live",
+  "migration": {
+    "version": "20261028000285",
+    "sha256": "cc54143f420c2f39d2f5541cfea3bd04466a0fdeadaab22d5e00c11961af2a38",
+    "protectedSets": 173,
+    "protectedRowsUnchangedDuringMigration": true,
+    "unrelatedFunctionsUnchanged": true,
+    "existingPermissionsUnchanged": true,
+    "reviewedFunctions": 14,
+    "newFunctions": 2,
+    "newPrivateTables": 2
+  },
+  "pair": {
+    "accounts": [
+      {"code": "24FAGF", "id": "4d95e1b8-09e9-4904-aaaa-5e564dabb603", "economicDomain": "sandbox", "ownPlus": true, "effectivePlusAtVerification": true},
+      {"code": "88US9W", "id": "36b75655-a89b-45dd-b232-a35db4efe502", "economicDomain": "production", "ownPlus": false, "effectivePlusAtVerification": true}
+    ],
+    "pairVersion": "598d48d14cda41f9d15e119f9fb62a15",
+    "enabledAt": "2026-10-28T16:29:48.916233Z",
+    "expiresAt": "2026-11-04T16:29:48.916233Z",
+    "expiresAtLosAngeles": "2026-11-04 08:29:48 PST",
+    "durationSeconds": 604800,
+    "bothDirectionsVerified": true,
+    "realSameEconomicDomain": false,
+    "reauthorizationAfterRematchingOrExpiry": "Not allowed automatically; requires fresh approval."
+  },
+  "scope": ["Couple Adventure and Nudge", "sharing an actually valid own Plus subscription", "Game", "Surprise and gifts", "Touch Note"],
+  "unchanged": ["real StoreKit/Play Billing verification", "own subscription authority", "immutable account economic domains", "independent wallets and inventory", "fixed economic dates and existing quotas", "prices, reward amounts and existing receipts", "all other accounts' isolation", "previous Touch Note-only exception"],
+  "expiry": {
+    "mechanism": "Server statement-time/current-pair checks on every authorization; no cron or later code edit required.",
+    "earlyClose": "Set enabled=false on exactly the approved frozen configuration row, via controlled database access only.",
+    "committed": "Do not reverse existing results: original Touch Note receipts replay, paid Surprise upload/complete/refund, immutable gifted transaction claims, already joined Adventure deadlines and personal results, and purchased unlock ownership persist under their original relationship/read/retention rules.",
+    "uncommitted": "New cross-domain sends/joins/paid-game eligibility and borrowed Plus are refused; unpaid legacy Surprise tickets cannot create a new debit. Original daily/monthly usage is not reset.",
+    "touchHistory": "Existing Free downgrade pruning still applies and deleted messages are not restored."
+  },
+  "validation": {
+    "domainRegression": {"passed": 1142, "failed": 0, "log": "/private/tmp/burrow-test285.akntzR/domain.log"},
+    "databaseRegression": {"passed": 60, "failed": 0, "log": "/private/tmp/burrow-test285.akntzR/database-regression-final.log", "scope": "new temporary exception + existing security/economy, dual-bunny Adventure and old Touch-only exception suites"},
+    "currentProductionFunctionRehearsal": {"passed": 14, "failed": 0, "log": "/private/tmp/burrow-test285.akntzR/deployed-function-tests.log", "overlapsOtherDatabaseTests": true},
+    "mobileTypecheck": "passed",
+    "apiBuild": "Vercel optimized production build, lint/types, catalog verification and native avatar-runtime checks passed",
+    "gitDiffCheck": "passed",
+    "negativeCases": ["third party", "one-way/stale/replaced pair", "disabled/expired permission", "revoked actual Plus", "stale profile Plus", "same-key replay and altered intent", "existing Touch usage not reset", "earlier debit rolled back on denied transfer", "unpaid legacy Surprise after expiry", "protected-row and unrelated-function corruption abort release transaction"]
+  },
+  "api": {
+    "baseline": "dpl_DsYWZZP5epoBzzgnekmBSAs1tbhU",
+    "deployment": "dpl_2rpofCuC9qjM6fY5npzUQNo9vtXm",
+    "url": "https://api.soulsayit.com",
+    "verifiedFiles": 293,
+    "changedFiles": ["apps/api/src/app/api/duo/status/route.js"],
+    "change": "Only substitute the authoritative same-domain-or-approved-pair RPC in the legacy Duo display endpoint.",
+    "productionCapabilityPreflight": {"versions": 7, "currentProducts": 496},
+    "adminUnchanged": true,
+    "existingCronsRegistered": true,
+    "anonymousDuoAndBootstrapStatus": 401,
+    "verifiedAt": "2026-10-28T16:31:21.199Z"
+  },
+  "evidenceDirectory": "/private/tmp/burrow-test285.akntzR",
+  "limits": ["No production messages, gifts, purchases or quota consumption were performed by the agent.", "No App, Admin, announcement or force-update release.", "No claim of production dual-device end-to-end, physical haptics or all-device verification.", "Isolated PostgreSQL is a single WASM engine, not a multi-connection load test.", "Already running separate Solo journeys are not merged; remaining >10 minutes and independent log/quota rules still apply.", "Client cached membership display uses existing foreground/Me-page refresh; server permission expiry does not depend on that cache."]
+}

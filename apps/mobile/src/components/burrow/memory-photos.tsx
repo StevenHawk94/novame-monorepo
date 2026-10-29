@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { registerOverlay } from '@/lib/overlay-presence';

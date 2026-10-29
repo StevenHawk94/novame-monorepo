@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef} from 'react';
-import {Pressable,ScrollView,StyleSheet,Text,View,type NativeScrollEvent,type NativeSyntheticEvent} from 'react-native';
+import { ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {ONBOARDING_CREAM,ONBOARDING_INK} from '@/lib/burrow-onboarding-design';
 import {clampRelationshipDate,formatRelationshipDate,localRelationshipDate,relationshipDateParts,relationshipMonthDays,RELATIONSHIP_MONTHS} from '@/lib/onboarding-relationship-date';
 

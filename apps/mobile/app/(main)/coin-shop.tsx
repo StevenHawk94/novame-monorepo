@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CarrotShop } from '@/components/burrow/carrot-shop';
 import { useBurrowSnapshot } from '@/lib/burrow-store';

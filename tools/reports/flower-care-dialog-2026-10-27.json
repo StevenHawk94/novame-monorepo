@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-27",
+  "request": "Use Bunny Feed's format for the Flower watering completion dialog, with Ahh! / Your flower is fresh and growing. and a heart icon",
+  "changes": {
+    "ownWater": {"title": "Ahh!", "message": "Your flower is fresh and growing.", "icon": "heart"},
+    "partnerWater": {"title": "Ahh!", "message": "[Name]'s flower is fresh and growing.", "icon": "heart", "note": "Preserves existing owner-specific wording, consistently with partner Bunny Feed"},
+    "sharedPresentation": "Existing CareQuestCelebration card, centered title/body, title 22/28, body 15/22, icon 48, and Done callback",
+    "unchanged": ["Bunny Feed text and celebration icon", "Existing care-status/cooldown dialog", "Care submission and instant feedback timing", "Owner/actor and relationship checks", "Cooldown, quotas and rewards", "Done/back cleanup and non-blocking save"]
+  },
+  "verification": {
+    "counterexample": "Before implementation, the updated care suite failed three assertions: own-water copy, partner-water copy, and the real component heart rendering",
+    "targeted": {"command": "node --test tools/test-burrow-care-interaction.cjs", "passed": 55, "failed": 0, "overlapsDomainGate": true},
+    "initialCare": {"command": "PGLITE_MODULE=<isolated PGlite package> node --test tools/test-burrow-initial-care.cjs", "passed": 3, "failed": 0, "database": "Isolated local PGlite only; no production calls or SQL changes"},
+    "domain": {"command": "pnpm test:domain-isolation", "passed": 984, "failed": 0},
+    "types": {"command": "pnpm --filter @novame/mobile exec tsc --noEmit", "exitCode": 0},
+    "diffCheck": {"command": "git diff --check", "exitCode": 0},
+    "native": {
+      "environment": "Dedicated iphone se / iOS 26.2 simulator, existing isolated QA app, Release/minified Hermes JS, actual CareQuestCelebration component, synthetic completion trigger with no business network",
+      "observed": ["Heart visible, exact Ahh! title and full flower body centered and unobscured", "Done dismisses the popup and underlying buttons remain visible/actionable", "Bunny Feed remains Yum! / Your bunny is full and happy. with its original celebration icon", "Reopen Flower from the same underlying page works"],
+      "screenshots": ["outputs/flower-care-dialog-2026-10-27/flower-complete.png", "outputs/flower-care-dialog-2026-10-27/bunny-reference.png"],
+      "limits": "Component-level native visual/lifecycle check, not production end-to-end watering, Android or physical-device validation; no performance change claimed"
+    }
+  },
+  "documentation": "docs/burrow-development-standards.md v1.24 / section 10",
+  "release": "Client-only source change. Metro reload applies it in development; existing published binaries need a future client release. No production API/database deployment, App publication or Git commit performed."
+}

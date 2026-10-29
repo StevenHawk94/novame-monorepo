@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { ActivityIndicator, AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { useGlobalSearchParams, usePathname } from 'expo-router';
 import { ScreenOverlay } from '@/components/ui/screen-overlay';
 import { cancelBurrowPageEntry, getBurrowPageEntry, retryBurrowPageEntry, subscribeBurrowPageEntry } from '@/lib/burrow-page-entry';

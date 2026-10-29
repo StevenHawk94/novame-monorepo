@@ -94,6 +94,27 @@ test('actual 258 SQL: anchored hours, all photographed toys, midnight tasks, pri
     await db.query("insert into room_photos values($1,$2,$2,$2,'doll','toy-a')",[soloPhoto,A]);
     assert.equal((await send('solo',4,{partner:null,version:null,photo:soloPhoto})).count,4);
     assert.equal((await send('solo',4,{partner:null,version:null,photo:soloPhoto})).applied,false);
+    // Reproduce the production failure: retained owner photo was uploaded in
+    // Solo/a former relationship. New interaction has the CURRENT pair scope.
+    await db.query('insert into pairings(user_id,partner_user_id) values($1,$2),($2,$1)',[A,B]);
+    await db.exec('delete from moment_events where toy_window_started_at is not null');
+    await db.query('update room_photos set pair_low=owner_id,pair_high=owner_id where id=$1',[PHOTO]);
+    assert.equal((await send('old-photo-before282',3)).skipped,'photo_required');
+    const rowsBefore=(await db.query('select * from room_photos order by id')).rows;
+    const migration=fs.readFileSync('supabase/migrations/20261027000282_received_touch_history_and_personal_photo_moments.sql','utf8');
+    await db.exec(migration.slice(migration.indexOf('do $moments$'),migration.indexOf('end $moments$;')+'end $moments$;'.length));
+    assert.deepEqual((await db.query('select * from room_photos order by id')).rows,rowsBefore);
+    assert.equal((await send('old-photo-before282',3)).skipped,'photo_required','immutable old receipt is not rewritten');
+    assert.equal((await send('retained-photo-new',3)).count,3);assert.equal((await send('retained-photo-new',3)).applied,false);
+    assert.equal((await send('retained-photo-next',2,{at:plus(first,59*60000),last:plus(first,59*60000)})).count,5);
+    assert.equal((await db.query('select count(*)::int n from moment_events where toy_window_started_at is not null')).rows[0].n,1);
+    assert.equal((await send('retained-photo-new-hour',1,{start:plus(first,3600000),at:plus(first,3600000),last:plus(first,3600000)})).count,1);
+    assert.equal((await send('retained-wrong-owner',8,{actor:B,partner:A})).skipped,'photo_required');
+    assert.equal((await send('retained-wrong-toy',8,{toy:'other-toy'})).skipped,'photo_required');
+    assert.equal((await send('retained-missing-photo',8,{photo:KEY+'-missing'})).skipped,'photo_required');
+    assert.equal((await send('retained-stale-pair',8,{version:oldVersion})).error,'pair_changed');
+    const legacyRetained=(await db.query('select interact_burrow_toy_batch_v1($1,$1,$2,$3,$4,2,$5) r',[A,B,version,times.day,'legacy-retained282'])).rows[0].r;
+    assert.equal(legacyRetained.applied,true);assert.equal(legacyRetained.count,2);
     assert.equal((await db.query("select has_function_privilege('authenticated','record_burrow_toy_window_v1(uuid,uuid,text,text,text,timestamptz,timestamptz,timestamptz,date,integer,text,text)','execute') allowed")).rows[0].allowed,false);
   }catch(error){console.error({query:error.query,position:error.position,internalPosition:error.internalPosition,internalQuery:error.internalQuery,where:error.where});throw error;}finally{await db.close();}
 });

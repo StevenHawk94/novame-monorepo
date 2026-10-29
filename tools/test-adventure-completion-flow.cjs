@@ -22,6 +22,7 @@ function harness({ v2 = false, pending = false, hasFriend = true, resumed = fals
     '@react-navigation/native': { useIsFocused: () => focused, useRoute:()=>({key:'adventure-route'}) }, 'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) },
     '@/lib/adventure-paywall':{recordAdventurePaywallCompletion:input=>promotions.push(input)},
     '@/lib/rating-navigation':{markNavigationTransitionPending:key=>transitions.push(key)},
+    '@/lib/use-adventure-completion-guard':{useAdventureCompletionGuard:(_data,done)=>focused&&!done},
     './burrow-image': { Image: 'Image' }, './burrow-back-button': { BurrowBackButton: 'Back' },
     './adventure-treasure': { AdventureTreasure: 'Treasure' }, './adventure-encounter-card': { AdventureEncounterCard: 'Encounter' },
     './adventure-friend-card': { AdventureFriendCard: 'LegacyFriend' },
@@ -42,7 +43,7 @@ function harness({ v2 = false, pending = false, hasFriend = true, resumed = fals
   const render = () => nodes(h.render(() => AdventureCompletionScreen({ data })));
   return { h, data, render, calls, receipts, routes, request,promotions,transitions,setDelivery:value=>{delivery=value;}, setFocused: value => { focused = value; render(); } };
 }
-test('treasure and friends each carry their own opaque background and back button inside the sliding page',async()=>{
+test('treasure and friends keep their opaque background but normal completion has no back button',async()=>{
   for(const v2 of [false,true]){
     const x=harness({v2});
     if(v2)x.data.adventureResult.metadata.giftSnapshot={stable_id:'gift'};
@@ -51,15 +52,21 @@ test('treasure and friends each carry their own opaque background and back butto
       const children=nodes(transition.props.children);
       assert.equal(tree.filter(n=>n.type==='Image').length,1,'no background shared outside the page');
       assert.equal(children.find(n=>n.type==='Image').props.source,source);
-      assert.ok(children.some(n=>n.type==='Back'));
+      assert.equal(children.some(n=>n.type==='Back'),false);
       assert.ok(children.some(n=>n.type==='View'&&JSON.stringify(n.props.style).includes('backgroundColor')));
     }
     page('finish-bg');await x.render().find(n=>n.type==='Treasure').props.onClaim();page('friends-bg');x.h.unmount();
   }
 });
+test('retryable and terminal errors never add an exit control to the reward flow',async()=>{
+ const x=harness({fail:true});await x.render().find(n=>n.type==='Treasure').props.onClaim();
+ assert.equal(x.render().some(n=>n.type==='Back'),false);assert.equal(x.routes.length,0);
+ x.setDelivery({failed:true,terminal:true});assert.equal(x.render().some(n=>n.type==='Back'),false);x.h.unmount();
+});
 test('an in-session finish receipt cannot tear down a gift popup before its dismissal callback',()=>{
   const x=harness({v2:true,resumed:true});x.render();x.setDelivery({finish:true});x.render();
   assert.equal(x.routes.length,0);x.render().find(n=>n.type==='Encounter').props.onComplete();
+  x.render();
   assert.equal(x.routes.length,1);x.h.unmount();
 });
 test('legacy interactionRequired is a success receipt and immediately opens the friend invitation without a bootstrap', async () => {
@@ -77,7 +84,7 @@ test('new furniture claim is separate from the friend gift and uses the frozen f
   const tap=treasure.props.onClaim(); assert.equal(h.render().some(n=>n.type==='Encounter'),true,'no network wait before invitation');
   await tap; assert.deepEqual(JSON.parse(JSON.stringify(h.calls)), [['queue','journey',{treasure:true}]]);
   assert.deepEqual(h.receipts, []); assert.equal(h.routes.length, 0);
-  h.render().find(n => n.type === 'Encounter').props.onComplete(); assert.deepEqual(h.routes, ['/(main)/(tabs)']); h.h.unmount();
+  h.render().find(n => n.type === 'Encounter').props.onComplete();h.render();assert.deepEqual(h.routes, ['/(main)/(tabs)']); h.h.unmount();
 });
 test('presentation is frozen before a legacy chest claim creates this friend’s discovery', async () => {
   const h=harness();h.render();
@@ -96,7 +103,7 @@ test('legacy returning friends also skip the invitation and show their frozen pr
 test('resuming the intermediate receipt skips an already-claimed chest; final navigation goes to Home', () => {
   const h = harness({ v2: true, resumed: true });
   assert.ok(h.render().some(n => n.type === 'Encounter')); assert.equal(h.calls.length, 0);
-  h.render().find(n => n.type === 'Encounter').props.onComplete(); assert.deepEqual(h.routes, ['/(main)/(tabs)']); h.h.unmount();
+  h.render().find(n => n.type === 'Encounter').props.onComplete();h.render();assert.deepEqual(h.routes, ['/(main)/(tabs)']); h.h.unmount();
 });
 test('claim failure stays on the reward and makes no confirmed cache change', async () => {
   const h = harness({ v2: false, fail: true });
@@ -106,6 +113,7 @@ test('claim failure stays on the reward and makes no confirmed cache change', as
 });
 test('a no-friend legacy claim exits immediately, but a late response cannot pull a user back into Home', async () => {
   const h = harness({ hasFriend: false }); await h.render().find(n => n.type === 'Treasure').props.onClaim();
+  h.render();
   assert.deepEqual(h.receipts, [['done', 'journey']]); assert.equal(h.routes.length, 1); h.h.unmount();
   const late = harness({ pending: true, hasFriend: false });
   const task = late.render().find(n => n.type === 'Treasure').props.onClaim(); late.setFocused(false);
@@ -121,12 +129,13 @@ test('Adventure promotion is counted only on the final gift exit, once, using it
  x.data.specialQuests=[{questId:'adventures_completed',progress:5}];
  const complete=x.render().find(n=>n.type==='Encounter').props.onComplete;
  complete();complete();
+ x.render();
  assert.equal(x.promotions.length,1);assert.equal(x.promotions[0].ordinal,5);
  assert.equal(x.promotions[0].adventureId,'journey');assert.equal(x.promotions[0].userId,'me');
  assert.equal(x.routes.length,1);assert.deepEqual(x.transitions,['adventure-route']);x.h.unmount();
 });
 test('Back, a failed claim, offscreen callbacks and recovery auto-exit cannot create an Adventure promotion',async()=>{
- const back=harness({v2:true});back.render().find(n=>n.type==='Back').props.onPress();assert.equal(back.promotions.length,0);back.h.unmount();
+ const back=harness({v2:true});assert.equal(back.render().some(n=>n.type==='Back'),false);assert.equal(back.promotions.length,0);back.h.unmount();
  const failed=harness({fail:true});await failed.render().find(n=>n.type==='Treasure').props.onClaim();assert.equal(failed.promotions.length,0);failed.h.unmount();
  const off=harness({v2:true,resumed:true});const done=off.render().find(n=>n.type==='Encounter').props.onComplete;
  off.setFocused(false);done();assert.equal(off.promotions.length,0);assert.equal(off.routes.length,0);off.h.unmount();

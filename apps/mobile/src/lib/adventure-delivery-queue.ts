@@ -1,6 +1,8 @@
 export type AdventureDelivery = {
   owner: string; scope: string; id: string; treasure: boolean; choiceId?: string; finish: boolean;
-  treasureSaved: boolean; responseSaved: boolean; failed?: boolean;
+  treasureSaved: boolean; responseSaved: boolean; failed?: boolean; terminal?:boolean;
+  journeyDay?:string; finishSaved?:boolean;
+  checkpoint?:{stage:'intro'|'reply'|'gift';line:number;invited:boolean};
 };
 type Receipt = { itemId?: string | null; interactionRequired?: boolean };
 /** UI records intent synchronously. Only this durable, ordered worker writes
@@ -22,7 +24,11 @@ export function createAdventureDeliveryQueue(deps: {
     && typeof job.treasureSaved === 'boolean' && typeof job.responseSaved === 'boolean'
     && (job.choiceId === undefined || typeof job.choiceId === 'string')) jobs.set(`${job.scope}:${job.id}`, job);
   let flight: Promise<void> | null = null, timer: unknown, attempts = 0, generation = 0;
-  const persist = () => deps.save([...jobs.values()]);
+  const persist = () => {
+    const all=[...jobs.values()],completed=all.filter(job=>job.finishSaved||job.terminal).slice(-32);
+    deps.save(all.filter(job=>!job.finishSaved&&!job.terminal||completed.includes(job)));
+    for(const [key,job]of jobs)if((job.finishSaved||job.terminal)&&!completed.includes(job))jobs.delete(key);
+  };
   function update(key: string, next?: AdventureDelivery) {
     const previous = jobs.get(key);
     if (next) jobs.set(key, next); else jobs.delete(key);
@@ -35,12 +41,15 @@ export function createAdventureDeliveryQueue(deps: {
     const ctx = deps.context(); return ctx?.owner === job.owner && ctx.scope === job.scope;
   };
   function get(id: string) { const ctx = deps.context(); return ctx ? jobs.get(`${ctx.scope}:${id}`) : undefined; }
-  function enqueue(id: string, intent: { treasure?: boolean; choiceId?: string; finish?: boolean }) {
+  function enqueue(id: string, intent: { treasure?: boolean; choiceId?: string; finish?: boolean;journeyDay?:string;checkpoint?:AdventureDelivery['checkpoint'] }) {
     const ctx = deps.context(); if (!ctx) return false;
     const previous = get(id);
+    if(previous?.terminal)return false;
     const job: AdventureDelivery = { owner: ctx.owner, scope: ctx.scope, id,
-      treasure: false, finish: false, treasureSaved: false, responseSaved: false, ...previous,
-      ...intent, ...(previous?.choiceId ? { choiceId: previous.choiceId } : {}), failed: false };
+      treasureSaved: false, responseSaved: false, ...previous,
+      ...intent, ...(previous?.choiceId ? { choiceId: previous.choiceId } : {}),
+      ...(previous?.journeyDay?{journeyDay:previous.journeyDay}:{}),
+      treasure:!!(previous?.treasure||intent.treasure),finish:!!(previous?.finish||intent.finish),failed: false };
     try { update(`${ctx.scope}:${id}`, job); } catch { return false; }
     void resume(); return true;
   }
@@ -62,7 +71,7 @@ export function createAdventureDeliveryQueue(deps: {
     const startedGeneration = generation;
     while (deps.active()) {
       const job = [...jobs.values()].find(j => current(j) && !j.failed
-        && ((j.treasure && !j.treasureSaved) || (j.choiceId && !j.responseSaved) || j.finish));
+        && !j.finishSaved&&((j.treasure && !j.treasureSaved) || (j.choiceId && !j.responseSaved) || j.finish));
       if (!job) return;
       const key = `${job.scope}:${job.id}`;
       const stage = job.treasure && !job.treasureSaved ? 'treasure' : job.choiceId && !job.responseSaved ? 'response' : 'finish';
@@ -72,9 +81,9 @@ export function createAdventureDeliveryQueue(deps: {
         if (generation !== startedGeneration || !current(job)) return;
         if (stage === 'finish' && receipt.interactionRequired) throw Error('interaction_required');
         const latest = jobs.get(key)!;
-        update(key, stage === 'finish' ? undefined : { ...latest, ...(stage === 'treasure' ? { treasureSaved: true } : { responseSaved: true }) });
-        deps.confirmed(job, stage, receipt);
-        if (stage === 'finish') deps.settled();
+        update(key, { ...latest, ...(stage === 'finish'?{finishSaved:true}:stage === 'treasure' ? { treasureSaved: true } : { responseSaved: true }) });
+        try{deps.confirmed(job, stage, receipt);}catch{/* A saved receipt is not a failed transaction. */}
+        if (stage === 'finish')try{deps.settled();}catch{/* Later bootstrap reconciliation remains available. */}
         attempts = 0;
       } catch (error) {
         if (generation !== startedGeneration || !current(job)) return;
@@ -82,7 +91,7 @@ export function createAdventureDeliveryQueue(deps: {
         const code = body && typeof body === 'object' && 'error' in body ? String(body.error)
           : error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error);
         if (['adventure_cancelled','pair_changed','not_found','session_changed'].includes(code)) {
-          try { update(key); deps.settled(); return; } catch { /* keep durable intent */ }
+          try { update(key,{...jobs.get(key)!,failed:true,terminal:true}); deps.settled(); return; } catch { /* keep durable intent */ }
         }
         if (['invalid_response','interaction_required','treasure_required','feature_disabled'].includes(code)) {
           try { update(key, { ...jobs.get(key)!, failed: true }); deps.settled(); return; } catch { /* keep durable intent */ }

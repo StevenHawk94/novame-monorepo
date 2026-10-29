@@ -4,7 +4,7 @@ const model=load('apps/mobile/src/lib/burrow-surface.ts');
 const plain=value=>JSON.parse(JSON.stringify(value));
 
 test('flat and fully covered screens keep their exact colors without creating a gradient surface',()=>{
-  for(const [section,entry,color] of [['home',false,'#793D29'],['burrow',false,'#572b1a'],['quests',false,'#844624'],['adventure',true,'#461501']])
+  for(const [section,entry,color] of [['home',false,'#793D29'],['burrow',false,'#572b1a'],['quests',false,'#6a321c'],['adventure',true,'#5c2c19']])
     assert.equal(model.burrowFlatSurface(section,entry),color);
   for(const section of ['adventure','friends_room','self_care_room'])assert.equal(model.burrowFlatSurface(section,false),model.BURROW_PAGE_COLORS[0]);
   const source=fs.readFileSync('apps/mobile/src/components/burrow/burrow-screen.tsx','utf8');

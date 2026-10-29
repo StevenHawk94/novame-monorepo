@@ -1,8 +1,12 @@
 import type { MajorUpdateBootstrap } from './app-major-update-api';
+import {currentRoomCare,roomCareAction} from './room-care-model';
+import type {RoomCareAction} from '@novame/domain';
 
 export const CARE_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const justCompleted = new Map<string, number>();
 const pending = new Map<string, object>();
+let v2Pending: (data:MajorUpdateBootstrap,owner:string,action:RoomCareAction)=>boolean=()=>false;
+export function configureCarePending(reader:typeof v2Pending){v2Pending=reader;}
 const submissionScope = (data: MajorUpdateBootstrap, ownerId: string, need: 'food' | 'water') =>
   `${data.profile.id}:${data.partner?.id ?? ''}:${data.pairVersion ?? ''}:${ownerId}:${need}`;
 
@@ -26,6 +30,12 @@ export function markCareCompleted(ownerId: string, need: 'food' | 'water', at = 
 /** Shared entry/completion gate: full, saving, or inside the care cooldown. */
 export function careCoolingDown(data: MajorUpdateBootstrap, need: 'food' | 'water', now = Date.now(), ownerId = data.profile.id) {
   if (pending.has(submissionScope(data, ownerId, need))) return true;
+  const care=currentRoomCare(data);
+  if(care){
+    const action=roomCareAction(need,ownerId!==data.profile.id);
+    const status=(ownerId===data.profile.id?care.own:care.partner)?.[action];
+    return !status||v2Pending(data,ownerId,action)||now<(Date.parse(status.nextAt??'')||0);
+  }
   const needs = ownerId === data.profile.id ? data.roomNeeds : data.partnerNeeds;
   if (needs) {
     const stored = need === 'food' ? needs.foodValue : needs.waterValue;

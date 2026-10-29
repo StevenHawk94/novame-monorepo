@@ -7,6 +7,7 @@ import {createTouchRecorder,type TouchRecordingCheckpoint} from '@/lib/plushie-t
 import type {BurrowArtAsset} from '@/lib/burrow-art-assets';
 import type {MajorUpdateBootstrap} from '@/lib/app-major-update-api';
 import type {ToyMotion} from '@/lib/squishy-toy-motion';
+import {queueTouchHeartBursts} from '@/lib/touch-heart-motion';
 import {PlushieTouchToy} from './plushie-touch-toy';
 import {TouchHeartMeter,TouchFlyingHearts} from './plushie-touch-heart';
 
@@ -20,9 +21,9 @@ export function PlushieTouchRecording({asset,photo,size,scope,onComplete,onInter
  const [started,setStarted]=useState(initial?.started??false),[saveError,setSaveError]=useState(false),focused=useIsFocused(),reduced=useReducedMotion();
  const recorder=useRef(createTouchRecorder(initial,2)),live=useRef(true),accepting=useRef(false),done=useRef(false),elapsedJS=useRef(initial?.elapsedMs??0),savedAt=useRef(-1);
  const handlers=useRef({onComplete,onInterrupted,onCheckpoint,onStatus});handlers.current={onComplete,onInterrupted,onCheckpoint,onStatus};
- const feedback=useSharedValue(initial?.touches??0),start=useSharedValue(-1),offset=useSharedValue(initial?.elapsedMs??0),clock=useSharedValue(0),
-  elapsedUI=useSharedValue(initial?.elapsedMs??0),progress=useSharedValue((initial?.elapsedMs??0)/60000),sent=useSharedValue(false),
-  enabled=useSharedValue(false),resuming=useSharedValue(initial?.started??false),last=useSharedValue(-1),serial=useSharedValue(0),
+ const feedback=useSharedValue(initial?.touches??0),start=useSharedValue(-1),offset=useSharedValue(initial?.elapsedMs??0),clock=useSharedValue(initial?.elapsedMs??0),
+  elapsedUI=useSharedValue(initial?.elapsedMs??0),sent=useSharedValue(false),
+  enabled=useSharedValue(false),resuming=useSharedValue(initial?.started??false),last=useSharedValue(-1),
   bursts=useSharedValue<number[]>([-1e6,-1e6,-1e6,-1e6,-1e6,-1e6]);
  const persist=useCallback((force=false)=>{
   if(!force&&elapsedJS.current-savedAt.current<500)return;
@@ -46,7 +47,7 @@ export function PlushieTouchRecording({asset,photo,size,scope,onComplete,onInter
  },[focused,resume,pause,enabled]);
  useEffect(()=>{const app=AppState.addEventListener('change',status=>{if(status==='active'&&focused)resume();else if(!done.current)pause();});return()=>app.remove();},[focused,resume,pause]);
  useEffect(()=>{handlers.current.onStatus?.({started,seconds,count});},[started,seconds,count]);
- useEffect(()=>{runOnUI((n:number)=>{'worklet';if(n>feedback.value){const b=[...bursts.value];for(let i=0;i<Math.min(6,n-feedback.value);i++)b[serial.value++%6]=clock.value;bursts.value=b;}feedback.value=n;})(count);},[count,feedback,bursts,serial,clock]);
+ useEffect(()=>{runOnUI((n:number)=>{'worklet';if(n>feedback.value)bursts.value=queueTouchHeartBursts(bursts.value,clock.value,n-feedback.value);feedback.value=n;})(count);},[count,feedback,bursts,clock]);
  const input=useCallback((batch:TouchEvent[])=>{
   if(!live.current||!accepting.current||done.current)return;
   for(const e of batch)recorder.current.input(e);
@@ -65,21 +66,21 @@ export function PlushieTouchRecording({asset,photo,size,scope,onComplete,onInter
   }
  },[persist]);
  const frame=useCallback((_m:ToyMotion,f:FrameInfo)=>{
-  'worklet';clock.value=f.timestamp;if(!enabled.value||sent.value)return;
+  'worklet';if(!enabled.value||sent.value)return;
   if(resuming.value&&start.value<0)start.value=f.timestamp;
   if(start.value<0)return;
   const elapsed=Math.min(60000,Math.max(elapsedUI.value,offset.value+Math.max(0,f.timestamp-start.value)));
-  elapsedUI.value=elapsed;progress.value=elapsed/60000;
+  elapsedUI.value=elapsed;clock.value=elapsed;
   if(elapsed>=60000){sent.value=true;runOnJS(tick)(60000,true);}
   else if(f.timestamp-last.value>=100){last.value=f.timestamp;runOnJS(tick)(elapsed,false);}
- },[clock,enabled,sent,resuming,start,offset,elapsedUI,progress,last,tick,feedback,bursts,serial]);
- const toyTop=height*.27;
+ },[clock,enabled,sent,resuming,start,offset,elapsedUI,last,tick,feedback,bursts]);
+ const toyTop=height*.27,meterSize=Math.min(width*.39,height*.23);
  return <View testID="touch-recording-stage" style={{width,height}}>
-  <View pointerEvents="none" style={{position:'absolute',top:height*.035,alignSelf:'center'}}><TouchHeartMeter progress={progress} count={count} size={Math.min(width*.39,height*.23)}/></View>
+  <View pointerEvents="none" style={{position:'absolute',top:height*.035,alignSelf:'center'}}><TouchHeartMeter count={count} size={meterSize} clock={clock} bursts={bursts} reduced={reduced}/></View>
   <View style={{position:'absolute',top:toyTop,left:0,width,height:height-toyTop}}>
    <PlushieTouchToy asset={asset} photo={photo} size={size} quality="full" scope={scope} recording onInput={input} inputStart={start} inputOffset={offset} onFrame={frame}
     containerStyle={{width,height:height-toyTop}} actionsStyle={{position:'absolute',top:height-bottom-78-toyTop,left:24,width:width-48}}/>
-   {!reduced&&<View pointerEvents="none" style={{position:'absolute',top:0,left:(width-size)/2,width:size,height:size}}><TouchFlyingHearts clock={clock} bursts={bursts}/></View>}</View>
+   {!reduced&&<View pointerEvents="none" style={{position:'absolute',top:0,left:(width-size)/2,width:size,height:size}}><TouchFlyingHearts clock={clock} bursts={bursts} size={size} travelY={height*.035+meterSize/2-toyTop-size*.42}/></View>}</View>
   {saveError&&<Text accessibilityRole="alert" style={{position:'absolute',bottom:bottom+94,left:24,right:24,textAlign:'center',color:'#7D251B',backgroundColor:'#FFF9EF',padding:8,borderRadius:12}}>Your recording is still here. Free up storage to save it; we’ll retry.</Text>}
  </View>;
 }

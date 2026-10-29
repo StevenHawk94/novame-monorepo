@@ -5,6 +5,7 @@ import {randomUUID} from 'node:crypto';
 import {personalRoomTestDb} from './personal-room-test-db.mjs';
 import {shop279Transaction} from './release-shop-support279.mjs';
 const {db,query,rpc,release,migrate}=await personalRoomTestDb();
+release.release='f7647586172bd52cc353933b38ac06b40fc3ad51e870eed9635e80e26d8a3c15';
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';
 const migration=fs.readFileSync('supabase/migrations/20261027000279_shop_client_capability.sql','utf8');
 let checks=0;const check=(v,message)=>{assert.ok(v,message);checks++;};

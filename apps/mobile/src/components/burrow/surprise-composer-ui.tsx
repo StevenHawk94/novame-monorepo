@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, type ReactNode } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import LottieView from 'lottie-react-native';
 import { Image } from './burrow-image';
 

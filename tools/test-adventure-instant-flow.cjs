@@ -126,10 +126,10 @@ test('offline requests replay the same Save and Start keys without losing words 
   const h=jobsHarness(),id=h.queue();h.api.requestAdventureJournalStart(id);
   h.requests.prepare[0].resolve({ok:false,error:'network'});await flush();
   assert.equal(h.api.readAdventureJournalJob(id).input.body,'Kept day');
-  h.time.advance(2000);assert.equal(h.requests.prepare.length,2);
+ h.time.advance(2000);await flush();assert.equal(h.requests.prepare.length,2);
   assert.equal(h.calls.filter(c=>c[0]==='prepare')[0][1].idempotencyKey,h.calls.filter(c=>c[0]==='prepare')[1][1].idempotencyKey);
   h.requests.prepare[1].resolve({ok:true,draft});await flush();h.requests.finish[0].resolve({ok:true,snapshot:{reflectId:'record'}});await flush();
-  h.requests.start[0].reject({body:{error:'network_error'}});await flush();h.time.advance(4000);
+ h.requests.start[0].reject({body:{error:'network_error'}});await flush();h.time.advance(4000);await flush();
   assert.equal(h.requests.start.length,2);assert.equal(h.calls.filter(c=>c[0]==='start')[0][2],h.calls.filter(c=>c[0]==='start')[1][2]);
   h.background();
 });
@@ -137,7 +137,7 @@ test('restart restores a pending Start and resumes from confirmed finalize witho
   const first=jobsHarness(),id=first.queue();first.api.requestAdventureJournalStart(id);
   first.requests.prepare[0].resolve({ok:true,draft});await flush();first.requests.finish[0].resolve({ok:true,snapshot:{reflectId:'record'}});await flush();first.background();
   const second=jobsHarness({stored:first.stored});second.api.restoreAdventureJournalProjection();
-  assert.ok(second.projections.at(-1).startedAt);void second.api.resumeAdventureJournalJobs();
+  assert.ok(second.projections.at(-1).startedAt);void second.api.resumeAdventureJournalJobs();await flush();
   assert.equal(second.requests.prepare.length,0);assert.equal(second.requests.finish.length,0);assert.equal(second.requests.start.length,1);
   assert.equal(first.calls.find(c=>c[0]==='start')[2],second.calls.find(c=>c[0]==='start')[2]);second.background();
 });
@@ -155,10 +155,11 @@ test('semantic failures retain a retryable local receipt without an unbounded re
   assert.equal(h.api.readAdventureJournalJob(id).blocked,true);h.time.advance(600000);assert.equal(h.requests.prepare.length,1);
   h.api.retryAdventureJournalJob(id);assert.equal(h.requests.prepare.length,2);h.background();
 });
-test('returning to a server-confirmed saved day also starts locally and uses the durable worker',()=>{
+test('returning to a server-confirmed saved day also starts locally and uses the durable worker',async()=>{
   const h=jobsHarness();h.snapshot({readyRecordId:'server-record'});
   assert.equal(h.api.startPendingAdventureJournal('server-record'),true);
   assert.ok(h.projections.at(-1).startedAt);assert.equal(h.requests.prepare.length,0);
+  await flush();
   assert.deepEqual(h.calls.find(c=>c[0]==='start').slice(1),['server-record','key-2']);h.background();
 });
 test('logged screen/confetti paint before any network receipt; Start synchronously routes with one native fade',()=>{

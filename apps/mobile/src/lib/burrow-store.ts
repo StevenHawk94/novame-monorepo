@@ -1,5 +1,6 @@
 import { useCallback, useRef, useSyncExternalStore } from 'react';
 import { coinPresentationTiming } from './burrow-motion';
+import {mergeRoomCare} from './room-care-model';
 import { adventureDurationMs } from './adventure-duration';
 import { accountProfileRevision, projectAccountProfile, subscribeAccountProfile } from './account-profile-local';
 import {configureAvatarPair} from './avatar';
@@ -39,6 +40,8 @@ import { kPlushiePhotoOutbox, kFramePhotoOutbox } from '../shared/storage/keys';
 import { showBurrowToast } from './burrow-toast';
 import { configureQuestProgress, questProgress } from './quest-progress-store';
 import { burrowLocalDay } from './burrow-local-day';
+import {adventureDay} from './adventure-entry-state';
+import {readAdventureDeliveryRows} from './adventure-delivery-state';
 import { coinOperations, enqueueAffectionCommand } from './coin-command-outbox';
 import { freeAffectionUsedToday } from './burrow-daily-entry';
 import { questScope } from './quest-progress-model';
@@ -515,17 +518,20 @@ export function projectFriendVisitAnswerLocally(id:string,status:'pending'|'conf
 type JournalProjection = { owner: string; scope: string; localDate: string; recordId: string;
   startedAt?: string; adventureId?: string; endsAt?: string; error?: string; after?: number;team?:import('./cooperative-adventure').AdventureTeam };
 let journalProjection: JournalProjection | null = null;
-function mergeJournalProjection(data: MajorUpdateBootstrap, readStartedAt?: number) {
+function mergeJournalProjection(data: MajorUpdateBootstrap, readStartedAt?: number,serverTime?:number) {
   const p = journalProjection;
   if (!p) return data;
   const scope = `${data.profile.id}:${data.partner?.id ?? 'solo'}:${data.pairVersion ?? ''}`;
-  if (p.owner !== data.profile.id || p.scope !== scope || p.localDate !== data.localDate) {
+  const day=adventureDay(data,serverTime??(Date.parse(data.serverNow)+Math.max(0,burrowClock()-state.receivedAt)));
+  if (p.owner !== data.profile.id || p.scope !== scope || p.localDate !== day) {
     journalProjection = null; return data;
   }
   // A real start receipt already owns an authoritative deadline. Its optional
   // display/large Bootstrap may arrive later, but must not hold the clock at
   // the local preview value in the meantime (including restored old jobs).
   const accepted = !!p.adventureId && !p.adventureId.startsWith('pending:') && Number.isFinite(Date.parse(p.endsAt ?? ''));
+  const completed=readAdventureDeliveryRows().some(j=>j.owner===data.profile.id&&j.scope===scope&&j.id===data.activeAdventure?.id&&j.finish&&!j.failed);
+  if(completed)data={...data,activeAdventure:null,adventureResult:null};
   if (data.activeAdventure && !data.activeAdventure.id.startsWith('pending:')) {
     if (accepted && data.activeAdventure.localStartPending && data.activeAdventure.id === p.adventureId) {
       const { localStartPending: _pending, ...journey } = data.activeAdventure;
@@ -536,12 +542,12 @@ function mergeJournalProjection(data: MajorUpdateBootstrap, readStartedAt?: numb
       && (!p.adventureId || data.activeAdventure.id === p.adventureId)) journalProjection = null;
     return data;
   }
-  if (!p.startedAt) return { ...data, readyRecordId: p.recordId };
+  if (!p.startedAt) return { ...data, readyRecordId: p.recordId,readyRecordLocalDate:p.localDate };
   return { ...data, readyRecordId: null, dailyAdventureUsed: true,
     ...(p.team?{adventureTeam:{userId:p.owner,partnerId:data.partner?.id??null,pairVersion:data.pairVersion??null,
       adventureId:p.adventureId??`pending:${p.recordId}`,team:p.team,joinable:null,nudgeAvailable:accepted&&!p.team.followerId&&!p.team.nudged}}:{}),
     activeAdventure: { id: p.adventureId ?? `pending:${p.recordId}`, status: 'in_progress' as const,
-      started_at: p.startedAt, ends_at: p.endsAt ?? new Date(Date.parse(p.startedAt) + adventureDurationMs(data.hasPlus)).toISOString(),
+      started_at: p.startedAt,local_date:p.localDate,ends_at: p.endsAt ?? new Date(Date.parse(p.startedAt) + adventureDurationMs(data.hasPlus)).toISOString(),
       ...(accepted ? {} : { localStartPending: true as const }) } };
 }
 /** Pending Save/Start is backed by the durable journal queue, not a network wait. */
@@ -618,6 +624,19 @@ export function enqueueBurrowAffection(type:AffectionType,metrics:Record<string,
 // Receipt handling outlives the originating page and the first failed attempt.
 // Pair/session fences prevent an old send from consuming a new pair's entry.
 coinOperations.subscribeSettled(({operation,receipt,error})=>{
+  if(operation.payload.action==='complete_room_care_v2'){
+    const data=state.data,p=operation.payload;
+    if(!data||data.profile.id!==operation.owner||operation.owner!==sessionUserId()||state.pairInvalidated
+      ||p.partnerId!==(data.partner?.id??null)||p.pairVersion!==(data.pairVersion??null))return;
+    const result=receipt as {completedAt?:string}|undefined;
+    if(result?.completedAt&&Number.isFinite(Date.parse(result.completedAt))&&data.roomCare?.version===2){
+      const side=p.ownerId===data.profile.id?'own':'partner',room=data.roomCare[side];
+      if(room){const lastAt=result.completedAt,nextAt=new Date(Date.parse(lastAt)+12*3600000).toISOString();
+        publish({data:mergeRoomCare(data,{...data,roomCare:{...data.roomCare,[side]:{...room,[String(p.careAction)]:{lastAt,nextAt}}}})});}
+    }
+    if(error)showBurrowToast('This care could not be saved. Please try again.');
+    scheduleBurrowRefresh();return;
+  }
   if(operation.payload.action!=='complete_affection')return;
   const data=state.data;
   if(!data||data.profile.id!==operation.owner||data.profile.id!==sessionUserId()
@@ -991,6 +1010,9 @@ export function refreshBurrow({ silent = false }: { silent?: boolean } = {}) {
       // turns a usable room snapshot into a loading or empty notification state.
       if(!data.attention&&state.data?.profile.id===data.profile.id&&state.data.partner?.id===data.partner?.id
         &&state.data.pairVersion===data.pairVersion)data={...data,attention:state.data.attention};
+      if(data.roomCare===undefined&&state.data?.profile.id===data.profile.id&&state.data.partner?.id===data.partner?.id
+        &&state.data.pairVersion===data.pairVersion)data={...data,roomCare:state.data.roomCare};
+      data=mergeRoomCare(state.data,data);
       // Optional display failures must not erase a confirmed same-day value.
       // Never carry quotas/bonus or partner metadata into a new day, tier or
       // relationship. Wallet, catalogue and hasPlus always come from the core.
@@ -1080,7 +1102,7 @@ export function refreshBurrow({ silent = false }: { silent?: boolean } = {}) {
       if (confirmed && confirmed.wallet.version >= (data.wallet?.version ?? -1)) {
         data = { ...data, wallet: confirmed.wallet, coinState: confirmed.coinState };
       }
-      data = mergeJournalProjection(data, startedAt);
+      data = mergeJournalProjection(data, startedAt,Date.parse(data.serverNow)+Math.max(0,burrowClock()-receivedAt));
       data = mergeAdventureArrival(state.data, data, Date.parse(data.serverNow)+Math.max(0,burrowClock()-receivedAt));
       giftClaims.receive(data,true,giftReadRevision);
       data = roomEditSnapshot(giftClaims.project(data),true,roomReadRevision);

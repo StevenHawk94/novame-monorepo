@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-28",
+  "authorization": "User expressly approved production migration 286, corresponding API and cleanup cron, and committing/deploying all pending updates to Vercel. Prior request approved clearing the two developer placeholder descriptions while keeping normal descriptions.",
+  "status": "production_live",
+  "database": {
+    "photoRetention": {
+      "migration": "20261028000286",
+      "sha256": "3fef9070a0a2fc8d648675d9c8f2bbaac998916c24da49893c22d8ac3b9efb35",
+      "protectedSets": 173,
+      "protectedDataUnchanged": true,
+      "existingPermissionsUnchanged": true,
+      "unrelatedFunctionsUnchanged": true,
+      "currentPlushiePhotos": 39,
+      "removedDuplicateRows": 0,
+      "queuedObsoleteFiles": 3,
+      "migrationRecordedAndServiceOnlyRPCsVerified": true
+    },
+    "copyAndCapability": {
+      "migration": "20261028000287",
+      "sha256": "2ad977a20b62ee6534ce85e1f6563a98623059aecaf05e06720b30dc95a5744e",
+      "clearedDescriptions": 12,
+      "registeredProducts": 496,
+      "protectedSets": 176,
+      "protectedDataAndPermissionsUnchanged": true,
+      "catalogRepublished": false,
+      "priorCapabilityVersionsUnchanged": true,
+      "newClientRelease": "5acf169b89ae03ad502a2f18797ae0e03b9aa59005e6e3104165845a63ff20f4",
+      "verifiedClientVersions": 8
+    }
+  },
+  "api": {
+    "baseline": "dpl_2rpofCuC9qjM6fY5npzUQNo9vtXm",
+    "deployment": "dpl_7RXLSXE6xRckAV3BdLuPKguPrUbF",
+    "state": "READY",
+    "domain": "https://api.soulsayit.com",
+    "deploymentUrl": "https://novame-monorepo-rfkrd0c0q-soulsayit.vercel.app",
+    "verifiedSourceFiles": 294,
+    "changedFromLiveBaseline": [
+      "apps/api/src/app/api/vnext/bootstrap/route.js",
+      "apps/api/src/app/api/vnext/room-photo/route.js",
+      "apps/api/vercel.json",
+      "packages/domain/src/generated/shop-catalog-release.json",
+      "packages/domain/src/index.ts",
+      "packages/domain/src/room-care.ts"
+    ],
+    "removedSourceFiles": 0,
+    "photoCleanupSchedule": "*/5 * * * *",
+    "allTenCronPathsPreserved": true,
+    "anonymousBootstrapCommandPhotoAndCleanup": 401,
+    "verifiedAt": "2026-10-29T06:48:45.537Z"
+  },
+  "admin": {
+    "baseline": "dpl_51V9UNiaRd3L4hMZDc7R6DYsaYVT",
+    "deployment": "dpl_32UiFB1axDQzKU4yCoaR1TU2sHdw",
+    "state": "READY",
+    "domain": "https://novame-monorepo-admin.vercel.app",
+    "deploymentUrl": "https://novame-monorepo-admin-30qyx1ml5-soulsayit.vercel.app",
+    "verifiedSourceFiles": 903,
+    "baselineSourceComparisonAvailable": false,
+    "domainAliasVerified": true,
+    "httpSmoke": {"endpoint": "/admin/login", "status": 200, "transport": "system-proxy-compatible curl"},
+    "verifiedAt": "2026-10-29T06:55:29.590Z"
+  },
+  "checks": {
+    "domainIsolation": {"passed": 1248, "failed": 0, "domainSourceFiles": 497},
+    "mobileTypecheck": "passed",
+    "databaseRegression": {"passed": 37, "failed": 0, "suites": ["photo retention 286", "temporary pair 285", "security boundaries"]},
+    "releaseTransactionRehearsal": {"passed": true, "productionFunctionDefinitionsUsed": true, "ciFixtureWithoutProductionEvidenceAlsoPassed": true, "protectedRowsAndPermissions": true, "deduplication": true, "allCurrent496ProductCapabilities": true, "replayAndDriftGuards": true},
+    "previousPhotoSpecificRegression": {"passed": 53, "failed": 0},
+    "cleanupFailureAndClientContractTests": {"passed": 4, "failed": 0},
+    "catalogConsistencyAndProductionSupport": "passed",
+    "apiAndAdminOptimizedBuildsLintTypes": "passed",
+    "apiNativeAvatarRuntimeCheck": "passed",
+    "gitDiffCheck": "passed",
+    "stagedCredentialPatterns": {"forbiddenFiles": 0, "commonSecretPatterns": 0}
+  },
+  "policy": {
+    "plushie": "No Free/Plus daily quota; 10 authenticated upload requests per actor/hour across all toys/targets; one current owner+toy photo. Pending immutable upload protection remains.",
+    "oldPlushieFiles": "One-hour grace, five-minute worker schedule; healthy target 60-65 minutes, retries retained on storage/acknowledgement failure.",
+    "freeFrames": "Non-current history older than 30 days retired and cleaned; one currently displayable photo per owner exempt. Free 7-day history visibility and daily upload quotas unchanged.",
+    "plusExpiry": "Free rules use original photo age; upgrading does not restore retired/deleted history.",
+    "incompleteUploads": "Existing 24-hour recovery window retained."
+  },
+  "releaseBoundary": {
+    "appPublished": false,
+    "announcementOrForceUpdateChanged": false,
+    "agentPerformedProductionPurchasesOrMessages": false,
+    "agentManuallyInvokedAuthorizedCleanup": false,
+    "privateEvidence": "/private/tmp/burrow-photo286.oUApm0",
+    "localOnlyOutputs": "QA screenshots, exports and retired-resource recovery archive preserved locally and excluded from Git/Vercel. Sanitized reports and source/test/assets are committed.",
+    "clientAvailability": "Reload Metro to use committed client changes, or include in a separately authorized future App build. Vercel does not replace installed native App UI."
+  },
+  "limitations": [
+    "Queueing and cron registration do not prove physical deletion has occurred; no one-hour live wait was performed. External outages/backlog may delay deletion, with retry work retained.",
+    "The prior Admin source listing returned 404 beyond platform retention. All 903 candidate source hashes were verified against the reviewed local snapshot, but not against the old deployment's unavailable source.",
+    "SQL tests use isolated single-engine PGlite, not multi-connection load or real-user transactions.",
+    "No new simulator, physical haptic, real payment or all-device end-to-end acceptance is claimed for this release.",
+    "Specialized counts overlap the domain gate and must not be added as independent coverage.",
+    "The staged credential scan checks common formats and forbidden files; it is not a complete static proof of absence of secrets."
+  ],
+  "documentation": "docs/burrow-development-standards.md v1.40"
+}

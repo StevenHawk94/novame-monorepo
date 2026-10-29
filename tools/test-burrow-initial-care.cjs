@@ -55,16 +55,17 @@ test('fresh zero-percent rooms permit both interactions for either owner; succes
   assert.equal(care.careCoolingDown(data,'food',now,B),false);
 });
 
-test('care completion keeps the same copy and Done exit, with smaller title/body typography',()=>{
+test('watering completion uses the approved copy and heart, keeping the shared title/body typography and Done exit',()=>{
   const h=hooks(),jsx=(type,props)=>({type,props}),nodes=tree=>Array.isArray(tree)?tree.flatMap(nodes):tree&&typeof tree==='object'?[tree,...nodes(tree.props?.children)]:[];
   const {CareQuestCelebration}=load('apps/mobile/src/components/burrow/care-quest-celebration.tsx',{
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
-    'react-native':{BackHandler:{addEventListener:()=>({remove(){}})},Pressable:'Pressable',Text:'Text',View:'View',StyleSheet:{create:x=>x,absoluteFillObject:{}}},
-    'react-native-reanimated':{__esModule:true,default:{View:'AnimatedView'}},
+    'react-native':{AppState:{addEventListener:()=>({remove(){}})},BackHandler:{addEventListener:()=>({remove(){}})},Pressable:'Pressable',Text:'Text',View:'View',StyleSheet:{create:x=>x,absoluteFillObject:{}}},
+    'react-native-reanimated':{...require('./motion-test-utils.cjs').motionHarness(h).reanimated,withSpring:value=>value},
   });
   let closed=0;
-  const tree=nodes(h.render(()=>CareQuestCelebration({title:'Fresh and thirsty no more!',message:'Your bunny is full and happy.',onClose:()=>closed++})));
-  assert.equal(tree.find(n=>n.props?.children==='Fresh and thirsty no more!').props.style.fontSize,22);
-  assert.equal(tree.find(n=>n.props?.children==='Your bunny is full and happy.').props.style.fontSize,15);
+  const tree=nodes(h.render(()=>CareQuestCelebration({title:'Ahh!',message:'Your flower is fresh and growing.',icon:'heart',onClose:()=>closed++})));
+  assert.equal(tree.find(n=>n.props?.children==='Ahh!').props.style.fontSize,22);
+  assert.equal(tree.find(n=>n.props?.children==='Your flower is fresh and growing.').props.style.fontSize,15);
+  assert.equal(tree.find(n=>n.props?.children==='❤️').props.style.fontSize,48);
   tree.find(n=>n.type==='Pressable').props.onPress();assert.equal(closed,1);h.unmount();
 });

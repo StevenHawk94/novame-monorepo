@@ -7,6 +7,8 @@ import { decorationOptions } from './burrow-collection-options';
 import { BURROW_SHOP_CATEGORIES } from './burrow-shop-categories';
 import {getAppViewport} from './app-viewport';
 import { gameRoomInitialRows } from './game-room-layout';
+import { getBurrowEnvironment } from './burrow-environment-state';
+import { burrowMapEnvironment } from './burrow-map-model';
 export type PreparedPage = 'shop' | 'game' | 'surprise' | 'release' | 'affection' | 'adventure';
 const ready = new Set<string>();
 const pending = new Map<string, Promise<void>>();
@@ -14,9 +16,11 @@ function sources(kind: PreparedPage, data: MajorUpdateBootstrap) {
   if(kind==='affection')return [BURROW_BACKGROUNDS.affectionSend,
     ...Object.values(require('./burrow-ui-assets').BURROW_AFFECTION_ICONS)] as ImageProps['source'][];
   if(kind==='adventure'){
-    const entry=require('./burrow-ui-assets').BURROW_ADVENTURE_ENTRY_ART;
+    const {BURROW_ADVENTURE_ENTRY_ART:entry,BURROW_ADVENTURE_BANNERS:banners}=require('./burrow-ui-assets');
+    const shared=getBurrowEnvironment();
+    const environment=shared.environment??burrowMapEnvironment(Date.now(),data.profile?.timezone_name??undefined,shared.context?.country);
     const {start,current,end}=require('./adventure-progress-assets').ADVENTURE_PROGRESS_ART;
-    return [...Object.values(entry),start,current,end] as ImageProps['source'][];
+    return [banners[`${environment.season}-day`],banners[`${environment.season}-night`],...Object.values(entry),start,current,end] as ImageProps['source'][];
   }
   if(kind==='surprise')return require('./surprise-frame-assets').SURPRISE_FRAME_OPTIONS.slice(0,9).map((frame:{source:number})=>frame.source) as number[];
   if(kind==='release')return [require('../../assets/burrow-webp/monster-bg.webp'),

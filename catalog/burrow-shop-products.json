@@ -29,7 +29,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 180,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -69,7 +69,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -138,7 +138,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -178,7 +178,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -258,7 +258,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -298,7 +298,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": false,
         "tradable": true
       },
@@ -338,7 +338,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -378,7 +378,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -418,7 +418,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -498,7 +498,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -636,8 +636,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -716,8 +716,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -757,7 +757,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -796,8 +796,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -833,10 +833,10 @@
       "type": "decor",
       "category": "cabinets",
       "title": "Ivory",
-      "description": "Replaceable catalog content used to validate purchase, gifting and decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 260,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -922,7 +922,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -968,7 +968,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -1014,7 +1014,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -1060,7 +1060,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -1106,7 +1106,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -1152,7 +1152,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -1198,8 +1198,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -1244,7 +1244,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -1290,7 +1290,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -1336,7 +1336,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -1382,8 +1382,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -1429,7 +1429,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -1474,7 +1474,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -1520,8 +1520,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -1566,8 +1566,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -1612,8 +1612,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 500,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -1658,7 +1658,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -1704,7 +1704,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -1750,7 +1750,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -1796,7 +1796,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -1934,7 +1934,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -2026,8 +2026,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -2072,7 +2072,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -2118,8 +2118,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -2164,7 +2164,7 @@
       "description": "An interactive toy for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -2210,7 +2210,7 @@
       "description": "An interactive toy for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -2256,7 +2256,7 @@
       "description": "An interactive toy for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -2302,8 +2302,8 @@
       "description": "An interactive toy for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -2345,7 +2345,7 @@
       "type": "decor",
       "category": "couple_dolls",
       "title": "Love Bunny",
-      "description": "Replaceable artwork. Fixed-slot room decoration.",
+      "description": "",
       "status": "active",
       "seed": {
         "price": 0,
@@ -2389,10 +2389,10 @@
       "type": "decor",
       "category": "couple_dolls",
       "title": "BBQ Dad",
-      "description": "Replaceable artwork. Fixed-slot room decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -2436,8 +2436,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -2556,7 +2556,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -2596,8 +2596,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 500,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -2636,7 +2636,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -2676,7 +2676,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -2716,7 +2716,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -2756,7 +2756,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": true,
         "tradable": true
       },
@@ -2796,7 +2796,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -2836,7 +2836,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -2916,7 +2916,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": true,
         "tradable": true
       },
@@ -2996,7 +2996,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -3036,7 +3036,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -3116,7 +3116,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -3156,7 +3156,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -3196,7 +3196,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -3236,7 +3236,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -3276,7 +3276,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -3316,7 +3316,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": true,
         "tradable": true
       },
@@ -3436,7 +3436,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -3476,7 +3476,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -3516,7 +3516,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -3556,7 +3556,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -3596,7 +3596,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -3636,7 +3636,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -3676,8 +3676,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -3716,7 +3716,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -3756,7 +3756,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -3838,10 +3838,10 @@
       "type": "decor",
       "category": "cushions",
       "title": "Sunset Arc",
-      "description": "Replaceable catalog content used to validate purchase, gifting and decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 140,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -4122,7 +4122,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -4159,7 +4159,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -4196,7 +4196,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -4270,7 +4270,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -4307,7 +4307,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -4344,7 +4344,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -4381,7 +4381,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -4418,8 +4418,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": true,
+        "price": 150,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -4455,8 +4455,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 150,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -4492,7 +4492,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -4529,7 +4529,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -4566,7 +4566,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -4640,7 +4640,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 150,
         "plusOnly": true,
         "tradable": true
       },
@@ -4677,8 +4677,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -4714,7 +4714,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -4751,7 +4751,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -4788,8 +4788,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -4825,7 +4825,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -4862,8 +4862,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -4899,7 +4899,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -4936,7 +4936,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -4974,7 +4974,7 @@
       "status": "active",
       "seed": {
         "price": 200,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -5010,8 +5010,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": true,
+        "price": 100,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -5047,7 +5047,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -5084,8 +5084,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -5121,8 +5121,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -5158,8 +5158,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -5195,7 +5195,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -5232,7 +5232,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -5269,7 +5269,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -5306,7 +5306,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -5343,8 +5343,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -5380,7 +5380,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -5417,7 +5417,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -5491,7 +5491,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -5528,8 +5528,8 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -5565,7 +5565,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -5602,7 +5602,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -5639,7 +5639,7 @@
       "description": "",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -5677,7 +5677,7 @@
       "status": "active",
       "seed": {
         "price": 200,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -5713,8 +5713,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -5760,7 +5760,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -5851,7 +5851,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -5897,7 +5897,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -5943,7 +5943,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -5989,7 +5989,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -6035,7 +6035,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -6078,7 +6078,7 @@
       "type": "decor",
       "category": "frames",
       "title": "Classic",
-      "description": "Replaceable artwork. Fixed-slot room decoration.",
+      "description": "",
       "status": "active",
       "seed": {
         "price": 0,
@@ -6122,10 +6122,10 @@
       "type": "decor",
       "category": "frames",
       "title": "Botanical",
-      "description": "Replaceable artwork. Fixed-slot room decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -6235,7 +6235,7 @@
       "description": "Smooth operator or chaotic disaster? Your partner knows.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -6268,8 +6268,8 @@
       "description": "Netflix and… actually, let's plan it properly this time.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6301,7 +6301,7 @@
       "description": "Where do they actually like to be touched? Let's find out.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": false
       },
@@ -6334,8 +6334,8 @@
       "description": "You know how they kiss. But do you know how they sleep?",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": true,
+        "price": 150,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6367,7 +6367,7 @@
       "description": "Your phone knows things. Let's see if your partner does too.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": false
       },
@@ -6400,7 +6400,7 @@
       "description": "The heat is easy to find. The ick is harder.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 250,
         "plusOnly": true,
         "tradable": false
       },
@@ -6433,8 +6433,8 @@
       "description": "Tonight's cast is you two. Who plays what?",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 180,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6466,7 +6466,7 @@
       "description": "Everyone has a secret. Time to guess theirs.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 250,
         "plusOnly": true,
         "tradable": false
       },
@@ -6499,7 +6499,7 @@
       "description": "Rise and shine, or rise and whine? The first hour of the day says everything.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 60,
         "plusOnly": false,
         "tradable": false
       },
@@ -6532,8 +6532,8 @@
       "description": "The most honest relationship you have is with your screen time report.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 80,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6566,7 +6566,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6598,7 +6598,7 @@
       "description": "Saver, spender, or “I'll check my account later”?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": true,
         "tradable": false
       },
@@ -6631,7 +6631,7 @@
       "description": "Five minutes or five outfit changes? The mirror knows.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": false
       },
@@ -6665,7 +6665,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -6697,8 +6697,8 @@
       "description": "Life of the party or leaving at 9? Check the battery.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 80,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6730,8 +6730,8 @@
       "description": "Two days, unlimited plans, zero motivation.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6763,8 +6763,8 @@
       "description": "Trips reveal everything. Everything.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -6829,8 +6829,8 @@
       "description": "Some people say it. Some people show it. Some send a meme.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6862,7 +6862,7 @@
       "description": "Big romance is easy. Tiny romance is the real deal.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -6928,7 +6928,7 @@
       "description": "Time is the one thing money can't buy. Let's see how they spend it.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -6961,8 +6961,8 @@
       "description": "Some people hug like they mean it. Some people hug like a fire drill.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 100,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -6994,7 +6994,7 @@
       "description": "We all mess up. It's how we fix it that counts.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": true,
         "tradable": false
       },
@@ -7027,7 +7027,7 @@
       "description": "Apart for a day or a week? Here's how the heart handles it.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -7060,7 +7060,7 @@
       "description": "Behind closed doors is one thing. Out in the wild is another.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": true,
         "tradable": false
       },
@@ -7093,8 +7093,8 @@
       "description": "Dates to remember (or panic about).",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -7126,7 +7126,7 @@
       "description": "Sick, sad, or stressed: what does “taking care” actually look like?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -7159,8 +7159,8 @@
       "description": "Pressure reveals what's underneath. Do you know what's underneath?",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 180,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7192,8 +7192,8 @@
       "description": "Every couple argues. The question is how.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 180,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7225,7 +7225,7 @@
       "description": "Every relationship has them. Let's see which ones get waved.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 250,
         "plusOnly": true,
         "tradable": false
       },
@@ -7258,7 +7258,7 @@
       "description": "Sunny, stormy, or somewhere in between.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -7291,7 +7291,7 @@
       "description": "Gold, silver, or spiral. Who's the champion?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 250,
         "plusOnly": true,
         "tradable": false
       },
@@ -7324,7 +7324,7 @@
       "description": "In the group chat, everyone plays a role.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -7390,8 +7390,8 @@
       "description": "Everyone's a little jealous. Some just hide it better.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 250,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -7423,7 +7423,7 @@
       "description": "What they want most. What they fear most.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 250,
         "plusOnly": false,
         "tradable": false
       },
@@ -7456,7 +7456,7 @@
       "description": "Long before you met, there was a kid with opinions.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 250,
         "plusOnly": true,
         "tradable": false
       },
@@ -7489,7 +7489,7 @@
       "description": "Every love story has an origin. Do you two remember it the same way?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -7523,7 +7523,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7555,7 +7555,7 @@
       "description": "First times are forever. Which ones stuck?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": false
       },
@@ -7621,8 +7621,8 @@
       "description": "Every couple has a soundtrack. Time to find the top track.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -7654,8 +7654,8 @@
       "description": "Ridiculous fights we laugh about later.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 250,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7687,8 +7687,8 @@
       "description": "Passports, packing lists, and stories to tell for years.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -7720,8 +7720,8 @@
       "description": "The tiny things that belong only to the two of you.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 180,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7753,7 +7753,7 @@
       "description": "The quiet, ordinary moments are often the best ones.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -7786,7 +7786,7 @@
       "description": "From “what are we?” to “this is us.”",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": false
       },
@@ -7852,8 +7852,8 @@
       "description": "Pineapple debates have ended friendships. Let's see where you stand.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 80,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7885,7 +7885,7 @@
       "description": "You can tell a lot about someone by their order.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 130,
         "plusOnly": false,
         "tradable": false
       },
@@ -7919,7 +7919,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7951,8 +7951,8 @@
       "description": "Delivery apps know your secrets. Let's expose a few.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -7984,8 +7984,8 @@
       "description": "Master chef or microwave gourmet?",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -8017,8 +8017,8 @@
       "description": "Salty, sweet, or “whatever's in the cabinet”?",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -8083,7 +8083,7 @@
       "description": "The fridge light is the only light. Time for honesty.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": true,
         "tradable": false
       },
@@ -8150,7 +8150,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -8215,7 +8215,7 @@
       "description": "The world ended on a Tuesday. Who survives, and who's snack #1?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": false
       },
@@ -8248,8 +8248,8 @@
       "description": "One button. Any year. No paperwork.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -8281,7 +8281,7 @@
       "description": "Stranded. No Wi-Fi. Not even one bar. What's in the bag?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -8314,7 +8314,7 @@
       "description": "Somewhere out there, another version of you is living a completely different life.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": false
       },
@@ -8348,7 +8348,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -8380,7 +8380,7 @@
       "description": "Blueprints, budgets, and very strong opinions about kitchens.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": false
       },
@@ -8413,8 +8413,8 @@
       "description": "The cast list is out. Drama incoming.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -8446,7 +8446,7 @@
       "description": "Fast-forward. What does the picture look like?",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 250,
         "plusOnly": true,
         "tradable": false
       },
@@ -8519,8 +8519,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 50,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -8559,7 +8559,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -8599,7 +8599,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -8639,8 +8639,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -8679,8 +8679,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 300,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -8719,8 +8719,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -8827,7 +8827,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -8867,7 +8867,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -8907,8 +8907,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -8947,7 +8947,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -8987,7 +8987,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -9027,8 +9027,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -9067,7 +9067,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -9107,7 +9107,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -9187,7 +9187,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -9227,8 +9227,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -9267,7 +9267,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -9347,7 +9347,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": true,
         "tradable": true
       },
@@ -9387,7 +9387,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -9427,7 +9427,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -9467,7 +9467,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -9547,7 +9547,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -9587,8 +9587,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -9667,8 +9667,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -9707,8 +9707,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -9864,10 +9864,10 @@
       "type": "decor",
       "category": "lamps",
       "title": "Birthday Cake",
-      "description": "Replaceable catalog content used to validate purchase, gifting and decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 240,
+        "price": 500,
         "plusOnly": false,
         "tradable": true
       },
@@ -9948,7 +9948,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -9988,8 +9988,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -10028,7 +10028,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -10108,7 +10108,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -10149,7 +10149,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": true,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -10188,7 +10188,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -10228,8 +10228,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -10268,7 +10268,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -10308,7 +10308,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -10348,7 +10348,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -10388,8 +10388,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -10428,7 +10428,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -10465,7 +10465,7 @@
       "type": "decor",
       "category": "music_players",
       "title": "Candy",
-      "description": "Replaceable artwork. Fixed-slot room decoration.",
+      "description": "",
       "status": "active",
       "seed": {
         "price": 0,
@@ -10503,11 +10503,11 @@
       "type": "decor",
       "category": "music_players",
       "title": "Matcha",
-      "description": "Replaceable artwork. Fixed-slot room decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [],
@@ -10544,8 +10544,8 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -10600,7 +10600,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -10712,7 +10712,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -10768,7 +10768,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -10825,7 +10825,7 @@
       "status": "active",
       "seed": {
         "price": 300,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -10880,8 +10880,8 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -10936,7 +10936,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -10992,7 +10992,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -11048,7 +11048,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -11104,8 +11104,8 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": true,
+        "price": 100,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -11160,7 +11160,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -11216,7 +11216,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -11272,7 +11272,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -11328,7 +11328,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -11384,8 +11384,8 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -11440,7 +11440,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -11496,7 +11496,7 @@
       "description": "A layered outfit for your bunny.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -11598,7 +11598,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -11718,7 +11718,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -11758,7 +11758,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -11798,8 +11798,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -11838,7 +11838,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -11878,7 +11878,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -11918,7 +11918,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -11998,8 +11998,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -12038,8 +12038,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -12078,7 +12078,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -12118,7 +12118,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -12198,7 +12198,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -12278,8 +12278,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -12318,7 +12318,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -12358,7 +12358,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -12398,7 +12398,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -12438,7 +12438,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -12478,7 +12478,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -12518,7 +12518,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -12558,7 +12558,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -12598,7 +12598,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -12638,8 +12638,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 240,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -12678,7 +12678,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -12718,7 +12718,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -12758,7 +12758,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -12838,7 +12838,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -12878,7 +12878,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -12918,7 +12918,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -12958,8 +12958,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -12998,7 +12998,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -13038,8 +13038,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -13078,7 +13078,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -13118,7 +13118,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": true,
         "tradable": true
       },
@@ -13155,10 +13155,10 @@
       "type": "decor",
       "category": "rugs",
       "title": "Lavender Moon",
-      "description": "Replaceable catalog content used to validate purchase, gifting and decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 190,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -13284,7 +13284,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -13324,7 +13324,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -13364,7 +13364,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -13404,7 +13404,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -13484,8 +13484,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -13524,8 +13524,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -13564,7 +13564,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -13622,7 +13622,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -13656,8 +13656,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": true,
+        "price": 150,
+        "plusOnly": false,
         "tradable": false
       },
       "tags": [],
@@ -13690,8 +13690,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 150,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -13748,8 +13748,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 150,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -13782,8 +13782,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 80,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -13816,7 +13816,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -13850,7 +13850,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 140,
         "plusOnly": false,
         "tradable": false
       },
@@ -13884,8 +13884,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 150,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -13918,7 +13918,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -13998,7 +13998,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 100,
         "plusOnly": false,
         "tradable": false
       },
@@ -14055,7 +14055,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -14089,7 +14089,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -14123,8 +14123,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 80,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -14157,7 +14157,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 100,
         "plusOnly": false,
         "tradable": false
       },
@@ -14191,7 +14191,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -14225,7 +14225,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -14282,7 +14282,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -14339,7 +14339,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -14373,7 +14373,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -14430,8 +14430,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -14464,7 +14464,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -14544,7 +14544,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 130,
         "plusOnly": false,
         "tradable": false
       },
@@ -14578,7 +14578,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -14646,7 +14646,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -14680,7 +14680,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 50,
         "plusOnly": false,
         "tradable": false
       },
@@ -14737,7 +14737,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -14771,8 +14771,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -14805,7 +14805,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 100,
         "plusOnly": false,
         "tradable": false
       },
@@ -14839,8 +14839,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 150,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -14873,7 +14873,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 120,
         "plusOnly": false,
         "tradable": false
       },
@@ -14907,7 +14907,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 150,
         "plusOnly": true,
         "tradable": false
       },
@@ -15033,7 +15033,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 80,
         "plusOnly": false,
         "tradable": false
       },
@@ -15067,8 +15067,8 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": false
       },
       "tags": [],
@@ -15101,7 +15101,7 @@
       "description": "Pay per send. Preview and replay are free.",
       "status": "active",
       "seed": {
-        "price": 300,
+        "price": 150,
         "plusOnly": false,
         "tradable": false
       },
@@ -15158,8 +15158,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -15278,7 +15278,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -15318,7 +15318,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -15358,7 +15358,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": true,
         "tradable": true
       },
@@ -15398,8 +15398,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 80,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -15438,8 +15438,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 100,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -15478,7 +15478,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -15518,7 +15518,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -15598,7 +15598,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -15638,7 +15638,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -15678,7 +15678,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -15718,7 +15718,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -15758,7 +15758,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -15838,7 +15838,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -15878,8 +15878,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -15918,7 +15918,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -15958,8 +15958,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -15998,7 +15998,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -16035,10 +16035,10 @@
       "type": "decor",
       "category": "tables",
       "title": "Lilac Checks",
-      "description": "Replaceable catalog content used to validate purchase, gifting and decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 220,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -16124,7 +16124,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -16164,8 +16164,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 120,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -16204,7 +16204,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -16244,7 +16244,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 500,
         "plusOnly": false,
         "tradable": true
       },
@@ -16284,8 +16284,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -16324,7 +16324,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -16364,8 +16364,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -16404,8 +16404,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -16444,8 +16444,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 180,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -16484,8 +16484,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": true,
+        "price": 180,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -16524,8 +16524,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -16644,7 +16644,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -16756,10 +16756,10 @@
       "type": "decor",
       "category": "vases",
       "title": "Carnation",
-      "description": "Replaceable catalog content used to validate purchase, gifting and decoration.",
+      "description": "",
       "status": "active",
       "seed": {
-        "price": 180,
+        "price": 150,
         "plusOnly": false,
         "tradable": true
       },
@@ -16915,8 +16915,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -16985,7 +16985,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -17287,7 +17287,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -17328,7 +17328,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -17427,7 +17427,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -17671,7 +17671,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -17741,7 +17741,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -17869,7 +17869,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -17939,7 +17939,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 0,
         "plusOnly": false,
         "tradable": true
       },
@@ -17981,7 +17981,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -18023,7 +18023,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -18065,7 +18065,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -18107,7 +18107,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -18149,7 +18149,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -18191,7 +18191,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -18233,7 +18233,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -18275,7 +18275,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18317,7 +18317,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18359,7 +18359,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18401,7 +18401,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18443,7 +18443,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18485,7 +18485,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18527,7 +18527,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18569,7 +18569,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -18611,8 +18611,8 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -18653,8 +18653,8 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 180,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -18695,8 +18695,8 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 100,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -18738,7 +18738,7 @@
       "status": "active",
       "seed": {
         "price": 200,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -18779,8 +18779,8 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": false,
+        "price": 120,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -18947,7 +18947,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 300,
         "plusOnly": true,
         "tradable": true
       },
@@ -18989,7 +18989,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -19031,7 +19031,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -19073,8 +19073,8 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": true,
+        "price": 300,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -19115,7 +19115,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -19157,8 +19157,8 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
-        "plusOnly": true,
+        "price": 300,
+        "plusOnly": false,
         "tradable": true
       },
       "tags": [
@@ -19199,7 +19199,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 500,
         "plusOnly": true,
         "tradable": true
       },
@@ -19241,7 +19241,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19283,7 +19283,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19325,7 +19325,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19367,7 +19367,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19409,7 +19409,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19451,7 +19451,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19493,7 +19493,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19535,7 +19535,7 @@
       "description": "A window frame with a seasonal day and night view.",
       "status": "active",
       "seed": {
-        "price": 200,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19577,8 +19577,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -19617,7 +19617,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -19657,8 +19657,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -19697,8 +19697,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -19737,7 +19737,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19777,7 +19777,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -19817,8 +19817,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -19857,8 +19857,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -19897,7 +19897,7 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -19937,8 +19937,8 @@
       "description": "A room decoration from the Burrow art collection.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -19977,7 +19977,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -20018,7 +20018,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 50,
         "plusOnly": false,
         "tradable": true
       },
@@ -20059,7 +20059,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -20100,7 +20100,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -20142,7 +20142,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -20183,7 +20183,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -20224,7 +20224,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -20265,7 +20265,7 @@
       "status": "active",
       "seed": {
         "price": 150,
-        "plusOnly": false,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -20469,7 +20469,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -20510,7 +20510,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -20551,7 +20551,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -20592,7 +20592,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 180,
         "plusOnly": false,
         "tradable": true
       },
@@ -20633,7 +20633,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 80,
         "plusOnly": false,
         "tradable": true
       },
@@ -20674,7 +20674,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -20715,7 +20715,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -20756,7 +20756,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 120,
         "plusOnly": false,
         "tradable": true
       },
@@ -20797,7 +20797,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 100,
         "plusOnly": false,
         "tradable": true
       },
@@ -20838,8 +20838,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -20879,8 +20879,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -20920,8 +20920,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -20961,8 +20961,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -21002,8 +21002,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 500,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -21043,8 +21043,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -21084,8 +21084,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 200,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -21125,7 +21125,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },
@@ -21166,7 +21166,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -21207,8 +21207,8 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
-        "plusOnly": false,
+        "price": 300,
+        "plusOnly": true,
         "tradable": true
       },
       "tags": [
@@ -21248,7 +21248,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 200,
         "plusOnly": false,
         "tradable": true
       },
@@ -21289,7 +21289,7 @@
       "description": "A decoration for your Burrow.",
       "status": "active",
       "seed": {
-        "price": 150,
+        "price": 300,
         "plusOnly": false,
         "tradable": true
       },

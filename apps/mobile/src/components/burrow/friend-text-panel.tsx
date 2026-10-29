@@ -1,5 +1,6 @@
 import {createContext,useContext,useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
-import {Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {FRIEND_TEXT,fitFriendText,friendHintHeight,friendTextSizing,friendTextPageHeight,friendTextRuns,friendTextStyle,type FriendTextPage} from '@/lib/friend-text-layout';
 import {AdventureReveal} from './adventure-reveal';
 import {BackIcon} from './burrow-back-button';

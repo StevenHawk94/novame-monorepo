@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -18,6 +19,7 @@ import { scheduleBurrowRefresh } from '@/lib/burrow-store';
 import { getBunnyName } from '@/lib/onboarding';
 import { usePageBackGesture } from '@/lib/use-page-back-gesture';
 import { cachedAccountProfile, saveAccountProfile, subscribeAccountProfile, accountProfileSyncError } from '@/lib/account-profile-local';
+import { AccountMatchCodeCard } from './account-match-code-card';
 const genders = { woman: 'Woman', man: 'Man', non_binary: 'Non-binary', prefer_not_to_say: 'Prefer not to say' } as const;
 type Section = 'name' | 'birthday' | 'gender' | 'email' | 'password' | 'delete' | null;
 const cachedProfile = cachedAccountProfile;
@@ -221,6 +223,7 @@ export function AccountManagementScreen() {
    <View style={s.header}><Text style={s.title}>Account Management</Text><Pressable accessibilityLabel="Close account management" onPress={() => router.back()} style={s.close}><MaterialIcons name="close" size={23} color="#FFF9F0"/></Pressable></View>
    {!!status && <Text accessibilityRole="alert" style={s.status}>{status}</Text>}{!ready && action('Retry loading details', () => void reload())}
    <View style={s.card}>{row('Your name', name, () => open('name'))}{row('Your date of birth', profile?.birthday ?? 'Not set', ready ? () => open('birthday') : undefined)}{row('Your gender', profile?.gender ? genders[profile.gender] : 'Not set', ready ? () => open('gender') : undefined)}</View>
+   <AccountMatchCodeCard/>
    <View style={s.card}>{row('Email', email || 'Not connected', email ? () => open('email') : undefined)}{profile?.has_password ? row('Change password', '', () => open('password')) : row('Sign-in methods', '', () => router.push('/(main)/(modals)/connect-account'))}</View>
    <View style={s.card}>{row('Delete account', '', confirmDelete, true)}</View>
    {section==='delete'?<View style={s.card}>

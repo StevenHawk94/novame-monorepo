@@ -9,7 +9,7 @@ const nodes = tree => typeof tree==='function'?nodes(tree({pressed:false})):Arra
   : tree && typeof tree === 'object' ? [tree, ...nodes(tree.type===QuestAction?QuestAction(tree.props):tree.props?.children)] : [];
 const textContent = node => Array.isArray(node.props?.children) ? node.props.children.join('') : node.props?.children;
 
-test('Quest banner is bundled, uncropped at 2:1, and joins a full-bleed solid #844624 page',()=>{
+test('Quest banner is bundled, uncropped at 9:6, and joins a full-bleed solid #6a321c page',async()=>{
   const fs=require('node:fs'),h=hooks();
   const {QuestBoard,QuestBanner}=load('apps/mobile/src/components/burrow/quest-board.tsx',{
     './quest-progress':{QuestProgress:'QuestProgress'},
@@ -20,17 +20,37 @@ test('Quest banner is bundled, uncropped at 2:1, and joins a full-bleed solid #8
   });
   const tree=h.render(()=>QuestBoard({data:{profile:{id:'me'},localDate:'2026-10-09',quests:{quests:[]},specialQuests:[],inventory:[],discoveries:[]},
     busy:false,onGo(){},onClaim:async()=>0,onSpecialClaim:async()=>0,onSpecialGo(){}}));
-  assert.equal(tree.props.style.backgroundColor,'#844624');
+  assert.equal(tree.props.style.backgroundColor,'#6a321c');
   assert.equal(tree.props.children[0].type,QuestBanner,'the banner is first in the scrollable quest board');
   const banner=QuestBanner();
   assert.equal(banner.props.source,'bundled-banner');assert.equal(banner.props.contentFit,'contain');
-  assert.deepEqual(JSON.parse(JSON.stringify(banner.props.style)),{width:'100%',aspectRatio:2,flexShrink:0});
+  assert.deepEqual(JSON.parse(JSON.stringify(banner.props.style)),{width:'100%',aspectRatio:9/6,flexShrink:0});
+  const content=tree.props.children[1];
+  assert.equal(content.props.style.paddingTop,16,'preserve the original banner-to-list gap');
+  assert.equal(content.props.style.paddingHorizontal,18,'preserve the original list inset');
+  for(const label of ['Daily Quests','Special Quests']) {
+    const title=nodes(tree).find(node=>node.props?.accessibilityRole==='header'&&node.props.children===label);
+    assert.ok(title,`preserve the ${label} heading`);
+    const style=Object.assign({},...[title.props.style].flat());
+    assert.equal(style.fontSize,24,'both section titles shrink by three points');
+    assert.equal(style.marginLeft,5,'only the headings move five points right');
+    assert.equal(style.marginBottom,3,'preserve the title-to-list margin');
+  }
+  assert.equal(tree.props.style.gap,undefined,'no extra gap between banner and quest content');
+  for(const width of [320,360,393,430,560]) {
+    const height=width/banner.props.style.aspectRatio;
+    assert.equal(height,width*6/9,'banner height follows its original 9:6 canvas');
+    assert.equal(height+content.props.style.paddingTop-height,16,'the list follows the taller banner without overlap');
+  }
   const registry=fs.readFileSync('apps/mobile/src/lib/burrow-ui-assets.ts','utf8');
   assert.match(registry,/BURROW_QUEST_BANNER = require\('\.\.\/\.\.\/assets\/burrow-webp\/Quest-Page-Banner.webp'\)/);
   assert.ok(fs.existsSync('apps/mobile/assets/burrow-webp/Quest-Page-Banner.webp'));
+  const sharp=require('node:module').createRequire(require.resolve('next/package.json',{paths:[require('node:path').resolve('apps/api')]}))('sharp');
+  const metadata=await sharp('apps/mobile/assets/burrow-webp/Quest-Page-Banner.webp').metadata();
+  assert.equal(metadata.width/metadata.height,banner.props.style.aspectRatio,'layout matches the updated bundled artwork');
   const screen=fs.readFileSync('apps/mobile/src/components/burrow/burrow-screen.tsx','utf8');
   assert.match(screen,/burrowFlatSurface\(section,adventureEntry\|\|adventureLogged\)/);
-  assert.equal(load('apps/mobile/src/lib/burrow-surface.ts').burrowFlatSurface('quests',false),'#844624');
+  assert.equal(load('apps/mobile/src/lib/burrow-surface.ts').burrowFlatSurface('quests',false),'#6a321c');
   assert.match(screen,/section!=='quests'&&.*?<Image source=\{background\}/);
   assert.match(screen,/section==='quests'\?s\.mapContent:s\.content/);
   h.unmount();

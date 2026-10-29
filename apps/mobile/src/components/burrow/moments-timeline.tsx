@@ -1,6 +1,7 @@
 import { BurrowBackButton } from './burrow-back-button';
 import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { Image } from './burrow-image';
 import { router, type Href } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';

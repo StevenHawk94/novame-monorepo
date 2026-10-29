@@ -53,6 +53,12 @@ export function createQuestProgress(deps: { load: () => unknown; save: (value: u
     if (old?.status === status || (status === 'pending' && old)) return;
     facts.set(key, { ...intent, id, status }); save();
   }
+  /** Retire only an unconfirmed display witness from an old protocol. Never
+   * revoke a confirmed pre-upgrade receipt or its already-earned quest. */
+  function rejectPendingFact(id:string,intent:QuestIntent){
+    const old=facts.get(`${intent.scope}:${intent.day}:${id}`);
+    if(old&&old.status!=='confirmed')fact(id,intent,'rejected');
+  }
   function claim(id: string, intent: QuestIntent, status: Status) {
     const key = `${intent.scope}:${id}`, old = claims.get(key);
     if (old?.status === status || (status === 'pending' && old?.status === 'confirmed')) return;
@@ -137,7 +143,7 @@ export function createQuestProgress(deps: { load: () => unknown; save: (value: u
   const unproject = (data: MajorUpdateBootstrap): MajorUpdateBootstrap => ({...data,
     quests:{...data.quests,quests:data.quests.quests.map(q=>originals.get(q)??q)},
     specialQuests:data.specialQuests.map(q=>specialOriginals.get(q)??q)});
-  return { fact, claim, capture, captureClaim, guard, project, unproject, observe,
+  return { fact, rejectPendingFact, claim, capture, captureClaim, guard, project, unproject, observe,
     reload:(owner:string|null)=>{reload(owner);deps.changed();},
     reset: () => { facts.clear(); claims.clear(); deps.changed(); } };
 }

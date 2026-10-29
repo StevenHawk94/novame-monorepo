@@ -2,6 +2,7 @@ import type { MajorUpdateBootstrap, MajorUpdateCatalogItem } from './app-major-u
 import { BURROW_ART, burrowArtForItem } from './burrow-art-assets';
 import { SHOP_PRODUCT_IDS } from './generated/shop-product-art';
 import { roomSlots } from './burrow-presentation';
+import { compareShopOffers } from './shop-offer-order';
 
 export function toyCatalog(data: MajorUpdateBootstrap): MajorUpdateCatalogItem[] {
   return data.catalog.filter(item => (item.status==null||item.status==='active')&&item.category === 'couple_dolls' && item.item_type === 'decor' &&
@@ -22,7 +23,8 @@ export function toyCollectionItems(data: MajorUpdateBootstrap) {
 
 export function toyShopItems(data: MajorUpdateBootstrap) {
   const owned = new Set(toyCollectionItems(data).map(item => item.stable_id));
-  return toyCatalog(data).filter(item => (item.status==null||item.status==='active')&&!owned.has(item.stable_id) && item.price != null && item.price > 0);
+  return toyCatalog(data).filter(item => (item.status==null||item.status==='active')&&!owned.has(item.stable_id) && item.price != null && item.price > 0)
+    .sort(compareShopOffers);
 }
 
 /** Existing save API replaces the room: always carry every other decoration. */

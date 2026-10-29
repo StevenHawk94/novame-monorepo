@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-28",
+  "finalUserRequest": "Restore the original Adventure ongoing colors; supersedes the attempted darker-rim recolor",
+  "restored": {
+    "backgroundGradient": ["#2C0D00", "#360E02", "#2C0D00"],
+    "rootBackground": "#360e02",
+    "outerRim": "#5B2C13",
+    "outerAndInnerWidths": [72, 56]
+  },
+  "unchanged": ["new seasonal entry banner", "#5c2c19 entry/Write Freely/Tap Your Day/ready backgrounds", "earth and orange gradients", "route geometry", "animation", "countdown and cooperative timing", "rewards and quotas"],
+  "verification": {
+    "targeted": {"passed": 26, "failed": 0},
+    "mobileTypecheck": "passed",
+    "diffCheck": "passed",
+    "domainIsolation": {"command": "pnpm test:domain-isolation", "passed": 1099, "failed": 0},
+    "nativeVisual": {
+      "passed": true,
+      "device": "Isolated iOS 26.2 simulator",
+      "runtime": "Release/minified Hermes QA shell with actual product UI and synthetic business boundaries",
+      "screenshot": "outputs/adventure-route-rim-2026-10-28/digging.png",
+      "scope": "Ongoing page at synthetic 50% progress; visually confirmed original background and visible two-layer tunnel",
+      "productionBusinessWrites": false
+    },
+    "initialTestFailures": "New palette test caught the original near-identical background/rim; intermediate decorative contrast budget led to a darker candidate. User subsequently cancelled the recolor. Two newly added full-gate assertions initially compared VM-realm array prototypes rather than values; fixed by spreading into local arrays, retaining exact stop/color assertions."
+  },
+  "release": {"metroReloadRequired": true, "appStoreRelease": false, "apiDeployment": false, "databaseChanges": false},
+  "limits": ["Not Android or physical-device visual validation", "Not a performance benchmark", "No real-account Adventure submission"]
+}

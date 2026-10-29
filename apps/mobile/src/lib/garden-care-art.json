@@ -1,0 +1,853 @@
+{
+  "sourceSha256": "5c9936658cb35f51d5eee46b21ecb46ac38efcceac35ff5deecec91fb2e4dabc",
+  "art": {
+    "leaf": {
+      "tag": "svg",
+      "props": {
+        "viewBox": "0 0 420 420"
+      },
+      "children": [
+        {
+          "tag": "defs",
+          "props": {},
+          "children": [
+            {
+              "tag": "mask",
+              "props": {
+                "id": "eatMask",
+                "maskUnits": "userSpaceOnUse",
+                "x": "0",
+                "y": "0",
+                "width": "980",
+                "height": "980"
+              },
+              "children": [
+                {
+                  "tag": "rect",
+                  "props": {
+                    "width": "980",
+                    "height": "980",
+                    "fill": "white"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "props": {
+                    "id": "bites",
+                    "fill": "black"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "g",
+          "props": {},
+          "children": [
+            {
+              "tag": "svg",
+              "props": {
+                "x": "18",
+                "y": "18",
+                "width": "384",
+                "height": "384",
+                "viewBox": "0 0 980 980"
+              },
+              "children": [
+                {
+                  "tag": "g",
+                  "props": {
+                    "id": "leafShape",
+                    "mask": "url(#eatMask)"
+                  },
+                  "children": [
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#77c40c",
+                        "d": "M174 752 C217 758 275 716 287 682 C299 651 276 623 301 603 C321 585 341 619 365 596 C366 582 380 576 369 557 C353 520 364 487 400 484 C431 487 410 467 402 451 C391 429 414 422 429 417 C441 402 427 378 435 353 C445 320 486 315 479 286 C469 262 489 252 509 247 C532 235 522 211 546 194 C566 179 594 176 601 188 C607 209 619 220 641 202 C674 175 707 162 730 173 C753 184 745 195 747 210 C754 235 781 247 795 274 C801 290 793 297 799 309 C815 345 778 350 790 375 C800 397 829 415 824 442 C827 461 808 469 815 485 C833 516 819 529 788 534 C763 536 750 547 763 568 C793 601 768 630 738 634 C704 640 706 654 690 673 C677 693 657 696 646 701 C635 710 630 735 603 734 C576 736 556 723 549 756 C548 786 526 809 493 810 C461 811 416 808 401 800 C382 794 373 772 358 780 C320 807 280 815 245 811 C212 808 157 799 157 774 C156 761 163 755 174 752Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#98d52a",
+                        "d": "M190 768 C238 771 285 738 306 697 C318 670 325 647 353 637 C383 623 404 631 401 600 C397 569 436 557 429 533 C416 504 444 484 462 469 C479 451 456 443 472 424 C489 404 506 399 498 379 C481 350 478 336 499 340 C523 351 547 330 526 311 C509 292 528 278 542 273 C557 266 549 230 570 225 C586 223 578 247 602 246 C620 245 623 226 638 234 C650 239 646 263 664 262 C691 252 710 259 702 280 C697 293 723 286 732 306 C749 334 738 343 730 351 C718 368 739 376 733 399 C724 416 745 432 731 444 C720 452 693 435 691 451 C685 471 719 464 733 483 C755 513 725 521 716 529 C697 549 731 550 731 562 C737 589 706 585 692 602 C677 618 691 636 670 634 C647 621 645 643 646 657 C644 682 633 691 615 688 C591 682 609 716 584 706 C567 686 557 691 547 712 C530 733 520 712 509 733 C503 753 499 781 478 762 C465 749 455 736 442 751 C424 774 418 775 402 758 C376 729 360 742 337 750 C293 782 242 798 191 787 C170 783 170 770 190 768Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "g",
+                      "props": {
+                        "fill": "none",
+                        "stroke": "#b2df60",
+                        "strokeLinecap": "round",
+                        "strokeLinejoin": "round"
+                      },
+                      "children": [
+                        {
+                          "tag": "path",
+                          "props": {
+                            "strokeWidth": "19",
+                            "d": "M184 776 C265 798 440 700 512 603 C586 511 619 405 627 288"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "strokeWidth": "10",
+                            "d": "M420 691 Q446 638 452 566 M420 691 Q490 698 563 657 M510 603 Q529 544 504 460 M510 603 Q591 592 665 533 M586 469 Q581 410 563 355 M586 469 Q647 424 688 367"
+                          },
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "g",
+          "props": {
+            "id": "crumbs"
+          },
+          "children": []
+        }
+      ]
+    },
+    "fertilizer": {
+      "tag": "svg",
+      "props": {
+        "viewBox": "0 0 420 420"
+      },
+      "children": [
+        {
+          "tag": "g",
+          "props": {
+            "id": "bagRotate"
+          },
+          "children": [
+            {
+              "tag": "g",
+              "props": {
+                "transform": "translate(105 43) scale(.82)"
+              },
+              "children": [
+                {
+                  "tag": "defs",
+                  "props": {},
+                  "children": [
+                    {
+                      "tag": "radialGradient",
+                      "props": {
+                        "id": "sageFabric",
+                        "cx": "45%",
+                        "cy": "38%",
+                        "r": "85%"
+                      },
+                      "children": [
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "stopColor": "#9fb27a"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": ".62",
+                            "stopColor": "#8fa76f"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": "1",
+                            "stopColor": "#829b63"
+                          },
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "linearGradient",
+                      "props": {
+                        "id": "oliveFold",
+                        "x1": "0",
+                        "y1": "0",
+                        "x2": "1",
+                        "y2": "1"
+                      },
+                      "children": [
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "stopColor": "#9eaa57"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": ".5",
+                            "stopColor": "#959e4f"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": "1",
+                            "stopColor": "#889543"
+                          },
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "radialGradient",
+                      "props": {
+                        "id": "warmSoil",
+                        "cx": "52%",
+                        "cy": "28%",
+                        "r": "80%"
+                      },
+                      "children": [
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "stopColor": "#795342"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": "1",
+                            "stopColor": "#704b3b"
+                          },
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "radialGradient",
+                      "props": {
+                        "id": "creamLabel"
+                      },
+                      "children": [
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "stopColor": "#fff9e4"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": "1",
+                            "stopColor": "#f7f0d6"
+                          },
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "radialGradient",
+                      "props": {
+                        "id": "goldPetal"
+                      },
+                      "children": [
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "stopColor": "#f7cb3a"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": "1",
+                            "stopColor": "#f4bc27"
+                          },
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "linearGradient",
+                      "props": {
+                        "id": "flowerLeaf",
+                        "x1": "0",
+                        "x2": "1",
+                        "y1": "0",
+                        "y2": "1"
+                      },
+                      "children": [
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "stopColor": "#94b733"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "stop",
+                          "props": {
+                            "offset": "1",
+                            "stopColor": "#83a62a"
+                          },
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "url(#sageFabric)",
+                    "d": "M28 96 C18 122 11 174 15 210 C15 216 3 222 9 228 C14 233 23 228 34 229 Q126 247 217 229 C228 226 238 232 242 227 C248 221 238 214 236 210 C241 168 235 122 223 96Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "ellipse",
+                  "props": {
+                    "cx": "125",
+                    "cy": "57",
+                    "rx": "87",
+                    "ry": "17",
+                    "fill": "#7d8b3c"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "url(#warmSoil)",
+                    "d": "M44 54 C57 36 66 36 80 33 C95 21 111 13 126 14 C141 14 147 21 155 24 C171 24 182 29 191 42 C199 43 204 48 208 55 C167 71 86 71 44 54Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "props": {
+                    "fill": "#5e3c2b"
+                  },
+                  "children": [
+                    {
+                      "tag": "ellipse",
+                      "props": {
+                        "cx": "67",
+                        "cy": "45",
+                        "rx": "3",
+                        "ry": "2.6"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "ellipse",
+                      "props": {
+                        "cx": "80",
+                        "cy": "47",
+                        "rx": "3",
+                        "ry": "2.6"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "ellipse",
+                      "props": {
+                        "cx": "90",
+                        "cy": "38.7",
+                        "rx": "3.1",
+                        "ry": "2.6"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "ellipse",
+                      "props": {
+                        "cx": "96",
+                        "cy": "51",
+                        "rx": "3",
+                        "ry": "2.6"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "ellipse",
+                      "props": {
+                        "cx": "73",
+                        "cy": "54.5",
+                        "rx": "3",
+                        "ry": "2.6"
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "url(#oliveFold)",
+                    "d": "M26 73 C20 76 16 83 18 91 C21 105 72 110 125 110 C175 110 220 105 230 97 C238 90 233 80 226 74 L202 69 L47 68Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "d": "M25 74 C35 83 58 86 80 88.7 M171 88.6 C194 87 218 83 226 75",
+                    "fill": "none",
+                    "stroke": "#778639",
+                    "strokeWidth": "4.8",
+                    "strokeLinecap": "round"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "url(#oliveFold)",
+                    "d": "M35 50 C43 45 43 52 56 55 C94 68 161 68 198 57 C209 54 216 49 220 51 C229 52 230 67 226 72 C217 82 170 89 125 89 C79 89 35 82 27 73 C20 66 24 52 35 50Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "url(#creamLabel)",
+                    "d": "M113 119 C122 113 127 113 137 119 C148 126 166 145 174 157 C182 169 181 177 172 187 C163 198 146 214 135 220 C128 224 123 223 116 219 C104 211 87 195 78 185 C69 175 70 166 77 155 C88 141 103 126 113 119Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "d": "M125.5 209 V175",
+                    "fill": "none",
+                    "stroke": "#708f27",
+                    "strokeWidth": "6",
+                    "strokeLinecap": "round"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "url(#flowerLeaf)",
+                    "d": "M120 194 C104 199 93 189 91 173 Q90 170 96 171 C110 171 119 179 120 194Z M131 194 C147 199 159 188 161 173 Q162 170 156 171 C142 171 132 180 131 194Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "d": "M125.5 207 C126 195 117 189 105 181 M126 203 C129 194 139 187 147 181",
+                    "fill": "none",
+                    "stroke": "#708f27",
+                    "strokeWidth": "5",
+                    "strokeLinecap": "round"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "url(#goldPetal)",
+                    "d": "M117.4 149 C109 137 120 126 125.5 127 C131 127 141 139 134 149 C145 140 156 150 155 156 C154 162 145 169 134 163 C141 175 132 181 126 180 C120 180 111 173 117 163 C106 169 96 163 96 156 C95 150 106 141 117.4 149Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "circle",
+                  "props": {
+                    "cx": "125.5",
+                    "cy": "156.5",
+                    "r": "7",
+                    "fill": "#db971f"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "g",
+          "props": {
+            "id": "grains",
+            "fill": "#57382a"
+          },
+          "children": []
+        }
+      ]
+    },
+    "carrot": {
+      "tag": "svg",
+      "props": {
+        "viewBox": "0 0 420 420"
+      },
+      "children": [
+        {
+          "tag": "defs",
+          "props": {},
+          "children": [
+            {
+              "tag": "mask",
+              "props": {
+                "id": "carrotMask",
+                "maskUnits": "userSpaceOnUse",
+                "x": "0",
+                "y": "0",
+                "width": "736",
+                "height": "736"
+              },
+              "children": [
+                {
+                  "tag": "rect",
+                  "props": {
+                    "width": "736",
+                    "height": "736",
+                    "fill": "white"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "props": {
+                    "id": "carrotBites",
+                    "fill": "black"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "g",
+          "props": {},
+          "children": [
+            {
+              "tag": "svg",
+              "props": {
+                "x": "14",
+                "y": "8",
+                "width": "392",
+                "height": "392",
+                "viewBox": "0 0 736 736"
+              },
+              "children": [
+                {
+                  "tag": "g",
+                  "props": {
+                    "mask": "url(#carrotMask)"
+                  },
+                  "children": [
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#638d37",
+                        "d": "M398 312 C430 274 428 179 457 130 C473 104 505 106 498 142 C491 178 462 260 414 316Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#83ac47",
+                        "d": "M393 310 C420 273 396 204 395 173 C392 147 411 137 428 142 C463 153 432 258 412 307Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#638d37",
+                        "d": "M405 315 C456 277 492 221 543 204 C577 191 590 209 578 231 C564 253 479 276 418 322Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#88b04b",
+                        "d": "M408 318 C451 284 497 263 539 263 C566 262 575 278 570 293 C565 319 535 309 504 307 C465 305 440 314 419 326Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#84af48",
+                        "d": "M400 310 C438 259 476 180 533 129 C554 111 572 108 582 121 C601 147 550 197 523 221 C479 260 437 292 412 322Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "d": "M403 318 Q448 264 496 213",
+                        "fill": "none",
+                        "stroke": "#96bc53",
+                        "strokeWidth": "6",
+                        "strokeLinecap": "round"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#ee8e42",
+                        "d": "M319 298 C341 273 372 284 402 306 C438 329 461 357 446 390 C429 434 231 620 178 633 C144 643 146 617 159 583 C179 529 275 340 319 298Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#e67732",
+                        "d": "M412 315 C448 340 459 368 446 393 C417 443 239 615 179 633 C160 640 150 632 151 619 C201 622 343 465 399 399 C424 369 432 346 412 315Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "props": {
+                        "fill": "#f7a45a",
+                        "d": "M327 313 C341 304 349 312 341 326 C319 355 266 416 231 465 C251 417 296 335 327 313Z"
+                      },
+                      "children": []
+                    },
+                    {
+                      "tag": "g",
+                      "props": {
+                        "fill": "#dc7b34"
+                      },
+                      "children": [
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M322 294 Q358 301 376 329 Q348 309 315 301Z"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M281 346 Q313 354 329 378 Q307 361 275 355Z"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M240 417 Q265 425 278 448 Q259 432 235 427Z"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M195 499 Q219 506 230 526 Q212 512 190 510Z"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M199 568 Q222 573 231 592 L220 602 Q214 581 199 568Z"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M368 371 Q397 381 414 402 L403 413 Q397 393 368 371Z"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M319 419 Q346 427 364 448 L353 459 Q344 437 319 419Z"
+                          },
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "props": {
+                            "d": "M263 495 Q283 500 302 518 L292 529 Q282 507 263 495Z"
+                          },
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "g",
+          "props": {
+            "id": "carrotCrumbs"
+          },
+          "children": []
+        }
+      ]
+    },
+    "water": {
+      "tag": "svg",
+      "props": {
+        "viewBox": "0 0 420 420"
+      },
+      "children": [
+        {
+          "tag": "g",
+          "props": {
+            "id": "waterRotate"
+          },
+          "children": [
+            {
+              "tag": "g",
+              "props": {
+                "transform": "translate(40 75) scale(.22)"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "props": {
+                    "d": "M309 96 C127 -53 -98 73 54 432 L104 526",
+                    "fill": "none",
+                    "stroke": "#8ea967",
+                    "strokeWidth": "26",
+                    "strokeLinecap": "round"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "#8ea967",
+                    "d": "M617 621 L1057 385 L1099 448 L646 768Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "#8ea967",
+                    "d": "M304 69 L759 226 L646 827 C592 871 140 780 40 631Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "#607e4b",
+                    "d": "M40 631 C118 741 566 865 646 827 C631 888 116 784 40 631Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "d": "M303 69 Q577 149 759 226",
+                    "fill": "none",
+                    "stroke": "#567146",
+                    "strokeWidth": "8",
+                    "strokeLinecap": "round"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "d": "M303 66 Q577 140 765 224",
+                    "fill": "none",
+                    "stroke": "#9db87a",
+                    "strokeWidth": "14",
+                    "strokeLinecap": "round"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "#8ea967",
+                    "d": "M1056 265 C1028 284 1035 353 1050 390 L1088 459 C1124 493 1160 510 1195 516Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "ellipse",
+                  "props": {
+                    "cx": "1126",
+                    "cy": "390",
+                    "rx": "28",
+                    "ry": "143",
+                    "transform": "rotate(-28 1126 390)",
+                    "fill": "#506b43"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "path",
+                  "props": {
+                    "fill": "#efba22",
+                    "d": "M422 361 C448 296 503 285 529 316 C550 344 543 380 522 406 C588 417 620 458 602 491 C583 531 543 527 510 506 C525 560 493 604 456 596 C416 590 405 548 414 519 C365 563 324 551 313 527 C298 491 326 457 361 441 C315 429 295 401 313 369 C334 330 384 325 422 361Z"
+                  },
+                  "children": []
+                },
+                {
+                  "tag": "circle",
+                  "props": {
+                    "cx": "455",
+                    "cy": "441",
+                    "r": "40",
+                    "fill": "#4b733d"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "g",
+          "props": {
+            "id": "waterJets",
+            "fill": "none",
+            "stroke": "#81c9db",
+            "strokeLinecap": "round"
+          },
+          "children": []
+        },
+        {
+          "tag": "g",
+          "props": {
+            "id": "waterDrops",
+            "fill": "#8ecddd"
+          },
+          "children": []
+        }
+      ]
+    }
+  }
+}

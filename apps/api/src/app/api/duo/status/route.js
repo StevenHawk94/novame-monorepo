@@ -89,7 +89,7 @@ export async function GET(request) {
       .eq('member_id', userId)
       .eq('status', 'claimed')
       .maybeSingle()
-    const canShare=seat?await supabase.rpc('same_economic_domain_v1',{p_a:userId,p_b:seat.owner_id}):null
+    const canShare=seat?await supabase.rpc('burrow_pair_economy_allowed_v1',{p_a:userId,p_b:seat.owner_id}):null
     const ownerActive=seat?await supabase.rpc('has_own_active_plus',{p_user_id:seat.owner_id}):null
     if (seat && canShare?.data===true && ownerActive?.data===true) {
       const { data: o } = await supabase

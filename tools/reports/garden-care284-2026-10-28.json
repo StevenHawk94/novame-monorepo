@@ -1,0 +1,208 @@
+{
+  "task": "Four independent garden care actions",
+  "date": "2026-10-28",
+  "authority": {
+    "implementation": "User confirmed own carrot/water; partner-only greens/fertilizer; four independent care states and rewards; retain hold/pause/resume",
+    "production": "Explicit user approval for migration 284 and corresponding API after isolated verification; no App publication"
+  },
+  "contract": {
+    "own": [
+      "carrot",
+      "water"
+    ],
+    "partner": [
+      "leaf",
+      "fertilizer"
+    ],
+    "cooldownHours": 12,
+    "rewardPerActionPerEconomicDay": 5,
+    "maxCareCoinsPerActorPerDay": 20,
+    "ownerOnlyCareQuests": true,
+    "helperDoesNotConsumeOwnerNeedOrReward": true,
+    "legacyHelperLedgerKeysRetained": true,
+    "immutableDurableIntent": true
+  },
+  "reference": {
+    "file": "garden-interactions.html",
+    "sha256": "5c9936658cb35f51d5eee46b21ecb46ac38efcceac35ff5deecec91fb2e4dabc",
+    "bodyPaths": "Mechanically imported original SVG",
+    "nativeAdaptations": [
+      "Flatten nested SVG viewports into equivalent transforms for one native definition registry",
+      "Direct native gradient Stop children preserve the original colors",
+      "Native six-value rotation matrices",
+      "Exact circle/half-plane complement clipping avoids per-frame offscreen luminance masks",
+      "Seeded finite particle trajectories and eight opacity buckets; all freeze with the same elapsed time"
+    ],
+    "sourceHashes": {
+      "component": "4e74423f3eca3cb1ef6bd17a166bcb14e148624270e3e900e68d309e649679b1",
+      "motion": "f638a92cac43e79302095e83813f18efdf34d744b742ed155d53b8e96204ac15",
+      "migration": "6533e355fc9cbb6dd5b133101136a01605f8408b0f51a3bc6d83259200687d01"
+    }
+  },
+  "validation": {
+    "domain": {
+      "passed": 1123,
+      "failed": 0
+    },
+    "target": {
+      "passed": 109,
+      "failed": 0
+    },
+    "postGradientFix": {
+      "passed": 66,
+      "failed": 0
+    },
+    "finalLegacyCompatibility": {
+      "passed": 36,
+      "failed": 0
+    },
+    "database": {
+      "passed": 15,
+      "failed": 0,
+      "engine": "PGlite actual wallet/receipt/quest SQL plus the production transaction protection wrapper"
+    },
+    "mobileTypecheck": "Passed, including final legacy compatibility change",
+    "catalogCheck": "Passed, 496 active items; unchanged catalog",
+    "native": {
+      "os": "iOS 26.2",
+      "engine": "Hermes",
+      "dev": false,
+      "minify": true,
+      "businessTransport": "Synthetic business API/session/storage boundaries, actual native renderer and production hold component. Copied host native SDK configuration is unchanged; not a claim that every native SDK network call is disabled.",
+      "frames": [
+        {
+          "action": "carrot",
+          "count": 379,
+          "fps": 58.85983339046348,
+          "max": 56.64791679382324,
+          "over50": 1,
+          "p50": 16.666666507720947,
+          "p95": 16.666666984558105,
+          "pausedIdentical": true,
+          "completionVisible": true
+        },
+        {
+          "action": "leaf",
+          "count": 378,
+          "fps": 58.14634602148298,
+          "max": 84.17175006866455,
+          "over50": 1,
+          "p50": 16.666666507720947,
+          "p95": 16.666666984558105,
+          "pausedIdentical": true,
+          "completionVisible": true
+        },
+        {
+          "action": "water",
+          "count": 351,
+          "fps": 54.86291772831694,
+          "max": 58.46441698074341,
+          "over50": 1,
+          "p50": 16.666666507720947,
+          "p95": 33.33333349227905,
+          "pausedIdentical": true,
+          "completionVisible": true
+        },
+        {
+          "action": "fertilizer",
+          "count": 368,
+          "fps": 57.06598752742937,
+          "max": 62.831249713897705,
+          "over50": 3,
+          "p50": 16.666666507720947,
+          "p95": 16.666666984558105,
+          "pausedIdentical": true,
+          "completionVisible": true
+        }
+      ],
+      "slowFrameReview": "Final color-correct run: 6 isolated intervals >50ms among 1476 intervals, maximum 84.17ms. Carrot/leaf maxima are near the expected completion/celebration transition window; one water interval during resumed stream and three fertilizer intervals during resumed gradient/particle rendering. These phase associations are diagnostic inferences, not exhaustive CPU/GPU flame profiles. None consecutive. Earlier post-clip/pre-gradient-fix run was 57.15–59.85fps with zero >50ms. Final run is retained rather than selecting only the faster sample; no all-device/zero-jank claim.",
+      "background": {
+        "backgroundedMs": 5000,
+        "foregroundDidNotAutoResume": true,
+        "pausedPixelsIdentical": true,
+        "resumedCompleted": true,
+        "hermes": true
+      },
+      "compactCanvas": "320x568 within an isolated iPhone simulator; leaf/water/fertilizer inspected",
+      "gradientPaint": {
+        "passed": true,
+        "method": "Decoded unedited native PNG pixels; original sage bag and cream-label colors, including rotated and compact views",
+        "checks": [
+          {
+            "file": "fertilizer-ready.png",
+            "sagePixels": 160129,
+            "creamPixels": 65432
+          },
+          {
+            "file": "fertilizer-paused.png",
+            "sagePixels": 160176,
+            "creamPixels": 50640
+          },
+          {
+            "file": "fertilizer-compact-paused.png",
+            "sagePixels": 84731,
+            "creamPixels": 31917
+          }
+        ]
+      },
+      "gallery": "outputs/garden-care-review-2026-10-28/index.html"
+    },
+    "limitations": [
+      "Test counts overlap and are not additive",
+      "No Android native/physical-device haptic acceptance",
+      "No real-user coin issuance or production dual-account end-to-end actions",
+      "PGlite does not exercise independent simultaneous database connections",
+      "Native screenshot container/header is synthetic; production route and state/outbox boundaries are tested separately",
+      "UI callback intervals are sampled while real SVG is rendering, not external GPU presentation timestamps"
+    ]
+  },
+  "production": {
+    "database": {
+      "existingPermissionsUnchanged": true,
+      "migration": 284,
+      "protectedRowsUnchanged": true,
+      "protectedSets": 172,
+      "sha256": "6533e355fc9cbb6dd5b133101136a01605f8408b0f51a3bc6d83259200687d01",
+      "unrelatedFunctionsUnchanged": true
+    },
+    "verified": {
+      "migration": 284,
+      "migrationRecorded": true,
+      "serviceOnlyRpc": true,
+      "privateTable": true,
+      "verifiedAt": "2026-10-28T13:54:53.250Z"
+    },
+    "api": {
+      "id": "dpl_DsYWZZP5epoBzzgnekmBSAs1tbhU",
+      "url": "novame-monorepo-azayqnkh4-soulsayit.vercel.app",
+      "readyState": "READY",
+      "verifiedFiles": 293,
+      "changedFiles": [
+        "apps/api/src/app/api/vnext/bootstrap/route.js",
+        "apps/api/src/app/api/vnext/command/route.js",
+        "apps/api/src/lib/app-major-update.js",
+        "apps/api/src/lib/burrow-attention.mjs",
+        "apps/api/src/lib/room-care-contract.mjs"
+      ],
+      "domain": "https://api.soulsayit.com",
+      "adminUnchanged": true,
+      "cronsRegistered": true,
+      "authSmoke": [
+        {
+          "endpoint": "/api/vnext/bootstrap",
+          "status": 401
+        },
+        {
+          "endpoint": "/api/vnext/command",
+          "status": 401
+        }
+      ],
+      "verifiedAt": "2026-10-28T14:01:41.138Z"
+    },
+    "privateEvidence": "/private/tmp/burrow-care284.tZAANp",
+    "appPublished": false,
+    "otherUncommittedUpdatesNotDeployed": true,
+    "clientAvailability": "Reload Metro on both test clients; the new client capability uses v2. Installed old clients/old queued intents retain their existing protocol."
+  },
+  "documentation": "docs/burrow-development-standards.md v1.30 / 10.6"
+}

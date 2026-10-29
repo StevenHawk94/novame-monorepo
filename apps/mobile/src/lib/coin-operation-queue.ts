@@ -2,7 +2,7 @@ import type { QuestIntent } from './quest-progress-model';
 export type CoinOperation={id:string;owner:string;path:string;payload:Record<string,unknown>;key:string|null;amount:number;deferred:boolean;display?:Record<string,unknown>;quest?:QuestIntent};
 export type CoinOperationSettlement={operation:CoinOperation;receipt?:unknown;error?:unknown};
 export function validCoinOperation(r:CoinOperation,allowPurchases=false){
- const actions=['claim_daily_quest','claim_special_quest','complete_affection','refill_room_need','claim_daily_plus_bonus','respond_friend_visit_v3',...(allowPurchases?['purchase_catalog_item']:[])];
+ const actions=['claim_daily_quest','claim_special_quest','complete_affection','refill_room_need','complete_room_care_v2','claim_daily_plus_bonus','respond_friend_visit_v3',...(allowPurchases?['purchase_catalog_item']:[])];
  return !!r&&typeof r.id==='string'&&typeof r.owner==='string'&&r.payload&&typeof r.payload==='object'&&!Array.isArray(r.payload)
   &&(r.path==='/api/vnext/command'?actions.includes(String(r.payload.action)):['/api/vnext/release-room','/api/reflect/finalize','/api/tame-enemy'].includes(r.path))
   &&(r.key===null||typeof r.key==='string')&&Number.isSafeInteger(r.amount)&&r.amount>=0&&r.amount<=99999&&typeof r.deferred==='boolean'

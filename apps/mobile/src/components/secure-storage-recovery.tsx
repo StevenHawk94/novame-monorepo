@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DevSettings, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { DevSettings, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { reloadAppAsync } from 'expo';
 import * as SplashScreen from 'expo-splash-screen';
 

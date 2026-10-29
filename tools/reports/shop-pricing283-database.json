@@ -1,0 +1,12 @@
+{
+  "assertions": 4971,
+  "counts": {
+    "room": 390,
+    "games": 70,
+    "surprises": 36
+  },
+  "products": 496,
+  "changed": 426,
+  "isolated": true,
+  "productionWrites": false
+}

@@ -1,4 +1,5 @@
-import {Pressable,Text,View} from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {router} from 'expo-router';
 /** Old deep links cannot revive a retired cash-payment flow. */
 export default function RetiredPayment(){return <View style={{flex:1,backgroundColor:'#FFF8EC',alignItems:'center',justifyContent:'center',padding:24,gap:24}}>

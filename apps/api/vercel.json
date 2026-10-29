@@ -16,7 +16,7 @@
     },
     {
       "path": "/api/cron/room-photo-cleanup",
-      "schedule": "45 * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/memory-photo-cleanup",

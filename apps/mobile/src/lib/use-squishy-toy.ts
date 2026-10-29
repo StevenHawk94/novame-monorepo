@@ -57,6 +57,7 @@ export function useSquishyToy({geometry,left,top,disabled=false,onInteract,onCon
     'worklet';if(running.value&&(eventRevision===undefined||eventRevision===identity.value)){if(kind)emitInput(kind==='squeeze'?4:5,0,0,0);runOnJS(record)(eventRevision??identity.value);}
   },[identity,record,running,emitInput]);
   const feedback=useCallback((heavy=false)=>{if(mounted.current&&accepting.current)void (heavy?haptics.medium():haptics.light());},[]);
+  const buttonFeedback=useCallback(()=>{if(mounted.current&&accepting.current)void haptics.soft();},[]);
   useEffect(()=>{const subscription=AppState.addEventListener('change',status=>{
     // Invalidate queued JS deliveries synchronously, before React may batch
     // inactive/active into one render. They cannot reopen a paused pointer.
@@ -74,7 +75,9 @@ export function useSquishyToy({geometry,left,top,disabled=false,onInteract,onCon
     clock.value=frame.timestamp;
     clockReady.value=true;
     if(onInput&&clock.value-lastFlush.value>=100)flushInput();
-    if(!readOnly&&state.value.touches.length){
+    // Only Touch Note capture repeats held feedback. Ordinary touches already
+    // emit once in beginToyTouch; holding or dragging must not add more bursts.
+    if(onInput&&!readOnly&&state.value.touches.length){
       if(holdAt.value<0)holdAt.value=clock.value;
       else if(clock.value-holdAt.value>=500){holdAt.value=clock.value;let notify=false;state.modify(v=>{const t=v.touches[0];v.clock=clock.value;notify=toyFeedback(v,t.x,t.y);return v;},true);if(notify)runOnJS(feedback)();}
     }else holdAt.value=-1;
@@ -109,8 +112,8 @@ export function useSquishyToy({geometry,left,top,disabled=false,onInteract,onCon
     if(disabled||!running.value)return;
     let notify=false;
     state.modify(value=>{value.clock=clock.value;notify=hitToy(value,kind);return value;},true);
-    if(notify)runOnJS(feedback)(kind==='punch');
-  },[state,clock,disabled,feedback,running]);
+    if(notify)runOnJS(buttonFeedback)();
+  },[state,clock,disabled,buttonFeedback,running]);
   const handle=useMemo<ToyMotionHandle>(()=>({hit:kind=>{if(mounted.current&&accepting.current)runOnUI(performHit)(kind);}}),[performHit]);
   useEffect(()=>{
     ready.current?.(handle);

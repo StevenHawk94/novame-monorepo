@@ -1,5 +1,6 @@
 import {useCallback,useRef,useState} from 'react';
-import { AppState, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, FlatList, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import {router,useFocusEffect} from 'expo-router';
@@ -73,7 +74,7 @@ export default function FramePhotoHistory(){
   <View style={s.header}><BurrowBackButton onPress={()=>router.back()}/><Text style={s.title}>Photo History</Text><View style={{width:44}}/></View>
   {!(paid&&page.hasPlus)&&<View style={s.banner}><Text style={s.copy}>Photos older than 7 days are hidden. Join Plus to unlock unlimited photo history!</Text>
    <Pressable accessibilityRole="button" style={s.join} onPress={()=>router.push('/(main)/(modals)/subscription-paywall')}><Text style={s.joinText}>Join Plus</Text></Pressable>
-   <Text style={s.note}>Free photos are permanently deleted after 30 days. Deleted photos cannot be restored.</Text></View>}
+   <Text style={s.note}>Free photos older than 30 days are deleted, except the current photo in your frame. Deleted photos cannot be restored.</Text></View>}
   {error!==''&&<Text accessibilityRole="alert" style={s.copy}>{error}</Text>}
   <FlatList data={items} numColumns={3} keyExtractor={item=>item.id} contentContainerStyle={[s.grid,{paddingBottom:insets.bottom+20}]} columnWrapperStyle={{gap:10}}
    renderItem={({item})=><Pressable accessibilityRole="button" accessibilityLabel={`Photo from ${new Date(item.createdAt).toLocaleDateString()}`} onPress={()=>setSelected(item)} style={{width:size,gap:6}}>

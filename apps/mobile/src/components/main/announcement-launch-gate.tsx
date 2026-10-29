@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
-import {AppState,BackHandler,Linking,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
+import { AppState, BackHandler, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {Image} from 'expo-image';
 import {useSegments} from 'expo-router';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';

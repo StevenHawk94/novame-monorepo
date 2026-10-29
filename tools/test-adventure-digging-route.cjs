@@ -77,6 +77,17 @@ function routeHarness({reduced=false,progress=.5,remaining=7200000,pending=false
   props:next=>{props={...props,...next};},focus:value=>{focused=value;},
   appState:value=>{app.currentState=value;events.forEach(fn=>fn(value));}};
 }
+test('the tunnel restores its original two-layer earth palette without changing geometry or progress',()=>{
+ const h=routeHarness(),all=nodes(h.render());
+ const strokes=all.filter(n=>n.type==='Path');
+ const rim=strokes.find(n=>n.props.strokeWidth===72);
+ assert.equal(rim.props.stroke,'#5B2C13');
+ assert.equal(rim.props.d,path.DIGGING_PATH);
+ assert.equal(rim.props.strokeLinecap,'round');
+ assert.equal(strokes.filter(n=>n.props.strokeWidth===56).length,2,'earth and progress widths stay unchanged');
+ assert.deepEqual(all.filter(n=>n.type==='Stop').map(n=>n.props.stopColor),['#884724','#71391E','#FF881C','#FF9824']);
+ h.h.unmount();
+});
 test('route first frame uses actual progress; cursor and orange trim remain synchronized without React frame renders',()=>{
  const h=routeHarness(),tree=h.render(),all=nodes(tree),shown=h.motion.values[0],cycle=h.motion.values[1];
  assert.equal(shown.current,.5);assert.equal(h.motion.timings[0].value,1);assert.equal(h.motion.timings[0].config.duration,7200000);

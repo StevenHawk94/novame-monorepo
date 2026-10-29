@@ -1,5 +1,6 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import { useIsFocused } from '@react-navigation/native';

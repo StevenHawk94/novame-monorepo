@@ -35,7 +35,7 @@ test('daily claim delegates to the shared optimistic outbox without a second loc
 });
 test('bootstrap delivers pending daily status and fails closed while the migration is unavailable',async()=>{
   let missing=false;const calls=[];
-  const snapshot={profile:{id:'me'},partner:null,wallet:{balance:1240,version:1}};
+  const snapshot={profile:{id:'me'},partner:null,wallet:{balance:1240,version:1},economicTimezone:'UTC'};
   const chain={select(){return this;},eq(){return this;},contains(){return this;},order(){return this;},limit:async()=>({data:[]})};
   const db={from:()=>chain,rpc:async(name,args)=>{
     calls.push([name,args]);
@@ -44,6 +44,7 @@ test('bootstrap delivers pending daily status and fails closed while the migrati
     return {data:{enabled:true}};
   }};
   const {GET}=load('apps/api/src/app/api/vnext/bootstrap/route.js',{
+    '@/lib/economic-calendar-contract.mjs':load('apps/api/src/lib/economic-calendar-contract.mjs'),
     '@/lib/burrow-friend-visits.mjs':load('apps/api/src/lib/burrow-friend-visits.mjs'),
     'next/server':{NextResponse:{json}},'@/lib/app-major-update':{authenticatedUserId:async()=> 'me',appMajorUpdateServiceClient:()=>db,commandStatus:()=>200},
     '@/lib/burrow-unpaired-bootstrap.mjs':{},'@/lib/adventure-bootstrap.mjs':{settleBootstrapAdventure:async(_db,_id,snapshot)=>snapshot},

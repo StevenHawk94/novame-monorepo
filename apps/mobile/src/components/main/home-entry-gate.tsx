@@ -1,8 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
-import {
-  AppState, BackHandler, Image as NativeImage, Platform,
-  ActivityIndicator, Pressable, Text, StyleSheet, View,
-} from 'react-native';
+import { AppState, BackHandler, Image as NativeImage, Platform, ActivityIndicator, Text, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
 import { BurrowLaunchScreen } from './burrow-launch-screen';
 import { BURROW_LAUNCH_BACKGROUND } from '@/lib/burrow-onboarding-design';

@@ -4,8 +4,6 @@ import { GameRoomScreen } from '@/components/burrow/game-room-screen';
 import { CoupleJournalScreen } from '@/components/burrow/couple-journal-screen';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { useCallback } from 'react';
-import { useIsFocused, usePreventRemove } from '@react-navigation/native';
-import { Alert } from 'react-native';
 import { useBurrowSelector } from '@/lib/burrow-store';
 import { SHOP_CATEGORIES } from '@novame/domain';
 import { dismissToRetainedTab } from '@/lib/retained-tab-navigation';
@@ -22,18 +20,10 @@ function RetainedTabDestination({section}:{section:BurrowSection}) {
 export default function BurrowDetail(){
   const enabled=useMajorUpdateEnabled();
   const params=useLocalSearchParams<{section?:string;roomType?:string;category?:string;inbox?:string;ownedOnly?:string;itemId?:string;ownerId?:string;journalPage?:string;giftTo?:string;giftFrom?:string}>();
-  const focused=useIsFocused();
   const section=allowed.includes(params.section as BurrowSection)?params.section as BurrowSection:'collection';
-  const {scope,guarded}=useBurrowSelector(snapshot=>({
-    scope:`${snapshot.data?.profile.id??''}:${snapshot.data?.partner?.id??''}:${snapshot.data?.pairVersion??''}`,
-    guarded:section==='adventure'&&snapshot.busy&&!['not_paired','feature_disabled'].includes(snapshot.error??''),
-  }),(before,next)=>before.scope===next.scope&&before.guarded===next.guarded);
-  const blocked=focused&&enabled&&guarded;
-  // Pending rewards are reminders, not navigation traps. Users can leave and
-  // return through the badge; only an active blocking command prevents removal.
-  usePreventRemove(blocked,useCallback(()=>{
-    Alert.alert('Finish your adventure','Claim your treasure and finish your friend’s story first. You can choose Not now when a friend asks for help.');
-  },[]));
+  const scope=useBurrowSelector(snapshot=>`${snapshot.data?.profile.id??''}:${snapshot.data?.partner?.id??''}:${snapshot.data?.pairVersion??''}`);
+  // The mounted completion owns its narrow lock and releases it before its
+  // own final pop. This route must not add a second, server-busy-based lock.
   if(!enabled)return <Redirect href="/(main)/(tabs)"/>;
   if(params.section==='self_care_room')return <RetainedTabDestination section="burrow"/>;
   if(section==='burrow'||section==='moments'||section==='collection'||(section==='shop'&&!params.giftTo&&!params.itemId&&!params.category&&!params.ownedOnly))

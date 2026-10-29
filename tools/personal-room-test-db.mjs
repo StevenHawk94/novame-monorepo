@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {seedLegacyRoomPhotos} from './test-burrow-room-photo-cleanup-database.mjs';
-export async function personalRoomTestDb(){
+export async function personalRoomTestDb(options={}){
  const {PGlite}=await import(pathToFileURL(process.env.BURROW_PGLITE_PATH).href),db=new PGlite();
  const query=async(sql,args=[])=> (await db.query(sql,args)).rows;
  const rpc=async(name,args)=>(await query(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) result`,args))[0].result;
@@ -26,7 +26,7 @@ export async function personalRoomTestDb(){
  await db.exec(migration('20261014000233_burrow_repair_history_isolation').split('-- Preserve every existing bootstrap feature')[0]+'\ncommit;');
  await db.exec(migration('20261019000250_shop_gift_claim'));
  await db.exec(migration('20261022000262_shop_checkout_repair'));
- const release=JSON.parse(fs.readFileSync('catalog/generated/shop-catalog-release.json'));
+ const release=options.release??JSON.parse(fs.readFileSync('catalog/generated/shop-catalog-release.json'));
  await rpc('publish_burrow_shop_catalog_v1',[release]);
  return {db,query,rpc,release,migrate:()=>db.exec(migration('20261023000267_personal_room_isolation'))};
 }

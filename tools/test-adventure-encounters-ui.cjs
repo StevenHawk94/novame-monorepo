@@ -34,13 +34,13 @@ test('encounter reads scene/dialogue, swaps to image 2 after answer and requires
   for(let i=0;i<dialogue.lines.length+1;i++)render().find(n=>n.type==='Button').props.onPress();
   let tree=render();assert.equal(tree.filter(n=>n.type==='Button').length,dialogue.choices.length);
   tree.find(n=>n.type==='Button').props.onPress();await flush();tree=render();
-  assert.equal(tree.find(n=>n.type==='Stage').props.answered,true);assert.equal(calls.length,1);
+  assert.equal(tree.find(n=>n.type==='Stage').props.answered,true);assert.equal(calls.filter(c=>c[2]?.choiceId).length,1);
   for(let i=0;i<dialogue.choices[0].reaction.length+(dialogue.outro?1:0);i++)render().find(n=>n.type==='Button').props.onPress();
   const reward=render().find(n=>n.type==='RewardScreen');assert.equal(reward.props.variant,'gift');assert.equal(reward.props.item,data.adventureResult.metadata.giftSnapshot);assert.equal(finishes.length,0);
   reward.props.onClaim();reward.props.onClaim();
   assert.equal(finishes.length,1,'local claim navigates immediately without fading contents or waiting on network');
   assert.equal(render().find(n=>n.type==='RewardScreen').props.closing,undefined);await flush();
-  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])),['queue','journey',{choiceId:dialogue.choices[0].id}]);assert.deepEqual(JSON.parse(JSON.stringify(calls[1])),['queue','journey',{finish:true}]);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls.find(c=>c[2]?.choiceId))),['queue','journey',{choiceId:dialogue.choices[0].id,checkpoint:{stage:'reply',line:0,invited:true}}]);assert.deepEqual(JSON.parse(JSON.stringify(calls.find(c=>c[2]?.finish))),['queue','journey',{finish:true}]);
   h.unmount();
 });
 test('a failed durable gift intent stays visible and retries once, with no stale completion after unmount',async()=>{

@@ -18,6 +18,25 @@ test('all permanent products validate; no asset is served over the network',()=>
  }
  assert.deepEqual(treasureCategories,categories.filter(c=>!['outfits','wallpapers','couple_dolls','games','surprises'].includes(c)));
 });
+test('catalog descriptions contain no retired development placeholder copy',()=>{
+ const placeholderCopy=new Set(['Replaceable artwork. Fixed-slot room decoration.',
+  'Replaceable catalog content used to validate purchase, gifting and decoration.']);
+ assert.deepEqual(manifest.products.filter(p=>placeholderCopy.has(p.description)).map(p=>p.id),[]);
+ const publication=require('../catalog/generated/shop-catalog-release.json');
+ assert.deepEqual(publication.products.filter(p=>placeholderCopy.has(p.description)).map(p=>p.id),[]);
+});
+test('validation rejects only the two known development descriptions, preserving normal introductions',()=>{
+ const id='placeholder_couple_dolls_02';
+ for(const description of ['Replaceable artwork. Fixed-slot room decoration.',
+  'Replaceable catalog content used to validate purchase, gifting and decoration.']){
+  const m=clone(manifest);m.products.find(p=>p.id===id).description=description;
+  assert.throws(()=>validate(m,ledger),/Development placeholder description/);
+ }
+ for(const description of ['', 'A cozy plushie with a familiar little face.']){
+  const m=clone(manifest);m.products.find(p=>p.id===id).description=description;
+  assert.equal(validate(m,ledger),true);assert.equal(m.products.find(p=>p.id===id).description,description);
+ }
+});
 test('rename/reorder cannot change the ID to artwork association',()=>{
  const m=clone(manifest);m.products.reverse();m.products[0].title='Renamed';assert.ok(validate(m,ledger));
  for(const p of m.products)if(p.art)assert.equal(art.SHOP_PRODUCT_ART[p.id].source,path.resolve('apps/mobile/assets',p.art.file));

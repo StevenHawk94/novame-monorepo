@@ -1,20 +1,7 @@
 import { BackIcon } from '@/components/burrow/burrow-back-button';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import {
-  ActivityIndicator,
-  Keyboard,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Linking, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Switch } from '@/components/ui/feedback-pressable';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

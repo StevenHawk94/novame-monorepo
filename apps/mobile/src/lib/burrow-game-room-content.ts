@@ -3,6 +3,7 @@
 // Sharing the canonical source prevents mobile/server question order drift.
 import catalog from '../../../api/src/data/burrow-game-room-v1.json';
 import type { GameOverview, GameSession, GameSummary } from './burrow-game-room-api';
+import { compareShopOffers } from './shop-offer-order';
 
 export const GAME_ROOM_CONTENT_VERSION = catalog.version;
 export const GAME_ROOM_CATEGORIES = catalog.categories;
@@ -11,15 +12,10 @@ export const GAME_ROOM_GAMES: GameSummary[] = catalog.games.map(({ questions, ..
 }));
 const byId = new Map(catalog.games.map(game => [game.id, game]));
 
-/** Stable partition of the resolved Admin offers, never the membership badge.
- * Preserve editorial order within each group and never mutate the catalogue. */
+/** Sort the resolved offers, never ownership or the user's membership badge.
+ * Keep editorial order for equal prices and never mutate the catalogue. */
 export function gameRailItems(games: readonly GameSummary[]): GameSummary[] {
-  const regular: GameSummary[] = [], plus: GameSummary[] = [];
-  for (const game of games) {
-    if (game.active === false) continue;
-    (game.plus_only ? plus : regular).push(game);
-  }
-  return [...regular, ...plus];
+  return games.filter(game => game.active !== false).sort(compareShopOffers);
 }
 
 /** User state is remote; every visible catalogue string is always local. */

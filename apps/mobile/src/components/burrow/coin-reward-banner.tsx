@@ -12,7 +12,7 @@ import {claimCoinWalletPortal,useCoinWalletRegistry} from '@/lib/coin-wallet-reg
 import {coinWalletMetrics,coinWalletWidth,homeWalletFontSize} from '@/lib/coin-wallet-layout';
 import {BURROW_MOTION,coinArrivalTiming,coinPresentationTiming,formatAnimatedCoins} from '@/lib/burrow-motion';
 import {useAppViewport} from '@/lib/app-viewport';
-import {haptics} from '@/lib/haptics';
+import {useCoinFlightFeedback} from '@/lib/use-coin-flight-feedback';
 import {coinOperations} from '@/lib/coin-command-outbox';
 
 export const RewardParticle=memo(function RewardParticle({index,width,origin,target,elapsed}:{
@@ -35,6 +35,7 @@ export const RewardParticle=memo(function RewardParticle({index,width,origin,tar
 /** One UI-thread balance controller. Receipts retarget it, never remount the
  * counter or restart flights. Render placement and monetary truth are separate. */
 export function useCoinWalletController(batch:CoinRewardBatch|null,balance:number|null,onFinish:(id:number,revision:number)=>void):WalletMotion{
+ const feedback=useCoinFlightFeedback();
  const count=useSharedValue(balance??0),pulse=useSharedValue(1),elapsed=useSharedValue(0);
  const [reduced,setReduced]=useState(false),active=useRef(0),started=useRef(0),run=useRef(0),celebrated=useRef(0);
  const latest=useRef({batch,onFinish});latest.current={batch,onFinish};
@@ -50,7 +51,7 @@ export function useCoinWalletController(batch:CoinRewardBatch|null,balance:numbe
   if(!batch){active.current=0;celebrated.current=0;cancelAnimation(count);cancelAnimation(pulse);pulse.value=1;count.value=balance;return;}
   if(active.current!==batch.id){active.current=batch.id;celebrated.current=0;}
   started.current=batch.flight.startedAt;
-  if(batch.celebration>celebrated.current){void haptics.light().catch(()=>{});AccessibilityInfo.announceForAccessibility(`You earned ${batch.earned} coins. Balance ${formatAnimatedCoins(balance)}.`);}
+  if(batch.celebration>celebrated.current){AccessibilityInfo.announceForAccessibility(`You earned ${batch.earned} coins. Balance ${formatAnimatedCoins(balance)}.`);}
   celebrated.current=batch.celebration;
   const age=coinRewardClock()-started.current;
   const arrival=coinArrivalTiming(age),presentation=coinPresentationTiming(age,reduced);
@@ -65,9 +66,13 @@ export function useCoinWalletController(batch:CoinRewardBatch|null,balance:numbe
  },[batch?.id,batch?.celebration,balance,reduced,count,pulse]);
  useEffect(()=>{
   if(!batch)return;elapsed.value=0;
-  if(!reduced)elapsed.value=withTiming(coinArrivalTiming(0).flightEnd,{duration:coinArrivalTiming(0).flightEnd,easing:Easing.linear});
-  return()=>cancelAnimation(elapsed);
- },[batch?.id,batch?.flight.id,reduced,elapsed]);
+  if(!reduced){
+   const duration=coinArrivalTiming(0).flightEnd;
+   elapsed.value=withTiming(duration,{duration,easing:Easing.linear});
+   feedback.start(`${batch.id}:${batch.flight.id}`,duration);
+  }
+  return()=>{cancelAnimation(elapsed);feedback.stop();};
+ },[batch?.id,batch?.flight.id,reduced,elapsed,feedback]);
  return useMemo(()=>({count,pulse,elapsed,batch,balance,reduced}),[count,pulse,elapsed,batch,balance,reduced]);
 }
 

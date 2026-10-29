@@ -41,6 +41,13 @@ test('switching keeps wallpaper/table, excludes outfits and rejects partner-owne
   assert.throws(()=>model.toyRoomLoadout(snapshot(),'blue'),/item_not_owned/);
   assert.throws(()=>model.toyRoomLoadout(snapshot(),'missing'),/item_not_owned/);
 });
+test('standalone Plushie Shop uses Free first and ascending prices without reordering the personal collection',()=>{
+  const data=snapshot();data.catalog.find(p=>p.stable_id==='blue').price=500;
+  data.catalog.find(p=>p.stable_id==='plus').price=10;
+  data.catalog.push(item('cheap',5,{price:50}));
+  assert.deepEqual(plain(model.toyShopItems(data).map(p=>p.stable_id)),['cheap','blue','plus']);
+  assert.deepEqual(plain(model.toyCollectionItems(data).map(p=>p.stable_id)),['default','bunny']);
+});
 
 function nodes(tree){
   if(Array.isArray(tree))return tree.flatMap(nodes);

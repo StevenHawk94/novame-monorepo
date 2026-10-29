@@ -27,7 +27,7 @@ if (!apiBaseUrl) {
 
 export const apiClient = new ApiClient({
   baseUrl: apiBaseUrl,
-  headers: {'X-Burrow-Catalog':BUNDLED_SHOP_RELEASE,'X-Burrow-Rooms':'personal-v2','X-Burrow-Journal':'2','X-Burrow-Economy':'1','X-Burrow-Bunny':'1','X-Burrow-Adventure':'5'},
+  headers: {'X-Burrow-Catalog':BUNDLED_SHOP_RELEASE,'X-Burrow-Rooms':'personal-v2','X-Burrow-Journal':'2','X-Burrow-Economy':'1','X-Burrow-Bunny':'1','X-Burrow-Adventure':'5','X-Burrow-Care':'2'},
   getRequestContext:()=>({key:`${sessionEpoch()}:${sessionUserId()??''}`,actorId:sessionUserId()??undefined}),
   getToken: async () => {
     const owner=sessionUserId(),epoch=sessionEpoch();

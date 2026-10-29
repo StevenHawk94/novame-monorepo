@@ -7,6 +7,9 @@ import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..');
 const version='20261027000279',name='shop_client_capability';
 const release=JSON.parse(fs.readFileSync(path.join(root,'packages/domain/src/generated/shop-catalog-release.json')));
+// This historical migration registers this exact reviewed bundle, not whichever
+// bundle happens to be current when a later regression/recovery is run.
+release.release='f7647586172bd52cc353933b38ac06b40fc3ad51e870eed9635e80e26d8a3c15';
 const source=fs.readFileSync(path.join(root,`supabase/migrations/${version}_${name}.sql`),'utf8');
 const q=s=>"'"+s.replaceAll("'","''")+"'";
 export function shop279Transaction(){

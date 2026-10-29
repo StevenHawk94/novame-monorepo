@@ -12,6 +12,6 @@ test('Collection decorator exposes only the viewed owner’s purchased items', (
   assert.deepEqual(Array.from(decorationOptions(catalog,'windows',true,'partner',inventory),value=>value.stable_id),['partner']);
 });
 
-test('Shop decorator still offers purchasable items in catalog order', () => {
-  assert.deepEqual(Array.from(decorationOptions(catalog,'windows',false,'me',inventory),value=>value.stable_id),['unowned','partner','mine']);
+test('Shop decorator offers purchasable items in ascending price order', () => {
+  assert.deepEqual(Array.from(decorationOptions(catalog,'windows',false,'me',inventory),value=>value.stable_id),['mine','partner','unowned']);
 });

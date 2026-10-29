@@ -1,5 +1,6 @@
 import {useEffect} from 'react';
-import {Pressable,StyleSheet,Text,View} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {Image} from 'expo-image';
 import {useAppViewport} from '@/lib/app-viewport';
 import {BUNNY_ICONS,type BunnyVariant} from '@/lib/bunny-variant-assets';

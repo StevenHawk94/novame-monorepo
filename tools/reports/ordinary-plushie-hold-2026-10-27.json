@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-27",
+  "request": "Restore per-tap hearts for ordinary own-Plushie interactions; retain held feedback during Touch Note recording; no simulator inspection",
+  "changes": {
+    "controller": "Only an active Touch Note input capture may produce periodic held feedback; ordinary touch-down still produces its existing single three-heart burst",
+    "ordinary": "Holding or dragging no longer adds timed heart/haptic bursts; release, new taps and Squeeze/Bonk retain their existing interaction behavior",
+    "recording": "First action and subsequent 500ms held counting/one visible heart remain unchanged; recording's internal toy particles remain hidden",
+    "sharedScope": "Same useSquishyToy controller for Skia and native fallback",
+    "unchanged": ["Moments durable queue and fixed one-hour aggregation", "Ordinary interaction business counts", "Touch Note duration, quota, send and replay", "Rewards, permissions and economic isolation", "Existing feedback rate limiter"]
+  },
+  "verification": {
+    "counterexample": "Before the controller fix, the new ordinary-held test failed with 12 particle births instead of 3; the corresponding recording test passed",
+    "targeted": {"command": "node --test tools/test-burrow-toy-warp.cjs tools/test-plushie-touch-v2.cjs tools/test-plushie-touch-recovery.cjs tools/test-toy-interaction-records.cjs tools/test-toy-moment-windows.cjs tools/test-toy-interaction-batches.cjs", "passed": 52, "failed": 0, "overlapsDomainGate": true},
+    "lifecycle": {"command": "node --test tools/test-plushie-exit-lifecycle.cjs", "passed": 10, "failed": 0, "overlapsDomainGate": true, "note": "Old ordinary 500ms expectation split into ordinary non-repeating and recording repeating cases; task/rating record protections retained"},
+    "domain": {"command": "pnpm test:domain-isolation", "passed": 987, "failed": 0, "note": "Final complete rerun after updating the explicitly superseded ordinary-hold contract"},
+    "types": {"command": "pnpm --filter @novame/mobile exec tsc --noEmit", "exitCode": 0},
+    "diffCheck": {"command": "git diff --check", "exitCode": 0},
+    "limits": "Code/worklet/component-model tests only. Per user request, no simulator, screenshots, physical-device haptic verification or native performance sampling this turn. Targeted suites overlap the domain gate; counts are not additive."
+  },
+  "documentation": "docs/burrow-development-standards.md v1.25 / sections 10.3 and 10.5",
+  "release": "Client-only source change, applies after Metro reload. No API/database deployment, App publication or Git commit. Existing unrelated working-tree changes preserved."
+}

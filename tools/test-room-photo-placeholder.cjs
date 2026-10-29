@@ -17,6 +17,8 @@ test('empty frame and toy art is local cream camera decoration, without labels o
   }
   assert.match(art.roomPhotoPlaceholderSvg('frame'), /viewBox="0 0 100 144"/);
   assert.match(art.roomPhotoPlaceholderSvg('doll'), /viewBox="0 0 100 100"/);
+  assert.doesNotMatch(art.roomPhotoPlaceholderSvg('doll'), /M50 82 C47 79/,'Plushie has only a camera, no heart');
+  assert.match(art.roomPhotoPlaceholderSvg('frame'), /M50 82 C47 79/,'frame artwork is unchanged');
 });
 
 test('decoration has no touch target and leaves the parent photo interaction unchanged', () => {

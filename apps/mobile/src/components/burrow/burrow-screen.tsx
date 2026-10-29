@@ -6,7 +6,8 @@ import { useBurrowDestinationPreload } from '@/lib/burrow-destination-preload';
 import { beginInteractionTiming, markInteractionTiming } from '@/lib/interaction-timing';
 import { BunnyActor } from './bunny-actor';
 import {OutfitThumbnail} from './outfit-thumbnail';
-import { ActivityIndicator, Alert, AppState, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, AppState, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import { router, type Href } from 'expo-router';
@@ -45,7 +46,6 @@ import { RoomSceneArt as RoomScene } from './room-scene-art';
 import { HomeArtScene } from './home-art-scene';
 import { DailyPlusBonus } from './daily-plus-bonus';
 import { AdventureNappingDialog } from './adventure-napping-dialog';
-import { adventureFinishedToday } from '@/lib/burrow-daily-entry';
 import type { HomeWalletAnchor } from '@/lib/daily-plus-bonus';
 import { PartnerRoomScreen } from './partner-room-screen';
 import { HomeArtPreview } from './home-art-preview';
@@ -77,7 +77,7 @@ import { FRAME_ART_REFERENCE_BOUNDS } from '@/lib/room-photo-crop';
 import { BURROW_AFFECTION_ICONS, BURROW_QUEST_ICONS, burrowFriendArt } from '@/lib/burrow-ui-assets';
 import { BurrowMap } from './burrow-map';
 import { BurrowMapScrollView } from './burrow-map-scroll-view';
-import { useBurrowAttention, dismissHomeLetterReminder, dismissAdventureReminder } from '@/lib/burrow-attention';
+import { useBurrowAttention } from '@/lib/burrow-attention';
 import { QuestBoard } from './quest-board';
 import { claimQuestOptimistically } from '@/lib/coin-command-outbox';
 import { recordToyInteraction as queueToyInteraction } from '@/lib/toy-interaction-records';
@@ -86,6 +86,8 @@ import { BurrowShop } from './burrow-shop';
 import { haptics } from '@/lib/haptics';
 import { BurrowBackButton } from './burrow-back-button';
 import { burrowPageIsReady, cancelBurrowPageEntry, enterBurrowPage, openPreparedBurrow } from '@/lib/burrow-page-entry';
+import {adventureEntryState,adventureScope} from '@/lib/adventure-entry-state';
+import {readAdventureDeliveryRows,useAdventureDeliveryRevision} from '@/lib/adventure-delivery-state';
 
 export type BurrowSection = 'home'|'burrow'|'quests'|'shop'|'moments'|'collection'|'adventure'|'affection'|'decorate'|'partner_room'|'our_room'|'friends_room'|'game_room'|'memories_room'|'carrot_shop';
 const titles: Record<BurrowSection,string> = {home:'Our Room',burrow:'Our Burrows',quests:'Quests',shop:'Shop',moments:'Our Moments',collection:'Collection',adventure:'Adventure',affection:'Affection',decorate:'Decorate',partner_room:'Partner’s Room',our_room:'Our Room',friends_room:"Friend's Room",game_room:'Game Room',memories_room:'Memories Room',carrot_shop:'Carrot Shop'};
@@ -99,10 +101,6 @@ export function openBurrow(section:BurrowSection,extra?:Record<string,string>,fr
     :section==='affection'?'affection' as const:section==='adventure'?'adventure' as const:'page' as const,
     sessionId:extra?.sessionId,intent:JSON.stringify([section,extra,fromStack])};
   const dispatch=()=>{
-  if(section==='adventure'){
-    const snapshot=getBurrowSnapshot(),data=snapshot.data;
-    if(data)dismissAdventureReminder(data,Date.parse(data.serverNow)+Math.max(0,burrowClock()-snapshot.receivedAt));
-  }
   if(section==='partner_room'&&requirePartner())return;
   markInteractionTiming('dispatch');
   if(section==='our_room'){router.push('/(main)/surprise-room' as Href);return;}
@@ -152,6 +150,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   const retainedPage=section==='home'?'home':section==='affection'?'affection':section==='adventure'?'adventure':section==='partner_room'?'partner_room':asTab&&['burrow','quests','shop','moments','collection'].includes(section)
     ? section as 'burrow'|'quests'|'shop'|'moments'|'collection' : undefined;
   const {data,loading,error,busy,receivedAt}=useBurrow(section==='home',retainedPage);
+  useAdventureDeliveryRevision(section==='home'||section==='adventure');
   useEffect(()=>{
     if(section!=='home'||!focused)return;
     let live=true;
@@ -226,18 +225,15 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   // the current monotonic clock on every Adventure render, including hidden
   // cache updates. Otherwise stale hidden React ticks look like a server-clock
   // correction to the display model. This does not enable a hidden timer.
-  const renderClock=section==='adventure'?Math.max(clock,burrowClock()):clock;
+  const renderClock=section==='adventure'||section==='home'?Math.max(clock,burrowClock()):clock;
   const now=data&&Number.isFinite(Date.parse(data.serverNow))?Date.parse(data.serverNow)+Math.max(0,renderClock-receivedAt):Date.now();
   let bonusDayCurrent=false;
   if(section==='home'&&data?.dailyPlusBonus) {
     try { bonusDayCurrent=burrowLocalDay(now,data.economicTimezone ?? data.profile.timezone_name)===data.localDate; } catch { /* Wait for a fresh, valid server day. */ }
   }
   const attention=useBurrowAttention(data,now,section==='home'?'home':section==='burrow'?'rooms':section==='affection'?'affection':'none');
-  // Deep links and arrival while already viewing Adventure also acknowledge
-  // immediately, not during cleanup after Home is visible again.
-  useEffect(()=>{
-    if(section==='adventure'&&focused&&data)dismissAdventureReminder(data,now);
-  },[section,focused,data?.profile.id,data?.partner?.id,data?.pairVersion,data?.activeAdventure?.id,data?.activeAdventure?.status,now]);
+  // Opening/returning never consumes the pending-reward badge. The shared
+  // entry selector removes it only after the complete flow is durable.
   const midnightRetry=useRef(0);
   useEffect(()=>{
     if(!focused||section!=='home'||!data||loading||busy||AppState.currentState!=='active'||clock<midnightRetry.current)return;
@@ -249,17 +245,22 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
     } catch { /* Invalid profile timezone must not start a refresh loop. */ }
   },[focused,section,data,loading,busy,clock,now]);
   const adventure=data?.activeAdventure;
+  const adventureEntryStatus=adventureEntryState(data,now,readAdventureDeliveryRows());
   useAdventureTeamPrefetch(section==='adventure'&&!adventure);
   const completion = useRef<MajorUpdateBootstrap | null>(null);
   // Keep the mounted final conversation/modal through the receipt's immediate
   // cache clear, until its explicit navigation to Home has completed.
   if (!data || (completion.current && (completion.current.profile.id !== data.profile.id
     || completion.current.partner?.id !== data.partner?.id || completion.current.pairVersion !== data.pairVersion))) completion.current = null;
-  if (section === 'adventure' && focused && data?.activeAdventure && data.adventureResult
+  // An authoritative cancellation can retire an impossible settlement after a
+  // refresh; it is not a user back/skip path and cannot grant rewards.
+  if(completion.current&&data&&!data.activeAdventure&&!data.adventureResult
+    &&readAdventureDeliveryRows().some(row=>row.scope===adventureScope(data)&&row.id===completion.current?.activeAdventure?.id&&row.terminal))completion.current=null;
+  if (section === 'adventure' && focused && adventureEntryStatus.kind==='settlement'&&data?.activeAdventure && data.adventureResult
     && ['result_ready', 'interaction_required'].includes(data.activeAdventure.status)) completion.current = data;
   useEffect(() => { if (!focused) completion.current = null; }, [focused]);
-  const adventureEntry=section==='adventure'&&!!data&&!adventure&&!data.dailyAdventureUsed&&!data.readyRecordId;
-  const adventureLogged=section==='adventure'&&!!data&&!adventure&&!data.dailyAdventureUsed&&!!data.readyRecordId;
+  const adventureEntry=section==='adventure'&&adventureEntryStatus.kind==='log';
+  const adventureLogged=section==='adventure'&&adventureEntryStatus.kind==='ready';
   const displayedCareProgress=careProgress(data,careKind,now);
   const owner=section==='partner_room'&&data?.partner?data.partner.id:data?.profile.id;
   const needsRoomSlots=['home','partner_room','our_room','decorate'].includes(section);
@@ -475,9 +476,10 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
     if(section==='affection')return null;
     if(section==='adventure'){
       return <>
-        {adventure?<Card title="Your discovery is safe" body="Refresh to load the end of your adventure.">
+        {adventureEntryStatus.kind==='settlement'?<Card title="Your discovery is safe" body="Refresh to load the end of your adventure.">
           <Action label="Refresh" disabled={busy||loading} onPress={()=>void refreshBurrow()}/>
-        </Card>:data.dailyAdventureUsed?<Card title="Your bunny is home for today" body="Another adventure will be ready after your local midnight."/>:data.readyRecordId?<AdventureReady disabled={busy} onStart={()=>beginAdventure(data.readyRecordId!)}/>:<AdventureEntry
+        </Card>:adventureEntryStatus.kind==='napping'?<Card title="Your bunny is home for today" body="Another adventure will be ready after your local midnight."/>:adventureEntryStatus.kind==='ready'?<AdventureReady disabled={busy} onStart={()=>beginAdventure(adventureEntryStatus.recordId)}/>:<AdventureEntry
+          timeZone={data.profile.timezone_name} now={now}
           onWrite={()=>{prefetchAdventureRewards(data.adventureCollection?.enabled);router.push('/(main)/reflect-typing' as Href);}} onTap={()=>{prefetchAdventureRewards(data.adventureCollection?.enabled);router.push('/(main)/reflect-guided' as Href);}}/>}
       </>;
     }
@@ -488,7 +490,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   if(section==='friends_room'&&data&&(data.friendVisitsVersion===2||data.friendVisit?.version===2))return <FriendVisitCard data={data} busy={busy}/>;
   if(section==='adventure'&&completion.current)return <AdventureStageTransition stageKey={`settlement:${completion.current.activeAdventure!.id}`}>
     <AdventureCompletionScreen key={completion.current.activeAdventure!.id} data={completion.current}/></AdventureStageTransition>;
-  if(section==='adventure'&&data&&adventure?.status==='in_progress')return <AdventureStageTransition stageKey="ongoing">
+  if(section==='adventure'&&data&&adventureEntryStatus.kind==='ongoing'&&adventure?.status==='in_progress')return <AdventureStageTransition stageKey="ongoing">
     <AdventureProgressScreen data={data} now={now} onHome={()=>dismissToRetainedTab('/(main)/(tabs)')}/></AdventureStageTransition>;
   if(section==='affection')return <AffectionHub data={data} loading={loading} receivedAt={receivedAt} initialInbox={initialInbox||attention.affection>0}/>;
   if(section==='partner_room')return <PartnerRoomScreen/>;
@@ -515,7 +517,9 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
         onToyInteract={()=>openHomeInteraction('toy')} onToyPhoto={()=>openHomeInteraction('toy')}
         onMenu={()=>openPreparedBurrow('/(main)/menu')} onCarrots={()=>openBurrow('carrot_shop')}
         onAffection={()=>openBurrow('affection')} onAdventure={()=>{
-          if(adventureFinishedToday(data,now)){setNappingOpen(true);return;}
+          const latest=getBurrowSnapshot();
+          const at=latest.data?Date.parse(latest.data.serverNow)+Math.max(0,burrowClock()-latest.receivedAt):now;
+          if(adventureEntryState(latest.data,at,readAdventureDeliveryRows()).kind==='napping'){setNappingOpen(true);return;}
           openBurrow('adventure');
         }}
         onLetter={()=>openHomeInteraction('letter')}

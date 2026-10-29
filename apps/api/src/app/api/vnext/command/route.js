@@ -146,6 +146,16 @@ export async function POST(request) {
     } else if (action === 'visit_partner_room') {
       rpc = 'visit_partner_room_v1'
       args = { p_user_id: userId }
+    } else if (action === 'complete_room_care_v2') {
+      if(body.actorId!==userId||!uuid(body.ownerId)||!['carrot','water','leaf','fertilizer'].includes(body.careAction)
+        ||(body.partnerId!=null&&!uuid(body.partnerId))||(body.pairVersion!=null&&!/^[a-f0-9]{32}$/.test(body.pairVersion))
+        ||!uuid(body.idempotencyKey)||typeof body.localDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(body.localDate)
+        ||!Number.isFinite(Date.parse(`${body.localDate}T00:00:00Z`))
+        ||new Date(`${body.localDate}T00:00:00Z`).toISOString().slice(0,10)!==body.localDate)
+        return NextResponse.json({error:'invalid_request'},{status:400})
+      rpc='complete_room_care_v2'
+      args={p_user_id:userId,p_owner_id:body.ownerId,p_action:body.careAction,p_partner_id:body.partnerId??null,
+        p_pair_version:body.pairVersion??null,p_local_date:body.localDate,p_key:body.idempotencyKey}
     } else if (action === 'refill_room_need') {
       const ownerId = requiredText(body.ownerId, 80)
       const need = body.need === 'food' || body.need === 'water' ? body.need : null
@@ -372,6 +382,7 @@ export async function POST(request) {
       return NextResponse.json({error:'toy_batch_unavailable'},{status:503})
     if(action==='interact_burrow_toy_window'&&error?.code==='PGRST202')
       return NextResponse.json({error:'toy_window_unavailable'},{status:503})
+    if(action==='complete_room_care_v2'&&error?.code==='PGRST202')return NextResponse.json({error:'care_unavailable'},{status:503})
     if (error) throw error
     // A missing pair does not lock someone out of their own room. Keep every
     // fallback self-scoped; partner-targeted gifts/affection/games never enter
@@ -433,7 +444,7 @@ export async function POST(request) {
     }
     // Include the ledger keys already folded into this balance, including
     // simultaneous claims from another device. Supplementary reads fail open.
-    if (!data?.error && ['claim_daily_quest', 'claim_special_quest', 'complete_affection', 'refill_room_need',
+    if (!data?.error && ['claim_daily_quest', 'claim_special_quest', 'complete_affection', 'refill_room_need', 'complete_room_care_v2',
       'purchase_catalog_item', 'purchase_room_loadout', 'purchase_room_changes', 'respond_friend_visit_v2', 'respond_friend_visit_v3', 'claim_adventure_treasure'].includes(action)) {
       data = await withRewardWallet(supabase, userId, data, { ...body, action })
     }

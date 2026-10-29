@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import { BURROW_DAILY_ENTRY_ART } from '@/lib/burrow-ui-assets';
 import { Image } from './burrow-image';

@@ -1,6 +1,7 @@
 import { BurrowBackButton } from './burrow-back-button';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, BackHandler, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, BackHandler, Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';

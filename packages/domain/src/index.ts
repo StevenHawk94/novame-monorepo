@@ -13,3 +13,4 @@ export * from './skill-library';
 export * from './app-major-update';
 export * from './release-room';
 export * from './plushie-touch';
+export * from './room-care';

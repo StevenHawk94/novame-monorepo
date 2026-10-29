@@ -1,9 +1,11 @@
 import { BurrowBackButton } from './burrow-back-button';
 import { useEffect, useSyncExternalStore } from 'react';
-import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { router } from 'expo-router';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { FOREGROUND_AUDIO_MODE } from '@/lib/foreground-audio-mode';
+import { acquirePrivateAudioFocus, privateAudioFocused } from '@/lib/burrow-audio-focus';
 import { getInteractionPreferences, subscribeInteractionPreferences } from '@/lib/interaction-preferences';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,11 +33,10 @@ function setMuted(muted: boolean) {
   if (muted) ambientAudio.stop();
   publish({ muted }); try { storage.set(kBurrowMusicMuted.name, String(muted)); } catch {}
 }
-const audioFocusOwners = new Set<object>();
 /** Recordings and private messages must not mix with Home's ambient soundtrack. */
 export function acquireBurrowAudioFocus() {
-  const owner={}; audioFocusOwners.add(owner); ambientAudio.stop(); publish({suspended:true});
-  return () => { audioFocusOwners.delete(owner); publish({suspended:audioFocusOwners.size>0}); };
+  const release=acquirePrivateAudioFocus(); ambientAudio.stop(); publish({suspended:true});
+  return () => { release(); publish({suspended:privateAudioFocused()}); };
 }
 let confirmedTrack: string | null | undefined;
 const musicQueue = createLatestSelectionQueue<{ id: string | null; token: number }>(async choice => {

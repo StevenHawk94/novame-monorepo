@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, AppState, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { useFocusEffect } from 'expo-router';
 import UIAnimated, { cancelAnimation, Easing, ReduceMotion, withTiming, runOnJS, runOnUI, useAnimatedProps, useDerivedValue, useFrameCallback, useSharedValue, useReducedMotion, type SharedValue, type FrameInfo } from 'react-native-reanimated';
@@ -25,7 +26,7 @@ type Crumb={id:number;x:number;y:number;dx:number;dy:number;spin:number;size:num
 /** A gentle continuous haptic train, only while the real hold is active.
  * Expo has no cross-platform continuous-haptics handle: short metered pulses
  * avoid long system vibrations that cannot stop promptly when a finger lifts. */
-function useCareHoldFeedback(onInterrupt:()=>void){
+export function useCareHoldFeedback(onInterrupt:()=>void){
   const timer=useRef<ReturnType<typeof setInterval>|null>(null);
   const foreground=useRef(AppState.currentState==='active');
   const focused=useRef(false);

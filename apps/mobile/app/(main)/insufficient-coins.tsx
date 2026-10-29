@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** A real stack overlay keeps the checkout and draft mounted below. Replace

@@ -1,12 +1,11 @@
 import type { MajorUpdateBootstrap } from './app-major-update-api';
 import { burrowLocalDay } from './burrow-local-day';
+import {adventureEntryState} from './adventure-entry-state';
 
 /** Entry decisions use the cached server clock and the owner's timezone, not
  * the phone's wall clock. An unfinished result always remains accessible. */
 export function adventureFinishedToday(data: MajorUpdateBootstrap | null, now: number) {
-  if (!data?.dailyAdventureUsed || data.activeAdventure || data.adventureResult || data.readyRecordId) return false;
-  try { return burrowLocalDay(now, data.economicTimezone ?? data.profile.timezone_name) === data.localDate; }
-  catch { return false; }
+  return adventureEntryState(data,now).kind==='napping';
 }
 
 export function freeAffectionUsedToday(data: MajorUpdateBootstrap | null, now: number) {

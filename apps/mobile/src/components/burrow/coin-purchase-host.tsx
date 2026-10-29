@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { FullWindowOverlay } from 'react-native-screens';
 import {AppWindowLayer} from '@/components/layout/app-window-layer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

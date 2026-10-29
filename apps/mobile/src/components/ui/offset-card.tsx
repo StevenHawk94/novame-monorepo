@@ -6,7 +6,8 @@
  * COLORED offset identically to iOS (elevation can't tint shadows).
  */
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 
 type Props = {
   /** The offset layer's color — pick from the screen's palette. */

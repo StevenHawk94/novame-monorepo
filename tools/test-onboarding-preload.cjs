@@ -67,6 +67,7 @@ function harness() {
       '@/lib/bunny-identity':{bunnyVariant:()=> 'biscuit',queueBunnySelection(){},syncBunnyIdentity:async()=>{}},
       '@/components/main/burrow-launch-screen': { BurrowLaunchScreen: 'BurrowLaunchScreen' },
       react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': native,
+      '@/components/ui/feedback-pressable':native,
       '@/lib/app-viewport': { useAppViewport: () => native.useWindowDimensions() },
       '@/components/layout/app-modal': { AppModal: 'Modal' },
       'expo-image': { Image: 'NativeImage' }, '../../lib/splash': { hideSplashOnce: () => splashHides++ },

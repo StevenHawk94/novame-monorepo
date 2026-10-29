@@ -9,6 +9,7 @@ import {burrowArtForItem} from '@/lib/burrow-art-assets';
 import type {TouchMessage} from '@/lib/plushie-touch-store';
 import {haptics} from '@/lib/haptics';
 import {touchCapabilities} from '@/lib/touch-note-runtime';
+import {queueTouchHeartBursts} from '@/lib/touch-heart-motion';
 import {PlushieTouchToy} from './plushie-touch-toy';
 import {TouchFlyingHearts,TouchHeartMeter} from './plushie-touch-heart';
 export function PlushieTouchPlayback({message,size,width=size,height=size+290,paused=false,initialQuality='full',adaptive=true,onFinish,onPause,onQuality,onSample}:{
@@ -17,7 +18,7 @@ export function PlushieTouchPlayback({message,size,width=size,height=size+290,pa
  const reduced=useReducedMotion(),focused=useIsFocused(),mounted=useRef(true),active=useRef(!paused);
  const initial=reduced||initialQuality==='light'?'standard':initialQuality;
  const [quality,setQuality]=useState<TouchQuality>(initial),[count,setCount]=useState(0);
- const cursor=useSharedValue(createTouchPlayback(initial)),progress=useSharedValue(0),clock=useSharedValue(0),bursts=useSharedValue<number[]>([-1e6,-1e6,-1e6,-1e6,-1e6,-1e6]),serial=useSharedValue(0);
+ const cursor=useSharedValue(createTouchPlayback(initial)),clock=useSharedValue(0),bursts=useSharedValue<number[]>([-1e6,-1e6,-1e6,-1e6,-1e6,-1e6]);
  const samples=useSharedValue<number[]>([]),lastSample=useSharedValue(0),enabled=useSharedValue(!paused);
  const art=useMemo(()=>burrowArtForItem(message.toy,'couple_dolls'),[message.toy]);
  const handlers=useRef({onFinish,onPause,onQuality,onSample});handlers.current={onFinish,onPause,onQuality,onSample};
@@ -49,19 +50,20 @@ export function PlushieTouchPlayback({message,size,width=size,height=size+290,pa
  const frame=useCallback((m:ToyMotion,f:FrameInfo)=>{
   'worklet';if(!enabled.value||cursor.value.done)return false;
   const c=cursor.value,started=c.at>=0,result=advanceTouchPlayback(c,m,clip,f.timestamp,started?f.timeSincePreviousFrame??0:0,adaptive);
-  cursor.value=c;clock.value=result.elapsed;progress.value=result.elapsed/60000;
-  if(result.pulse){const next=[...bursts.value];next[serial.value++%6]=result.elapsed;bursts.value=next;runOnJS(pulse)();}
+  cursor.value=c;clock.value=result.elapsed;
+  if(result.pulse){bursts.value=queueTouchHeartBursts(bursts.value,result.elapsed);runOnJS(pulse)();}
   if(result.finished){enabled.value=false;bursts.value=[-1e6,-1e6,-1e6,-1e6,-1e6,-1e6];Object.assign(m,createToyMotion(m.geometry,m.reduced));}
   if(result.notify)runOnJS(notify)(result.count,c.quality,result.finished);
   if(onSample&&started&&f.timeSincePreviousFrame){samples.value=[...samples.value,f.timeSincePreviousFrame];if(f.timestamp-lastSample.value>=1000){runOnJS(sample)(samples.value,c.quality);samples.value=[];lastSample.value=f.timestamp;}}
   return true;
- },[enabled,clock,cursor,clip,adaptive,progress,bursts,serial,pulse,notify,onSample,samples,lastSample,sample]);
+ },[enabled,clock,cursor,clip,adaptive,bursts,pulse,notify,onSample,samples,lastSample,sample]);
  if(!art)return <Text>This plushie is not available on this App version.</Text>;
+ const meterSize=Math.min(width*.39,height*.23);
  return <View style={{width,height}}>
-  <View pointerEvents="none" style={{position:'absolute',top:height*.035,alignSelf:'center'}}><TouchHeartMeter progress={progress} count={count} size={Math.min(width*.39,height*.23)}/></View>
+  <View pointerEvents="none" style={{position:'absolute',top:height*.035,alignSelf:'center'}}><TouchHeartMeter count={count} size={meterSize} clock={clock} bursts={bursts} reduced={reduced}/></View>
   <View style={{position:'absolute',top:height*.27,left:(width-size)/2,width:size,height:size}}>
    <PlushieTouchToy asset={art} photo={message.photo??undefined} size={size} quality={quality} scope={`touch:${message.id}`} onFrame={frame} frameEnabled={enabled}/>
-   {!reduced&&<TouchFlyingHearts clock={clock} bursts={bursts}/>}
+   {!reduced&&<TouchFlyingHearts clock={clock} bursts={bursts} size={size} travelY={height*.035+meterSize/2-height*.27-size*.42}/>}
   </View>
  </View>;
 }

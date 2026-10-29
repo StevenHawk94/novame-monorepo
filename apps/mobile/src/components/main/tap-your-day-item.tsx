@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { TapYourDayChoice } from '@novame/engine';
 import { TapDayIcon } from '@/components/ui/tap-day-icon';

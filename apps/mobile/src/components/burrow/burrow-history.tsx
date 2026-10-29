@@ -1,6 +1,7 @@
 import {UserAvatar} from '@/components/ui/user-avatar';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppState, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import { Image } from './burrow-image';
 import { router, type Href } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';

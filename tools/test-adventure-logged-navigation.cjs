@@ -28,13 +28,13 @@ test('both saved-record entry paths share solid background and account-color rea
  const x=fixture();
  for(const [variant,source]of [['biscuit','adventure-ready-biscuit'],['pinky','adventure-ready-pinky']]){
   x.setVariant(variant);const tree=x.ready(),all=nodes(tree);
-  assert.equal(tree.props.style.backgroundColor,'#461501');
+  assert.equal(tree.props.style.backgroundColor,'#5c2c19');
   assert.equal(all.find(n=>n.type==='Image').props.source,source);
   assert.ok(all.findIndex(n=>n.type==='Image')<all.findIndex(n=>n.props.children==='Your day has been logged!'));
   assert.ok(!all.some(n=>n.props.children==='🎉'));
   const button=all.find(n=>n.type==='Button');assert.equal(button.props.style({pressed:false})[0].backgroundColor,'#FFC746');
  }
- const completion=x.completion();assert.equal(completion.props.style.backgroundColor,'#461501');
+ const completion=x.completion();assert.equal(completion.props.style.backgroundColor,'#5c2c19');
  assert.ok(!nodes(completion).some(n=>n.type==='Image'),'no old full-screen backdrop');x.h.unmount();
 });
 test('logged page has no back affordance; native swipe, Android back and route removal are blocked',()=>{
@@ -75,7 +75,7 @@ test('failed local Start stays on logged page and locked; a later retry can proc
 test('background syncing cannot auto-navigate; restored ready records share the same guard and no header back button',()=>{
  const x=fixture();x.completion();x.setJob({id:'job',blocked:true});x.completion();assert.equal(x.routes.length,0);x.h.unmount();
  const source=fs.readFileSync('apps/mobile/src/components/burrow/burrow-screen.tsx','utf8');
- assert.match(source,/const adventureLogged=section==='adventure'.*data\.readyRecordId/);
+ assert.match(source,/const adventureLogged=section==='adventure'.*adventureEntryStatus.kind==='ready'/);
  assert.match(source,/!adventureEntry&&!adventureLogged&&[^\n]*?<View style=\{\[s\.header/);
- assert.match(source,/data\.readyRecordId\?<AdventureReady/);
+ assert.match(source,/adventureEntryStatus.kind==='ready'\?<AdventureReady/);
 });

@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { NativeVerticalGradient } from './native-vertical-gradient';
-import { ADVENTURE_PROGRESS_COLORS, ADVENTURE_RETURN_COLORS } from '@/lib/burrow-surface';
+import { ADVENTURE_PROGRESS_COLORS } from '@/lib/burrow-surface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdventureDiggingRoute } from './adventure-digging-route';
 import { BurrowBackButton } from './burrow-back-button';

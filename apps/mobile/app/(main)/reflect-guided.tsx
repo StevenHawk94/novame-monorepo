@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
-import { Image as ExpoImage } from 'expo-image';
 import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,7 +16,7 @@ import {
 } from '@/lib/reflect-api';
 import { haptics } from '@/lib/haptics';
 import { ReflectCelebration } from '@/components/main/reflect-celebration';
-import { BURROW_BACKGROUNDS } from '@/lib/burrow-art-assets';
+import { ADVENTURE_LOG_BACKGROUND } from '@/lib/burrow-surface';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { TAP_GRID_PADDING, TAP_ITEM_GAP, TapYourDayItem, tapItemGridMetrics } from '@/components/main/tap-your-day-item';
 import { RC, ReflectTopBar } from '@/components/main/reflect-shared';
@@ -151,8 +151,7 @@ export default function ReflectGuidedScreen() {
   return (
     <AdventureStageTransition stageKey={`${phase}:${phase === 'steps' ? step : ''}`} direction={direction.current}>
     {phase === 'result' && journalJobId ? <AdventureRecordCompletion jobId={journalJobId} /> :
-    <View style={{ flex: 1, backgroundColor: '#925735' }}>
-      <ExpoImage source={BURROW_BACKGROUNDS.common} style={StyleSheet.absoluteFill} contentFit="cover" />
+    <View style={{ flex: 1, backgroundColor: ADVENTURE_LOG_BACKGROUND }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} enabled={phase !== 'result'}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

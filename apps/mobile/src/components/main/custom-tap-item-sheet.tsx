@@ -1,6 +1,7 @@
 import { BackIcon } from '@/components/burrow/burrow-back-button';
 import { useMemo, useState } from 'react';
-import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TAP_YOUR_DAY_OPTIONAL_CHOICES, type CustomTapItem, type TapYourDayQuestion } from '@novame/engine';

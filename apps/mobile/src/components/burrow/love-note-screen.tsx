@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
-import {ActivityIndicator,BackHandler,KeyboardAvoidingView,Platform,Pressable,ScrollView,SectionList,StyleSheet,Text,TextInput,View} from 'react-native';
+import { ActivityIndicator, BackHandler, KeyboardAvoidingView, Platform, ScrollView, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {router} from 'expo-router';
 import {Feather,MaterialIcons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -10,9 +11,9 @@ import {loveNoteBody,loveNoteDate,loveNoteKey,loveNoteSections,notesForTab,oldes
 import {keepBurrowTextDraft,readBurrowTextDraft,removeBurrowTextDraft} from '@/lib/burrow-text-drafts';
 import {enqueueLoveNote,recoverLoveNote} from '@/lib/burrow-store';
 import {sessionEpoch} from '@/lib/session-lifecycle';
+import {afterUiSettles} from '@/lib/ui-idle';
 import {dismissToRetainedTab} from '@/lib/retained-tab-navigation';
 import {BurrowBackButton} from './burrow-back-button';
-import {usePreventRemove} from '@react-navigation/native';
 
 function Header({history=false,canOpenHistory=false,onBack}:{history?:boolean;canOpenHistory?:boolean;onBack?:()=>void}){
   const insets=useSafeAreaInsets();
@@ -29,7 +30,7 @@ function Action({label,onPress,disabled=false,spinning=false,acknowledged=false}
 }
 const writeBack=()=>router.push({pathname:'/(main)/room-interaction',params:{kind:'letter',compose:'1'}});
 
-export function LoveNoteScreen({data,compose=false,noteId}:{data:MajorUpdateBootstrap;compose?:boolean;noteId?:string}){
+export function LoveNoteScreen({data,compose=false,noteId,autoFocusReady=false}:{data:MajorUpdateBootstrap;compose?:boolean;noteId?:string;autoFocusReady?:boolean}){
   const scope=attentionScope(data),insets=useSafeAreaInsets();
   const unread=unreadBurrowUpdateIds(data,'letters');
   // Composing needs no history request. Freeze read intent so acknowledging
@@ -41,10 +42,10 @@ export function LoveNoteScreen({data,compose=false,noteId}:{data:MajorUpdateBoot
   // reading page with the composer; arrivals must not overwrite a typed draft.
   const [selection,setSelection]=useState<string|null|undefined>(()=>noteId??(compose?null:oldestUnreadLoveNote(notes.rows,unread,notes.loaded&&!notes.hasMore)?.id??(unread.length?undefined:null)));
   const note=notes.rows.find(row=>row.id===selection);
-  const [closingRead,setClosingRead]=useState(false);
-  // Native swipe/back and the visible close share the same read-to-History exit.
-  usePreventRemove(!compose&&!noteId&&selection!==null&&!closingRead,()=>setClosingRead(true));
-  useEffect(()=>{if(closingRead)router.replace('/(main)/love-note-history');},[closingRead]);
+  // A received letter is a normal native page: swipe pops its original route,
+  // without interception or a History detour. Explicit History details still
+  // pop back to the History page that opened them.
+  const closeRead=()=>{if(router.canGoBack())router.back();else dismissToRetainedTab('/(main)/(tabs)');};
   const draftScope=`${data.profile.id}:${data.pairVersion??'solo'}`;
   const [body,setBody]=useState(()=>readBurrowTextDraft(draftScope,'letter')?.body??recoverLoveNote(data)?.body??'');
   const [sent,setSent]=useState(false),[error,setError]=useState<string|null>(null);
@@ -53,7 +54,16 @@ export function LoveNoteScreen({data,compose=false,noteId}:{data:MajorUpdateBoot
   const request=useRef(false),mounted=useRef(true),current=useRef(scope);current.current=scope;
   const success=useRef<{scope:string;epoch:number}|null>(null),closing=useRef(false);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;if(feedbackTimer.current!==null)clearTimeout(feedbackTimer.current);};},[]);
-  useEffect(()=>{if(notes.focused&&selection===null)input.current?.focus();},[notes.focused,selection]);
+  useEffect(()=>{
+    if(!autoFocusReady||!notes.focused||selection!==null)return;
+    // Native autoFocus on mount overlaps the card slide with keyboard-driven
+    // layout. Use one focus owner after the existing transition scheduler has
+    // released the UI, not a guessed animation-length timeout or network wait.
+    const epoch=sessionEpoch();
+    return afterUiSettles(()=>{
+      if(mounted.current&&current.current===scope&&epoch===sessionEpoch()&&!input.current?.isFocused())input.current?.focus();
+    },{delayMs:0});
+  },[autoFocusReady,notes.focused,selection,scope]);
   useEffect(()=>{
     if(selection!==undefined)return;
     const next=oldestUnreadLoveNote(notes.rows,unread,notes.loaded&&!notes.hasMore);
@@ -108,7 +118,7 @@ export function LoveNoteScreen({data,compose=false,noteId}:{data:MajorUpdateBoot
     <View style={styles.root}>
     {/* Stable native editor parent; inline feedback never adds a touch-blocking overlay. */}
     <View style={styles.root} collapsable={false}>
-    <Header canOpenHistory={selection===null} onBack={!compose&&!noteId&&selection!==null?()=>setClosingRead(true):undefined}/>
+    <Header canOpenHistory={selection===null} onBack={!compose&&!noteId&&selection!==null?closeRead:undefined}/>
     {selection!==null?<View style={[styles.readPage,{paddingBottom:Math.max(insets.bottom,20)}]}>
       {note?<>
         <View style={styles.from}><Text style={styles.fromTitle}>{received?'From':'To'} {name} ❤️</Text><Text style={styles.date}>{loveNoteDate(note.created_at,data.profile.timezone_name,true)}</Text></View>
@@ -120,7 +130,7 @@ export function LoveNoteScreen({data,compose=false,noteId}:{data:MajorUpdateBoot
       </View>}
     </View>:<View style={[styles.composePage,{paddingBottom:Math.max(insets.bottom,20)}]}>
       <Text style={styles.to}>To <Text style={{color:'#4C2B22'}}>{name} ❤️</Text></Text>
-      <TextInput ref={input} autoFocus={notes.focused} accessibilityLabel="Love note" multiline maxLength={500} value={body} textAlignVertical="top" placeholder="Write something from your heart..." placeholderTextColor="#79685A" style={[styles.paper,styles.input]} onChangeText={text=>{
+      <TextInput ref={input} accessibilityLabel="Love note" multiline maxLength={500} value={body} textAlignVertical="top" placeholder="Write something from your heart..." placeholderTextColor="#79685A" style={[styles.paper,styles.input]} onChangeText={text=>{
         // Keep the keyboard up. Only the short accepted-feedback stage freezes input.
         if(request.current||closing.current)return;
         success.current=null;setBody(text);setSent(false);setError(null);

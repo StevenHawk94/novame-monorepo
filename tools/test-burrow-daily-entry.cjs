@@ -20,9 +20,10 @@ test('only fully finished adventures open the cached Home napping dialog',()=>{
   assert.equal(model.adventureFinishedToday(data(),now),true);
   for(const status of ['in_progress','result_ready','interaction_required'])
     assert.equal(model.adventureFinishedToday({...data(),activeAdventure:{id:'trip',status}},now),false,status);
-  for(const patch of [{adventureResult:{id:'unclaimed'}},{readyRecordId:'journal'},{dailyAdventureUsed:false},{localDate:'2026-10-11'}])
+  for(const patch of [{adventureResult:{id:'unclaimed'}},{dailyAdventureUsed:false},{localDate:'2026-10-11'}])
     assert.equal(model.adventureFinishedToday({...data(),...patch},now),false);
   assert.equal(model.adventureFinishedToday(null,now),false);
+  assert.equal(model.adventureFinishedToday({...data(),readyRecordId:'stale'},now),true,'a contradictory old record cannot bypass today’s used quota');
 });
 test('Free affection resets at owner midnight; legacy Plus snapshots wait for the authoritative quota',()=>{
   assert.equal(model.freeAffectionUsedToday(data(),now),true);
@@ -130,7 +131,8 @@ test('cached affection hub immediately shows the Free limit, preserves inbox, an
 });
 test('Home intercepts completed Adventure before navigating; native Affection transition matches its pink background',()=>{
   const home=fs.readFileSync('apps/mobile/src/components/burrow/burrow-screen.tsx','utf8');
-  assert.match(home,/onAdventure=\{\(\)=>\{\s*if\(adventureFinishedToday\(data,now\)\)\{setNappingOpen\(true\);return;\}/);
+  assert.match(home,/onAdventure=\{\(\)=>\{\s*const latest=getBurrowSnapshot\(\)/);
+  assert.match(home,/adventureEntryState\(latest.data,at,readAdventureDeliveryRows\(\)\).kind==='napping'/);
   assert.match(home,/registerOverlay/);assert.match(home,/modalOpen=.*nappingOpen/);
   const options=load('apps/mobile/src/lib/main-navigation-options.ts',{'./page-edge-gesture':load('apps/mobile/src/lib/page-edge-gesture.ts')});
   assert.equal(options.burrowDetailOptions({section:'affection'}).contentStyle.backgroundColor,'#EF8392');

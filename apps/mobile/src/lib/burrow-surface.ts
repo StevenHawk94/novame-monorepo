@@ -3,7 +3,7 @@ import type { ViewStyle } from 'react-native';
 export const BURROW_PAGE_COLORS = ['#793D29','#B85B35','#D6834B'] as const;
 export const ADVENTURE_PROGRESS_COLORS = ['#2C0D00','#360E02','#2C0D00'] as const;
 export const ADVENTURE_RETURN_COLORS = ['#FFC343','#FFBC32'] as const;
-export const ADVENTURE_LOG_BACKGROUND = '#461501';
+export const ADVENTURE_LOG_BACKGROUND = '#5c2c19';
 
 /** Native edge resistance/rebound; no JS gesture loop or refresh on the map. */
 export function burrowPageScrollBehavior(section:string) {
@@ -24,13 +24,13 @@ export function nativeVerticalGradientStyle(colors: readonly [string,string,...s
 
 export function burrowFlatSurface(section:string,adventureEntry:boolean) {
   if(adventureEntry)return ADVENTURE_LOG_BACKGROUND;
-  if(section==='quests')return '#844624';
+  if(section==='quests')return '#6a321c';
   if(section==='burrow')return '#572b1a';
   // HomeArtScene fills its entire viewport with an opaque image + mask.
   // Do not draw an invisible full-screen gradient underneath that artwork.
   if(section==='home')return BURROW_PAGE_COLORS[0];
   // Every other generic BurrowScreen surface has an opaque cover Image.
-  // Progress owns its separate visible gradient. Keep only a plain fallback
+  // Recording owns its solid soil; Digging owns its visible dark gradient. Keep a plain fallback
   // behind artwork; never rasterize a full-screen gradient that cannot be seen.
   return BURROW_PAGE_COLORS[0];
 }

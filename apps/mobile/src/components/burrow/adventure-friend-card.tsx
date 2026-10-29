@@ -1,4 +1,5 @@
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import { router, type Href } from 'expo-router';
 import { Image } from './burrow-image';
 import { completeFriendInteraction, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';

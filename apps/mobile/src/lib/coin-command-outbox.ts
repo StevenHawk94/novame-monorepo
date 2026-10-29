@@ -10,9 +10,17 @@ import {captureQuestFact,currentQuestData,guardQuestClaim,questProgress,subscrib
 import {questScope} from './quest-progress-model';
 import {showBurrowToast} from './burrow-toast';
 import {recordRatingMilestone} from './official-rating-milestones';
+import {configureCarePending} from './burrow-care-cooldown';
 const isClaim=(row:CoinOperation)=>['claim_daily_quest','claim_special_quest'].includes(String(row.payload.action));
 function projectQuest(row:CoinOperation,status:'pending'|'confirmed'|'rejected'){
  if(!row.quest)return;
+ // Old persisted helper rows may still carry the retired display-only quest
+ // fact. Keep their original wire intent/receipt and money untouched, but do
+ // not let replay resurrect helper completion under the owner-only contract.
+ if(row.payload.action==='refill_room_need'&&row.payload.ownerId!==row.owner
+  ||row.payload.action==='complete_room_care_v2'&&['leaf','fertilizer'].includes(String(row.payload.careAction))){
+  questProgress.rejectPendingFact(row.id,row.quest);return;
+ }
  if(isClaim(row))questProgress.claim(row.id,row.quest,status);
  else questProgress.fact(row.id,row.quest,status);
 }
@@ -46,6 +54,9 @@ export const coinOperations=createCoinOperationQueue({
   if(isClaim(row))showBurrowToast('This reward could not be verified. Your coins have been corrected.');},
  definitive:coinRewardDefinitelyRejected,schedule:(fn,ms)=>setTimeout(fn,ms),cancel:timer=>clearTimeout(timer as ReturnType<typeof setTimeout>),
 });
+configureCarePending((data,ownerId,action)=>coinOperations.pending().some(row=>row.owner===data.profile.id
+ &&row.payload.action==='complete_room_care_v2'&&row.payload.ownerId===ownerId&&row.payload.careAction===action
+ &&row.payload.partnerId===(data.partner?.id??null)&&row.payload.pairVersion===(data.pairVersion??null)));
 // A completed photo/journal/game receipt releases waiting Claims promptly;
 // do not make an invisible dependency wait for the next network backoff tick.
 let questWake:ReturnType<typeof setTimeout>|undefined;
@@ -93,8 +104,15 @@ function coinCommandOperation(action:string,payload:Record<string,unknown>):Omit
  const quest=action==='claim_daily_quest'&&data?questProgress.captureClaim(data,String(payload.assignmentId))
   :action==='claim_special_quest'&&data?{...questScope(data),questId:String(payload.questId),stage:Number(payload.stage),verified:true}
   :action==='complete_affection'?captureQuestFact('send_affection')
-  :action==='refill_room_need'?captureQuestFact(payload.need==='water'?'water_partner_flower':'feed_partner_bunny'):undefined;
+  :action==='refill_room_need'&&payload.ownerId===sessionUserId()?captureQuestFact(payload.need==='water'?'water_partner_flower':'feed_partner_bunny')
+  :action==='complete_room_care_v2'&&['carrot','water'].includes(String(payload.careAction))
+    ?captureQuestFact(payload.careAction==='water'?'water_partner_flower':'feed_partner_bunny'):undefined;
  return {...commandCoinRewardPlan(action,payload),path:'/api/vnext/command',payload:{action,...payload},...(quest?{quest}:{})};
+}
+export function enqueueRoomCareCommand(payload:Record<string,unknown>){
+ const operation=coinCommandOperation('complete_room_care_v2',payload);
+ void enqueueCoinOperation(operation).catch(()=>{/* Retained immutable retry; settled observer handles definitive refusal. */});
+ return operation.id;
 }
 /** Local commit and coin presentation happen before returning. The background
  * queue retains unknown failures; only definitive rejection rolls back. */

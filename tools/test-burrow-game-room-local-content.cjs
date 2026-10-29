@@ -20,7 +20,7 @@ test('game rails stably place Plus offers last, hide inactive entries and never 
     Object.freeze({id:'free',price:0,plus_only:false}),
     Object.freeze({id:'plus-second',plus_only:true}),
   ]);
-  assert.deepEqual(Array.from(content.gameRailItems(items),g=>g.id),['paid','free','plus-first','plus-second']);
+  assert.deepEqual(Array.from(content.gameRailItems(items),g=>g.id),['free','paid','plus-first','plus-second']);
   assert.deepEqual(items.map(g=>g.id),['plus-first','paid','hidden','free','plus-second']);
   assert.equal(content.gameRailItems([]).length,0);
 });

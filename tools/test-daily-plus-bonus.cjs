@@ -39,16 +39,22 @@ test('daily bonus offers only Claim, with no Later action even after a retryable
  check();x.tap();x.request.reject(Error('intent_not_saved'));await flush();check();
  assert.ok(x.render().some(n=>n.props?.accessibilityRole==='alert'),'failure handling stays intact');x.h.unmount();
 });
-test('tap hides popup and wallet portal at flight start, guards double taps and never awaits a receipt',()=>{
+test('tap keeps popup and its shared wallet portal until coin presentation completes, guards double taps and never awaits a receipt',()=>{
  const x=harness(),tap=x.render().find(n=>n.type==='Button').props.onPress;tap();tap();
  assert.equal(x.calls.filter(c=>typeof c==='string').length,1);
- assert.equal(x.render().length,0,'the card/scrim disappear immediately, not after coin flight/hold');
- x.props.bonus={...bonus(),claimed:true};assert.equal(x.render().some(n=>n.type==='WalletPortal'),false,'root wallet resumes the same global flight');
- x.time.advance(2700);x.render();x.time.advance(300);assert.equal(x.render().length,0);x.h.unmount();
+ assert.ok(x.render().some(n=>n.type==='WalletPortal'),'the native modal retains the SAME shared wallet during the flight');
+ assert.equal(x.render().find(n=>n.type==='Button').props.disabled,true);
+ assert.ok(x.render().some(n=>n.props?.children==='Claimed!'));
+ x.props.bonus={...bonus(),claimed:true};assert.ok(x.render().some(n=>n.type==='WalletPortal'),'a fast authoritative claimed update must not remove the presentation');
+ const flight=motionModel.coinArrivalTiming(0).flightEnd;
+ x.time.advance(flight);assert.ok(x.render().some(n=>n.type==='WalletPortal'),'keep the existing balance hold/fade timing after the particles land');
+ x.time.advance(motionModel.BURROW_MOTION.coinHold);x.render();
+ x.time.advance(motionModel.BURROW_MOTION.coinFade-1);assert.ok(x.render().length>0,'do not remove the popup before its fade completes');
+ x.time.advance(1);assert.equal(x.render().length,0);x.h.unmount();assert.equal(x.time.timers.size,0);
 });
 test('ambiguous timeout does not reopen or rewind an already completed celebration',async()=>{
  const x=harness();x.tap();x.request.reject(Error('network'));await flush();
- assert.equal(x.render().length,0);assert.equal(x.render().some(n=>n.props?.accessibilityRole==='alert'),false);
+ assert.ok(x.render().some(n=>n.type==='WalletPortal'));assert.equal(x.render().some(n=>n.props?.accessibilityRole==='alert'),false);
  x.time.advance(2700);x.render();x.time.advance(300);assert.equal(x.render().length,0);x.h.unmount();
 });
 test('a synchronous local persistence failure keeps Claim visible and retryable instead of hiding an unsaved grant',()=>{
@@ -61,6 +67,10 @@ test('definitive rejection restores a retry; account changes cannot show old fai
 });
 test('background/blur consumes the celebration and never replays it on return; unmount cancels timers',()=>{
  const x=harness();x.tap();x.props.enabled=false;x.render();x.render();x.props.enabled=true;assert.equal(x.render().length,0);x.h.unmount();assert.equal(x.time.timers.size,0);
+});
+test('background/blur during popup fade cannot reopen its native modal on return',()=>{
+ const x=harness();x.tap();x.time.advance(motionModel.coinArrivalTiming(0).flightEnd+motionModel.BURROW_MOTION.coinHold);x.render();
+ x.props.enabled=false;x.render();x.render();x.props.enabled=true;assert.equal(x.render().length,0);x.h.unmount();assert.equal(x.time.timers.size,0);
 });
 test('daily popup has no separate wallet, counter, flight tree or balance synchronization',()=>{
  const source=fs.readFileSync('apps/mobile/src/components/burrow/daily-plus-bonus.tsx','utf8');

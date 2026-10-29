@@ -84,7 +84,7 @@ test('first encounter waits for Talk and then immediately shows the first prewri
   assert.ok(first.some(n=>n.props.children==='Talk to him'));
   first.find(n=>n.type==='Button').props.onPress();
   const next=x.render();assert.ok(next.some(n=>n.props.children==='A fresh dirt mound.'));
-  assert.ok(!next.some(n=>n.props.children==='Let’s be friends'));assert.equal(x.calls.length,0);x.h.unmount();
+  assert.ok(!next.some(n=>n.props.children==='Let’s be friends'));assert.equal(x.calls.length,1);assert.equal(x.calls[0][1].checkpoint.invited,true);x.h.unmount();
 });
 test('returning encounter starts directly at dialogue; headline is stable through taps and bootstrap updates',()=>{
   const d=data();d.discoveries=[discovery()];const x=harness(d),first=x.render();
@@ -96,7 +96,7 @@ test('returning encounter starts directly at dialogue; headline is stable throug
   d.discoveries=[];d.adventureCollection.progress=[];
   const next=x.render();assert.ok(next.some(n=>n.props.children==='Hm. My roof.'));
   assert.equal(next.find(n=>n.type==='Stage').props.heading,heading);
-  assert.equal(x.calls.length,0,'line navigation never requests a reload');x.h.unmount();
+  assert.equal(x.calls.length,1,'line navigation saves one local checkpoint, not a reload');assert.equal(x.calls[0][1].checkpoint.line,1);x.h.unmount();
 });
 test('new encounter does not change presentation if progress refreshes while talking',()=>{
   const x=harness();x.render().find(n=>n.type==='Button').props.onPress();

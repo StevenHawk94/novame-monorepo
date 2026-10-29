@@ -1,4 +1,5 @@
-import {Pressable,StyleSheet,View,type StyleProp,type ViewStyle} from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import type {SharedValue} from 'react-native-reanimated';
 import {CoinIcon,CoinAddIcon} from './coin-ui';
 import {AnimatedCoinBalance} from './animated-coin-balance';

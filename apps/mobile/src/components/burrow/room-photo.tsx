@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Alert, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import { Image } from './burrow-image';
@@ -446,7 +447,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
             sourceUri={draft?.uri} photo={draft?undefined:photo} imageRect={draftFaceRect}/></View>
         </View>
       </View>:<View style={[styles.preview,kind==='frame'&&!memory&&styles.framePreview]}>{draft ? <Image source={{ uri: draft.uri }} cachePolicy="none" contentFit="cover" style={styles.image} /> : <RoomPhoto photo={photo} memory={!!memory} />}</View>}
-      {kind === 'doll' && toyPhotoChangedToday(data, toyId, ownerId) && <Text style={styles.copy}>Today’s photo change for this toy is used. Other toys have their own photos.</Text>}
+      {kind === 'doll' && !data.photoUsage?.doll.unlimited && toyPhotoChangedToday(data, toyId, ownerId) && <Text style={styles.copy}>Today’s photo change for this toy is used. Other toys have their own photos.</Text>}
       {kind==='doll'&&draft&&!draft.submitted&&<View style={styles.row}><Button label="− Zoom" disabled={busy} onPress={()=>zoom(-1)}/><Button label="+ Zoom" disabled={busy} onPress={()=>zoom(1)}/></View>}
       {error && <Text accessibilityRole="alert" style={styles.copy}>{error}</Text>}
       {canEdit && <View style={styles.row}>{(memory||kind==='frame')&&<Button label="Photo library" disabled={busy} onPress={() => void choose(false)} />}<Button label="Camera" disabled={busy} onPress={() => void choose(true)} /></View>}

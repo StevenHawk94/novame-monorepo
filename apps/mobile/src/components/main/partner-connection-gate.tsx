@@ -30,6 +30,13 @@ export function PartnerConnectionGate() {
     if (!owner || (previous.current && (previous.current.owner !== owner || previous.current.epoch !== epoch))) {
       previous.current = null; preparing.current = ''; setPrompt(null);
     }
+    // The explicit route can already present the authenticated minimal pairing
+    // receipt before full bootstrap verifies shared access. Remember that scope
+    // now: verification arriving after Continue on Home is not a second event.
+    // This suppresses presentation only; it never grants shared-room access.
+    if (owner && data?.profile.id === owner && !pairInvalidated && scope && inline) {
+      previous.current = { owner, epoch, scope }; preparing.current = ''; setPrompt(null); return;
+    }
     // Ignore invalidation gaps. Only authenticated, complete bootstrap data
     // can announce a connection (a broadcast payload is never authorization).
     if (!data || data.profile.id !== owner || pairInvalidated || !data.pairAccessVerified) return;

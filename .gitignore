@@ -77,3 +77,7 @@ tools/item-source/memory-items/old/
 # Firebase Admin / FCM V1 service-account private keys (never commit)
 **/*firebase-adminsdk*.json
 **/firebase-fcm-service-account*.json
+
+# Local QA screenshots, exports and recovery archives are not runtime source.
+# Sanitized release evidence is kept under tools/reports (or explicitly added).
+/outputs/*

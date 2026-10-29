@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { Image } from './burrow-image';
 import type { MajorUpdateBootstrap, MajorUpdateQuest } from '@/lib/app-major-update-api';
 import { BURROW_QUEST_BANNER, BURROW_QUEST_ICONS } from '@/lib/burrow-ui-assets';
@@ -157,10 +158,10 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim }: {
 }
 
 const styles = StyleSheet.create({
-  board: { backgroundColor: '#844624', paddingBottom: 30 },
-  banner: { width: '100%', aspectRatio: 2, flexShrink: 0 },
+  board: { backgroundColor: '#6a321c', paddingBottom: 30 },
+  banner: { width: '100%', aspectRatio: 9 / 6, flexShrink: 0 },
   questContent: { paddingHorizontal: 18, paddingTop: 16, gap: 13 },
-  heading: { color: '#FFF8EC', fontSize: 27, fontWeight: '800', marginBottom: 3 },
+  heading: { color: '#FFF8EC', fontSize: 24, fontWeight: '800', marginLeft: 5, marginBottom: 3 },
   specialHeading: { marginTop: 20 },
   list: { gap: 12 },
   dailyCard: { minHeight: 78, borderRadius: 21, backgroundColor: '#FFFDF8', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, paddingVertical: 12, shadowColor: '#231008', shadowOffset: { width: 0, height: 5 }, shadowOpacity: .38, shadowRadius: 0, elevation: 4 },

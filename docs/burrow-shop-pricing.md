@@ -2,6 +2,12 @@
 
 ## Scope
 
+### Approved itemized update — 2026-10-28
+
+The user's edited `Burrow-Pricing-V1.xlsx` (SHA256 `ed93774c63a3233a42be6c6da4ce1f546b02ab23107ab8c5722556ef1c3746a6`) supersedes the suggested tier/Plus ratios. Columns E/F joined by permanent ID N define 496 final offers (343 Free, 153 Plus), including 16 zero-price starters and two existing free games. `catalog/approvals/pricing-2026-10-28.json` is immutable approval evidence, not another runtime catalog. The source manifest seeds and generated artifacts are synchronized; migration 283 updates 426 changed rows under the existing pricing lock/audit, with expected-version guards and exact capability registration, without publishing/rerolling Adventure reservations. The approved starter-window correction is narrowly scoped to WIN-01 (200→0).
+
+Shop categories, each Game theme and the Surprise picker show Free offers first, Plus offers last, ascending actual price inside each group; ties retain editorial order. Ownership/member state does not reorder offers. Existing inventory/unlocks/committed receipts, quote reconfirmation, quotas, tradability and user resources remain unchanged. Sorting requires a current client bundle; database prices use the original silent catalog refresh. Release/verification evidence and environment limits are in `tools/reports/shop-pricing283-2026-10-28.json`; no App release is implied.
+
 Admin → **Shop Pricing** lists active Shop products in the live content revision, with category/search, local-art previews, IDs, descriptions, Plus/gift flags, current carrot prices, single/batch editing and recent audit history. A history entry can restore its old price into a draft for review and normal save. Free/default products remain read-only; paid prices are integers from 1 to 1,000,000 carrots, up to 200 changes per save.
 
 This panel cannot create/delete products, upload/replace artwork, change availability, or edit cash prices for subscriptions/carrot packs. Existing ownership, gifts, purchase snapshots and saved room layouts are not rewritten.

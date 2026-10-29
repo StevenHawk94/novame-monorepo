@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-27",
+  "request": "Impact Soft on App activation targets, including Home objects; twenty Light requests across each coin flight, coin-collect.mp3 at flight start; user further requires BGM to continue playing and cancels simulator verification",
+  "changes": {
+    "activationCoverage": {"files": 106, "pressableImports": 105, "touchableOpacityImports": 1, "switchImports": 1, "nativeAlertImports": 14, "additional": "Four inline Text links/retry actions use the same synchronous acknowledgement; gesture-backed Squeeze/Bonk buttons use Soft"},
+    "activationContract": "Accepted actions use Soft without awaiting it; disabled controls remain inert. Forward the original host/ref/layout/press-state/hitSlop and action return value. Deduplicate the same native event and synchronous legacy navigation/selection impacts; retain independent semantic outcomes and continuous interaction feedback.",
+    "coinFlight": {"lightRequests": 20, "flightDurationSource": "coinArrivalTiming(0).flightEnd", "currentDurationMs": 1200, "excluded": "1500ms balance hold and 300ms fade", "implementation": "One bounded absolute-deadline timer; only a new batch/flight starts it, not a receipt, merged reward, portal or balance update. Late slots are skipped, never caught up into a burst or played during the balance hold."},
+    "sound": {"source": "apps/mobile/assets/sound-effect/coin-collect.mp3", "bytes": 49152, "preparation": "Foreground silent preload; a not-yet-loaded clip is skipped rather than played late", "bgm": "mixWithOthers, no ducking, no exclusive-focus acquisition, no pause/replacement/recreation of BGM. Audio-effect cleanup owns only its own player.", "privateAudio": "Share the existing Surprise/private-playback focus state through a small non-UI registry, so effect preload/playback cannot overwrite recording/private playback audio mode."},
+    "lifecycle": "Respect App sound/haptics preferences. Background, identity change, cancellation and unmount release pending pulses/audio without replay on return. Reduce Motion with no visible coin flight does not start the flight sequence.",
+    "unchanged": ["Coin ledger, durable intents, claims, amounts and receipts", "Quotas, economic domains and permissions", "Touch Note recording/replay counting and continuous feedback", "Ordinary Plushie hearts and fixed one-hour Moments aggregation", "Room ownership, notifications and startup priority"]
+  },
+  "verification": {
+    "counterexamples": "Before implementation, the new activation/coverage/coin-feedback suite failed all eight initial cases (missing shared adapters and 105 raw Pressable imports).",
+    "targeted": [
+      {"command": "node --test tools/test-interaction-feedback.cjs tools/test-unified-coin-wallet.cjs tools/test-burrow-toy-warp.cjs tools/test-plushie-exit-lifecycle.cjs tools/test-completion-effects.cjs", "passed": 67, "failed": 0, "note": "Earlier targeted run; later added audio-focus/BGM cases verified below."},
+      {"command": "node --test tools/test-home-entry-readiness.cjs tools/test-onboarding-preload.cjs tools/test-plushie-touch-recovery.cjs", "passed": 71, "failed": 0},
+      {"command": "node --test tools/test-interaction-feedback.cjs tools/test-burrow-music-ui.cjs tools/test-surprise-ui.cjs", "passed": 77, "failed": 0, "note": "Before the final additional BGM overlay case."},
+      {"command": "node --test tools/test-burrow-music-ui.cjs tools/test-interaction-feedback.cjs", "passed": 28, "failed": 0, "bgmEvidence": "Actual BGM gate/controller and coin-feedback hook share the audio boundary and private-focus registry. Three coin flights, completion and effect stop leave the same BGM player playing: one BGM play, zero pauses, no removal/recreation; no per-flight mode reset."}
+    ],
+    "domain": {"command": "pnpm test:domain-isolation", "passed": 1015, "failed": 0, "note": "Final complete rerun includes the BGM UI suite in the release gate."},
+    "types": {"command": "pnpm --filter @novame/mobile exec tsc --noEmit", "exitCode": 0},
+    "catalog": {"command": "pnpm catalog:check", "exitCode": 0, "activeProducts": 496, "release": "f7647586172bd52cc353933b38ac06b40fc3ad51e870eed9635e80e26d8a3c15"},
+    "export": {"command": "pnpm --filter @novame/mobile exec expo export --platform ios --platform android --max-workers 2 --output-dir <isolated temporary directory>", "exitCode": 0, "iosModules": 4696, "androidModules": 4706, "note": "Final stable-source export succeeded. An earlier export started before the audio-focus module was created failed resolution; the final clean process resolves it normally. No resolver/runtime workaround."},
+    "sdkInspection": "Installed expo-audio 1.1.1: iOS deactivateSession only deactivates when no registered player is playing; setAudioMode does not pause players. Android MIX_WITH_OTHERS bypasses audio-focus acquisition. Runtime uses the same FOREGROUND_AUDIO_MODE as BGM.",
+    "diffCheck": {"command": "git diff --check", "exitCode": 0},
+    "native": {"status": "Not accepted as verified; user explicitly cancelled simulator tests and will self-test", "details": "An isolated QA bundle was built. Desktop UI service could not start; no native click/visual/haptic/performance acceptance result is claimed. The QA launch attempt had no continuing process when cleanup was requested. No production account/API mutations, native dependency change or App publication."},
+    "limits": "Target suites overlap each other and the domain gate; counts are not additive. Mock/native-boundary checks and code exports do not prove physical haptic sensation, speaker loudness, every historical UI route or Android/iOS hardware behavior. No simulator acceptance or new FPS result claimed."
+  },
+  "documentation": "docs/burrow-development-standards.md v1.26 / sections 2.4 and 10.5",
+  "release": "Client-only source update, applies after Metro reload with existing native dependencies. No API/database/R2 deployment, App publication, announcement, forced update or Git commit. Existing unrelated working-tree changes preserved."
+}

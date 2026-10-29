@@ -7,7 +7,7 @@ export type MomentKind = 'water' | 'feed' | 'journal' | 'affection' | 'game' | '
 export function momentKind(row: HistoryRow): MomentKind | null {
   if (!('event_type' in row)) return null;
   switch (row.event_type) {
-    case 'room_need_refilled': return row.payload.need === 'water' ? 'water' : row.payload.need === 'food' ? 'feed' : null;
+    case 'room_need_refilled': return ['water','fertilizer'].includes(row.payload.need) ? 'water' : ['food','leaf'].includes(row.payload.need) ? 'feed' : null;
     case 'memory_created': return row.payload.kind === 'love_note' ? 'letter' : 'journal';
     case 'affection_sent': return 'affection';
     case 'game_played': return 'game';
@@ -39,6 +39,8 @@ export function momentDescription(row: HistoryRow, selfId: string, partnerName: 
   if (!('event_type' in row)) return '';
   const self = row.actor_id === selfId;
   const actor = self ? 'You' : partnerName;
+  if(row.event_type==='room_need_refilled'&&row.payload.need==='leaf')return `${actor} fed ${row.target_id===selfId?'your':`${partnerName}'s`} bunny some greens`;
+  if(row.event_type==='room_need_refilled'&&row.payload.need==='fertilizer')return `${actor} fertilized ${row.target_id===selfId?'your':`${partnerName}'s`} flower`;
   switch (momentKind(row)) {
     case 'water': return !row.target_id?(self?'You watered the flower':`${actor} watered your flower`)
       : `${actor} watered ${row.target_id===selfId?'your':self?`${partnerName}'s`:'their'} flower`;

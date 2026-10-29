@@ -83,7 +83,7 @@ export async function POST(request) {
     const db = appMajorUpdateServiceClient()
     if (!await majorUpdateEnabled(db)) return reply({ error: 'feature_disabled' }, 403)
     // Upload abuse protection fails closed; the general API limiter fails open.
-    const limited = await db.rpc('check_rate_limit', { p_bucket: `burrow-photo:${userId}`, p_limit: 20, p_window_seconds: 3600 })
+    const limited = await db.rpc('check_rate_limit', { p_bucket: body.kind === 'doll' ? `burrow-photo:doll:${userId}` : `burrow-photo:${userId}`, p_limit: body.kind === 'doll' ? 10 : 20, p_window_seconds: 3600 })
     if (limited.error || !limited.data) return reply({ error: 'photo_unavailable' }, 503)
     if (!limited.data.allowed) return reply({ error: 'upload_limit' }, 429)
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), n => n.toString(16).padStart(2,'0')).join('')

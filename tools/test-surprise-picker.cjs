@@ -74,10 +74,11 @@ test('every selectable frame card uses the requested contrast background, withou
 test('all frame cards use Shop coin/Plus rendering; Plus members see normal prices and Surprise is never Owned',()=>{
   const h=harness({seen:true}),offers=Object.fromEntries(ids.map((id,index)=>[id,{price:300+index,plus_only:index===1}]));
   let tree=h.render({offers,frame:ids[0]}),prices=nodes(tree).filter(n=>n.type==='ItemPrice');
-  assert.equal(prices.length,ids.length);assert.equal(prices[1].props.item.plus_only,true);assert.equal(prices[1].props.hasPlus,false);
+  assert.equal(prices.length,ids.length);assert.equal(prices.at(-1).props.item.plus_only,true);assert.equal(prices.at(-1).props.hasPlus,false);
+  assert.deepEqual(prices.map(p=>p.props.item.price),[300,...ids.slice(2).map((_,i)=>302+i),301]);
   assert.ok(prices.every(n=>n.props.owned===false&&n.props.fontSize===14&&n.props.numberColor==='#FFFFFF'));
   tree=h.render({offers,hasPlus:true});prices=nodes(tree).filter(n=>n.type==='ItemPrice');
-  assert.equal(prices[1].props.hasPlus,true);assert.equal(prices[1].props.item.price,301);
+  assert.equal(prices.at(-1).props.hasPlus,true);assert.equal(prices.at(-1).props.item.price,301);
   tree=h.render({offers,frame:ids[1]});prices=nodes(tree).filter(n=>n.type==='ItemPrice');
   assert.equal(prices.length,ids.length+1,'selected Plus frame footer also shows a crown badge, not a price');h.h.unmount();
 });

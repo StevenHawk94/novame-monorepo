@@ -66,7 +66,7 @@ function ToyHeart({state,index,scale}:{state:SharedValue<ToyMotion>;index:number
   });
   const transform=useDerivedValue(()=>{
     const p=state.value.particles[index],t=Math.max(0,Math.min(1,p.age/p.life));
-    return [{translateX:(p.x+p.dx*t)*scale},{translateY:(p.y+p.dy*t)*scale},{scale:scale*(1.2+.4*Math.sin(t*Math.PI))}];
+    return [{translateX:(p.x+p.dx*t)*scale},{translateY:(p.y+p.dy*t)*scale},{scale:scale*1.5*(1.2+.4*Math.sin(t*Math.PI))}];
   });
   return heartPath?<Group opacity={opacity} transform={transform}><Path path={heartPath} color="#F16A82"/></Group>:null;
 }

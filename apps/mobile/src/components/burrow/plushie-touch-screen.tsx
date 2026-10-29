@@ -1,12 +1,13 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,BackHandler,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, BackHandler, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {Image} from './burrow-image';
 import {useIsFocused,usePreventRemove} from '@react-navigation/native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {Feather} from '@expo/vector-icons';
-import {useSharedValue,useReducedMotion} from 'react-native-reanimated';
+import {useReducedMotion} from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import type {TouchClip} from '@novame/domain';
+import {touchSendAllowed,touchSendHasPlus,type TouchClip} from '@novame/domain';
 import {useAppViewport} from '@/lib/app-viewport';
 import {useBurrow} from '@/lib/burrow-store';
 import {roomSlots} from '@/lib/burrow-presentation';
@@ -15,6 +16,7 @@ import {toyPhotoFor} from '@/lib/burrow-toy-photos';
 import {createTouchRecorder,type TouchRecordingCheckpoint} from '@/lib/plushie-touch-recorder';
 import {usePageBackGesture} from '@/lib/use-page-back-gesture';
 import {showBurrowToast} from '@/lib/burrow-toast';
+import {withSoftPress} from '@/lib/haptics';
 import {getInteractionPreferences,setInteractionPreference} from '@/lib/interaction-preferences';
 import {touchCapabilities,touchInitialQuality,touchVisualOnly,testTouchVibration,touchVibrationVerified,confirmTouchVibration,type TouchCapabilities} from '@/lib/touch-note-runtime';
 import {usePlushieTouches,touchMessage,touchDraft,saveTouchDraft,discardTouchDraft,touchGuideSeen,acknowledgeTouchGuide,
@@ -48,13 +50,13 @@ export function PlushieTouchScreen(){
  const [activeMessage,setActiveMessage]=useState<TouchMessage|null>(null),[replay,setReplay]=useState(0),[error,setError]=useState<string|null>(null);
  const [caps,setCaps]=useState<TouchCapabilities|null>(null),[quality,setQuality]=useState<'full'|'standard'>('standard');
  const [hapticDialog,setHapticDialog]=useState(false),[hapticHelp,setHapticHelp]=useState(false),[hapticTested,setHapticTested]=useState(false),hapticConfirmed=useRef(touchVibrationVerified(data?.profile.id));
- const completeProgress=useSharedValue(1),leaving=useRef(false);
+ const leaving=useRef(false);
  const playbackRequest=useRef(0),liveScope=useRef(scope);liveScope.current=scope;
  useEffect(()=>()=>{playbackRequest.current++;},[]);
  useEffect(()=>{if(focused)setEntryDismissed(false);},[focused]);
- const rows=state.meta?.items??[],incoming=rows.filter(m=>m.recipient_id===data?.profile.id);
- const unread=incoming.find(m=>!m.read_at&&!state.seen.includes(m.id));
- const id=selected??messageId??unread?.id??incoming[0]?.id;
+ const rows=(state.meta?.items??[]).filter(m=>m.recipient_id===data?.profile.id&&m.sender_id===data?.partner?.id&&m.pair_version===data?.pairVersion);
+ const unread=rows.find(m=>!m.read_at&&!state.seen.includes(m.id));
+ const id=selected??messageId??unread?.id??rows[0]?.id;
  const prepared=touchMessage(id),message=activeMessage??prepared,expired=!!id&&!!state.meta&&!rows.some(m=>m.id===id)&&!activeMessage;
  const owner=inbox?data?.partner?.id:data?.profile.id,slots=useMemo(()=>data&&owner?roomSlots(data,owner):{},[data,owner]);
  const selectedToy=!inbox&&composer.toyId?data?.catalog.find(item=>item.stable_id===composer.toyId):slots.couple_doll;
@@ -62,7 +64,7 @@ export function PlushieTouchScreen(){
  const photo=data&&owner?(!inbox&&composer.photoId?data.roomPhotos.find(p=>p.id===composer.photoId&&p.ownerId===owner):toyPhotoFor(data.roomPhotos,owner,toyId)):undefined;
  const bodyHeight=Math.max(300,height-insets.top-68),size=Math.min(width*.94,bodyHeight*.43,420),toyTop=bodyHeight*.27;
  const locked=valid&&!inbox&&phase==='recording'&&status.started&&!!toy&&!!photo;
- const quota=state.meta?.remaining??0,quotaReady=state.meta?.version===2&&state.meta.sameDomain;
+ const quota=state.meta?.remaining??0,quotaReady=state.meta?.version===2&&touchSendAllowed(state.meta),sendPlus=touchSendHasPlus(state.meta);
  const canRecord=status.started||!!initial?.started||!!quota&&quotaReady&&!photo?.id.startsWith('local-');
  const recording=!inbox&&phase==='recording'&&!!toy&&!!photo&&canRecord;
  const pending=state.jobs.some(j=>j.state==='queued');
@@ -70,7 +72,7 @@ export function PlushieTouchScreen(){
  const guide=valid&&!inbox&&phase==='guide'&&!quotaDialog;
  const playing=inbox&&playState!=='idle'&&!!message;
  const name=data?.partner?.display_name?.trim()||'Your person',count=clip?.touches??status.count;
- const ownReplay=message?.sender_id===data?.profile.id;
+ const messageUnread=!!message&&!message.read_at&&!rows.find(m=>m.id===message.id)?.read_at&&!state.seen.includes(message.id);
  usePreventRemove(locked,()=>{});
  usePageBackGesture(!locked&&!discard&&!hapticDialog&&!guide&&!quotaDialog);
  useEffect(()=>{if(!locked||!focused)return;const sub=BackHandler.addEventListener('hardwareBackPress',()=>true);return()=>sub.remove();},[locked,focused]);
@@ -154,15 +156,15 @@ export function PlushieTouchScreen(){
     <Text style={s.historyCount}>{m.touches??touchMessage(m.id)?.clip.touches??'—'} Touches</Text><Text style={s.date}>{new Date(m.created_at).toLocaleDateString('en-GB',{year:'2-digit',month:'numeric',day:'numeric'}).split('/').reverse().join('.')}</Text>
    </Pressable>;})}
    {!rows.length&&<Text style={t.copy}>No Touch Notes yet.</Text>}
-   <Text style={[t.copy,{marginTop:8}]}>{state.meta?.hasPlus?'Only the latest 10 Touch Notes between you will be saved.':'Only your latest received Touch Note will be saved.\nJoin Plus to save up to 10.'}</Text>
+   <Text style={[t.copy,{marginTop:8}]}>{state.meta?.hasPlus?'Your received notes from the latest 10 Touch Notes between you are shown here.':'Only your latest received Touch Note will be saved.\nJoin Plus to keep up to 10 between you.'}</Text>
    <Text style={s.retention}>When Plus ends, only each person’s latest received note is kept. Deleted notes cannot be restored by upgrading.</Text>
-   {(error||state.error)&&<Text accessibilityRole="alert" style={s.error} onPress={()=>void refreshPlushieTouch()}>{error??state.error}</Text>}
+   {(error||state.error)&&<Text accessibilityRole="alert" style={s.error} onPress={event=>withSoftPress(()=>void refreshPlushieTouch(),event)}>{error??state.error}</Text>}
   </ScrollView>
   {!state.meta?.hasPlus&&<View style={[s.bottom,{bottom:insets.bottom+24}]}><Action label="Join Plus" onPress={joinPlus}/></View>}
  </View>;
  return <View style={[s.root,{paddingTop:insets.top}]}>
   <View style={s.header}>{header?<Text accessibilityRole="header" style={s.instruction}>{header}</Text>:<>
-   <BurrowBackButton light onPress={exit}/><Text numberOfLines={1} style={s.title}>{inbox&&!ownReplay?`${name}’s Plushie`:'Your Plushie'}</Text>
+   <BurrowBackButton light onPress={exit}/><Text numberOfLines={1} style={s.title}>{inbox?`${name}’s Plushie`:'Your Plushie'}</Text>
    {inbox&&!playing?<Pressable accessibilityRole="button" accessibilityLabel="Touch Note History" onPress={()=>setHistory(true)} style={s.icon}><Feather name="clock" size={26} color="#FFF9EF"/></Pressable>:<View style={s.icon}/>}
   </>}{header&&!locked&&phase!=='preview'&&<Pressable accessibilityRole="button" accessibilityLabel="Back from touch" onPress={exit} style={s.smallBack}><Feather name="chevron-left" size={23} color="#FFF9EF"/></Pressable>}</View>
   <View style={{flex:1}}><PlushieRoomBackground wallpaper={slots.wallpaper} width={width} height={bodyHeight} floorY={bodyHeight*.56} bottomInset={insets.bottom}/>
@@ -174,13 +176,13 @@ export function PlushieTouchScreen(){
       else {setReplay(n=>n+1);setPlayState('playing');}
      }}/></View></>:
      message?<><View style={{position:'absolute',top:toyTop,left:(width-size)/2}}><PlushieTouchToy asset={burrowArtForItem(message.toy,'couple_dolls')!} photo={message.photo??undefined} size={size} quality="light" scope={`preview:${message.id}`}/></View>
-      <View style={{position:'absolute',top:bodyHeight*.14,alignSelf:'center',backgroundColor:'#FFC343',padding:12,borderRadius:12}}><Text style={s.unread}>{message.recipient_id===data?.profile.id&&!message.read_at&&!state.seen.includes(message.id)?'You have an unread Touch Note':'Touch Note'}</Text></View>
-      <Pressable accessibilityRole="button" accessibilityLabel={ownReplay?'Replay your Touch Note':`Feel ${name}’s touch`} onPress={play} style={[s.bottom,{bottom:insets.bottom+45,gap:20}]}><TouchNoteIcon size={112}/><Text style={s.feel}>{ownReplay?'Tap to replay your Touch Note':`Tap to feel ${name}’s touch on you`}</Text></Pressable></>:
+      {messageUnread&&<View style={{position:'absolute',top:bodyHeight*.14,alignSelf:'center',backgroundColor:'#FFC343',padding:12,borderRadius:12}}><Text style={s.unread}>You have an unread Touch Note</Text></View>}
+      <Pressable accessibilityRole="button" accessibilityLabel={`Feel ${name}’s touch`} onPress={play} style={[s.bottom,{bottom:insets.bottom+45,gap:20}]}><TouchNoteIcon size={112}/><Text style={s.feel}>{`Tap to feel ${name}’s touch on you`}</Text></Pressable></>:
       <View style={s.center}>{!state.meta?<ActivityIndicator color="#FFF9EF"/>:<><Text style={s.sceneCopy}>{expired?'This Touch Note is no longer available.':rows.length?'Preparing your Touch Note…':'No Touch Notes yet.'}</Text><Action label={expired?'Open History':'Retry'} onPress={()=>{if(expired)setHistory(true);else {setError(null);void refreshPlushieTouch().then(()=>{if(id)return prepareTouchMessage(id);}).catch(()=>setError('Please try again.'));}}}/></>}</View>}
    </>:<>
     {recording?<PlushieTouchRecording key={`${scope}:${attempt}`} asset={toy!} photo={photo!} size={size} width={width} height={bodyHeight} bottom={insets.bottom+24}
       scope={`record:${scope}:${toyId}`} initial={initial} onCheckpoint={checkpoint} onStatus={setStatus} onComplete={complete} onInterrupted={incomplete}/>:
-     <><View pointerEvents="none" style={{position:'absolute',top:bodyHeight*.035,alignSelf:'center'}}>{phase==='preview'&&<TouchHeartMeter progress={completeProgress} count={count} size={Math.min(width*.39,bodyHeight*.23)}/>}</View>
+     <><View pointerEvents="none" style={{position:'absolute',top:bodyHeight*.035,alignSelf:'center'}}>{phase==='preview'&&<TouchHeartMeter count={count} size={Math.min(width*.39,bodyHeight*.23)} reduced={reduced}/>}</View>
       <View style={{position:'absolute',top:toyTop,left:(width-size)/2}}>{toy&&<PlushieTouchToy asset={toy} photo={photo} size={size} quality="light" scope={`preview:${scope}`}/>}</View>
       <View style={[s.bottom,{bottom:insets.bottom+24,gap:20}]}>
        {phase==='preview'?<><Action label="Send Touch Note" disabled={!clip||(!quota&&!composer.jobKey)||!quotaReady} onPress={send}/><Action cream label="Close and Leave" onPress={()=>setDiscard(true)}/></>:
@@ -188,13 +190,13 @@ export function PlushieTouchScreen(){
       </View></>}
     {blocked&&phase!=='preview'&&!status.started&&<View style={[s.bottom,{bottom:insets.bottom+100}]}><Action cream label="Recover unsent Touch Note" onPress={()=>{try{recoverTouchJob(blocked.payload.key);setComposer(restoreTouchComposer());setAttempt(v=>v+1);}catch{setError('Could not restore your recording. Please try again.');}}}/></View>}
    </>}
-   {(error||state.error)&&valid&&<Text accessibilityRole="alert" style={[s.error,{position:'absolute',bottom:insets.bottom+165,left:24,right:24}]} onPress={()=>void refreshPlushieTouch()}>{error??state.error}</Text>}
+   {(error||state.error)&&valid&&<Text accessibilityRole="alert" style={[s.error,{position:'absolute',bottom:insets.bottom+165,left:24,right:24}]} onPress={event=>withSoftPress(()=>void refreshPlushieTouch(),event)}>{error??state.error}</Text>}
   </View>
   <TouchNoteDialog visible={focused&&!entryDismissed&&(guide||quotaDialog)} onClose={defaultPage}>
    <Text style={t.chip}>Touch Note</Text><TouchNoteIcon size={80}/><Text style={t.heading}>Let your partner feel your touch</Text>
    <Text style={t.copy}>Not just playing by yourself. Every rub, pull, squeeze, and bonk on your plushie will be packed into a Touch Note, matching the rhythm and intensity of your touch. Send a little love they can feel in the palm of their hand.</Text>
-   <Action dark label={quotaDialog?state.meta?.hasPlus?'OK':'Join Plus':'Start'} disabled={!quotaDialog&&!quotaReady} onPress={quotaDialog?state.meta?.hasPlus?defaultPage:joinPlus:startRecording}/>
-   <Text style={t.hint}>{quotaDialog?state.meta?.hasPlus?'You’ve used today’s send. Your next send is available tomorrow.':'You’ve used this month’s Free send. Join Plus for one send per day. If you already sent today, your next send is available tomorrow.':state.meta?.hasPlus?'You have 1 send available today.':'You have 1 send available this month.'}</Text>
+   <Action dark label={quotaDialog?sendPlus?'OK':'Join Plus':'Start'} disabled={!quotaDialog&&!quotaReady} onPress={quotaDialog?sendPlus?defaultPage:joinPlus:startRecording}/>
+   <Text style={t.hint}>{quotaDialog?sendPlus?'You’ve used today’s send. Your next send is available tomorrow.':'You’ve used this month’s Free send. Join Plus for one send per day. If you already sent today, your next send is available tomorrow.':sendPlus?'You have 1 send available today.':'You have 1 send available this month.'}</Text>
   </TouchNoteDialog>
   <TouchNoteDialog visible={focused&&discard} onClose={()=>setDiscard(false)}><TouchNoteIcon size={80}/><Text style={t.heading}>Your recording won’t be saved</Text><Text style={t.copy}>Are you sure you want to close and leave?</Text><Action dark label="Yes" onPress={discardRecording}/></TouchNoteDialog>
   <TouchNoteDialog visible={focused&&hapticDialog} onClose={()=>setHapticDialog(false)}><TouchNoteIcon size={80}/><Text style={t.heading}>{touchVisualOnly(caps)?'Vibration is unavailable':'Feel their touch'}</Text>

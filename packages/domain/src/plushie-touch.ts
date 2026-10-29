@@ -6,6 +6,15 @@ export const TOUCH_RULES={version:2,durationMs:60000,maxTouches:999,maxEvents:81
 export type TouchEvent=[number,number,number,number,number];
 export type TouchClip={version:1|2;durationMs:60000;touches:number;events:TouchEvent[]};
 export type TouchQuality='full'|'standard'|'light';
+type TouchSendAccess={sameDomain:boolean;sendAllowed?:boolean;hasPlus:boolean;sendHasPlus?:boolean};
+/** Server transport permission is not proof of shared economic/Plus identity.
+ * Old servers omit the new fields, retaining their existing same-domain gate. */
+export function touchSendAllowed(meta:TouchSendAccess|null|undefined){
+ return !!meta&&(meta.sendAllowed===true||(meta.sendAllowed===undefined&&meta.sameDomain===true));
+}
+export function touchSendHasPlus(meta:TouchSendAccess|null|undefined){
+ return !!meta&&(meta.sendHasPlus===true||(meta.sendHasPlus===undefined&&meta.hasPlus===true));
+}
 /** Incremental, shared by recorder/playback; two fingers share one hold clock.
  * V1 remains release-counted. V2 never manufactures up/down events for holds. */
 export function createTouchCounter(version:1|2){'worklet';return {version,count:0,held:0,next:-1};}

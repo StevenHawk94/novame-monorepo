@@ -4,6 +4,7 @@ function load(file, imports = {}, globals = {}) {
   // Native wallet/queue boundaries added by the unified wallet. Keep old
   // component tests isolated; explicit implementations always take precedence.
   let coinSeams;
+  const coinFeedback={start(){},stop(){}};
   const module = { exports: {} };
   const source = fs.readFileSync(path.resolve(__dirname, '..', file), 'utf8');
   const code = ts.transpileModule(source, { compilerOptions: {
@@ -17,7 +18,21 @@ function load(file, imports = {}, globals = {}) {
       if(name==='./coin-reward-store'&&file.endsWith('burrow-store.ts')&&Object.hasOwn(imports,name))return{
         projectCoinSpend(){},settleCoinSpend(){},rejectCoinSpend(){},getCoinRewardSnapshot:()=>({balance:null}),...imports[name]};
       if(['./ui-idle','@/lib/ui-idle'].includes(name)&&Object.hasOwn(imports,name))return {yieldToUi:async()=>{},...imports[name]};
+      // Old route fixtures isolate the host control, not shared tactile/audio
+      // behavior. Dedicated interaction-feedback tests exercise the real adapters.
+      if(['./haptics','@/lib/haptics'].includes(name)&&Object.hasOwn(imports,name))return {
+        withSoftPress:action=>action(),...imports[name],
+        haptics:{soft:imports[name].haptics?.light??(()=>Promise.resolve()),...imports[name].haptics},
+      };
       if(Object.hasOwn(imports,name))return imports[name];
+      if(name==='@novame/domain')return load('packages/domain/src/room-care.ts');
+      if(['./room-care-model','@/lib/room-care-model'].includes(name))return load('apps/mobile/src/lib/room-care-model.ts');
+      if(name==='./burrow-care-cooldown')return load('apps/mobile/src/lib/burrow-care-cooldown.ts');
+      if(name==='@/lib/room-care-contract.mjs')return load('apps/api/src/lib/room-care-contract.mjs');
+      if(['./shop-offer-order','@/lib/shop-offer-order'].includes(name))return load('apps/mobile/src/lib/shop-offer-order.ts');
+      if(name==='@/lib/burrow-audio-focus')return load('apps/mobile/src/lib/burrow-audio-focus.ts');
+      if(name==='@/components/ui/feedback-pressable')return imports['react-native'];
+      if(name==='@/lib/use-coin-flight-feedback')return {useCoinFlightFeedback:()=>coinFeedback};
       if(['./adventure-friend-identity','@/lib/adventure-friend-identity'].includes(name))return load('apps/mobile/src/lib/adventure-friend-identity.ts');
       if(name==='./adventure-friend-identities.json')return require('../apps/mobile/src/lib/adventure-friend-identities.json');
       if(['./friend-text-layout','@/lib/friend-text-layout','./friend-visit-presentation','@/lib/friend-visit-presentation'].includes(name))return load('apps/mobile/src/lib/'+name.split('/').at(-1)+'.ts');
@@ -77,10 +92,16 @@ function load(file, imports = {}, globals = {}) {
       // Legacy native-boundary tests isolate quest display state; dedicated
       // quest-progress tests inject the real model/store and monetary outbox.
       if(['./quest-progress-store','@/lib/quest-progress-store'].includes(name))return{
-        questProgress:{fact(){},claim(){},project:d=>d,unproject:d=>d,observe(){},reset(){}},
+        questProgress:{fact(){},rejectPendingFact(){},claim(){},project:d=>d,unproject:d=>d,observe(){},reset(){}},
         captureQuestFact:()=>undefined,currentQuestData:()=>null,guardQuestClaim(){},configureQuestProgress(){},subscribeQuestProgress:()=>()=>{},
       };
       if(['./quest-progress-model','@/lib/quest-progress-model'].includes(name))return load('apps/mobile/src/lib/quest-progress-model.ts');
+      if(['./adventure-entry-state','@/lib/adventure-entry-state'].includes(name))return load('apps/mobile/src/lib/adventure-entry-state.ts',{'./burrow-local-day':load('apps/mobile/src/lib/burrow-local-day.ts')});
+      // Legacy fixtures have no durable delivery journal; dedicated Adventure
+      // lifecycle tests inject the real reader, queue and scoped storage.
+      if(['./adventure-delivery-state','@/lib/adventure-delivery-state'].includes(name))return{readAdventureDeliveryRows:()=>[],subscribeAdventureDelivery:()=>()=>{},useAdventureDeliveryRevision(){}};
+      if(name==='./adventure-delivery'&&file.endsWith('adventure-journal-jobs.ts'))return{finishAdventureDeliveryBeforeStart:async()=>true};
+      if(name==='@/lib/use-adventure-completion-guard')return{useAdventureCompletionGuard:()=>false};
       if(name==='./burrow-daily-entry')return load('apps/mobile/src/lib/burrow-daily-entry.ts',{'./burrow-local-day':load('apps/mobile/src/lib/burrow-local-day.ts')});
       if(name==='./burrow-local-day')return load('apps/mobile/src/lib/burrow-local-day.ts',{}, {Intl,Date});
       if(name==='./coin-reward-store'&&file.endsWith('toy-interaction-records.ts'))return{
@@ -163,7 +184,7 @@ function load(file, imports = {}, globals = {}) {
         './notification-content-version':load('apps/mobile/src/lib/notification-content-version.ts')});
       if(name==='./shop-gift-model')return load('apps/mobile/src/lib/shop-gift-model.ts');
       if(name==='./shop-gift-inbox')return{ShopGiftInbox:'ShopGiftInbox'};
-      if(name==='@/lib/burrow-surface')return load('apps/mobile/src/lib/burrow-surface.ts');
+      if(['./burrow-surface','@/lib/burrow-surface'].includes(name))return load('apps/mobile/src/lib/burrow-surface.ts');
       if(name==='./native-vertical-gradient')return{NativeVerticalGradient:'Gradient'};
       if(name==='@/lib/burrow-destination-preload')return{useBurrowDestinationPreload(){}};
       if(name==='@/lib/burrow-destination-model')return load('apps/mobile/src/lib/burrow-destination-model.ts');

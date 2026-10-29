@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-28",
+  "scope": "Adventure entry seasonal banner and fixed reference layout; solid #5c2c19 on Write Freely, Tap Your Day, saved/ready and Digging ongoing only",
+  "unchanged": ["arrival/friend/reward scenery", "economic rules", "quotas", "submission and start behavior", "couple timing", "shop catalog"],
+  "verification": {
+    "domainIsolation": {"command": "pnpm test:domain-isolation", "passed": 1098, "failed": 0, "note": "Full gate before final explicit image-frame constraint; final frame change rechecked with the 9 record UI tests and mobile typecheck."},
+    "finalRecordUi": {"command": "node --test tools/test-adventure-record-ui.cjs", "passed": 9, "failed": 0},
+    "finalPreparation": {"passed": 9, "failed": 0},
+    "mobileTypecheck": "passed",
+    "diffCheck": "passed",
+    "catalogReleaseUnchanged": "d32938720e72d3b1ce81c5f667e4e81afb87a6798552183c72460b5ec3edc97c"
+  },
+  "nativeEvidence": "outputs/adventure-banner-review-2026-10-28/native-verification.json",
+  "nativeResult": {"passed": true, "banners": 8, "screenshots": 18, "compact": true, "liveDayNightChange": true, "writeToReady": true, "tapSteps": 4, "tapNoteToReady": true, "digging": true},
+  "nativeMethod": "Isolated iOS simulator, Release/minified Hermes bundle, actual product presentation components with synthetic identity and in-memory business boundaries; no production business writes. Native callbacks invoked through diagnostic driver, not a physical-touch or real-server end-to-end test.",
+  "limitations": ["Not every device or Android", "No real-account journal/Adventure submission", "No claim of all historical workflows or performance certification"],
+  "release": {"clientSourceReady": true, "requires": "Metro reload or subsequent client build", "apiDeployment": false, "databaseMigration": false, "appStoreRelease": false}
+}

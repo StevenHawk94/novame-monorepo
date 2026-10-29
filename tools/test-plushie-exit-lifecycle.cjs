@@ -26,11 +26,11 @@ function harness(options={}){
   get gesture(){return gestures.at(-1);},frame:(timestamp=100)=>frame({timestamp,timeSincePreviousFrame:16}),
   app:status=>app(status),focus:value=>{focused=value;return render();},background:value=>{app(value?'background':'active');return render();},disable:value=>{disabled=value;return render();}};
 }
-test('holding the same point produces three-heart pulses each 500ms, but never adds ordinary task/rating records',()=>{
- const q=harness();q.render();q.frame(100);q.gesture.onTouchesDownCallback({allTouches:[q.touch],changedTouches:[q.touch]},q.manager);q.flushJS();
+for(const recording of [false,true])test(`holding the same point ${recording?'retains recording feedback each 500ms':'does not repeat ordinary feedback'}, and never adds timed task/rating records`,()=>{
+ const q=harness(recording?{onInput:()=>{}}:{});q.render();q.frame(100);q.gesture.onTouchesDownCallback({allTouches:[q.touch],changedTouches:[q.touch]},q.manager);q.flushJS();
  const first=q.stats.feedback;q.frame(200);q.frame(699);q.flushJS();assert.equal(q.stats.feedback,first);
- q.frame(700);q.frame(1200);q.flushJS();assert.equal(q.stats.feedback,first+2);assert.equal(q.stats.recorded,0);
- assert.equal(q.controller.state.value.particleSerial,9);
+ q.frame(700);q.frame(1200);q.flushJS();assert.equal(q.stats.feedback,first+(recording?2:0));assert.equal(q.stats.recorded,0);
+ assert.equal(q.controller.state.value.particleSerial,recording?9:3);
  q.gesture.onTouchesUpCallback({changedTouches:[q.touch]},q.manager);q.flushJS();assert.equal(q.stats.recorded,1);q.h.unmount();
 });
 test('paused replay skips shader notifications without resetting its held deformation; Continue uses the same controller',()=>{

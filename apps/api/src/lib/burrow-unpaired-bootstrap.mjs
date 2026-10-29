@@ -78,7 +78,9 @@ export async function unpairedBurrowBootstrap(db, userId) {
     db.from('adventures').select('id,status,started_at,ends_at,local_date').eq('user_id', userId).eq('partner_id', userId).order('created_at', { ascending: false }).limit(1),
     db.from('reflects').select('id').eq('user_id', userId).eq('local_date', day).in('journal_kind', ['write_freely', 'tap_your_day']).order('id').limit(10),
     db.from('room_music').select('track_id').eq('owner_id', userId).maybeSingle(),
-    db.from('room_photos').select('id,owner_id,kind,toy_id,updated_at').eq('pair_low', userId).eq('pair_high', userId),
+    // A doll face belongs to its owner even after unpairing. Keep the prior
+    // solo frame boundary, and never select a former partner's private photos.
+    db.from('room_photos').select('id,owner_id,kind,toy_id,updated_at,pair_low,pair_high').eq('owner_id', userId),
     db.from('room_photo_uploads').select('id,toy_id').eq('actor_id', userId).eq('kind', 'doll').eq('committed_date', day),
   ])
   const [allCatalog, allInventory] = await Promise.all([
@@ -142,7 +144,7 @@ export async function unpairedBurrowBootstrap(db, userId) {
     musicTrackId: requireRow(music)?.track_id || null,
     dollChangeUsed: !!requireRow(dollChanges)?.length,
     dollPhotoChangesUsed: [...new Set((requireRow(dollChanges)||[]).map(row=>row.toy_id).filter(Boolean))],
-    roomPhotos: (requireRow(photos) || []).map(row => ({ id: row.id, ownerId: row.owner_id,
+    roomPhotos: (requireRow(photos) || []).filter(row => row.kind==='doll'||(row.pair_low===userId&&row.pair_high===userId)).map(row => ({ id: row.id, ownerId: row.owner_id,
       kind: row.kind, ...(row.toy_id ? {toyId:row.toy_id} : {}), updatedAt: row.updated_at })),
     friendVisit: null, friendVisitDate: day, friendVisitTimezone: person.timezone_name || 'UTC',
     activeAdventure, partnerAdventure: null, adventureResult: result, readyRecordId,

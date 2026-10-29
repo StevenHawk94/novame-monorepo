@@ -32,13 +32,13 @@ test('quota messages distinguish minute/day rejections from uncertain connection
  for(const error of [null,{},Error('offline'),{body:{error:'Internal error'}}])assert.equal(model.loveNoteLimitMessage(error),null);
 });
 function screenHarness({rows=[],unread=[],compose=false,noteId}={}){
-  const h=hooks(),time=clock(),data=snapshot(),paths=[],marks=[],writes=[],clears=[],commands=[],saves=[],backHandlers=[],overlays=new Set();
+  const h=hooks(),time=clock(),data=snapshot(),paths=[],marks=[],writes=[],clears=[],commands=[],saves=[],backHandlers=[],overlays=new Set(),uiJobs=[];
   let epoch=1,focused=true,readIds=[...unread],draft=null;
-  const feed={rows,focused:true,loading:false,failed:false,loaded:true,hasMore:false,load(){}};
+  const feed={rows,focused:true,entryReady:true,loading:false,failed:false,loaded:true,hasMore:false,load(){}};
   const module=load('apps/mobile/src/components/burrow/love-note-screen.tsx',{
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{View:'View',Text:'Text',Pressable:'Button',ScrollView:'Scroll',SectionList:'SectionList',TextInput:'Input',KeyboardAvoidingView:'KeyboardView',ActivityIndicator:'Spinner',BackHandler:{addEventListener:(name,fn)=>{backHandlers.push(fn);return{remove(){}};}},Platform:{OS:'ios'},StyleSheet:{create:v=>v,hairlineWidth:1,absoluteFillObject:{position:'absolute',top:0,left:0,right:0,bottom:0}}},
-    'expo-router':{router:{push:path=>paths.push(path),replace:path=>paths.push(path),back:()=>paths.push('back')}},
+    'expo-router':{router:{push:path=>paths.push(path),replace:path=>paths.push(path),back:()=>paths.push('back'),canGoBack:()=>feed.canGoBack!==false}},
     '@react-navigation/native':{usePreventRemove:(enabled,callback)=>{feed.removal={enabled,callback};}},
     '@expo/vector-icons':{Feather:'Icon',MaterialIcons:'Icon'},'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:47,bottom:34})},
     'react-native-svg':{__esModule:true,default:'Svg',Path:'Path'},
@@ -52,23 +52,74 @@ function screenHarness({rows=[],unread=[],compose=false,noteId}={}){
       saves.push({body,key,request:deferred()});
     }},
     '@/lib/session-lifecycle':{sessionEpoch:()=>epoch},'./burrow-back-button':{BurrowBackButton:'Back'},
+    '@/lib/ui-idle':{afterUiSettles:fn=>{const job={fn,live:true};uiJobs.push(job);return()=>{job.live=false;};}},
     '@/lib/retained-tab-navigation':{dismissToRetainedTab:path=>paths.push(path)},
     '@/lib/overlay-presence':{registerOverlay:owner=>{overlays.add(owner);return()=>overlays.delete(owner);}},
   },time.globals);
-  const render=()=>h.render(()=>module.LoveNoteScreen({data,compose,noteId}));
+  const render=()=>h.render(()=>module.LoveNoteScreen({data,compose,noteId,autoFocusReady:feed.entryReady}));
   const history=()=>h.render(()=>module.LoveNoteHistoryScreen({data}));
-  return {h,render,history,paths,marks,writes,clears,saves,commands,feed,data,backHandlers,overlays,time,
+  return {h,render,history,paths,marks,writes,clears,saves,commands,feed,data,backHandlers,overlays,time,uiJobs,
+    settleUi(){uiJobs.splice(0).forEach(job=>{if(job.live)job.fn();});},
     focus(value){focused=value;},changeEpoch(){epoch++;},get draft(){return draft;},button:(tree,label)=>nodes(tree).find(node=>node.type==='Button'&&nodes(node).some(child=>child.type==='Text'&&child.props.children===label))};
 }
 test('default composer matches header/input/footer and opens native History, not a received-list tab',()=>{
   const h=screenHarness({rows:[note()]});const tree=nodes(h.render());
   assert.equal(tree.find(n=>n.type==='Input').props.maxLength,500);
   assert.equal(tree.find(n=>n.type==='Input').props.placeholder,'Write something from your heart...');
-  assert.equal(tree.find(n=>n.type==='Input').props.autoFocus,true);
+  assert.notEqual(tree.find(n=>n.type==='Input').props.autoFocus,true,'automatic focus is coordinated with the native transition, not input mount');
   assert.equal(h.button(h.render(),'Send Love Note').props.disabled,true);assert.equal(h.feed.enabled,false,'composing must not fetch old letters');
   tree.find(n=>n.props.accessibilityLabel==='Love Note History').props.onPress();
   assert.deepEqual(h.paths,['/(main)/love-note-history']);assert.equal(h.marks.length,0);
   assert.equal(tree.some(n=>n.props.accessibilityRole==='tab'),false);h.h.unmount();
+});
+test('composer opens immediately but requests the keyboard once only after UI settles; typing never reschedules it',()=>{
+ const h=screenHarness({compose:true});let focus=0;
+ const editor=nodes(h.render()).find(n=>n.type==='Input');editor.props.ref.current={focus:()=>focus++,isFocused:()=>false};
+ assert.equal(focus,0);assert.equal(h.uiJobs.length,1);assert.equal(h.feed.enabled,false);
+ h.settleUi();assert.equal(focus,1);
+ editor.props.onChangeText('Typing is immediate');h.render();h.settleUi();
+ assert.equal(focus,1);assert.equal(nodes(h.render()).find(n=>n.type==='Input').props.value,'Typing is immediate');h.h.unmount();
+});
+test('idle JS before a native appearance is not enough to open the keyboard; late content uses the route appearance state',()=>{
+ const h=screenHarness({compose:true});h.feed.entryReady=false;let focus=0;
+ const editor=nodes(h.render()).find(n=>n.type==='Input');editor.props.ref.current={focus:()=>focus++,isFocused:()=>false};
+ h.settleUi();assert.equal(focus,0);assert.equal(h.uiJobs.length,0);
+ h.feed.entryReady=true;h.render();h.settleUi();assert.equal(focus,1);h.h.unmount();
+ const route=fs.readFileSync('apps/mobile/app/(main)/room-interaction.tsx','utf8');
+ assert.match(route,/const entrySettled=usePageEntrySettled\(kind==='letter'\)/);
+ assert.ok(route.indexOf('usePageEntrySettled(kind')<route.indexOf('if(!data)return'));
+ assert.match(route,/autoFocusReady=\{entrySettled\}/);
+});
+test('native entry readiness uses actual appearance, resets on blur/closing, and cleans up listeners',()=>{
+ const h=hooks(),events=new Map();let focused=true,enabled=true;
+ const navigation={isFocused:()=>focused,addListener:(name,fn)=>{events.set(name,fn);return()=>events.delete(name);}};
+ const module=load('apps/mobile/src/lib/use-page-entry-settled.ts',{
+  react:h.react,'react-native':{Platform:{OS:'ios'}},'@react-navigation/native':{useNavigation:()=>navigation,useIsFocused:()=>focused},
+ });
+ const render=()=>h.render(()=>module.usePageEntrySettled(enabled));
+ assert.equal(render(),false);events.get('transitionStart')({data:{closing:false}});assert.equal(render(),false);
+ events.get('transitionEnd')({data:{closing:true}});assert.equal(render(),false);
+ events.get('transitionEnd')({data:{closing:false}});assert.equal(render(),true);
+ focused=false;render();assert.equal(render(),false);events.get('transitionEnd')({data:{closing:false}});assert.equal(render(),false);
+ focused=true;assert.equal(render(),false);events.get('transitionEnd')({data:{closing:false}});assert.equal(render(),true);
+ events.get('transitionStart')({data:{closing:true}});assert.equal(render(),false);
+ events.get('gestureCancel')({});assert.equal(render(),true);
+ enabled=false;assert.equal(render(),true);assert.equal(events.size,0);h.unmount();assert.equal(events.size,0);
+});
+for(const reason of ['blur','unmount','account','pair'])test(`pending keyboard work cannot refocus a stale composer after ${reason}`,()=>{
+ const h=screenHarness({compose:true});let focus=0;
+ nodes(h.render()).find(n=>n.type==='Input').props.ref.current={focus:()=>focus++,isFocused:()=>false};
+ if(reason==='blur'){h.focus(false);h.render();}
+ else if(reason==='unmount')h.h.unmount();
+ else if(reason==='account')h.changeEpoch();
+ else {h.data.pairVersion='two';h.render();}
+ if(reason==='pair')h.uiJobs.slice(0,-1).forEach(job=>{if(job.live)job.fn();});else h.settleUi();
+ assert.equal(focus,0);h.h.unmount();
+});
+test('received reading pages never queue keyboard work, and an already focused editor is not focused twice',()=>{
+ const n=note(),read=screenHarness({rows:[n],unread:[model.loveNoteKey(n)]});read.render();assert.equal(read.uiJobs.length,0);read.h.unmount();
+ const h=screenHarness({compose:true});let focus=0;
+ nodes(h.render()).find(n=>n.type==='Input').props.ref.current={focus:()=>focus++,isFocused:()=>true};h.settleUi();assert.equal(focus,0);h.h.unmount();
 });
 test('incoming entry reads one unread note; acknowledgement never jumps to composer or clears other letters',()=>{
   const a=note('a'),b=note('b');const h=screenHarness({rows:[a,b],unread:[model.loveNoteKey(a),model.loveNoteKey(b)]});
@@ -82,13 +133,15 @@ test('Write Back forces composer even while other incoming notes remain unread',
   const a=note(),h=screenHarness({rows:[a],unread:[model.loveNoteKey(a)],compose:true});
   assert.ok(nodes(h.render()).some(n=>n.type==='Input'));assert.equal(h.marks.length,0);h.h.unmount();
 });
-test('closing a Home incoming note by header or native removal leads to History, not the composer',()=>{
- for(const native of [false,true]){
+test('Home incoming note closes directly; native swipe is not intercepted or redirected to History',()=>{
   const a=note(),h=screenHarness({rows:[a],unread:[model.loveNoteKey(a)]}),tree=h.render();
-  assert.equal(h.feed.removal.enabled,true);
-  if(native)h.feed.removal.callback();else nodes(tree).find(n=>n.type==='Back').props.onPress();
-  h.render();assert.equal(h.feed.removal.enabled,false);assert.equal(h.paths.at(-1),'/(main)/love-note-history');h.h.unmount();
- }
+  assert.notEqual(h.feed.removal?.enabled,true,'native pop must remain free');
+  nodes(tree).find(n=>n.type==='Back').props.onPress();h.render();
+  assert.deepEqual(h.paths,['back']);assert.deepEqual(h.marks,[{channel:'letters',ids:[model.loveNoteKey(a)]}]);h.h.unmount();
+});
+test('incoming close without a native back stack falls back to retained Home, not History',()=>{
+ const a=note(),h=screenHarness({rows:[a],unread:[model.loveNoteKey(a)]});h.feed.canGoBack=false;
+ nodes(h.render()).find(n=>n.type==='Back').props.onPress();assert.deepEqual(h.paths,['/(main)/(tabs)']);h.h.unmount();
 });
 test('arriving letters do not overwrite a composer already in use',()=>{
   const h=screenHarness();nodes(h.render()).find(n=>n.type==='Input').props.onChangeText('Still writing');

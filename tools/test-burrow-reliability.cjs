@@ -114,12 +114,13 @@ test('purchased balances above the earning cap survive restart and spending belo
  }
 });
 
-function storeHarness({ cached = false, outbox } = {}) {
+function storeHarness({ cached = false, outbox,deliveryRows=[] } = {}) {
   const session = identity(), time = clock(), store = disk(), requests = [];
   const cache = load(lib + 'burrow-cache.ts', { './storage': store, '../shared/storage/keys': keys }, time.globals);
   if (cached) cache.persistBurrowSnapshot(snapshot());
   let key = 0;
   const api = load(lib + 'burrow-store.ts', {
+    './adventure-delivery-state':{readAdventureDeliveryRows:()=>deliveryRows},
     './adventure-arrival': load(lib + 'adventure-arrival.ts'),
     react: { useCallback: value => value, useSyncExternalStore() {} }, 'expo-router': { useFocusEffect() {} },
     '@react-navigation/native': {useIsFocused:()=>true},
@@ -132,6 +133,18 @@ function storeHarness({ cached = false, outbox } = {}) {
   }, { ...time.globals, performance: { now: () => time.globals.Date.now() } });
   return { api, requests, time, session, store };
 }
+test('cross-midnight final intent permits a new local log/Start without changing the global day, and stale old reads cannot replace it',async()=>{
+ const rows=[{owner:'A',scope:'A:B:one',id:'old',treasure:true,finish:true,treasureSaved:false,responseSaved:false,journeyDay:'2026-10-05'}];
+ const h=storeHarness({deliveryRows:rows}),base={...snapshot(),localDate:'2026-10-05',economicTimezone:'UTC',dailyAdventureUsed:true,
+  serverNow:'2026-10-05T23:59:59Z',activeAdventure:{id:'old',status:'result_ready',started_at:'2026-10-05T12:00:00Z'},adventureResult:{id:'old-result'}};
+ const read=h.api.refreshBurrow();h.requests[0].resolve(base);await read;h.time.advance(2000);
+ const p={owner:'A',scope:'A:B:one',localDate:'2026-10-06',recordId:'new-record'};h.api.projectAdventureJournalLocally(p);
+ assert.equal(h.api.getBurrowSnapshot().data.readyRecordLocalDate,'2026-10-06');assert.equal(h.api.getBurrowSnapshot().data.localDate,'2026-10-05');
+ h.api.projectAdventureJournalLocally({...p,startedAt:'2026-10-06T00:00:01Z',endsAt:'2026-10-06T06:00:01Z'});
+ assert.equal(h.api.getBurrowSnapshot().data.activeAdventure.local_date,'2026-10-06');assert.equal(h.api.getBurrowSnapshot().data.activeAdventure.id,'pending:new-record');
+ const late=h.api.refreshBurrow();h.requests.at(-1).resolve({...base,localDate:'2026-10-06',serverNow:'2026-10-06T00:00:03Z',dailyAdventureUsed:false});await late;
+ assert.equal(h.api.getBurrowSnapshot().data.activeAdventure.id,'pending:new-record');assert.equal(h.api.getBurrowSnapshot().data.inventory.length,0);
+});
 test('confirmed first-pair receipt immediately supplies Adventure identity, fences old reads, and does not grant Plus/private readiness',async()=>{
  const h=storeHarness(),base={...snapshot(),partner:null,pairVersion:undefined,hasPlus:false,wallet:{balance:42,version:1},pairAccessVerified:true};
  let read=h.api.refreshBurrow();h.requests[0].resolve(base);await read;

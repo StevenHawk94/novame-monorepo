@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { SurprisePortrait } from './surprise-art';
 import { SurprisePlaybackOverlay } from './surprise-playback-overlay';
 import { ShopItemPrice } from './shop-item-price';
 import { prepareSurprisePreview, useSurprisePreview } from '@/lib/surprise-preview';
+import { compareShopOffers } from '@/lib/shop-offer-order';
 
 export function SurpriseFramePicker({userId,frame,photoUri,locked,continueTitle,onSelect,onContinue,offers,hasPlus=false}:{
   userId:string;frame:SurpriseFrame;photoUri?:string;locked?:boolean;continueTitle:string;
@@ -55,7 +57,8 @@ export function SurpriseFramePicker({userId,frame,photoUri,locked,continueTitle,
     {/* Only this region scrolls. The preview and CTA stay in view. */}
     <FlatList style={s.list} contentContainerStyle={s.grid} columnWrapperStyle={s.gridRow} numColumns={3}
       initialNumToRender={3} maxToRenderPerBatch={2} windowSize={3}
-      data={SURPRISE_FRAME_OPTIONS.filter(option=>offers?.[option.id])} keyExtractor={option=>option.id}
+      data={SURPRISE_FRAME_OPTIONS.filter(option=>offers?.[option.id])
+        .sort((a,b)=>compareShopOffers(offers![a.id],offers![b.id]))} keyExtractor={option=>option.id}
       ListEmptyComponent={!offers?<ActivityIndicator color="#FFF8EC" accessibilityLabel="Loading frame prices"/>:null}
       showsVerticalScrollIndicator bounces={false} overScrollMode="never"
       renderItem={({item:option})=><Pressable accessibilityRole="button"

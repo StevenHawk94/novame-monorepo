@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-27",
+  "scope": "User-approved Touch Note transport exception for YRZQDM and HA54J3 only",
+  "authorization": {
+    "business": "Only this account pair may test Touch Note across economic domains; other economic isolation unchanged",
+    "production": "User explicitly authorized deploying the limited migration after isolated validation; no App publication"
+  },
+  "production": {
+    "migration": "20261027000280",
+    "sha256": "145f0a203455eb2096d500031b398243a6638bb7d88347c5c4aa7baf721ac213",
+    "applied": true,
+    "migrationSourceFingerprintVerified": true,
+    "pairVersion": "16c28ab7ac5076c524f82acbbb7e81a2",
+    "allowedBothDirections": true,
+    "sameEconomicDomainStillFalse": true,
+    "BKJWH6Excluded": true,
+    "protectedExistingDataSets": 171,
+    "protectedRowsUnchanged": true,
+    "unrelatedFunctionsUnchanged": true,
+    "existingPermissionsUnchanged": true,
+    "accountDomainsAndEntitlementsUnchanged": true,
+    "apiDeployed": false,
+    "appPublished": false,
+    "realUserMessagesSentByAgent": false,
+    "realUserAllowanceConsumedByAgent": false,
+    "backupAndDisableSQL": "/private/tmp/burrow-touch280.gOXxmf"
+  },
+  "contract": {
+    "identity": "Immutable UUID pair plus the active mutually paired relationship version; no invite-code/client-DEV authorization",
+    "metadata": "sendAllowed is transport permission, sameDomain remains truthful; sendHasPlus reflects only the sender's original effective allowance entitlement",
+    "history": "Original hasPlus/history retention and read authorization unchanged; no cross-domain shared Plus or shared 10-note history granted",
+    "quotas": "No reset or increase. Original Free monthly / verified own Plus daily and same-day upgrade protections remain",
+    "closure": "Controlled database enabled=false closes new cross-domain sends; unlink or relationship rotation invalidates the exception. Existing valid messages follow original read/retention rules",
+    "nonMetroClients": "The same authorized account pair is permitted regardless of client build; not claimed as Metro-only",
+    "legacy": "v1 historical clips, recovery, send transaction and immutable receipt compatibility preserved"
+  },
+  "verification": {
+    "domainIsolation": {"passed": 865, "failed": 0, "log": "/private/tmp/burrow-touch280-domain-final.log"},
+    "isolatedPostgreSQL": {
+      "passed": 29,
+      "failed": 0,
+      "newExceptionCases": 9,
+      "log": "/private/tmp/burrow-touch280-db.log",
+      "coverage": ["migration mutation guard rollback", "both send directions", "strict outsiders/other cross-domain rejection", "same-domain compatibility", "idempotency", "date/photo/clip validation", "unread, photo and seen read", "push eligibility", "original quota enforcement", "own Plus without cross-domain sharing", "same-day upgrade", "Surprise isolation", "server disable", "unlink and pair-version rotation", "RLS/ACL denial"]
+    },
+    "mobileTypecheck": "passed",
+    "gitDiffCheck": "passed",
+    "native": {
+      "device": "Isolated iphone se simulator / iOS 26.2 / minified Release Hermes",
+      "actualComponents": true,
+      "businessTransport": "Synthetic QA fixture only; production API prohibited",
+      "fixture": {"sameDomain": false, "sendAllowed": true, "sendHasPlus": false},
+      "flow": ["first-use dialog on original Plushie", "Start opens recorder", "first squeeze starts countdown", "complete full foreground 60000 ms", "Send returns to default Plushie", "durable synthetic job committed", "next entry shows original exhausted-Free-quota dialog"],
+      "syntheticCommittedJob": {"state": "committed", "touches": 1},
+      "screenshots": "outputs/touch-note-test-pair-2026-10-27/",
+      "limits": "Not production dual-phone end-to-end, Android physical-device/haptics or performance acceptance. No frame benchmark was run in this scope"
+    }
+  },
+  "clientActivation": "Reload Metro and re-enter Plushie to fetch new server metadata. No native module rebuild, API redeploy or App Store release is needed for this change"
+}

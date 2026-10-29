@@ -140,7 +140,7 @@ test('room render forwards independent sleep/outfit state and blocks food taps w
   const away=RoomScene({slots:{outfit:mine},away:true,onSlot(){}});
   assert.equal(nodes(away).filter(n=>n.type==='Pressable').length,0);
 });
-test('adventure rewards do not trap navigation; only an active blocking command prevents removal',()=>{
+test('parent detail route does not install a competing navigation guard; the mounted settlement owns its narrow lock',()=>{
   let data={activeAdventure:adventure('result_ready')},enabled=true,error=null,blocked,busy=false;
   const Detail=load('apps/mobile/app/(main)/burrow-detail.tsx',{
     '@/lib/retained-tab-navigation':{dismissToRetainedTab:()=>{}},
@@ -151,9 +151,9 @@ test('adventure rewards do not trap navigation; only an active blocking command 
     '@/components/burrow/couple-journal-screen':{CoupleJournalScreen:'CoupleJournalScreen'},
     '@/lib/burrow-store':{useBurrowSelector:selector=>selector({data:{profile:{id:'me'},...data},busy,error})},'@/lib/burrow-presentation':presentation,
   }).default;
-  Detail();assert.equal(blocked,false);data={activeAdventure:adventure('interaction_required')};Detail();assert.equal(blocked,false);
-  busy=true;Detail();assert.equal(blocked,true);busy=false;
-  data={activeAdventure:null};Detail();assert.equal(blocked,false);
-  data={activeAdventure:adventure('result_ready')};error='not_paired';Detail();assert.equal(blocked,false);
-  error=null;enabled=false;Detail();assert.equal(blocked,false);
+  Detail();assert.equal(blocked,undefined);data={activeAdventure:adventure('interaction_required')};Detail();assert.equal(blocked,undefined);
+  busy=true;Detail();assert.equal(blocked,undefined);busy=false;
+  data={activeAdventure:null};Detail();assert.equal(blocked,undefined);
+  data={activeAdventure:adventure('result_ready')};error='not_paired';Detail();assert.equal(blocked,undefined);
+  error=null;enabled=false;Detail();assert.equal(blocked,undefined);
 });

@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { sessionEpoch, sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
 import { CoinRewardLedger, type CoinWallet, type CoinWalletState } from './coin-reward-ledger';
 import { coinArrivalTiming } from './burrow-motion';
+import {ROOM_CARE_ACTIONS,roomCareRewardKey,type RoomCareAction} from '@novame/domain';
 
 export type CoinRewardPoint = { x: number; y: number };
 export type CoinRewardBatch = { id: number; earned: number; from: number; revision: number; celebration: number; origin?: CoinRewardPoint;
@@ -184,7 +185,7 @@ export function coinRewardDefinitelyRejected(failure:unknown){
   return ['session_changed','pair_changed','day_changed','plus_required','daily_limit_reached','already_claimed','invalid_request',
     'not_found','visit_expired','visit_session_changed','idempotency_conflict','feature_disabled','content_unavailable','intent_not_saved',
     'not_completed','not_claimable','no_eligible_reward','reward_no_longer_eligible','already_done','already_completed','cooldown_active',
-    'care_cooldown','already_full','not_paired','client_upgrade_required','journal_conflict','sharing_conflict','revision_conflict'].includes(code)
+    'care_cooldown','care_target_not_allowed','already_full','not_paired','client_upgrade_required','journal_conflict','sharing_conflict','revision_conflict'].includes(code)
     ||!!(e?.status&&e.status>=400&&e.status<500&&![408,409,425,429].includes(e.status));
 }
 export function commandCoinReward(action: string, payload: Record<string, unknown>) {
@@ -204,6 +205,9 @@ export function commandCoinRewardPlan(action:string,payload:Record<string,unknow
   if (action === 'complete_affection') { key = dailyCoinRewardKey('affection-first'); amount = 10; }
   if (action === 'refill_room_need' && payload.ownerId !== sessionUserId()) {
     key = dailyCoinRewardKey(`room-need-reward:${payload.need}`); amount = 5;
+  }
+  if(action==='complete_room_care_v2'&&ROOM_CARE_ACTIONS.includes(payload.careAction as RoomCareAction)){
+    key=roomCareRewardKey(payload.careAction as RoomCareAction,String(payload.localDate));amount=5;
   }
   return {id,key,amount,deferred:action==='complete_affection'};
 }

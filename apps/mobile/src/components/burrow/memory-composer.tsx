@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable } from '@/components/ui/feedback-pressable';
 import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { dailyMemoryPrompt } from '@/lib/memory-prompt';
 import { clearMemoryDraft, copyMemoryJobToDraft, forgetBlockedMemoryJob, queueMemoryDraft, readMemoryLocal, retryMemoryJobs, saveMemoryDraft, useMemoryLocalRevision, type MemoryDraft } from '@/lib/burrow-memory-local';

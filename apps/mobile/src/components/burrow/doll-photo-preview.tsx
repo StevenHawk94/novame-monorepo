@@ -1,4 +1,5 @@
-import {Pressable,StyleSheet,View,type StyleProp,type ViewStyle} from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import type {BurrowArtAsset} from '@/lib/burrow-art-assets';
 import type {MajorUpdateBootstrap} from '@/lib/app-major-update-api';
 import {dollFaceRect} from '@/lib/burrow-doll-face';

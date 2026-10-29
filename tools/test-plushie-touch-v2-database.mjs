@@ -15,6 +15,9 @@ before(async()=>{
  await db.exec(definition(src('20261020000254_system_notification_policy'),'system_notification_context_v1'));
  await db.exec(src('20261021000257_adventure_production_duration'));
  for(const n of ['20261025000273_bunny_identity','20261025000274_cooperative_adventure','20261025000275_bind_unpaired_adventure'])await db.exec(src(n));
+ // Schema-only legacy adapter missing from the small security fixture.
+ await db.exec(definition(src('20261022000258_plushie_moment_windows'),'interact_burrow_toy_batch_v1'));
+ await db.exec(definition(src('20261022000258_plushie_moment_windows'),'interact_burrow_toy_v1'));
  const deploy=JSON.parse(execFileSync(process.execPath,['tools/release-plushie-touch276.mjs','sql','/private/tmp/burrow-touch276-release.isolated'],{encoding:'utf8'}));
  for(const table of deploy.tables)if(!(await q('select to_regclass($1) id',[table]))[0].id)await db.exec(`create table public.${table}(guard_marker int);insert into public.${table} values(276);`);
  await db.exec('create schema supabase_migrations;create table supabase_migrations.schema_migrations(version text primary key,name text,statements text[])');
@@ -93,4 +96,27 @@ test('send commits once, no extra quota on same-day upgrade, Push version is aut
 test('v2 content and validators remain service-only, outsiders cannot read',async()=>{
  const r=await send2();assert.equal((await rpc('read_plushie_touch_v2',[C,await pairVersion(),r.messageId,false])).error,'pair_changed');
  for(const role of ['anon','authenticated'])for(const sig of ['valid_plushie_touch_clip_v2(jsonb)','plushie_touch_state_v2(uuid,text)','read_plushie_touch_v2(uuid,text,uuid,boolean)','system_notification_context_before_touch_v2(uuid,text,jsonb)'])assert.equal((await q("select has_function_privilege($1,$2,'EXECUTE') yes",[role,sig]))[0].yes,false);
+});
+test('282 recipient-only history preserves Plus shared-ten retention, immutable rows and existing grants',async()=>{
+ await plus();const bp=await senderPhoto(B),ids=[];
+ for(let i=0;i<12;i++){const r=await send2(i%2?B:A,i%2?bp:photo);assert.equal(r.success,true);ids.push(r.messageId);}
+ const pv=await pairVersion(),before=await q('select * from plushie_touch_messages order by id');
+ assert.equal(before.length,10);assert.equal((await rpc('plushie_touch_state_v2',[A,pv])).items.length,10,'old contract reproduction');
+ const sigs=['plushie_touch_state_v2(uuid,text)','read_plushie_touch_v2(uuid,text,uuid,boolean)',
+  'record_burrow_toy_window_v1(uuid,uuid,text,text,text,timestamptz,timestamptz,timestamptz,date,integer,text,text)',
+  'interact_burrow_toy_batch_v1(uuid,uuid,uuid,text,date,integer,text)','interact_burrow_toy_v1(uuid,text)'];
+ const defs=()=>q("select oid::text,pg_get_functiondef(oid) d,proacl::text a from pg_proc where pronamespace='public'::regnamespace and prokind='f' and oid not in(select x::regprocedure from unnest($1::text[]) x) order by oid",[sigs]);
+ const acl=()=>q("select oid::text,proacl::text a from pg_proc where pronamespace='public'::regnamespace and prokind='f' order by oid");
+ const untouched=await defs(),grants=await acl(),wallets=await q('select * from wallets order by user_id'),sends=await q('select * from plushie_touch_sends order by user_id,local_date');
+ await db.exec(src('20261027000282_received_touch_history_and_personal_photo_moments').replace(/^begin;/m,'').replace(/^commit;/m,''));
+ assert.deepEqual(await defs(),untouched);assert.deepEqual(await acl(),grants);
+ assert.deepEqual(await q('select * from plushie_touch_messages order by id'),before);assert.deepEqual(await q('select * from wallets order by user_id'),wallets);assert.deepEqual(await q('select * from plushie_touch_sends order by user_id,local_date'),sends);
+ for(const [user,partner]of [[A,B],[B,A]]){
+  const s=await rpc('plushie_touch_state_v2',[user,pv]);assert.equal(s.items.length,5);assert.ok(s.items.every(m=>m.recipient_id===user&&m.sender_id===partner));
+  const own=before.find(m=>m.sender_id===user);assert.equal((await rpc('read_plushie_touch_v2',[user,pv,own.id,true])).error,'not_found');
+  const incoming=s.items[0];assert.equal((await rpc('read_plushie_touch_v2',[user,pv,incoming.id,false])).message.id,incoming.id);
+  assert.ok((await rpc('read_plushie_touch_v2',[user,pv,incoming.id,true])).message.read_at);
+ }
+ assert.equal((await rpc('read_plushie_touch_v2',[C,pv,ids.at(-1),false])).error,'pair_changed');
+ assert.equal((await q('select count(*)::int n from plushie_touch_messages'))[0].n,10);
 });

@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-27",
+  "scope": [
+    "Suppress duplicate Home connection success for the explicit pairing generation; retain passive pairing prompts",
+    "Diagnose per-toy daily photo quota and Ballerina missing photo",
+    "Camera-only empty Plushie face artwork, frame unchanged",
+    "Shared per-category decor canvas sizing, preserving default geometry, source ratios and approved gift 20% enlargement",
+    "Prevent hidden/previous Plushie stage measurements from collapsing a newly equipped empty toy",
+    "Local migration 281 and solo API projection for owner-retained Plushie photos across re-pairing"
+  ],
+  "diagnosis": {
+    "duplicateSuccess": "Minimal authenticated pairing receipt was ignored until pairAccessVerified; verification after Continue on Home looked like a second connection.",
+    "quota": "Production read-only function/index audit confirms Free 1 and Plus 3 committed saves per actor + owner + toy + fixed economic day. Initial save counts. YRZQDM independently saved several toy photos on the same day; no global one-photo limit.",
+    "ballerina": "Current photo row and Storage object exist. Photo is owned by YRZQDM but pair scope records its former BKJWH6 relationship. Current relationship is HA54J3. Existing bootstrap/read filters hide the old-pair photo, while the independent same-day upload accounting correctly remains consumed.",
+    "layout": "A hidden/previous stage can report zero height. Reusing that child measurement to determine the empty toy size feeds 1px size and a near-zero floor seam back into the page. Geometry now derives from positive parent viewport space, with explicit play/creation layout and target-keyed stage.",
+    "decor": "Fitting each image's alpha width enlarged narrow silhouettes and their heights. One category reference canvas now preserves default placement while retaining each variant's source proportions."
+  },
+  "verification": {
+    "domainGate": {"command": "pnpm test:domain-isolation", "passed": 958, "failed": 0},
+    "mobileTypes": {"command": "pnpm --filter @novame/mobile type-check", "passed": true},
+    "targeted": {"passed": 112, "failed": 0, "includes": ["pairing lifecycle", "photo per-target quotas", "camera SVG", "all decor canvas variants", "creation/play/hidden layout", "solo photo API projection"]},
+    "photoDatabaseExisting": {"passed": 26, "failed": 0, "engine": "isolated PGlite", "includes": ["Free per-toy 1 and Plus per-toy 3", "independent new toys", "race/idempotency guards"]},
+    "photoMigration281": {"passed": 6, "failed": 0, "engine": "isolated PGlite", "migrationAppliedTwice": true,
+      "guards": ["owner access after unpair/re-pair", "current reciprocal partner only", "former partner denied", "one-way/null/unknown identities denied", "old frame access unchanged", "photo rows and paths unchanged", "quota/accounting unchanged", "wallet and inventory unchanged", "unrelated function bodies/ACL and table RLS/ACL unchanged", "service-only RPC access"]},
+    "apiTargeted": {"passed": 20, "failed": 0},
+    "privateCacheRegression": {"passed": 13, "failed": 0},
+    "diffWhitespace": "passed",
+    "native": {
+      "environment": "Existing isolated QA App com.novame.plushtouchqa, iOS 26.2 simulator, minified Release/Hermes bundle, actual repository renderers and interactions",
+      "businessTransport": "synthetic fixtures; production business writes prohibited",
+      "observed": ["photo-equipped to new empty Plushie switch", "Ballerina empty face and camera-only prompt", "Add Photo opens photo choice and Cancel preserves layout", "HomeArtScene decor geometry and lamp hit target", "HomeArtPreview same selected decor geometry"],
+      "screenshots": ["outputs/pair-photo-decor-2026-10-27/new-plushie-camera-only.png", "outputs/pair-photo-decor-2026-10-27/ballerina-after-switch.png", "outputs/pair-photo-decor-2026-10-27/decorate-shared-canvas.png"]
+    },
+    "limits": ["Not a live production purchase or pairing end-to-end test", "No real user image downloaded or replaced", "Not Android/iPad/all-device validation", "No new frame-rate benchmark in this UI/authorization repair"]
+  },
+  "authorization": "User approved personal Plushie photos following the owner across re-pairing, explicitly local repair and validation first.",
+  "release": {
+    "migration281": "local only; not applied to production",
+    "api": "local only; not deployed",
+    "app": "not published; Metro client changes require reload",
+    "productionWritesThisTask": false,
+    "quotaReset": false,
+    "deploymentOrderWhenSeparatelyAuthorized": "Review and apply migration 281, then deploy API solo-bootstrap projection. Current paired personal-v2 photo restoration depends on migration; unpaired restoration also needs API update.",
+    "compatibility": "Existing old-pair photo metadata and bytes are not rewritten. Old v1 clients retain their bootstrap contract. Frame relationship rules and Touch Note message history permissions are not migrated."
+  }
+}

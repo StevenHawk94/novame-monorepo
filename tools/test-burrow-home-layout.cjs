@@ -151,3 +151,30 @@ test('bookshelf gifts keep identical source-canvas placement without per-gift bo
    assert.ok(Math.abs(box.left+box.width/2-616.5*scale)<1e-8);assert.ok(Math.abs(box.top+box.height-713*scale)<1e-8);}
  }
 });
+
+test('all decor variants use one category canvas scale instead of enlarging narrow silhouettes; defaults retain their geometry',()=>{
+ const fs=require('node:fs'),path=require('node:path'),file='apps/mobile/src/lib/burrow-art-assets.ts';
+ const {BURROW_ART,burrowArtForItem}=load(file,Object.fromEntries([...fs.readFileSync(file,'utf8').matchAll(/require\((['"])(.*?)\1\)/g)]
+  .map(m=>[m[2],path.resolve(path.dirname(file),m[2])])));
+ const products=JSON.parse(fs.readFileSync('catalog/burrow-shop-products.json','utf8')).products;
+ for(const placement of HOME_ART_PLACEMENTS){
+  const assets=BURROW_ART[placement.category];assert.ok(assets?.length,placement.category);
+  const first=assets[0],refWidth=first.bounds[2]-first.bounds[0];
+  const all=[...assets,...products.filter(p=>p.category===placement.category&&p.status==='active').map(p=>burrowArtForItem({...p,stable_id:p.id,item_type:p.type},p.category)).filter(Boolean)];
+  for(const scale of [.35,.5,1]){
+   const baseline=homeAnchoredBox(first,placement,scale);
+   if(placement.canvasWidth==null){
+    const oldRatio=placement.visibleWidth/refWidth;
+    assert.ok(Math.abs(baseline.width-first.width*oldRatio*scale)<1e-8,placement.category+' default width');
+    assert.ok(Math.abs(baseline.left-(placement.x-first.bounds[0]*oldRatio)*scale)<1e-8,placement.category+' default x');
+   }
+   for(const asset of all){
+    const box=homeAnchoredBox(asset,placement,scale);
+    assert.ok(Math.abs(box.width-baseline.width)<1e-8,asset.name+' canvas width');
+    assert.ok(Math.abs(box.left-baseline.left)<1e-8,asset.name+' canvas x');
+    assert.ok(Math.abs(box.width/box.height-asset.width/asset.height)<1e-8,asset.name+' aspect');
+    if(asset.height===first.height)assert.ok(Math.abs(box.height-baseline.height)<1e-8,asset.name+' same source height');
+   }
+  }
+ }
+});

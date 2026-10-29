@@ -3,7 +3,7 @@ export type RetainedPage = 'home' | 'burrow' | 'quests' | 'shop' | 'moments' | '
 const fields: Record<RetainedPage, readonly (keyof MajorUpdateBootstrap)[]> = {
   home: ['catalog','catalogComplete','inventory','loadouts','roomPhotos','photoUsage','adventureCollection','unread','wallet',
     'activeAdventure','adventureResult','adventurePlan','dailyAdventureUsed','readyRecordId','roomNeeds','lastCareAt','sharedRoom',
-    'dailyPlusBonus','affectionInbox','affectionInboxGroups','affectionUsage','memoryEntries','gifts','giftCatalog','musicTrackId'],
+    'dailyPlusBonus','affectionInbox','affectionInboxGroups','affectionUsage','memoryEntries','gifts','giftCatalog','musicTrackId','roomCare'],
   burrow: ['friendVisit','friendVisitsVersion','friends','discoveries','friendContent','adventureCollection','unread','activeAdventure','moments','roomPhotos','catalog','pairAccessVerified'],
   quests: ['quests','specialQuests','activeAdventure','dailyAdventureUsed','readyRecordId','inventory','catalog','wallet'],
   shop: ['catalog','catalogComplete','inventory','loadouts','roomPhotos','adventureCollection','wallet','activeAdventure','partnerAdventure','gifts','giftCatalog','photoUsage','dollChangeUsed','dollPhotoChangesUsed','dollPhotoChangeTargetsUsed'],
@@ -16,7 +16,7 @@ const fields: Record<RetainedPage, readonly (keyof MajorUpdateBootstrap)[]> = {
   surprise: ['catalog','catalogComplete','wallet'],
   plushie:['catalog','catalogComplete','inventory','loadouts','roomPhotos','photoUsage','dollPhotoChangesUsed','dollPhotoChangeTargetsUsed'],
   partner_room: ['catalog','catalogComplete','inventory','loadouts','roomPhotos','adventureCollection','wallet',
-    'partnerAdventure','roomNeeds','lastCareAt','sharedRoom'],
+    'partnerAdventure','roomNeeds','lastCareAt','sharedRoom','roomCare'],
 };
 export function retainedPageChanged(before: MajorUpdateBootstrap | null, next: MajorUpdateBootstrap | null, page: RetainedPage) {
   if (before === next) return false;

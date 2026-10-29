@@ -18,6 +18,7 @@ function harness({password=false,failSave=false,guest=false}={}){
  '@/lib/subscription':{clearCachedSubscription(){}},'@/lib/storage':{storage:{getString:()=>JSON.stringify(profile),set(){}}},'@/shared/storage/keys':{kAccountProfile:{name:'account'}},
  '@/lib/account-profile-local':{cachedAccountProfile:()=>profile,subscribeAccountProfile:()=>()=>{},accountProfileSyncError:()=>'',saveAccountProfile:(fields,base)=>{if(failSave)throw Error('disk failed');calls.push(['local',fields]);return{...base,...fields};}},
  '@/lib/burrow-store':{scheduleBurrowRefresh(){}},'@/lib/onboarding':{getBunnyName:()=>''},
+ './account-match-code-card':{AccountMatchCodeCard:'MatchCodeCard'},
  });
  const render=()=>h.render(api.AccountManagementScreen),button=label=>nodes(render()).find(n=>n.type==='Button'&&nodes(n).some(child=>child.type==='Text'&&child.props.children===label));
  return{render,button,calls,alerts,h,profile,input:(label,value)=>nodes(render()).find(n=>n.type==='Input'&&n.props.accessibilityLabel===label).props.onChangeText(value),switch:()=>{owner='other';epoch++;}};

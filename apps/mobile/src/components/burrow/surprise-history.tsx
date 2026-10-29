@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import { Feather } from '@expo/vector-icons';
 import { listSurpriseHistory, surpriseTime, type Surprise, type SurpriseHistoryCursor } from '@/lib/surprise-api';
 import { sessionEpoch } from '@/lib/session-lifecycle';

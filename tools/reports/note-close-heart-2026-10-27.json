@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-27",
+  "scope": "User-requested Love Note envelope-reading exit and reference Touch Note heart styling",
+  "changes": {
+    "loveNote": "Removed read-to-History usePreventRemove/replace flow. Incoming envelope reading uses normal native pop; header goes back, or falls back to retained Home without a stack. Explicit History/detail and Write Back routes remain unchanged. No read, quota, draft or send changes.",
+    "mainHeart": "Closed flat pink reference silhouette with subtle gradient, no glossy highlights or time arc. Three bounded native SVG shadow layers below the silhouette; no blur filter, ForeignObject, view snapshot or new dependency. Existing 0..999 scale and collection pulse unchanged.",
+    "feedbackHearts": "Touch Note flying heart font/frame 30/30x40 to 45/45x60, centered on the existing path. Ordinary Skia feedback linear scale multiplied by 1.5. Counts (ordinary 3, recording 1), durations, fixed slot budgets and business events unchanged."
+  },
+  "verification": {
+    "domainGate": {"passed": 975, "failed": 0, "log": "/private/tmp/burrow-note-close-heart-domain.log"},
+    "targeted": {"passed": 45, "failed": 0, "suites": ["Love Note", "Touch heart", "shared native toy renderer"], "log": "/private/tmp/burrow-note-close-heart-target-final.log"},
+    "mobileTypes": {"passed": true, "log": "/private/tmp/burrow-note-close-heart-types.log"},
+    "gitDiffCheck": true,
+    "native": {
+      "environment": "Isolated iOS 26.2 simulator, Release host + production/minified Metro/Hermes, actual components and synthetic business data",
+      "passed": ["Reference heart silhouette/no highlights/bottom shadow and 0/999 size preview", "Enlarged centered Touch Note flying heart", "Received Love Note body opens, header Back returns to original source without History", "Ordinary Squeeze and Bonk each update local test interaction counter by exactly one, enlarged feedback visible", "Complete 60-second/999-touch Detailed playback with new artwork"],
+      "swipeLimitation": "Native drag automation did not complete an edge-back gesture, including after using the exact production MAIN_CARD_OPTIONS. Source interception is removed and negative regression confirms no removal guard; do not claim physical swipe integration passed. Requires manual device/gesture recheck.",
+      "screenshot": "outputs/note-close-heart-2026-10-27/01-heart-shadow-and-size.png",
+      "performance": {"frames": 3493, "p50Ms": 16.666666507720947, "p95Ms": 16.666666984558105, "p99Ms": 20.79099988937378, "maxMs": 144.61745834350586, "over50Ms": 6, "meanFps": 59.08796736987717},
+      "performanceLimitations": "One dense Detailed sample with UI-thread frame intervals; not compositor/GPU, physical haptics, Android or all-device certification. No concurrent build or test workload during sampling. Six >50ms intervals remain, no zero-jank claim."
+    },
+    "countsNote": "Targeted suites overlap the domain gate; counts must not be added into a unique/all-scenarios claim."
+  },
+  "publication": {"clientSourceUpdated": true, "apiChanged": false, "databaseChanged": false, "productionDeploymentPerformed": false, "appPublished": false, "metroReloadRequired": true}
+}

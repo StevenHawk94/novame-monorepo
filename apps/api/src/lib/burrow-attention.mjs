@@ -32,7 +32,7 @@ export async function readBurrowAttention(db,userId,snapshot,readSignal,journalV
     ]);
     if(!await current())return null;
     return {...empty,
-      moments:(moments??[]).filter(row=>row.event_type!=='room_need_refilled'||['food','water'].includes(row.payload?.need)).map(row=>item(`${row.id}:${row.created_at}`,row.created_at)),
+      moments:(moments??[]).filter(row=>row.event_type!=='room_need_refilled'||['food','water','leaf','fertilizer'].includes(row.payload?.need)).map(row=>item(`${row.id}:${row.created_at}`,row.created_at)),
       letters:(letters??[]).map(row=>item(`${row.id}:${row.updated_at}`,row.updated_at)),
       games:(games??[]).flatMap(row=>{
         const me=row.burrow_game_progress?.find(p=>p.user_id===userId),them=row.burrow_game_progress?.find(p=>p.user_id===partnerId);

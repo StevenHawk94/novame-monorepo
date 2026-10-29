@@ -42,6 +42,15 @@ test('cold restoration and explicit invite success do not create a second global
  const restored=harness({paired:true});restored.render();await flush();assert.equal(restored.requests.length,0);assert.equal(restored.render().props.visible,false);restored.h.unmount();
  const inline=harness({route:'pair-partner'});inline.render();inline.pair();inline.render();await flush();assert.equal(inline.requests.length,0);inline.route('moments');assert.equal(inline.render().props.visible,false);inline.h.unmount();
 });
+test('explicit minimal pairing receipt followed by verified bootstrap on Home announces only inline',async()=>{
+ const h=harness();h.render();h.route('pair-partner');h.render();h.pair();
+ h.state={...h.state,data:{...h.state.data,pairAccessVerified:undefined}};h.render();
+ h.route('index');h.render();h.state={...h.state,data:{...h.state.data,pairAccessVerified:true}};h.render();await h.ready();
+ assert.equal(h.requests.length,0);assert.equal(h.render().props.visible,false);
+ // Suppressing the explicit generation must not swallow a later passive pair.
+ h.state={...h.state,data:{...h.state.data,partner:null,pairVersion:undefined}};h.render();
+ h.pair('two');h.render();await h.ready();assert.equal(h.render().props.visible,true);h.h.unmount();
+});
 test('unpair/account switch discards a late prepared success; no stale partner is displayed',async()=>{
  for(const change of ['unpair','account']){
   const h=harness();h.render();h.pair();h.render();if(change==='account')h.switch();else h.state={pairInvalidated:true,data:null};h.render();await h.ready();assert.equal(h.render().props.visible,false);h.h.unmount();

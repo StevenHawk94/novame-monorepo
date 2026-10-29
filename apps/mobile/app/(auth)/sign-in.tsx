@@ -1,16 +1,8 @@
 import { useMemo, useState } from 'react';
 import { BackIcon } from '@/components/burrow/burrow-back-button';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
-import { Platform,
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Platform, ActivityIndicator, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, TouchableOpacity } from '@/components/ui/feedback-pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';

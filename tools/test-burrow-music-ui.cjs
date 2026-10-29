@@ -8,9 +8,11 @@ const tracks = load('apps/mobile/src/lib/burrow-music-tracks.ts', {
   '../../assets/music/Lo-fi.MP3': 1, '../../assets/music/Lullaby.MP3': 2, '../../assets/music/Jazz.MP3': 3,
 });
 function harness(options = {}) {
-  const pickerHooks=hooks(), gateHooks=hooks(), time=clock(); let activeHooks=pickerHooks;
+  const pickerHooks=hooks(), gateHooks=hooks(), coinHooks=hooks(), time=clock(); let activeHooks=pickerHooks;
   const choices=[], players=[], modes=[], routes=[], localStorage=new Map(), appListeners=new Set(), identities=[];
   let sound=true,haptics=true;const preferenceListeners=new Set();
+  const preferences={getInteractionPreferences:()=>({sound,haptics}),subscribeInteractionPreferences:fn=>{preferenceListeners.add(fn);return()=>preferenceListeners.delete(fn);}};
+  const focus=load('apps/mobile/src/lib/burrow-audio-focus.ts');
   const app={ currentState:'active', addEventListener(_name,fn){appListeners.add(fn);return{remove:()=>appListeners.delete(fn)};} };
   const room = { profile:{id:'me'}, hasPlus:false, musicTrackId:null, catalog:[
     {stable_id:'placeholder_music_calm',item_type:'music',title:'Quiet Burrow',asset:{bundleKey:'calm'},price:0},
@@ -19,9 +21,21 @@ function harness(options = {}) {
     {stable_id:'music_quiet_cave_01',item_type:'music',title:'Quiet Cave',asset:{renderer:'none'},price:0},
   ], inventory:[{owner_id:'me',item_id:'placeholder_music_02'}] };
   let token=0, closed=0;
+  const nativeAudio={async setAudioModeAsync(mode){
+    modes.push(mode);
+    if(!mode.playsInSilentMode&&(mode.interruptionMode==='duckOthers'||mode.allowsRecording||mode.shouldPlayInBackground))throw Error('InvalidAudioModeException');
+    await options.prepare?.(mode);
+  },createAudioPlayer(source){
+    const status=new Set(),player={source,playing:false,isLoaded:true,currentTime:0,plays:0,pauses:0,
+      get currentStatus(){return{isLoaded:this.isLoaded};},play(){this.playing=true;this.plays++;},pause(){this.playing=false;this.pauses++;},
+      remove(){this.unregistered=true;},release(){this.released=true;this.playing=false;},seekTo:async()=>{player.currentTime=0;},
+      emit(value){for(const fn of status)fn(value);},
+      addListener(_name,fn){status.add(fn);return{remove(){status.delete(fn);if(options.listenerFailure)throw Error('listener already released');}};}};
+    players.push(player);return player;
+  }};
   const api=load('apps/mobile/src/components/burrow/burrow-music.tsx', {
     '@/lib/foreground-audio-mode':options.policy?{FOREGROUND_AUDIO_MODE:options.policy}:load('apps/mobile/src/lib/foreground-audio-mode.ts'),
-    '@/lib/interaction-preferences':{getInteractionPreferences:()=>({sound,haptics}),subscribeInteractionPreferences:fn=>{preferenceListeners.add(fn);return()=>preferenceListeners.delete(fn);}},
+    '@/lib/interaction-preferences':preferences,'@/lib/burrow-audio-focus':focus,
     "./burrow-back-button":{BackIcon:'BackIcon',BurrowBackButton:'BackButton'},
     '@/lib/latest-selection-queue':load('apps/mobile/src/lib/latest-selection-queue.ts'),
     '@/lib/storage':{storage:{getString:key=>localStorage.get(key),set:(key,value)=>localStorage.set(key,value)}},
@@ -31,20 +45,7 @@ function harness(options = {}) {
     'react-native':{AppState:app,Modal:'Modal',Pressable:'Pressable',ScrollView:'ScrollView',StatusBar:'StatusBar',
       StyleSheet:{create:value=>value,absoluteFillObject:{}},Text:'Text',View:'View'},
     'expo-router':{router:{push:route=>routes.push(route)}},
-    'expo-audio':{async setAudioModeAsync(mode){
-      modes.push(mode);
-      // Mirror ExpoAudio iOS AudioUtils.validateAudioMode. A permissive mock
-      // previously hid the invalid silent-mode + duckOthers configuration.
-      if(!mode.playsInSilentMode&&(mode.interruptionMode==='duckOthers'||mode.allowsRecording||mode.shouldPlayInBackground))
-        throw Error('InvalidAudioModeException');
-      await options.prepare?.(mode);
-    },createAudioPlayer(source){
-      const player={source,playing:false,isLoaded:true,play(){this.playing=true;},pause(){this.playing=false;},
-        // Model iOS: remove unregisters ONLY, not an immediate stop.
-        remove(){this.unregistered=true;},release(){this.released=true;this.playing=false;},
-        addListener(){return{remove(){if(options.listenerFailure)throw Error('listener already released');}};}};
-      players.push(player);return player;
-    }},
+    'expo-audio':nativeAudio,
     'expo-linear-gradient':{LinearGradient:'LinearGradient'},
     '@expo/vector-icons':{Feather:'Feather',MaterialCommunityIcons:'MaterialCommunityIcons'},
     'react-native-svg':{__esModule:true,default:'Svg',Path:'Path'},
@@ -65,11 +66,38 @@ function harness(options = {}) {
   const tap=label=>{const node=nodes(render()).find(node=>node.props?.accessibilityLabel===label);
     assert.ok(node,label);assert.ok(!node.props.disabled,label);node.props.onPress();};
   const appState=state=>{app.currentState=state;appListeners.forEach(fn=>fn());};
+  const coin=()=>{
+    const {useCoinFlightFeedback}=load('apps/mobile/src/lib/use-coin-flight-feedback.ts',{
+      react:coinHooks.react,'react-native':{AppState:app},'expo-audio':nativeAudio,
+      './interaction-preferences':preferences,'./burrow-audio-focus':focus,
+      './session-lifecycle':{subscribeSessionIdentity:fn=>{identities.push(fn);return()=>{};}},
+      './coin-flight-feedback':load('apps/mobile/src/lib/coin-flight-feedback.ts',{},time.globals),
+      './completion-sound-player':load('apps/mobile/src/lib/completion-sound-player.ts',{},time.globals),
+      './foreground-audio-mode':load('apps/mobile/src/lib/foreground-audio-mode.ts'),
+      './coin-reward-store':{coinRewardClock:()=>time.globals.Date.now()},'./haptics':{haptics:{light:async()=>{}}},
+      './ui-idle':{afterUiSettles:fn=>{const id=time.globals.setTimeout(fn,80);return()=>time.globals.clearTimeout(id);}},
+      '../../assets/sound-effect/coin-collect.mp3':'coin-collect.mp3',
+    },time.globals);
+    return coinHooks.render(useCoinFlightFeedback);
+  };
   return{render,gate,tap,appState,room,choices,players,modes,routes,localStorage,api,identities,
+    coin,time,
     sound(value){sound=value;preferenceListeners.forEach(fn=>fn());},preferenceListeners,
     haptics(value){haptics=value;preferenceListeners.forEach(fn=>fn());},
-    unmount:()=>gateHooks.unmount(),closed:()=>closed};
+    unmount:()=>{coinHooks.unmount();gateHooks.unmount();},closed:()=>closed};
 }
+test('coin sound mixes over the exact playing BGM instance; start, completion and effect cleanup never pause or recreate music',async()=>{
+ const h=harness();h.room.musicTrackId='placeholder_music_calm';h.gate();await flush();const bgm=h.players[0];assert.equal(bgm.playing,true);
+ const fx=h.coin();h.time.advance(80);const effect=h.players[1];assert.equal(effect.source,'coin-collect.mp3');
+ for(const mode of h.modes)assert.equal(mode.interruptionMode,'mixWithOthers','neither doNotMix nor duckOthers');
+ assert.equal(h.modes.length,2,'preparation only, never per coin flight');
+ for(let i=0;i<3;i++){
+  fx.start('coins:'+i,1200);assert.equal(effect.playing,true);assert.equal(bgm.playing,true);h.time.advance(1200);
+  effect.emit({didJustFinish:true});h.time.advance(400);assert.equal(bgm.playing,true);assert.equal(bgm.pauses,0);assert.equal(bgm.plays,1);assert.equal(bgm.unregistered,undefined);
+ }
+ fx.stop();assert.equal(bgm.playing,true);assert.equal(h.players.filter(p=>p.source===1).length,1);assert.equal(h.modes.length,2);
+ h.unmount();
+});
 test('all three bundled songs initialize with an iOS-valid foreground mode, without bypassing silent switch or recording focus',async()=>{
   const h=harness();h.room.hasPlus=true;
   for(const id of ['placeholder_music_calm','placeholder_music_dream','placeholder_music_02']){

@@ -13,8 +13,11 @@ function dimensions(bytes){assert.equal(bytes.toString('ascii',0,4),'RIFF');asse
 function asset(file){assert.ok(typeof file==='string'&&!file.split(/[\\/]/).includes('..')&&!path.isAbsolute(file)&&file.endsWith('.webp'),'Invalid bundled asset: '+file);const target=path.resolve(ROOT,'apps/mobile/assets',file);assert.ok(fs.existsSync(target),'Required current/historical asset missing: '+file);return fs.readFileSync(target);}
 function validate(manifest,ledger){
  assert.equal(manifest.schema,1);assert.deepEqual(manifest.categories,categories);
+ const developmentDescriptions=new Set(['Replaceable artwork. Fixed-slot room decoration.',
+  'Replaceable catalog content used to validate purchase, gifting and decoration.']);
  const ids=new Set(),ordinals=new Set();
  for(const p of manifest.products){
+  assert.ok(!developmentDescriptions.has(p.description),'Development placeholder description: '+p.id);
   assert.ok(typeof p.id==='string'&&/^[a-zA-Z0-9_:-]{1,160}$/.test(p.id)&&!ids.has(p.id),'Duplicate/invalid permanent ID: '+p.id);ids.add(p.id);
   assert.ok(categories.includes(p.category)&&p.type===({outfits:'outfit',games:'game',surprises:'surprise'}[p.category]??'decor'),'Unsupported type/category: '+p.id);
   assert.ok(['active','retired','draft'].includes(p.status),'Invalid status: '+p.id);

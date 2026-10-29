@@ -1,5 +1,6 @@
 import {useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
-import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import {AppModal as Modal} from '@/components/layout/app-modal';
 import Animated,{cancelAnimation,Easing,runOnJS,useAnimatedStyle,useSharedValue,withTiming} from 'react-native-reanimated';
@@ -40,10 +41,10 @@ export function DailyPlusBonusPresentation({bonus,localDate,anchor,enabled,onCla
  const requested=enabled&&!!anchor&&phase!=='done'&&(available||phase==='flying'||phase==='closing');
  useEffect(()=>{if(requested)requestModalSlot('claim',slot);else releaseModalSlot('claim',slot);return()=>releaseModalSlot('claim',slot);},[requested,slot]);
  const visible=requested&&ownsModalSlot(slot);
- const popupVisible=visible&&phase==='ready';
+ const popupVisible=visible;
  useLayoutEffect(()=>visible?registerOverlay(owner):undefined,[visible,owner]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
- useEffect(()=>{if(!enabled&&phase==='flying')setPhase('done');},[enabled,phase]);
+ useEffect(()=>{if(!enabled&&(phase==='flying'||phase==='closing'))setPhase('done');},[enabled,phase]);
  useEffect(()=>{
   if(phase!=='flying')return;
   // The animation deadline never depends on a request or receipt. Background
@@ -78,8 +79,8 @@ export function DailyPlusBonusPresentation({bonus,localDate,anchor,enabled,onCla
    locked.current=false;setError('Your bonus is still available. Please try again.');setPhase('ready');onRefresh();
   });
  }
- // The app-wide wallet owns the flight. Dismiss this native popup immediately
- // and release its wallet portal; root continues the SAME batch/controller.
+ // Keep this native popup and its wallet portal through the shared coin
+ // presentation, then fade out together. The monetary intent never waits here.
  return <Modal visible={popupVisible} transparent animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={()=>{if(phase==='ready')setPhase('done');}}>
   <View style={s.scrim} accessibilityViewIsModal>
    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{backgroundColor:'#00000099'},scrim]}/>

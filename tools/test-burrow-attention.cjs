@@ -75,16 +75,18 @@ test('opening the Home envelope clears its reminder immediately, not the unread 
   h.change('other');reboot.dismissHomeLetterReminder(data);h.change('me');assert.equal(h.api.burrowAttentionCounts(data).letter,3);
   assert.ok([...h.disk.values()].every(value=>!value.includes('Second')));
   const home=fs.readFileSync('apps/mobile/src/components/burrow/burrow-screen.tsx','utf8');
-  assert.match(home,/onLetter=\{\(\)=>\{if\(data\)dismissHomeLetterReminder\(data\);openHomeInteraction\('letter',true\)/);
+  // Current unread-first Love Note contract: Home delegates reading/compose
+  // choice to the shared screen, never forces compose or consumes unread here.
+  assert.match(home,/onLetter=\{\(\)=>openHomeInteraction\('letter'\)\}/);
 });
-test('opening an arrived Adventure clears its badge before exit, without claiming or changing arrival, and survives stale refresh/restart',()=>{
+test('opening an arrived Adventure keeps its pending-reward badge through refresh and restart',()=>{
   const h=harness(),data=snapshot(),before=JSON.stringify(data);
   assert.equal(h.api.burrowAttentionCounts(data).adventure,1);
   h.api.dismissAdventureReminder(data);
-  assert.equal(h.api.burrowAttentionCounts(data).adventure,0);assert.equal(JSON.stringify(data),before);
-  assert.equal(h.restart().burrowAttentionCounts(data).adventure,0);
-  data.activeAdventure.status='interaction_required';assert.equal(h.api.burrowAttentionCounts(data).adventure,0);
-  data.activeAdventure.status='in_progress';assert.equal(h.api.burrowAttentionCounts(data).adventure,0,'a stale due snapshot cannot relight the same journey');
+  assert.equal(h.api.burrowAttentionCounts(data).adventure,1);assert.equal(JSON.stringify(data),before);
+  assert.equal(h.restart().burrowAttentionCounts(data).adventure,1);
+  data.activeAdventure.status='interaction_required';assert.equal(h.api.burrowAttentionCounts(data).adventure,1);
+  data.activeAdventure.status='in_progress';assert.equal(h.api.burrowAttentionCounts(data).adventure,1,'a stale due snapshot cannot hide incomplete rewards');
   data.activeAdventure.id='next-journey';assert.equal(h.api.burrowAttentionCounts(data).adventure,1);
   h.change('other');h.api.dismissAdventureReminder(data);h.change('me');assert.equal(h.api.burrowAttentionCounts(data).adventure,1);
   data.pairVersion='new-pair';assert.equal(h.api.burrowAttentionCounts(data).adventure,1);
@@ -92,7 +94,7 @@ test('opening an arrived Adventure clears its badge before exit, without claimin
 test('opening ongoing does not suppress its future arrival; the monotonic due time can acknowledge before status refresh',()=>{
   const h=harness(),data=snapshot(),now=Date.parse(at);data.activeAdventure.status='in_progress';data.activeAdventure.ends_at=new Date(now+1000).toISOString();
   h.api.dismissAdventureReminder(data,now);assert.equal(h.api.burrowAttentionCounts(data,now+1000).adventure,1);
-  h.api.dismissAdventureReminder(data,now+1000);assert.equal(h.api.burrowAttentionCounts(data,now+1000).adventure,0);
+  h.api.dismissAdventureReminder(data,now+1000);assert.equal(h.api.burrowAttentionCounts(data,now+1000).adventure,1);
 });
 test('claim decrements immediately, rolls back failure, persists success, and next stage is separate',()=>{
   const h=harness(),data=snapshot();let settle=h.api.beginQuestAttentionClaim(data,'daily:q1');

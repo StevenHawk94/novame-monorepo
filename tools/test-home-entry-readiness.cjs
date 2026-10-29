@@ -19,7 +19,10 @@ function load(file, imports = {}, globals = {}) {
   }).outputText;
   vm.runInNewContext(code, {
     module, exports: module.exports, console,
-    require(name) { assert.ok(Object.hasOwn(imports, name), name); return imports[name]; },
+    require(name) {
+      if(name==='@/components/ui/feedback-pressable')return imports['react-native'];
+      assert.ok(Object.hasOwn(imports, name), name); return imports[name];
+    },
     ...globals,
   });
   return module.exports;

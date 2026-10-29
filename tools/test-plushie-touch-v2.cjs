@@ -6,6 +6,28 @@ const warp=load('apps/mobile/src/lib/burrow-toy-warp.ts');
 const toy=load('apps/mobile/src/lib/squishy-toy-motion.ts',{'./burrow-toy-warp':warp});
 const play=load('apps/mobile/src/lib/plushie-touch-motion.ts',{'@novame/domain':domain,'./squishy-toy-motion':toy});
 const geometry={baseX:256,baseY:512,headWidth:202,scale:.7,bounds:[106,13,406,512]};
+test('Touch Note transport authority is separate from economic identity and history Plus, with strict old-server fallback',()=>{
+ assert.equal(domain.touchSendAllowed(null),false);
+ assert.equal(domain.touchSendAllowed({sameDomain:true,hasPlus:false}),true);
+ assert.equal(domain.touchSendAllowed({sameDomain:false,hasPlus:false}),false);
+ assert.equal(domain.touchSendAllowed({sameDomain:false,sendAllowed:true,hasPlus:false}),true);
+ assert.equal(domain.touchSendAllowed({sameDomain:true,sendAllowed:false,hasPlus:true}),false);
+ assert.equal(domain.touchSendAllowed({sameDomain:false,sendAllowed:'true',hasPlus:false}),false);
+ assert.equal(domain.touchSendHasPlus({sameDomain:false,hasPlus:false,sendHasPlus:true}),true);
+ assert.equal(domain.touchSendHasPlus({sameDomain:true,hasPlus:true,sendHasPlus:false}),false);
+ assert.equal(domain.touchSendHasPlus({sameDomain:true,hasPlus:true}),true);
+});
+test('existing v2 GET forwards the separate transport/allowance fields without rewriting economic identity',async()=>{
+ const meta={version:2,sameDomain:false,sendAllowed:true,sendHasPlus:false,hasPlus:false,remaining:1,items:[]};
+ const calls=[],route=load('apps/api/src/app/api/vnext/plushie-touch/route.js',{
+  'next/server':{NextResponse:{json:(body,options)=>({body,...options})}},
+  '@/lib/app-major-update':{authenticatedUserId:async()=> 'actor',appMajorUpdateServiceClient:()=>({rpc:async(name,args)=>{calls.push({name,args});return{data:meta};}}),majorUpdateEnabled:async()=>true},
+  '@/lib/security-boundary':{securityRateLimit:async()=>{},securityFailure:e=>{throw e;}},'@novame/domain':domain,
+ },{URL});
+ const response=await route.GET({url:'https://isolated.invalid/api/vnext/plushie-touch?pair='+'a'.repeat(32)+'&v=2'});
+ assert.equal(response.body,meta);assert.equal(calls[0].name,'plushie_touch_state_v2');assert.equal(calls[0].args.p_user,'actor');
+ assert.equal(response.body.sameDomain,false);assert.equal(response.body.hasPlus,false);
+});
 test('v2 first down counts once, half-second holds continue without moves; release adds nothing; two fingers share one clock',()=>{
  const r=recorder.createTouchRecorder(null,2);r.input([0,0,9,500,500]);assert.equal(r.touches,1);
  r.advance(499);assert.equal(r.touches,1);r.advance(500);assert.equal(r.touches,2);

@@ -9,7 +9,8 @@ import {AdventureJournalScreen} from '../apps/mobile/src/components/burrow/adven
 import {AdventureReady} from '../apps/mobile/src/components/burrow/adventure-record-completion';
 import {observeSessionIdentity} from '../apps/mobile/src/lib/session-lifecycle';
 import {queueBunnySelection} from '../apps/mobile/src/lib/bunny-identity';
-const Stack=createNativeStackNavigator(),bg='#461501';
+import {ADVENTURE_LOG_BACKGROUND as bg} from '../apps/mobile/src/lib/burrow-surface';
+const Stack=createNativeStackNavigator();
 function Entry({navigation}){return <ScrollView style={{flex:1,backgroundColor:bg}} contentContainerStyle={{flexGrow:1,paddingBottom:34}}>
  <AdventureEntry onWrite={()=>navigation.navigate('write')} onTap={()=>navigation.navigate('ready')}/>
 </ScrollView>;}

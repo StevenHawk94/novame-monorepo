@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import {ChooseBunnyPage} from './choose-bunny-page';
 import type {BunnyVariant} from '@/lib/bunny-identity-model';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';

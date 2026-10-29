@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
-import {Pressable,ScrollView,Text,View} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useIsFocused} from '@react-navigation/native';
 import type {MajorUpdateBootstrap} from '@/lib/app-major-update-api';
 import {fetchBurrowHistory,type HistoryCursor} from '@/lib/burrow-history';

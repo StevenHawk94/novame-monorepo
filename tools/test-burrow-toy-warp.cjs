@@ -116,7 +116,7 @@ test('Canvas retains the native plushie until its paint handoff, without size su
       Skia:{RuntimeEffect:{Make:()=>({})},Path:{MakeFromSVGString:()=>({})},Color:x=>x,
         Surface:{Make:()=>{compositions++;return {getCanvas:()=>canvas,flush(){},makeImageSnapshot:()=>image};}}},
       useImage:source=>source?image:null},
-    'react-native-gesture-handler':{GestureDetector:'Gesture'},'react-native-reanimated':{useDerivedValue:()=>({})},
+    'react-native-gesture-handler':{GestureDetector:'Gesture'},'react-native-reanimated':{useDerivedValue:fn=>({get value(){return fn();}})},
     './burrow-image':{resolveBurrowImageSource:x=>x},'@/lib/burrow-doll-face':{dollFaceBounds:a=>a.photoBounds},
     '@/lib/session-lifecycle':{subscribeSessionIdentity(){}},'@/lib/burrow-toy-warp':warp,'@/lib/squishy-toy-motion':m,
     '@/lib/use-squishy-toy':{useSquishyToy:()=>({state:{},gesture:{},handle:{},identity:{}})},
@@ -134,11 +134,17 @@ test('Canvas retains the native plushie until its paint handoff, without size su
   assert.equal(overlay.props.style.top+offset,surface.props.top,'enlarging the viewport cannot shift the heart origin or costume');
   assert.equal(overlay.props.style.height-offset,surface.props.height);
   assert.equal(overlayNodes.filter(n=>typeof n.type==='function'&&n.type.name==='ToyHeart').length,12,'same bounded particle pool, not another frame driver');
+  const particle=overlayNodes.find(n=>typeof n.type==='function'&&n.type.name==='ToyHeart'),heartMotion=m.createToyMotion(geometry);m.hitToy(heartMotion,'squeeze');
+  for(const age of [0,500,1000,1999]){
+    heartMotion.particles[0].age=age;
+    const draw=particle.type({...particle.props,state:{value:heartMotion},index:0,scale:.5});
+    assert.equal(draw.props.transform.value[2].scale,.5*1.5*(1.2+.4*Math.sin(age/2000*Math.PI)),'ordinary feedback is exactly 50% larger at every flight phase');
+  }
   for(const scale of [.2,.5,1,2])for(const kind of ['squeeze','punch']){
     const layer=particles.type({...particles.props,scale}),inset=nodes(layer).find(n=>n.type==='Group').props.transform[0].translateY;
     const motion=m.createToyMotion({...geometry,headTop:0});m.hitToy(motion,kind);
     for(const p of motion.particles.filter(p=>p.life===2000))for(let t=0;t<=1;t+=.05){
-      const top=inset+(p.y+p.dy*t)*scale-4*scale;
+      const top=inset+(p.y+p.dy*t)*scale-6*scale;
       assert.ok(top>=0,'the full upward flight, including the heart curve, stays inside the transparent viewport');
     }
   }
@@ -190,6 +196,35 @@ test('real controller worklets activate/end once, ignore the back edge, retain s
   assert.equal(recorded,3,'a delayed JS receipt cannot be retargeted into a new relationship');
   const before=clone(controller.state.value);h.unmount();assert.deepEqual(clone(controller.state.value),before,'teardown never wakes a shader mapper');
   assert.equal(driver.active,false);assert.equal(handle,null);
+});
+
+for(const recording of [false,true])test(`${recording?'Touch Note recording':'ordinary Plushie'}: held contact ${recording?'keeps half-second feedback':'does not repeat hearts or haptics'}; new taps still respond`,()=>{
+ const h=hooks(),gesture={},driver={setActive(){}},batches=[];let frame,recorded=0,feedback=0;
+ for(const name of ['enabled','shouldCancelWhenOutside'])gesture[name]=()=>gesture;
+ for(const name of ['onTouchesDown','onTouchesMove','onTouchesUp','onTouchesCancelled','onFinalize'])gesture[name]=fn=>{gesture[name+'Callback']=fn;return gesture;};
+ const reanimated={useReducedMotion:()=>false,runOnJS:fn=>fn,runOnUI:fn=>fn,useFrameCallback:fn=>{frame=fn;return driver;},
+  useSharedValue:initial=>{const r=h.react.useRef(null);if(!r.current)r.current={value:initial,modify(fn){this.value=fn(this.value);}};return r.current;}};
+ const {useSquishyToy}=load('apps/mobile/src/lib/use-squishy-toy.ts',{
+  react:h.react,'react-native':{AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},'@react-navigation/native':{useIsFocused:()=>true},
+  'react-native-gesture-handler':{Gesture:{Manual:()=>gesture}},'react-native-reanimated':reanimated,
+  './haptics':{haptics:{light:()=>feedback++,medium:()=>feedback++}},'./page-edge-gesture':{LEFT_EDGE_BACK_WIDTH:24},'./squishy-toy-motion':m,
+ });
+ const c=h.render(()=>useSquishyToy({geometry,left:0,top:0,onInteract:()=>recorded++,onInput:recording?batch=>batches.push(...batch):undefined}));
+ const manager={begin(){},activate(){},end(){},fail(){}},t={id:1,x:220,y:325,absoluteX:220};
+ frame({timestamp:1000,timeSincePreviousFrame:16});gesture.onTouchesDownCallback({allTouches:[t],changedTouches:[t]},manager);
+ assert.equal(c.state.value.particleSerial,3);assert.equal(feedback,1);assert.equal(recorded,0);
+ for(const timestamp of [1016,1516,2016,2516])frame({timestamp,timeSincePreviousFrame:16});
+ assert.equal(c.state.value.particleSerial,recording?12:3);assert.equal(feedback,recording?4:1);
+ gesture.onTouchesMoveCallback({changedTouches:[{...t,x:250}]});frame({timestamp:3016,timeSincePreviousFrame:16});
+ assert.equal(c.state.value.particleSerial,recording?15:3,'moving a held ordinary contact never adds a timed burst');
+ gesture.onTouchesUpCallback({changedTouches:[t]},manager);assert.equal(recorded,1,'normal interaction business count still occurs once on release');
+ const afterHold=c.state.value.particleSerial;frame({timestamp:4016,timeSincePreviousFrame:16});
+ assert.equal(c.state.value.particleSerial,afterHold,'released contact never repeats');
+ gesture.onTouchesDownCallback({allTouches:[t],changedTouches:[t]},manager);assert.equal(c.state.value.particleSerial,afterHold+3);
+ gesture.onTouchesUpCallback({changedTouches:[t]},manager);assert.equal(recorded,2);
+ for(const kind of ['squeeze','punch']){frame({timestamp:c.state.value.clock+1000,timeSincePreviousFrame:16});const before=c.state.value.particleSerial;c.performHit(kind);assert.equal(c.state.value.particleSerial,before+3);}
+ if(recording)assert.deepEqual(batches.map(e=>e[1]),[0,1,2,0,2]);else assert.equal(batches.length,0);
+ h.unmount();
 });
 
 test('native button gestures coexist with each other and a held body pull; each keeps its start-scope token',()=>{

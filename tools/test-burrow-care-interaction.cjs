@@ -246,13 +246,14 @@ test('rendered water clip plane follows actual layout and no fixed floor-height 
 
 function screenHarness(kind,{localized=false}={}) {
   const h = hooks(), save = deferred(), marks = [], alerts = [], navigation = [], targets = [], timer = clock(),toyRatings=[];
-  let requests = 0, coolingDown = false, epoch = 1, rejectedCode='network_error',reserves=0;
+  let requests = 0, coolingDown = false, epoch = 1, rejectedCode='network_error',reserves=0,diskFails=false;
   const params = { kind };
   let data = { profile: { id: 'me' }, roomPhotos: [], localDate: '2026-10-07', toyId: 'default',vase:{stable_id:'vase-1'} };
   const art = { bounds: [0, 0, 600, 600], width: 600, height: 600, source: 1 };
   const Screen = load('apps/mobile/app/(main)/room-interaction.tsx', {
     ...require('./rating-test-mocks.cjs'),
     '@/lib/use-page-back-gesture':{usePageBackGesture:()=>{}},
+    '@/lib/use-page-entry-settled':{usePageEntrySettled:()=>true},
     '@/lib/toy-interaction-records':{recordToyInteraction(){},flushToyInteractions(){}},
     react: h.react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { ...native, ActivityIndicator: 'ActivityIndicator', KeyboardAvoidingView: 'KeyboardAvoidingView',
@@ -263,7 +264,8 @@ function screenHarness(kind,{localized=false}={}) {
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0 }) },
     '@/lib/burrow-art-assets': { BURROW_ART: { couple_dolls: [art], vases: [art] }, burrowArtForItem: (item,category) => category==='vases'&&item?{...art,source:item.stable_id}:null },
     '@/lib/burrow-presentation': { roomSlots: () => ({ couple_doll: { stable_id: data.toyId },wallpaper:data.wallpaper,vase:data.vase,dresser_plant:{stable_id:'kettle-not-a-flower'} }) },
-    '@/lib/app-major-update-api': {refillRoomNeed:(...args)=>targets.push(args)},
+    '@/lib/app-major-update-api': {enqueueRoomCare:(_data,...args)=>{if(diskFails)throw Error('intent_not_saved');requests++;targets.push(args);}},
+    '@/lib/room-care-model':{...load('apps/mobile/src/lib/room-care-model.ts'),currentRoomCare:()=>({version:2})},
     ...require('./burrow-attention-test-mocks.cjs'),
     '@/lib/official-rating-milestones':{recordPhotoToyPlayForRating:(user,toy,photo)=>{if(toy&&photo)toyRatings.push([user,toy,photo]);}},
     '@/lib/burrow-store': { useBurrow: () => ({ data, loading: false }),
@@ -275,13 +277,15 @@ function screenHarness(kind,{localized=false}={}) {
     '@/lib/room-photo-errors': { TOY_PHOTO_DAILY_LIMIT_TITLE: 'Daily limit', TOY_PHOTO_DAILY_LIMIT_MESSAGE: 'Try tomorrow' },
     '@/lib/burrow-toy-photos': load('apps/mobile/src/lib/burrow-toy-photos.ts'),
     '@/components/burrow/burrow-back-button': { BurrowBackButton: 'BackButton' },
-    '@/components/burrow/care-interaction': { FeedInteraction: 'Feed', WaterInteraction: 'Water' },
+    '@/components/burrow/garden-care-interaction': { GardenCareInteraction: 'Garden' },
     '@/components/burrow/care-quest-celebration': { CareQuestCelebration: 'CarePopup' },
     '@/components/burrow/care-status-dialog': { CareStatusDialog: 'CareStatus' },
     '@/components/burrow/interactive-doll': { InteractiveDoll: 'Doll' },
     '@/components/burrow/localized-toy': { LocalizedToy: 'LocalizedToy' },
     '@/components/burrow/doll-photo-preview': { DollPhotoPreview: 'PhotoPreview' },
     '@/components/burrow/room-photo': {RoomPhotoEditor:'PhotoEditor'},
+    '@/components/burrow/touch-note-entry': {TouchNoteEntry:'TouchNoteEntry'},
+    '@/components/burrow/plushie-room-background': {PlushieRoomBackground:'PlushieRoomBackground'},
     '@/lib/burrow-text-drafts': { readBurrowTextDraft: () => null },
     '@/lib/session-lifecycle': { sessionEpoch: () => epoch },
   }, timer.globals);
@@ -289,8 +293,9 @@ function screenHarness(kind,{localized=false}={}) {
   render(); render();
   return { render, save, marks, alerts, navigation, targets, timer, params, art,toyRatings, get data(){return data;}, requests: () => requests,
     replaceVase(id){data={...data,vase:{stable_id:id}};},
+    replaceToy(id){data={...data,toyId:id};},
     replaceWallpaper(id){data={...data,wallpaper:{stable_id:id}};},
-    finish: () => nodes(render()).find(node => ['Feed', 'Water'].includes(node.type)).props.onComplete(),
+    finish: () => nodes(render()).find(node => node.type==='Garden').props.onComplete(),failDisk(){diskFails=true;},
     coolDown() { coolingDown = true; }, rejectWith(code){rejectedCode=code;},reserves:()=>reserves,changeSession() { epoch++; }, unmount: h.unmount };
 }
 
@@ -323,23 +328,35 @@ test('changing equipped Plushie has no temporary flow banner or delayed stage re
  const h=screenHarness('toy');
  h.data.roomPhotos=[{id:'face-a',ownerId:'me',kind:'doll',toyId:'default'},{id:'face-b',ownerId:'me',kind:'doll',toyId:'other'}];
  let all=nodes(h.render());const stage=all.find(n=>n.props?.testID==='plushie-play-area');
- assert.equal(stage.props.style.overflow,'visible');assert.equal(stage.props.style.zIndex,1,'particle subtree paints above the preceding instruction text');
- stage.props.onLayout({nativeEvent:{layout:{height:480}}});all=nodes(h.render());
+ const stageStyle=Object.assign({},...stage.props.style.filter(Boolean));
+ assert.equal(stageStyle.overflow,'visible');assert.equal(stageStyle.zIndex,1,'particle subtree paints above the preceding instruction text');
+ stage.props.onLayout?.({nativeEvent:{layout:{height:480}}});all=nodes(h.render());
  const before=JSON.stringify(all.find(n=>n.type==='Doll').props.artStyle);
- h.data.toyId='other';h.render();all=nodes(h.render());
+ h.replaceToy('other');h.render();all=nodes(h.render());
  assert.equal(all.some(n=>n.props?.accessibilityRole==='alert'||String(n.props?.children).includes('Toy updated in')),false);
  assert.equal(JSON.stringify(all.find(n=>n.type==='Doll').props.artStyle),before);
  h.timer.advance(3000);all=nodes(h.render());assert.equal(JSON.stringify(all.find(n=>n.type==='Doll').props.artStyle),before);h.unmount();
 });
 
-test('Plushie backdrop follows the active room wallpaper, extends into the safe area, and uses the measured character stage for its floor seam',()=>{
+test('returning from a hidden purchased-Plushie page cannot retain a zero-height stage or shrink the new empty toy',()=>{
+ const h=screenHarness('toy',{localized:true});
+ h.data.roomPhotos=[{id:'face-a',ownerId:'me',kind:'doll',toyId:'default'}];
+ let all=nodes(h.render()),stage=all.find(n=>n.props?.testID==='plushie-play-area');
+ stage.props.onLayout?.({nativeEvent:{layout:{height:0,y:0}}});
+ const page=all.find(n=>Array.isArray(n.props?.children)&&n.props.children.includes(stage));
+ page.props.onLayout({nativeEvent:{layout:{height:0}}});
+ h.replaceToy('new-purchased-toy');all=nodes(h.render());
+ const preview=all.find(n=>n.type==='PhotoPreview');assert.ok(preview.props.style.width>=270,'zero hidden layout must not size the visible toy');
+ const bg=all.find(n=>n.type==='PlushieRoomBackground');assert.ok(bg.props.floorY>200,'floor must not cover the whole wall');
+ h.unmount();
+});
+
+test('Plushie backdrop follows the active room wallpaper and preserves the approved play-page floor seam independent of child layout',()=>{
  const h=screenHarness('toy');h.replaceWallpaper('paper-A');h.data.roomPhotos=[{id:'face',ownerId:'me',kind:'doll',toyId:'default'}];
  let all=nodes(h.render());let bg=all.find(n=>n.type==='PlushieRoomBackground');assert.equal(bg.props.wallpaper.stable_id,'paper-A');
- const stage=all.find(n=>n.props?.testID==='plushie-play-area');stage.props.onLayout({nativeEvent:{layout:{height:540,y:70}}});
- all=nodes(h.render());all.find(n=>n.type==='Doll').props.onStageLayout(450);all=nodes(h.render());
- const doll=all.find(n=>n.type==='Doll'),size=doll.props.style.width,art=doll.props.artStyle;
- bg=all.find(n=>n.type==='PlushieRoomBackground');const top=70+(450-size)/2+art.top;
- assert.ok(Math.abs(bg.props.floorY-(top+art.height*2/3))<1e-8);
+ const stage=all.find(n=>n.props?.testID==='plushie-play-area');stage.props.onLayout?.({nativeEvent:{layout:{height:540,y:70}}});
+ bg=all.find(n=>n.type==='PlushieRoomBackground');
+ assert.ok(Math.abs(bg.props.floorY-(844-68)*.56)<1e-8);
  h.replaceWallpaper('paper-B');all=nodes(h.render());assert.equal(all.find(n=>n.type==='PlushieRoomBackground').props.wallpaper.stable_id,'paper-B');
  h.unmount();
 });
@@ -350,7 +367,7 @@ test('Plushie creation and play use the brown/white header, soft copy, yellow ph
   let all=nodes(h.render());
   const title=all.find(n=>n.props?.children==='Make a Plushie');assert.equal(title.props.style.at(-1).color,'#FFFFFF');
   assert.ok(all.some(n=>n.type==='BackButton'&&n.props.light===true));
-  assert.ok(all.some(n=>n.type==='Feather'&&n.props.name==='more-vertical'&&n.props.color==='#FFFFFF'));
+  assert.ok(all.some(n=>n.type==='Feather'&&n.props.name===(partner?'clock':'more-vertical')&&n.props.color==='#FFFFFF'));
   const copy=all.find(n=>n.props?.children===(partner?'Add your face to let Alex squeeze':'Add your babe’s face and give them a squeeze.'));
   assert.equal(copy.props.style[0].fontWeight,'400');assert.equal(copy.props.style[0].fontSize,16);
   assert.equal(copy.props.style[1].color,'#FFFFFF');
@@ -358,20 +375,22 @@ test('Plushie creation and play use the brown/white header, soft copy, yellow ph
   const addComponent=all.find(n=>typeof n.type==='function'&&n.props?.label==='Add Photo'),add=addComponent.type(addComponent.props);
   assert.equal(add.props.style({pressed:false})[0].backgroundColor,'#FFD36F');
   h.data.roomPhotos=[{id:'face',ownerId:partner?'partner':'me',kind:'doll',toyId:'default'}];all=nodes(h.render());
-  assert.ok(all.some(n=>n.props?.children==='Your Plushie'));
-  if(!partner)assert.ok(all.some(n=>n.props?.children==='Touch to rub · Drag to pull'));
+  assert.ok(all.some(n=>n.props?.children===(partner?'Alex’s Plushie':'Your Plushie')));
+  assert.equal(all.some(n=>n.props?.children==='Touch to rub · Drag to pull'),false,'approved default page has no extra gesture banner');
   assert.equal(all.some(n=>n.props?.accessibilityLabel==='显示影响范围'),false);h.unmount();
  }
 });
 
-test('own and partner watering both use the currently equipped vase, never the dresser kettle, and update after a replacement',()=>{
+test('own watering and partner fertilizer use their distinct reference artwork, unaffected by decoration replacement',()=>{
   for(const partner of [false,true]){
     const h=screenHarness('water');
     if(partner){h.data.partner={id:'partner',display_name:'Irina'};Object.assign(h.params,{ownerId:'partner',actorId:'me'});h.render();h.render();}
-    assert.equal(nodes(h.render()).find(node=>node.type==='Water').props.flower.source,'vase-1');
+    assert.equal(nodes(h.render()).find(node=>node.type==='Garden').props.action,partner?'fertilizer':'water');
+    assert.equal(nodes(h.render()).find(node=>node.type==='Garden').props.flower.source,'vase-1');
     h.replaceVase('replacement-flower');
-    assert.equal(nodes(h.render()).find(node=>node.type==='Water').props.flower.source,'replacement-flower');
-    assert.ok(nodes(h.render()).some(node=>node.props?.children===(partner?"Water Irina's flower":'Water your flower')));
+    assert.equal(nodes(h.render()).find(node=>node.type==='Garden').props.action,partner?'fertilizer':'water');
+    assert.equal(nodes(h.render()).find(node=>node.type==='Garden').props.flower.source,'replacement-flower','equipped flower updates without resetting the action');
+    assert.ok(nodes(h.render()).some(node=>node.props?.children===(partner?"Fertilize Irina's flower":'Water your flower')));
     h.unmount();
   }
 });
@@ -382,7 +401,7 @@ test('care headings distinguish my room from the partner target and use the part
     h.data.partner={id:'partner',display_name:'  Alex  '};
     if(partner)Object.assign(h.params,{ownerId:'partner',actorId:'me'});
     h.render();h.render();
-    const expected=kind==='food'?(partner?"Feed Alex's bunny":'Feed your bunny'):(partner?"Water Alex's flower":'Water your flower');
+    const expected=kind==='food'?(partner?"Feed Alex's bunny some greens":'Feed your bunny'):(partner?"Fertilize Alex's flower":'Water your flower');
     assert.ok(nodes(h.render()).some(node=>node.props?.children===expected));
     h.unmount();
   }
@@ -419,15 +438,17 @@ test('Plushie stage fills the space between copy and footer, clamps on small scr
  const h=screenHarness('toy');
  const all=()=>nodes(h.render());
  assert.equal(all().some(n=>n.type==='ScreenOptions'),false);
- const area=all().find(n=>n.props?.testID==='plushie-play-area');
- assert.equal(area.props.style.flex,1);assert.equal(area.props.style.minHeight,0);
- area.props.onLayout({nativeEvent:{layout:{height:400}}});
+ const initial=all(),area=initial.find(n=>n.props?.testID==='plushie-play-area');
+ const style=Object.assign({},...area.props.style.filter(Boolean));
+ assert.equal(style.flexGrow,1);assert.equal(style.minHeight,0);
+ const page=initial.find(n=>Array.isArray(n.props?.children)&&n.props.children.includes(area));
+ page.props.onLayout({nativeEvent:{layout:{height:530}}});
  let doll=all().find(n=>n.type==='PhotoPreview');assert.ok(doll,'empty toys use a static camera preview');
  assert.ok(doll.props.style.height<=400);
  h.data.roomPhotos=[{id:'face',ownerId:'me',kind:'doll',toyId:'default'}];
- all().find(n=>n.props?.testID==='plushie-play-area').props.onLayout({nativeEvent:{layout:{height:250}}});
- doll=all().find(n=>n.type==='Doll');assert.equal(doll.props.showActions,true);assert.equal(doll.props.fillStage,true);
- assert.equal(doll.props.style.height,250-78,'space reserved for the action row, never pushes the doll below center');
+ doll=all().find(n=>n.type==='Doll');assert.equal(doll.props.showActions,true);
+ assert.equal(doll.props.style.height,Math.min(390*.94,(844-68)*.43,420),'approved play-page size does not inherit the creation stage height');
+ assert.equal(doll.props.containerStyle.height,(844-68)*.73);
  h.unmount();
 });
 
@@ -438,30 +459,50 @@ for (const kind of ['food', 'water']) for (const partner of [false,true]) {
     if(partner){h.data.partner={id:'partner',display_name:'Irina'};Object.assign(h.params,{ownerId:'partner',actorId:'me'});h.render();h.render();}
     h.finish(); h.finish();
     const popup = nodes(h.render()).find(node => node.type === 'CarePopup');
-    assert.ok(popup); assert.equal(popup.props.title, kind === 'food' ? 'Yum!' : 'Fresh and thirsty no more!');
+    assert.ok(popup); assert.equal(popup.props.title, kind === 'food' ? 'Yum!' : 'Ahh!');
+    assert.equal(popup.props.message,`${partner?"Irina's":'Your'} ${kind==='food'?'bunny is full and happy.':'flower is fresh and growing.'}`);
+    assert.equal(popup.props.icon,kind==='water'?'heart':undefined,'watering alone switches to a heart; feeding keeps its existing icon');
     assert.equal(h.requests(), 1); assert.equal(h.marks.length, 0);
     popup.props.onClose();popup.props.onClose();
     assert.deepEqual(h.navigation,['back']);
     assert.equal(nodes(h.render()).some(node=>node.type==='CarePopup'),false);
     h.unmount();
     h.save.resolve(true); await flush();
-    assert.deepEqual(h.marks, [[partner?'partner':'me', kind]]);assert.deepEqual(h.navigation,['back']);
+    assert.deepEqual(h.marks, [],'the shared settled observer, not an unmounted page, owns confirmed cooldown');assert.deepEqual(h.navigation,['back']);
   });
 }
 
-test('failed care save dismisses speculative success, restores retry, and does not start cooldown', async () => {
-  const h = screenHarness('food'); h.finish();
-  h.save.resolve(false); await flush();
+test('watering completion shares the feeding card layout, with the requested heart and title/body typography',()=>{
+ for(const kind of ['food','water']){
+  const h=hooks(),back=[],title=kind==='water'?'Ahh!':'Yum!',message=kind==='water'?'Your flower is fresh and growing.':'Your bunny is full and happy.';
+  let closed=0,removed=0;
+  const {CareQuestCelebration}=load('apps/mobile/src/components/burrow/care-quest-celebration.tsx',{
+   react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
+   'react-native':{...native,AppState:{addEventListener:()=>({remove(){}})},BackHandler:{addEventListener:(_name,fn)=>{back.push(fn);return{remove:()=>removed++};}}},
+   'react-native-reanimated':{...require('./motion-test-utils.cjs').motionHarness(h).reanimated,withSpring:value=>value},
+  });
+  const tree=nodes(h.render(()=>CareQuestCelebration({title,message,icon:kind==='water'?'heart':undefined,onClose:()=>closed++})));
+  assert.equal(tree.find(n=>n.props?.children===(kind==='water'?'❤️':'🎉')).props.style.fontSize,48);
+  const heading=tree.find(n=>n.props?.children===title),body=tree.find(n=>n.props?.children===message);
+  assert.equal(heading.props.style.fontSize,22);assert.equal(body.props.style.fontSize,15);
+  assert.equal(heading.props.style.textAlign,'center');assert.equal(body.props.style.textAlign,'center');
+  tree.find(n=>n.type==='Pressable').props.onPress();assert.equal(closed,1);
+  assert.equal(back[0](),true);assert.equal(closed,2);h.unmount();assert.equal(removed,1);
+ }
+});
+
+test('failed durable care save cannot display success or coins, restores retry, and does not start cooldown', async () => {
+  const h = screenHarness('food'); h.failDisk();h.finish();
   const tree = nodes(h.render());
   assert.equal(tree.some(node => node.type === 'CarePopup'), false);
-  assert.equal(tree.find(node => node.type === 'Feed').props.complete, false);
-  assert.ok(tree.some(node => node.props?.children === 'That did not save. Please try again.'));
+  assert.equal(tree.find(node => node.type === 'Garden').props.complete, false);
+  assert.ok(tree.some(node => node.props?.children === 'Could not save on this device. Please hold to try again.'));
   assert.equal(h.marks.length, 0); h.unmount();
 });
 
-for(const kind of ['food','water'])for(const code of ['already_full','care_cooldown'])test(`${kind}: server ${code} race presents a full status and exits, not another feed/water attempt`,async()=>{
- const h=screenHarness(kind);h.finish();assert.equal(h.reserves(),1);h.rejectWith(code);h.save.resolve(false);await flush();
- assert.equal(h.reserves(),0);const status=nodes(h.render()).find(n=>n.type==='CareStatus');assert.ok(status);
+for(const kind of ['food','water'])test(`${kind}: another device's refreshed cooldown at the final frame presents status instead of submitting again`,async()=>{
+ const h=screenHarness(kind),complete=nodes(h.render()).find(n=>n.type==='Garden').props.onComplete;h.coolDown();complete();await flush();
+ assert.equal(h.requests(),0);assert.equal(h.reserves(),0);const status=nodes(h.render()).find(n=>n.type==='CareStatus');assert.ok(status);
  assert.equal(h.marks.length,0);status.props.onClose();status.props.onClose();assert.deepEqual(h.navigation,['back']);h.unmount();
 });
 
@@ -480,7 +521,7 @@ test('late care failure cannot dismiss a success popup on a different interactio
   h.params.kind = 'water'; h.render(); h.render();
   h.save.resolve(false); await flush();
   const tree = nodes(h.render());
-  assert.equal(tree.find(node => node.type === 'Water').props.complete, false);
+  assert.equal(tree.find(node => node.type === 'Garden').props.complete, false);
   assert.equal(tree.some(node => node.props?.accessibilityRole === 'alert'), false); h.unmount();
 });
 for(const kind of ['food','water'])test(`${kind}: partner care submits the partner owner and keeps the current instant celebration`,async()=>{
@@ -488,11 +529,11 @@ for(const kind of ['food','water'])test(`${kind}: partner care submits the partn
   h.data.partner={id:'partner',display_name:'Irina'};
   Object.assign(h.params,{ownerId:'partner',actorId:'me'});
   h.render();h.render();h.finish();
-  assert.deepEqual(h.targets,[['partner',kind,'key']]);
+  assert.deepEqual(h.targets,[['partner',kind]]);
   assert.ok(nodes(h.render()).some(node=>node.type==='CarePopup'));
   assert.match(nodes(h.render()).find(node=>node.type==='CarePopup').props.message,/Irina's (bunny|flower)/);
   h.save.resolve(true);await flush();
-  assert.deepEqual(h.marks,[['partner',kind]]);
+  assert.deepEqual(h.marks,[],'the page never marks an unverified completion');
   const popup=nodes(h.render()).find(node=>node.type==='CarePopup');
   popup.props.onClose();popup.props.onClose();
   assert.deepEqual(h.navigation,['back']);h.unmount();
@@ -531,7 +572,7 @@ test('unpaired, foreign-owner and stale-account routes never fall back to caring
   for(const extra of [{ownerId:'foreign',actorId:'me'},{ownerId:'partner',actorId:'old'},{ownerId:'partner',actorId:'me'}]){
     const h=screenHarness('food');
     Object.assign(h.params,extra);h.render();h.render();
-    assert.equal(nodes(h.render()).some(node=>node.type==='Feed'),false);
+    assert.equal(nodes(h.render()).some(node=>node.type==='Garden'),false);
     assert.equal(h.requests(),0);h.unmount();
   }
 });

@@ -1,6 +1,7 @@
 import { BackIcon } from './burrow-back-button';
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
 import { Image } from './burrow-image';
 import {CoinWallet} from './coin-wallet';

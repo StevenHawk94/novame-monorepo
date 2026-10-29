@@ -10,6 +10,7 @@ import { projectShopCatalog } from '@/lib/shop-catalog-release.mjs'
 import {personalRooms} from '@/lib/personal-room-contract.mjs'
 import {projectEconomicCalendar} from '@/lib/economic-calendar-contract.mjs'
 import {readCharacterState} from '@/lib/bunny-adventure-contract.mjs'
+import {careV2Capable,readRoomCare} from '@/lib/room-care-contract.mjs'
 
 // Regional Fluid compute reuses the Node runtime/JWKS and outbound connections
 // instead of fanning this database-heavy read across global edge isolates.
@@ -97,7 +98,7 @@ export async function GET(request) {
     if (snapshot && !snapshot.error) {
       // Independent supplementary reads share ONE round trip window. Care
       // used to block bonus/collection/wallet/photo reads from even starting.
-      const [bonus, collection, coinState, photoUsage, care, giftCatalog, character] = await timing.read('supplements', () => Promise.all([
+      const [bonus, collection, coinState, photoUsage, care, giftCatalog, character, roomCare] = await timing.read('supplements', () => Promise.all([
         supplement(signal => boundedQuery(db.rpc('daily_plus_bonus_state_v1', { p_user_id: userId }), signal)),
         supplement(signal => boundedQuery(db.rpc('adventure_collection_v2', { p_user_id: userId }), signal)),
         supplement(signal => readRewardWallet(db, userId, signal)),
@@ -110,6 +111,7 @@ export async function GET(request) {
             results.some(result => result.error) ? undefined : results)),
         supplement(signal => readShopGiftCatalog(db, snapshot, signal)),
         supplement(() => readCharacterState(db,userId,snapshot,request)),
+        careV2Capable(request)?supplement(signal=>readRoomCare(db,userId,snapshot,signal)):Promise.resolve(null),
       ]))
       if (care) snapshot = { ...snapshot, lastCareAt: { food: care[0].data?.[0]?.created_at || null,
         water: care[1].data?.[0]?.created_at || null } }
@@ -119,7 +121,8 @@ export async function GET(request) {
       if (bonus?.data && !bonus.data.error) snapshot = { ...snapshot, dailyPlusBonus: bonus.data }
       if (collection?.data && !collection.data.error) snapshot = { ...snapshot, adventureCollection: collection.data }
       if (coinState) snapshot = { ...snapshot, wallet: coinState.wallet, coinState }
-      if (photoUsage?.data && !photoUsage.data.error) snapshot = { ...snapshot, photoUsage: photoUsage.data }
+      if (photoUsage?.data && !photoUsage.data.error) snapshot = { ...snapshot, photoUsage: photoUsage.data,
+        ...(photoUsage.data.doll?.unlimited === true ? { dollChangeUsed: false, dollPhotoChangesUsed: [], dollPhotoChangeTargetsUsed: [] } : {}) }
       if (giftCatalog) snapshot = { ...snapshot, giftCatalog }
       if(character){
         snapshot={...snapshot,...character}
@@ -129,6 +132,7 @@ export async function GET(request) {
         if(party?.team&&party.adventureId===snapshot.activeAdventure?.id)
           snapshot={...snapshot,activeAdventure:{...snapshot.activeAdventure,ends_at:party.team.endsAt}}
       }
+      if(roomCare)snapshot={...snapshot,roomCare}
       const attention = await attentionRead
       if (attention) snapshot = { ...snapshot, attention }
     }

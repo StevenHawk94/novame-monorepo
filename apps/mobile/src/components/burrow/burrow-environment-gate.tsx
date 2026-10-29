@@ -1,5 +1,6 @@
 import {useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore,type PropsWithChildren} from 'react';
-import {ActivityIndicator,AppState,Pressable,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import {useSegments} from 'expo-router';
 import {BurrowLaunchScreen} from '@/components/main/burrow-launch-screen';
 import {BURROW_LAUNCH_BACKGROUND} from '@/lib/burrow-onboarding-design';

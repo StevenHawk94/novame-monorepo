@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable } from '@/components/ui/feedback-pressable';
 import Svg, { Path } from 'react-native-svg';
 import { uiWorkPriority } from '@/lib/ui-work-priority';
 import { beginInteractionTiming, markInteractionTiming } from '@/lib/interaction-timing';
